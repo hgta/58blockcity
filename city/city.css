@@ -1,0 +1,1171 @@
+
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 头部样式 */
+        header {
+            background-color: #ff6b00;
+            color: white;
+            padding: 12px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-img {
+            width: 45px;
+            height: 45px;
+            margin-right: 10px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 22px;
+            color: #ff6b00;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .logo-text span {
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0.8;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .nav-button {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* 城市详情内容 - 首屏优化 */
+        .city-detail-container {
+            padding: 20px 0;
+        }
+        
+        .city-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .city-avatar {
+            width: 80px;
+            height: 80px;
+            background-color: #ffefe6;
+            border-radius: 50%;
+            margin-right: 15px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .city-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .city-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .city-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #ff6b00;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .city-slogan {
+            color: #666;
+            margin-bottom: 12px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .city-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        .stat-card {
+            background-color: #fff8f5;
+            padding: 12px 15px;
+            border-radius: 8px;
+            min-width: 0;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b00;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 进入城市按钮 */
+        .enter-city-btn {
+            display: inline-block;
+            background-color: #ff6b00;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(255,107,0,0.3);
+        }
+        
+        .enter-city-btn:hover {
+            background-color: #e05d00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255,107,0,0.4);
+        }
+        
+        /* 城市管理部分 - 紧凑版 */
+        .city-management {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .city-management {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .management-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            color: #ff6b00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* 管理届数样式 */
+        .administration-term {
+            font-size: 12px;
+            color: #ff6b00;
+            background-color: #fff8f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .leader-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .leader-card {
+            background-color: #fff8f5;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .leader-avatar-container {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .leader-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #ffdbcc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b00;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .leader-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .crown-icon {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 20px;
+            height: 20px;
+            z-index: 2;
+        }
+        
+        .leader-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .leader-role {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        
+        .leader-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ff6b00;
+        }
+        
+        .leader-address {
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 2px;
+            word-break: break-all;
+        }
+        
+        .leader-address a {
+            color: #ff6b00;
+            text-decoration: underline;
+        }
+        
+        .leader-popularity {
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+            color: #ff6b00;
+        }
+        
+        .leader-popularity::before {
+            content: "★";
+            margin-right: 2px;
+        }
+        
+        /* 二维码样式 */
+        .leader-qrcode {
+            width: 80px;
+            height: 80px;
+            margin-left: 15px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .leader-qrcode img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border: 1px solid #eee;
+        }
+        
+        .leader-qrcode span {
+            font-size: 10px;
+            color: #999;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        /* 城市基础信息及特色亮点 - 新样式 */
+        .info-highlight-card {
+            background-color: #fff8f5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .info-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff6b00;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-title i {
+            margin-right: 5px;
+            font-size: 16px;
+        }
+        
+        .info-content {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* 区域地图部分 */
+        .city-map {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .map-area {
+            aspect-ratio: 1/1;
+            background-color: #ffefe6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ff6b00;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            font-size: 14px;
+        }
+        
+        .map-area:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 10px rgba(255,107,0,0.2);
+        }
+        
+        .area-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            font-size: 12px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-status {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            font-size: 10px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-owned {
+            background-color: #ff6b00;
+            color: white;
+        }
+        
+        .area-available {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .area-bookable {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .area-locked {
+            background-color: #9E9E9E;
+            color: white;
+        }
+        
+        /* 底部 - 优化样式 */
+        footer {
+            background-color: #333;
+            color: #999;
+            padding: 30px 0 25px;
+            font-size: 13px;
+        }
+        
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            padding: 0 15px;
+        }
+        
+        .footer-column h3 {
+            color: white;
+            font-size: 15px;
+            margin-bottom: 15px;
+            padding-left: 0;
+        }
+        
+        .footer-column ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #999;
+            transition: color 0.3s;
+            font-size: 13px;
+            display: block;
+            padding: 2px 0;
+        }
+        
+        .footer-column a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+            font-size: 12px;
+            color: #bbb;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .city-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .city-avatar {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            .footer-container {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 0 20px;
+            }
+            
+            .city-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .leader-qrcode {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+                padding: 0 15px;
+            }
+            
+            .logo-img {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            .logo-text {
+                font-size: 20px;
+            }
+            
+            .logo-text span {
+                font-size: 12px;
+            }
+            
+            .nav-button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .map-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .city-name {
+                font-size: 22px;
+            }
+            
+            .leader-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .leader-qrcode {
+                margin: 10px 0 0;
+            }
+        }
+		
+		/* 新增：优惠悬浮窗口样式 */
+        .promotion-floating {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 300px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 15px;
+            z-index: 999;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: floatIn 0.5s forwards;
+            border: 2px solid #ff6b00;
+        }
+
+        @keyframes floatIn {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .promotion-header {
+            color: #ff6b00;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .promotion-header i {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .promotion-content {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .promotion-qrcode {
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .promotion-qrcode img {
+            width: 150px;
+            height: 150px;
+            border: 1px solid #eee;
+        }
+
+        .promotion-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        .promotion-close:hover {
+            color: #ff6b00;
+        }
+
+        @media (max-width: 768px) {
+            .promotion-floating {
+                width: 250px;
+                right: 15px;
+                bottom: 15px;
+            }
+        }
+/* 新增：重新设计的领导名片样式 - 紧凑版 */
+.leader-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leader-card {
+    background: linear-gradient(135deg, #fff8f5 0%, #ffefe6 100%);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(255,107,0,0.1);
+    border: 1px solid #ffdbcc;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.leader-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23ffdbcc" d="M50,0 C77.6,0 100,22.4 100,50 C100,77.6 77.6,100 50,100 C22.4,100 0,77.6 0,50 C0,22.4 22.4,0 50,0 Z"/></svg>') no-repeat;
+    background-size: contain;
+    opacity: 0.2;
+}
+
+.leader-avatar-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.leader-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #ffdbcc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ff6b00;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.crown-icon {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 24px;
+    height: 24px;
+    z-index: 2;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.leader-details {
+    flex: 1;
+    min-width: 0;
+    z-index: 1;
+}
+
+.leader-role {
+    font-size: 11px;
+    color: #ff6b00;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.leader-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #333;
+}
+
+.leader-address {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.leader-address a {
+    color: #ff6b00;
+    text-decoration: underline;
+}
+
+.leader-popularity {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: #ff6b00;
+}
+
+.leader-popularity::before {
+    content: "★";
+    margin-right: 3px;
+    font-size: 12px;
+}
+
+.leader-qrcode {
+    width: 70px;
+    height: 70px;
+    margin-left: 12px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    border-radius: 6px;
+    padding: 4px;
+    border: 1px solid #eee;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    z-index: 1;
+}
+
+.leader-qrcode img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.leader-qrcode span {
+    font-size: 9px;
+    color: #999;
+    margin-top: 4px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* 响应式调整 - 手机版名片 */
+@media (max-width: 768px) {
+    .leader-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+    }
+    
+    .leader-avatar-container {
+        margin-right: 0;
+        margin-bottom: 10px;
+        width: 70px;
+        height: 70px;
+    }
+    
+    .leader-details {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .leader-qrcode {
+        margin-left: 0;
+        align-self: center;
+        width: 80px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 576px) {
+    .leader-card {
+        padding: 12px;
+    }
+    
+    .leader-avatar-container {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .leader-qrcode {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+/* 9区地图布局样式 */
+        .map-container {
+            display: grid;
+            grid-template-areas:
+                "A B C D Z"
+                "E F G H Z";
+            grid-template-columns: repeat(4, 1fr) 1.5fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .map-area {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            aspect-ratio: 1/1;
+            background-color: #ffefe6;
+            transition: all 0.3s;
+        }
+        
+        .map-area:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 10px rgba(255,107,0,0.2);
+        }
+        
+        .map-area.Z {
+            grid-area: Z;
+            aspect-ratio: auto;
+        }
+        
+        .map-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            transition: transform 0.3s;
+        }
+        
+        .map-area:hover img {
+            transform: scale(1.05);
+        }
+        
+        .area-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            font-size: 12px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-status {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-available {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .area-bookable {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .area-locked {
+            background-color: #9E9E9E;
+            color: white;
+        }
+        
+        /* 图片模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        
+        .modal-content {
+            display: block;
+            margin: auto;
+            max-width: 90%;
+            max-height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #ff6b00;
+        }
+        
+        /* 新增：城市定位提示条 */
+        .city-location-bar {
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .city-location-bar a {
+            color: white;
+            text-decoration: underline;
+            margin-left: 5px;
+        }
+        
+        /* 紧凑布局调整 */
+        .city-management {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .management-card {
+            margin-bottom: 0;
+        }
+        
+        .leader-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .leader-card {
+            padding: 12px;
+        }
+        
+        .info-highlight-card {
+            padding: 12px;
+        }
+        
+        /* 虚位以待样式 */
+        .vacant-position {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff8f2;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .vacant-position .btn {
+            display: inline-block;
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-decoration: none;
+        }
+		
+		 /* 新增样式调整布局 */
+        .city-management {
+            display: flex;
+            gap: 20px;
+        }
+        .management-card {
+            flex: 1;
+        }
+        .management-card:first-child {
+            flex: 0 0 300px; /* 缩小管理团队区域宽度 */
+        }
+        .city-basic-info {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .info-item h4 {
+            margin-top: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .info-item p {
+            margin-bottom: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+		
+		/* 新增样式调整布局 */
+        .city-management {
+            display: flex;
+            gap: 20px;
+        }
+        .management-card {
+            flex: 1;
+        }
+        .management-card:first-child {
+            flex: 0 0 300px;
+        }
+        .city-basic-info {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .info-item h4 {
+            margin-top: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .info-item p {
+            margin-bottom: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        /* 优化标题层级 */
+        h1.city-name {
+            font-size: 2.2em;
+            margin-bottom: 0.3em;
+        }
+        h2.section-title {
+            font-size: 1.6em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h3 {
+            font-size: 1.3em;
+        }
+        
+        /* 图片优化 */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .city-avatar img {
+            border-radius: 8px;
+        }
+        
+        /* 面包屑导航 */
+        .breadcrumb {
+            padding: 15px 0;
+            font-size: 14px;
+        }
+        .breadcrumb a {
+            color: #666;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+		/* 新增特色标签 */
+        .feature-tag {
+            display: inline-block;
+            background: #ff6b00;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }

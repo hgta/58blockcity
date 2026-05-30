@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>58互访圈 - 城市间互访交流平台 | 58 BlockCity </title>
+    <meta name="description" content="58互访圈是基于58区块城市的城市间互访交流平台，记录和管理城市间的互访活动。">
+    <meta name="keywords" content="58,互访圈,城市互访,区块城市,BlockCity,DAO,同城交流">
+    <link rel="stylesheet" href="/css/main.css">
+	<script src="/city/city.js"></script>
+	<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <style>
+        /* 继承主站样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 互访圈紧凑版样式 */
+        .visit-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1px;
+            background-color: #eee;
+        }
+        
+        /* 表头样式 */
+        .list-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px;
+            background-color: #ff6b00;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .header-item {
+            text-align: center;
+        }
+        
+        .header-item:first-child {
+            text-align: left;
+        }
+        
+        .visit-item {
+            background-color: white;
+            padding: 10px 15px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px;
+            align-items: center;
+        }
+        
+        .visit-name {
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .block-count {
+            font-size: 12px;
+            color: #ff6b00;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+        
+        .visit-city, .visit-date, 
+        .return-date, .next-suggest {
+            font-size: 13px;
+            color: #333;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .visit-status {
+            font-size: 12px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            text-align: center;
+            justify-self: center;
+            font-weight: bold;
+            min-width: 70px;
+        }
+        
+        .status-completed {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+        
+        .status-ongoing {
+            background-color: #fff8e1;
+            color: #ff8f00;
+            border: 1px solid #ff8f00;
+        }
+        
+        .status-planned {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #1565c0;
+        }
+        
+        /* 筛选区域 */
+        .filter-area {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .city-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .status-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-tag {
+            padding: 5px 12px;
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-tag.active, .filter-tag:hover {
+            background-color: #ff6b00;
+            color: white;
+        }
+        
+        .stats-info {
+            font-size: 14px;
+            margin-left: auto;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #ff6b00;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .list-header, .visit-item {
+                grid-template-columns: 1.8fr 0.9fr 0.9fr 0.9fr 0.9fr 90px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .list-header, .visit-item {
+                grid-template-columns: 1.8fr 0.9fr 0.9fr 0.9fr 90px;
+            }
+            .next-suggest {
+                display: none;
+            }
+            .list-header .header-item:nth-child(5),
+            .visit-item .next-suggest {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-area {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .stats-info {
+                margin-left: 0;
+            }
+            
+            .list-header, .visit-item {
+                grid-template-columns: 1.8fr 0.9fr 0.9fr 90px;
+            }
+            .return-date {
+                display: none;
+            }
+            .list-header .header-item:nth-child(4),
+            .visit-item .return-date {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .list-header, .visit-item {
+                grid-template-columns: 1.8fr 0.9fr 90px;
+            }
+            .visit-city {
+                display: none;
+            }
+            .list-header .header-item:nth-child(3),
+            .visit-item .visit-city {
+                display: none;
+            }
+        }
+		
+		/* 新增：城市定位提示条 */
+        .city-location-bar {
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .city-location-bar a {
+            color: white;
+            text-decoration: underline;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    互访圈
+                    <span>城市间互访交流平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="index.html" class="nav-button">返回首页</a>
+                <a href="top200city.html" class="nav-button">城市列表</a>
+                <a href="https://www.blockcity.pub/pages/user/user/?iclc=1" class="nav-button">我的互访</a>
+            </div>
+        </div>
+    </header>
+    
+	<!-- 城市定位提示条 -->
+    <div class="city-location-bar" id="cityLocationBar">
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+    </div>
+	
+    <!-- 主要内容 -->
+    <main class="container">
+        <!-- 筛选区域 -->
+        <section class="filter-area">
+            <div class="filter-group">
+                <div class="filter-label">城市筛选：</div>
+                <div class="city-tags">
+                    <div class="filter-tag active" data-city="all">全部</div>
+                    <div class="filter-tag" data-city="beijing">北京</div>
+                    <div class="filter-tag" data-city="shanghai">上海</div>
+                    <div class="filter-tag" data-city="guangzhou">广州</div>
+                    <div class="filter-tag" data-city="shenzhen">深圳</div>
+                    <div class="filter-tag" data-city="hangzhou">杭州</div>
+					<div class="filter-tag" data-city="hefei">合肥</div>
+					<div class="filter-tag" data-city="wuxi">无锡</div>
+					<div class="filter-tag" data-city="shucang">中国数藏</div>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">状态筛选：</div>
+                <div class="status-tags">
+                    <div class="filter-tag active" data-status="all">全部</div>
+                    <div class="filter-tag" data-status="completed">已完成</div>
+                    <div class="filter-tag" data-status="ongoing">进行中</div>
+                    <div class="filter-tag" data-status="planned">计划中</div>
+                </div>
+            </div>
+            
+            <div class="stats-info">
+                58互访圈区块数：<span class="stat-value" id="currentCityBlocks">1,258</span>
+            </div>
+        </section>
+        
+        <!-- 互访圈列表 -->
+        <section class="visit-list">
+            <!-- 表头 -->
+            <div class="list-header">
+                <div class="header-item">互访圈名</div>
+                <div class="header-item">城市</div>
+                <div class="header-item">来访日期</div>
+                <div class="header-item">回访日期</div>
+                <div class="header-item">下次互访时间</div>
+                <div class="header-item">互访状态</div>
+            </div>
+            
+            <!-- 互访圈1 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">20区块</span>
+                </div>
+                <div class="visit-city">上海</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+            
+            <!-- 互访圈2 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">18区块</span>
+                </div>
+                <div class="visit-city">北京</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+            
+            <!-- 互访圈3 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    星星互访圈（老号）<span class="block-count">15区块</span>
+                </div>
+                <div class="visit-city">北京</div>
+                <div class="visit-date">2025-05-09</div>
+                <div class="return-date">-</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-ongoing">进行中</div>
+            </div>
+            
+            <!-- 互访圈4 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    成渝双城经济圈互访<span class="block-count">6区块</span>
+                </div>
+                <div class="visit-city">成都</div>
+                <div class="visit-date">2025-01-05</div>
+                <div class="return-date">2025-02-15</div>
+                <div class="next-suggest">2025-08-15</div>
+                <div class="visit-status status-ongoing">进行中</div>
+            </div>
+            
+            <!-- 互访圈5 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    长江中游城市群互访<span class="block-count">9区块</span>
+                </div>
+                <div class="visit-city">武汉</div>
+                <div class="visit-date">2025-04-12</div>
+                <div class="return-date">2025-05-20</div>
+                <div class="next-suggest">2025-11-20</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈6 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">28区块</span>
+                </div>
+                <div class="visit-city">杭州</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+            
+            <!-- 互访圈7 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">24区块</span>
+                </div>
+                <div class="visit-city">苏州</div>
+                <div class="visit-date">-</div>
+                <div class="return-date">-</div>
+                <div class="next-suggest">-</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈8 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">25区块</span>
+                </div>
+                <div class="visit-city">天津</div>
+                <div class="visit-date">-</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈9 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    南京科技创新互访<span class="block-count">10区块</span>
+                </div>
+                <div class="visit-city">南京</div>
+                <div class="visit-date">2025-04-05</div>
+                <div class="return-date">2025-05-15</div>
+                <div class="next-suggest">2025-11-15</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈10 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    广州商贸互访圈<span class="block-count">8区块</span>
+                </div>
+                <div class="visit-city">广州</div>
+                <div class="visit-date">2025-03-10</div>
+                <div class="return-date">2025-04-18</div>
+                <div class="next-suggest">2025-10-18</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈11 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">17区块</span>
+                </div>
+                <div class="visit-city">重庆</div>
+                <div class="visit-date">-</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+            
+            <!-- 互访圈12 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    西安历史文化互访圈<span class="block-count">9区块</span>
+                </div>
+                <div class="visit-city">西安</div>
+                <div class="visit-date">2025-04-18</div>
+                <div class="return-date">2025-05-25</div>
+                <div class="next-suggest">2025-11-25</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+			
+			<!-- 互访圈12 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">14区块</span>
+                </div>
+                <div class="visit-city">合肥</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+			
+			<!-- 互访圈12 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">20区块</span>
+                </div>
+                <div class="visit-city">昆明</div>
+                <div class="visit-date">-</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-planned">计划中</div>
+            </div>
+			
+			<!-- 互访圈12 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    新妖妖互访圈<span class="block-count">86区块</span>
+                </div>
+                <div class="visit-city">无锡</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+			
+			<!-- 互访圈12 -->
+            <div class="visit-item">
+                <div class="visit-name">
+                    妖妖互访圈<span class="block-count">5区块</span>
+                </div>
+                <div class="visit-city">中国数藏</div>
+                <div class="visit-date">2025-05-10</div>
+                <div class="return-date">2025-05-10</div>
+                <div class="next-suggest">2025-11-10</div>
+                <div class="visit-status status-completed">已完成</div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58互访圈</h3>
+                    <ul>
+                        <li><a href="#">平台介绍</a></li>
+                        <li><a href="#">使用指南</a></li>
+                        <li><a href="#">隐私政策</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>互访服务</h3>
+                    <ul>
+                        <li><a href="#">互访流程</a></li>
+                        <li><a href="#">城市匹配</a></li>
+                        <li><a href="#">活动记录</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="#">常见问题</a></li>
+                        <li><a href="#">联系我们</a></li>
+                        <li><a href="#">意见反馈</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58互访圈 | 58 BlockCity 版权所有 | 城市间互访交流平台
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // 城市区块数数据
+        const cityBlockData = {
+            'all': 44,
+            'beijing': 7,
+            'shanghai': 6,
+            'guangzhou': 3,
+            'shenzhen': 3,
+            'hangzhou': 11,
+            'chengdu': 2,
+            'chongqing': 1,
+            'wuhan': 1,
+            'suzhou': 0,
+            'tianjin': 0,
+            'nanjing': 0,
+			'hefei': 4,
+			'kunming':0,
+			'wuxi':1,
+			'shucang':5
+        };
+        
+        // 初始化筛选状态
+        let currentCity = 'all';
+        let currentStatus = 'all';
+        
+        // 城市筛选功能
+        document.querySelectorAll('[data-city]').forEach(tag => {
+            tag.addEventListener('click', function() {
+                // 移除所有active类
+                document.querySelectorAll('[data-city]').forEach(t => t.classList.remove('active'));
+                // 为当前点击的标签添加active类
+                this.classList.add('active');
+                
+                // 更新当前城市
+                currentCity = this.getAttribute('data-city');
+                
+                // 筛选互访圈
+                filterVisits();
+                
+                // 更新城市区块数显示
+                updateCityBlocks();
+            });
+        });
+        
+        // 状态筛选功能
+        document.querySelectorAll('[data-status]').forEach(tag => {
+            tag.addEventListener('click', function() {
+                // 移除所有active类
+                document.querySelectorAll('[data-status]').forEach(t => t.classList.remove('active'));
+                // 为当前点击的标签添加active类
+                this.classList.add('active');
+                
+                // 更新当前状态
+                currentStatus = this.getAttribute('data-status');
+                
+                // 筛选互访圈
+                filterVisits();
+            });
+        });
+        
+        // 筛选互访圈
+        function filterVisits() {
+            const visits = document.querySelectorAll('.visit-item');
+            let visibleCount = 0;
+            
+            visits.forEach(visit => {
+                const visitCity = visit.querySelector('.visit-city').textContent;
+                const visitStatus = visit.querySelector('.visit-status').textContent;
+                
+                // 城市筛选条件
+                const cityMatch = currentCity === 'all' || visitCity === getCityName(currentCity);
+                
+                // 状态筛选条件
+                const statusMatch = currentStatus === 'all' || 
+                                  (currentStatus === 'completed' && visitStatus === '已完成') ||
+                                  (currentStatus === 'ongoing' && visitStatus === '进行中') ||
+                                  (currentStatus === 'planned' && visitStatus === '计划中');
+                
+                if (cityMatch && statusMatch) {
+                    visit.style.display = 'grid';
+                    visibleCount++;
+                } else {
+                    visit.style.display = 'none';
+                }
+            });
+            
+            // 更新显示数量
+            document.getElementById('currentCityBlocks').textContent = visibleCount.toLocaleString();
+        }
+        
+        // 更新城市区块数显示
+        function updateCityBlocks() {
+            const blockCount = cityBlockData[currentCity] || 0;
+            document.getElementById('currentCityBlocks').textContent = blockCount.toLocaleString();
+        }
+        
+        // 获取城市中文名
+        function getCityName(cityCode) {
+            const cityMap = {
+                'beijing': '北京',
+                'shanghai': '上海',
+                'guangzhou': '广州',
+                'shenzhen': '深圳',
+                'hangzhou': '杭州',
+                'chengdu': '成都',
+                'chongqing': '重庆',
+                'wuhan': '武汉',
+                'suzhou': '苏州',
+                'tianjin': '天津',
+                'nanjing': '南京',
+				'hefei': '合肥',
+				'wuxi': '无锡',
+				'shucang': '数藏'
+            };
+            return cityMap[cityCode] || '';
+        }
+        
+        // 初始化显示全部城市
+        updateCityBlocks();
+		
+		// 页面加载时获取城市信息
+        window.onload = function() {
+            getCityInfo();
+        };
+    </script>
+</body>
+</html>

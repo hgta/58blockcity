@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京区块城市详情 - 58区块城市</title>
+    <meta name="description" content="北京区块城市详情，包含城市排名、居民信息、基金余额、人气值和区域地图">
+    <meta name="keywords" content="58,区块城市,北京,元宇宙,BlockCity,DAO,同城服务">
+	
+	<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="shortcut icon" href="/favicon.ico" />
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+	<link rel="manifest" href="/site.webmanifest" />
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 头部样式 */
+        header {
+            background-color: #ff6b00;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: #ff6b00;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .logo-text span {
+            font-size: 16px;
+            margin-left: 10px;
+            opacity: 0.8;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-button {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* 城市详情内容 */
+        .city-detail-container {
+            padding: 30px 0;
+        }
+        
+        .city-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .city-avatar {
+            width: 100px;
+            height: 100px;
+            background-color: #ffefe6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff6b00;
+            margin-right: 20px;
+        }
+        
+        .city-info {
+            flex: 1;
+        }
+        
+        .city-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #ff6b00;
+        }
+        
+        .city-slogan {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .city-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background-color: #fff8f5;
+            padding: 15px 20px;
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6b00;
+        }
+        
+        /* 城市管理部分 */
+        .city-management {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .city-management {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .management-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #ff6b00;
+        }
+        
+        .leader-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .leader-card {
+            background-color: #fff8f5;
+            padding: 15px;
+            border-radius: 8px;
+            width: calc(50% - 8px);
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 576px) {
+            .leader-card {
+                width: 100%;
+            }
+        }
+        
+        .leader-role {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .leader-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .leader-stats {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        /* 区域地图部分 */
+        .city-map {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .map-area {
+            aspect-ratio: 1/1;
+            background-color: #ffefe6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ff6b00;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-area:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255,107,0,0.2);
+        }
+        
+        .area-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 14px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        
+        .area-status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        
+        .area-owned {
+            background-color: #ff6b00;
+            color: white;
+        }
+        
+        .area-available {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        /* 底部 */
+        footer {
+            background-color: #333;
+            color: #999;
+            padding: 30px 0;
+            font-size: 14px;
+        }
+        
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        
+        .footer-column h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+            font-size: 12px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .city-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .city-avatar {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .footer-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo-img {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            .logo-text {
+                font-size: 20px;
+            }
+            
+            .logo-text span {
+                font-size: 14px;
+            }
+            
+            .nav-button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/?urfh" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 城市详情内容 -->
+    <div class="container city-detail-container">
+        <!-- 城市头部信息 -->
+        <div class="city-header">
+            <div class="city-avatar">京</div>
+            <div class="city-info">
+                <h1 class="city-name">北京区块城市</h1>
+                <p class="city-slogan">中国的首都，政治、文化、科技创新中心</p>
+                <div class="city-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">全国排名</div>
+                        <div class="stat-value">第1名</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">现有居民</div>
+                        <div class="stat-value">2,202人</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">基金余额</div>
+                        <div class="stat-value">¥135,101.7</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">剩余人气值</div>
+                        <div class="stat-value">15,492,828/21,000,000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 城市管理信息 -->
+        <div class="city-management">
+            <div class="management-card">
+                <h2 class="section-title">城市管理团队</h2>
+                <div class="leader-list">
+                    <div class="leader-card">
+                        <div class="leader-role">市长</div>
+                        <div class="leader-name">星星✨</div>
+                        <div class="leader-stats">区块: 1320 | 人气值: 142776</div>
+                    </div>
+                    <div class="leader-card">
+                        <div class="leader-role">副市长</div>
+                        <div class="leader-name">网易云音乐</div>
+                        <div class="leader-stats">区块: 0692 | 人气值: 86111</div>
+                    </div>                    
+                </div>
+            </div>
+            
+            <div class="management-card">
+                <h2 class="section-title">城市发展数据</h2>
+                <div class="leader-list">
+                    <div class="leader-card">
+                        <div class="stat-label">本月新增居民</div>
+                        <div class="stat-value">+328人</div>
+                    </div>
+                    <div class="leader-card">
+                        <div class="stat-label">本月区块交易</div>
+                        <div class="stat-value">¥245,789</div>
+                    </div>
+                    <div class="leader-card">
+                        <div class="stat-label">活跃度排名</div>
+                        <div class="stat-value">全国第2</div>
+                    </div>
+                    <div class="leader-card">
+                        <div class="stat-label">区块完整度</div>
+                        <div class="stat-value">89%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 9块区域地图 -->
+        <div class="city-map">
+            <h2 class="section-title">北京区块城市地图 (9大区域)</h2>
+            <div class="map-container">
+                <!-- 区域1 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffdbcc;">
+                    <span class="area-number">A区</span>
+                    <span class="area-status area-owned">已售罄</span>
+                    朝阳区块
+                </a>
+                <!-- 区域2 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffe0d2;">
+                    <span class="area-number">B区</span>
+                    <span class="area-status area-available">可购买</span>
+                    海淀区块
+                </a>
+                <!-- 区域3 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffefe6;">
+                    <span class="area-number">C区</span>
+                    <span class="area-status area-available">可购买</span>
+                    东城区块
+                </a>
+                <!-- 区域4 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffdbcc;">
+                    <span class="area-number">D区</span>
+                    <span class="area-status area-available">可预订</span>
+                    西城区块
+                </a>
+                <!-- 区域5 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffc7b3;">
+                    <span class="area-number">E区</span>
+                    <span class="area-status area-owned">未开放</span>
+                    丰台区块
+                </a>
+                <!-- 区域6 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffefe6;">
+                    <span class="area-number">F区</span>
+                    <span class="area-status area-owned">未开放</span>
+                    石景山区块
+                </a>
+                <!-- 区域7 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffe0d2;">
+                    <span class="area-number">G区</span>
+                    <span class="area-status area-owned">未开放</span>
+                    通州区块
+                </a>
+                <!-- 区域8 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffefe6;">
+                    <span class="area-number">H区</span>
+                    <span class="area-status area-owned">未开放</span>
+                    昌平区块
+                </a>
+                <!-- 区域9 -->
+                <a href="https://www.blockcity.vip/?urfh=1&areaNo=0010" class="map-area" style="background-color: #ffdbcc;">
+                    <span class="area-number">Z区</span>
+                    <span class="area-status area-owned">未开放</span>
+                    大兴区块
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="#">公司简介</a></li>
+                        <li><a href="#">元宇宙愿景</a></li>
+                        <li><a href="#">BlockCity技术</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/book">DAO白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/help">新手指南</a></li>
+                        <li><a href="#">元宇宙入门</a></li>
+                        <li><a href="#">DAO参与指南</a></li>
+                        <li><a href="#">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="#">元宇宙店铺</a></li>
+                        <li><a href="#">数字资产上架</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/block">9区价格表</a></li>
+                        <li><a href="http://blockcity.vip/zc/?urfh">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="#">Twitter</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

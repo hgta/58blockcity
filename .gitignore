@@ -1,0 +1,26 @@
+# 敏感配置（复制 database-sample.php 为 database.php 并填写真实配置）
+config/database.php
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 线上数据备份（含真实用户数据）
+58tldata.sql
+
+# 临时文件
+*.log
+*.yaml
+!.github/**/*.yaml
+
+# 浏览器工具临时文件
+.playwright-cli/
+
+# 项目元数据
+.codebuddy/

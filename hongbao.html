@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各区块城市红包发放时间表 - 58区块城市</title>
+    <meta name="description" content="各区块城市红包发放时间表，包含发放时间、城市排名、人气值等">
+    <meta name="keywords" content="58,区块城市,红包,发放时间,元宇宙,BlockCity">
+    
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="/city/city.css" type="text/css" media="all" />
+    
+    <style>
+        /* 红包时间表专用样式 */
+        .redpacket-table-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .sort-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .sort-btn {
+            background-color: #fff8f5;
+            color: #ff6b00;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid #ffdbcc;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .sort-btn:hover {
+            background-color: #ffefe6;
+        }
+        
+        .sort-btn.active {
+            background-color: #ff6b00;
+            color: white;
+        }
+        
+        .redpacket-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .redpacket-table th {
+            background-color: #fff8f5;
+            color: #ff6b00;
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid #ffdbcc;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .redpacket-table th:hover {
+            background-color: #ffefe6;
+        }
+        
+        .redpacket-table th.sort-asc::after {
+            content: "↑";
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        
+        .redpacket-table th.sort-desc::after {
+            content: "↓";
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        
+        .redpacket-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        
+        .redpacket-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .redpacket-table tr:hover {
+            background-color: #fff8f5;
+        }
+        
+        .city-rank {
+            font-weight: bold;
+            color: #ff6b00;
+            text-align: center;
+        }
+        
+        .city-name-cell {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .redpacket-time {
+            font-weight: bold;
+            color: #ff6b00;
+        }
+        
+        .leader-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 5px;
+            border: 2px solid #ffdbcc;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .leader-avatar-small:hover {
+            transform: scale(1.1);
+        }
+        
+        .leader-name-small {
+            font-size: 13px;
+            color: #333;
+            margin-left: 5px;
+        }
+        
+        .leader-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .consult-btn {
+            background-color: #ff6b00;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 10px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .consult-btn:hover {
+            background-color: #e05d00;
+            transform: translateY(-2px);
+        }
+        
+        .notes {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 响应式表格 */
+        @media (max-width: 768px) {
+            .redpacket-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .redpacket-table th, 
+            .redpacket-table td {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+            
+            .leader-avatar-small {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .consult-btn {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 红包时间表内容 -->
+    <div class="container city-detail-container">
+        <div class="city-header">
+            <div class="city-avatar">
+                <img src="https://img.blockcity.vip/user/redpacket.jpg" alt="红包图标" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ffefe6\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23ff6b00\'>福</text></svg>';">
+            </div>
+            <div class="city-info">
+                <h1 class="city-name">区块城市红包发放时间表</h1>
+                <p class="city-slogan">每日红包福利，人气值轻松拿</p>
+                <div class="city-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">参与城市</div>
+                        <div class="stat-value">29个</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">最早发放</div>
+                        <div class="stat-value">07:00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">最晚发放</div>
+                        <div class="stat-value">21:30</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">最高人气值</div>
+                        <div class="stat-value">5人气值/包 （杭州）</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 红包时间表 -->
+        <div class="redpacket-table-container">
+            <h2 class="section-title">各城市红包发放时间详情</h2>
+            
+            <div class="sort-options">
+                <button class="sort-btn active" id="sortByRank">按城市排名排序</button>
+                <button class="sort-btn" id="sortByTime">按发放时间排序</button>
+            </div>
+            
+            <table class="redpacket-table" id="redpacketTable">
+                <thead>
+                    <tr>
+                        <th data-sort="rank">排名</th>
+                        <th data-sort="city">城市</th>
+                        <th data-sort="time">发放时间</th>
+                        <th>市长</th>
+                        <th>副市长</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 北京 -->
+                    <tr data-rank="1" data-time="20:00:00">
+                        <td class="city-rank">1</td>
+                        <td class="city-name-cell">北京</td>
+                        <td class="redpacket-time">20:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e059a205548.svg" alt="北京市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=010&blockNo=1320')">
+                                <span class="leader-name-small">星星✨</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=010&blockNo=1320')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e31c34f5129.svg" alt="北京市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=010&blockNo=0692')">
+                                <span class="leader-name-small">网易云音乐</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=010&blockNo=0692')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包3人气值</td>
+                    </tr>
+                    
+                    <!-- 杭州 -->
+                    <tr data-rank="2" data-time="12:00:00">
+                        <td class="city-rank">2</td>
+                        <td class="city-name-cell">杭州</td>
+                        <td class="redpacket-time">12:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/40719787ce244d9992ef04342fca9375.jpg" alt="杭州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0571&blockNo=3001')">
+                                <span class="leader-name-small">方程式</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0571&blockNo=0265')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/419bad20717f473689c2f0a478fe4505.jpg" alt="杭州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0571&blockNo=3002')">
+                                <span class="leader-name-small">杭州A1058</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0571&blockNo=1058')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每3天发放一次，每次150个，每包5人气</td>
+                    </tr>
+                    
+                    <!-- 上海 -->
+                    <tr data-rank="3" data-time="20:20:00">
+                        <td class="city-rank">3</td>
+                        <td class="city-name-cell">上海</td>
+                        <td class="redpacket-time">20:20:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e2bf3a79386.svg" alt="上海市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=021&blockNo=1024')">
+                                <span class="leader-name-small">不如</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=021&blockNo=1288')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/a6789e9f206f4a6cbc7f97812ff70133.jpg" alt="上海市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=021&blockNo=0888')">
+                                <span class="leader-name-small">杨眉吐气</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=021&blockNo=0203')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 深圳 -->
+                    <tr data-rank="4" data-time="20:40:00">
+                        <td class="city-rank">4</td>
+                        <td class="city-name-cell">深圳</td>
+                        <td class="redpacket-time">20:40:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/39ef4276e8bb4f1b8056fd90920aa6e1.jpg" alt="深圳市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0755&blockNo=2001')">
+                                <span class="leader-name-small">杨眉吐气</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0755&blockNo=0548')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd7070fe163.svg" alt="深圳市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0755&blockNo=2002')">
+                                <span class="leader-name-small">深圳A区1079</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0755&blockNo=1079')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 中国数藏 -->
+                    <tr data-rank="5" data-time="19:50:00">
+                        <td class="city-rank">5</td>
+                        <td class="city-name-cell">中国数藏</td>
+                        <td class="redpacket-time">19:50:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/85dc2ffcafda4483978dac7790b21853.jpg" alt="中国数藏市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=000&blockNo=5001')">
+                                <span class="leader-name-small">◍°∇°◍</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=uijd&blockNo=0962')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0002/85cd3784636f4c5ebd344419de915365.jpg" alt="中国数藏副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=000&blockNo=5002')">
+                                <span class="leader-name-small">明信探索</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=uijd&blockNo=0569')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 广州 -->
+                    <tr data-rank="6" data-time="19:20:00">
+                        <td class="city-rank">6</td>
+                        <td class="city-name-cell">广州</td>
+                        <td class="redpacket-time">19:20:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/99564f05fcf24f1397d2bba9a9cb3060.jpg" alt="广州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=020&blockNo=1001')">
+                                <span class="leader-name-small">广州A0570</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=020&blockNo=0570')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/463f85a3af834899916610afcbb9ee30.jpg" alt="广州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=020&blockNo=1002')">
+                                <span class="leader-name-small">润物有声</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=020&blockNo=0198')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 成都 -->
+                    <tr data-rank="7" data-time="21:00:00">
+                        <td class="city-rank">7</td>
+                        <td class="city-name-cell">成都</td>
+                        <td class="redpacket-time">21:00-21:30</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/bc850f0902a845b59a3369d3de913ca5.jpg" alt="成都市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=028&blockNo=4001')">
+                                <span class="leader-name-small">成都A0688</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=028&blockNo=0688')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e28db8b9593.svg" alt="成都市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=028&blockNo=4002')">
+                                <span class="leader-name-small">点点</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=028&blockNo=0174')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 重庆 -->
+                    <tr data-rank="8" data-time="19:30:00">
+                        <td class="city-rank">8</td>
+                        <td class="city-name-cell">重庆</td>
+                        <td class="redpacket-time">19:30:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0d3056e743.svg" alt="重庆市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=023&blockNo=6001')">
+                                <span class="leader-name-small">一剑封喉</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=023&blockNo=0181')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dfa75112150.svg" alt="重庆市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=023&blockNo=6002')">
+                                <span class="leader-name-small">毕了业</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=023&blockNo=1183')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 西安 -->
+                    <tr data-rank="9" data-time="19:00:00">
+                        <td class="city-rank">9</td>
+                        <td class="city-name-cell">西安</td>
+                        <td class="redpacket-time">19:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0b85ad8184.svg" alt="西安市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=029&blockNo=7001')">
+                                <span class="leader-name-small">土豆</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=029&blockNo=0111')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0002/f6964d4eff5c4cd698f4e3b03e162d14.jpg" alt="西安市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=029&blockNo=7002')">
+                                <span class="leader-name-small">无厘头</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=029&blockNo=0918')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 苏州 -->
+                    <tr data-rank="10" data-time="12:00:00">
+                        <td class="city-rank">10</td>
+                        <td class="city-name-cell">苏州</td>
+                        <td class="redpacket-time">12:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/0bd13223540d49d9bcb604b796eb59a6.jpg" alt="苏州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0512&blockNo=8001')">
+                                <span class="leader-name-small">苏州相城</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0512&blockNo=0987')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546df91b68a182.svg" alt="苏州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0512&blockNo=8002')">
+                                <span class="leader-name-small">苏州园区</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0512&blockNo=1234')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">不定时 12:00-13:00</td>
+                    </tr>
+                    
+                    <!-- 武汉 -->
+                    <tr data-rank="13" data-time="17:30:00">
+                        <td class="city-rank">13</td>
+                        <td class="city-name-cell">武汉</td>
+                        <td class="redpacket-time">17:30:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e26e2ade931.svg" alt="武汉市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=027&blockNo=5001')">
+                                <span class="leader-name-small">春江水暖</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=027&blockNo=0288')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/82d5f3822dd24eea85962f07323481ef.jpg" alt="武汉市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=027&blockNo=5002')">
+                                <span class="leader-name-small">武A0580-3</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=027&blockNo=0580')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 南京 -->
+                    <tr data-rank="14" data-time="00:00:00">
+                        <td class="city-rank">14</td>
+                        <td class="city-name-cell">南京</td>
+                        <td class="redpacket-time">-</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/93da530e43b04a0e9f9436fa78c33981.jpg" alt="南京市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=025&blockNo=9001')">
+                                <span class="leader-name-small">飞影</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=025&blockNo=0183')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/5e9bd39c0629421988f302eaa851c733.jpg" alt="南京市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=025&blockNo=9002')">
+                                <span class="leader-name-small">南京A0783</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=025&blockNo=0783')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 合肥 -->
+                    <tr data-rank="16" data-time="12:20:00">
+                        <td class="city-rank">16</td>
+                        <td class="city-name-cell">合肥</td>
+                        <td class="redpacket-time">12:20:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/6128f7b4549d49f2a2b91e86cc145a86.jpg" alt="合肥市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0551&blockNo=10001')">
+                                <span class="leader-name-small">合肥A0783</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0551&blockNo=0783')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd4590d9839.svg" alt="合肥市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0551&blockNo=10002')">
+                                <span class="leader-name-small">人气值变现</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0551&blockNo=0991')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 长沙 -->
+                    <tr data-rank="17" data-time="20:28:00">
+                        <td class="city-rank">17</td>
+                        <td class="city-name-cell">长沙</td>
+                        <td class="redpacket-time">20:28:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dcc5435a928.svg" alt="长沙市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0731&blockNo=11001')">
+                                <span class="leader-name-small">纯茶油供应</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0731&blockNo=0986')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e3129492668.svg" alt="长沙市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0731&blockNo=11002')">
+                                <span class="leader-name-small">长沙A1191</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0731&blockNo=1191')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 青岛 -->
+                    <tr data-rank="19" data-time="00:00:00">
+                        <td class="city-rank">19</td>
+                        <td class="city-name-cell">青岛</td>
+                        <td class="redpacket-time">-</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e2de55e1675.svg" alt="青岛市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0532&blockNo=12001')">
+                                <span class="leader-name-small">南天门</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0532&blockNo=0893)">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e27781c8816.svg" alt="青岛市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0532&blockNo=12002')">
+                                <span class="leader-name-small">枪王</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0532&blockNo=0777')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 天津 -->
+                    <tr data-rank="20" data-time="07:00:00">
+                        <td class="city-rank">20</td>
+                        <td class="city-name-cell">天津</td>
+                        <td class="redpacket-time">07:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd71b170815.svg" alt="天津市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=022&blockNo=8001')">
+                                <span class="leader-name-small">基建狂魔</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=022&blockNo=0695')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/685b3c8a135e4e888fb6cfc6350b246e.jpg" alt="天津市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=022&blockNo=8002')">
+                                <span class="leader-name-small">江小白不白</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=022&blockNo=0868')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 郑州 -->
+                    <tr data-rank="21" data-time="00:00:00">
+                        <td class="city-rank">21</td>
+                        <td class="city-name-cell">郑州</td>
+                        <td class="redpacket-time">-</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546df094af1219.svg" alt="郑州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0371&blockNo=13001')">
+                                <span class="leader-name-small">辛可</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0371&blockNo=0289')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0d3056e743.svg" alt="郑州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0371&blockNo=13002')">
+                                <span class="leader-name-small">春江水暖</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0371&blockNo=1086')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 贵阳 -->
+                    <tr data-rank="22" data-time="19:45:00">
+                        <td class="city-rank">22</td>
+                        <td class="city-name-cell">贵阳</td>
+                        <td class="redpacket-time">19:45:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/f45060a6d9d2488aa4c4facc0cdb5d58.jpg" alt="贵阳市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0851&blockNo=14001')">
+                                <span class="leader-name-small">天道</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0851&blockNo=1168')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dcd60db0857.svg" alt="贵阳市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0851&blockNo=14002')">
+                                <span class="leader-name-small">第一届市长</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0851&blockNo=0396')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">100个包，每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 沈阳 -->
+                    <tr data-rank="23" data-time="20:40:00">
+                        <td class="city-rank">23</td>
+                        <td class="city-name-cell">沈阳</td>
+                        <td class="redpacket-time">20:40:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e029183c435.svg" alt="沈阳市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=024&blockNo=15001')">
+                                <span class="leader-name-small">沈阳警署</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=024&blockNo=0779')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/e0f17588328a4c40badb07c9ff7b8655.jpg" alt="沈阳市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=024&blockNo=15002')">
+                                <span class="leader-name-small">沈阳A0989</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=024&blockNo=0989')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">50个包，每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 昆明 -->
+                    <tr data-rank="24" data-time="00:00:00">
+                        <td class="city-rank">24</td>
+                        <td class="city-name-cell">昆明</td>
+                        <td class="redpacket-time">-</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd6598c7127.svg" alt="昆明市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0871&blockNo=16001')">
+                                <span class="leader-name-small">云南商会</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0871&blockNo=0188')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0e3c082216.svg" alt="昆明市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0871&blockNo=16002')">
+                                <span class="leader-name-small">鲨鱼</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0871&blockNo=1177')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 厦门 -->
+                    <tr data-rank="27" data-time="08:00:00">
+                        <td class="city-rank">27</td>
+                        <td class="city-name-cell">厦门</td>
+                        <td class="redpacket-time">08:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dcce69aa321.svg" alt="厦门市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0592&blockNo=17001')">
+                                <span class="leader-name-small">厦门A1181</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0592&blockNo=1181')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/098845a8499a4b1f8162df8b95e529b7.jpg" alt="厦门市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0592&blockNo=17002')">
+                                <span class="leader-name-small">潮玩泽哥</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0592&blockNo=0795')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 宁德 -->
+                    <tr data-rank="28" data-time="19:30:00">
+                        <td class="city-rank">28</td>
+                        <td class="city-name-cell">宁德</td>
+                        <td class="redpacket-time">19:30:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0ab7bcf949.svg" alt="宁德市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0593&blockNo=18001')">
+                                <span class="leader-name-small">金牌</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0593&blockNo=0298')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e26cb503940.svg" alt="宁德市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0593&blockNo=18002')">
+                                <span class="leader-name-small">宁德A0583</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0593&blockNo=0583')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包1人气值</td>
+                    </tr>
+                    
+                    <!-- 无锡 -->
+                    <tr data-rank="29" data-time="20:35:00">
+                        <td class="city-rank">29</td>
+                        <td class="city-name-cell">无锡</td>
+                        <td class="redpacket-time">20:35:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/7146b2f7af394e1fbe8be284bbba75da.jpg" alt="无锡市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0510&blockNo=19001')">
+                                <span class="leader-name-small">妖妖</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0510&blockNo=0595')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd1cf48f852.svg" alt="无锡市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0510&blockNo=19002')">
+                                <span class="leader-name-small">书记</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0510&blockNo=0977')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 湖州 -->
+                    <tr data-rank="32" data-time="18:30:00">
+                        <td class="city-rank">32</td>
+                        <td class="city-name-cell">湖州</td>
+                        <td class="redpacket-time">18:30:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/9eb6678d2ff4427e97619a8f082fe185.jpg" alt="湖州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=20001')">
+                                <span class="leader-name-small">湖州A0295</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0295')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/63b6d337cc014ad699e2931ef6df68c9.jpg" alt="湖州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=20002')">
+                                <span class="leader-name-small">湖州A0990</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0990')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 南昌 -->
+                    <tr data-rank="35" data-time="20:00:00">
+                        <td class="city-rank">35</td>
+                        <td class="city-name-cell">南昌</td>
+                        <td class="redpacket-time">20:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e0f68dd9813.svg" alt="南昌市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0791&blockNo=21001')">
+                                <span class="leader-name-small">星星✨</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0791&blockNo=0196')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd82f9aa371.svg" alt="南昌市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0791&blockNo=21002')">
+                                <span class="leader-name-small">大王</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0791&blockNo=1195')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 常州 -->
+                    <tr data-rank="38" data-time="12:25:00">
+                        <td class="city-rank">38</td>
+                        <td class="city-name-cell">常州</td>
+                        <td class="redpacket-time">12:25:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/f3bccc617c2f416f90cbdea2d9e75a86.jpg" alt="常州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0519&blockNo=22001')">
+                                <span class="leader-name-small">常州A0198</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0519&blockNo=0198)">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546e3982885517.svg" alt="常州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0519&blockNo=22002')">
+                                <span class="leader-name-small">特靠普</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0519&blockNo=0896')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 肇庆 -->
+                    <tr data-rank="40" data-time="19:30:00">
+                        <td class="city-rank">40</td>
+                        <td class="city-name-cell">肇庆</td>
+                        <td class="redpacket-time">19:30:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/e2b44ab85cff4b08804f6e19d85080a7.jpg" alt="肇庆市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0758&blockNo=23001')">
+                                <span class="leader-name-small">长期主义</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0758&blockNo=0192')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/63462eacb497b885.jpg" alt="肇庆市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0758&blockNo=23002')">
+                                <span class="leader-name-small">傲视容颜</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0758&blockNo=0789')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 绍兴 -->
+                    <tr data-rank="41" data-time="12:25:00">
+                        <td class="city-rank">41</td>
+                        <td class="city-name-cell">绍兴</td>
+                        <td class="redpacket-time">12:25:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/c20cde4fb8d3476dadba1a67e1e7581e.jpg" alt="绍兴市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0575&blockNo=24001')">
+                                <span class="leader-name-small">绍兴A0997</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0575&blockNo=0997')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/8ea04f57f5f54324a0318bdecc5d8af4.jpg" alt="绍兴市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0575&blockNo=24002')">
+                                <span class="leader-name-small">中国数藏</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0575&blockNo=0888')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes">每包2人气值</td>
+                    </tr>
+                    
+                    <!-- 温州 -->
+                    <tr data-rank="42" data-time="21:00:00">
+                        <td class="city-rank">42</td>
+                        <td class="city-name-cell">温州</td>
+                        <td class="redpacket-time">21:00:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546df0bbc94706.svg" alt="温州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0577&blockNo=25001')">
+                                <span class="leader-name-small">哈喽满</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0577&blockNo=0794')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd923742388.svg" alt="温州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0577&blockNo=25002')">
+                                <span class="leader-name-small">0787</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0577&blockNo=0787')">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                    
+                    <!-- 潮州 -->
+                    <tr data-rank="47" data-time="07:10:00">
+                        <td class="city-rank">47</td>
+                        <td class="city-name-cell">潮州</td>
+                        <td class="redpacket-time">07:10:00</td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/nft/63546dd4590d9839.svg" alt="潮州市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0768&blockNo=26001')">
+                                <span class="leader-name-small">002</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0768&blockNo=0897')">咨询</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="leader-container">
+                                <img src="https://img.blockcity.vip/user/0001/1a1a6bbddb6f4423b09fa8e409ff7baf.jpg" alt="潮州市副市长头像" class="leader-avatar-small" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0768&blockNo=26002')">
+                                <span class="leader-name-small">潮州A0493</span>
+                                <button class="consult-btn" onclick="window.open('https://www.blockcity.pub/?iclc=1&type=4&areaNo=0768&blockNo=0493)">咨询</button>
+                            </div>
+                        </td>
+                        <td class="notes"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 红包领取提示 -->
+        <div class="management-card">
+            <h2 class="section-title">红包领取提示</h2>
+            <div class="info-highlight-card">
+                <div class="info-title"><i>⏰</i> 领取时间</div>
+                <div class="info-content">
+                    请提前5分钟进入对应城市区块，红包通常在指定时间准时发放，部分城市可能有1-2分钟延迟。
+                </div>
+            </div>
+            <div class="info-highlight-card">
+                <div class="info-title"><i>💡</i> 人气值说明</div>
+                <div class="info-content">
+                    人气值可用于提升你在区块城市中的影响力，不同城市发放的人气值数量不同，请关注备注信息。
+                </div>
+            </div>
+            <div class="info-highlight-card">
+                <div class="info-title"><i>🔔</i> 特别提醒</div>
+                <div class="info-content">
+                    部分城市红包数量有限，先到先得。如有任何问题，可点击上方"咨询"按钮联系城市管理人员。
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.pub/pages/index/help/?iclc=1">新手指南</a></li>
+                        <li><a href="#">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="#">数字资产上架</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
+                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 新增：优惠悬浮窗口 -->
+    <div class="promotion-floating" id="promotionFloating">
+        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
+        <div class="promotion-header">
+            <i>🎉</i> 红包提醒
+        </div>
+        <div class="promotion-content">
+            设置红包提醒，不错过任何福利！<br>
+            扫描下方二维码关注公众号，获取每日红包提醒服务。
+        </div>
+        <div class="promotion-qrcode">
+            <img src="../qr.jpg" alt="公众号二维码">
+        </div>
+        <div style="text-align:center;font-size:12px;color:#999;">扫码关注公众号</div>
+    </div>
+
+    <script>
+        // 3秒后显示悬浮窗口
+        setTimeout(function() {
+            document.getElementById('promotionFloating').style.display = 'block';
+        }, 3000);
+        
+        // 排序功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('redpacketTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const sortByRankBtn = document.getElementById('sortByRank');
+            const sortByTimeBtn = document.getElementById('sortByTime');
+            
+            // 默认按排名排序
+            let currentSort = 'rank';
+            let isAscending = true;
+            
+            // 按排名排序
+            function sortByRank() {
+                rows.sort((a, b) => {
+                    const rankA = parseInt(a.getAttribute('data-rank'));
+                    const rankB = parseInt(b.getAttribute('data-rank'));
+                    return isAscending ? rankA - rankB : rankB - rankA;
+                });
+                
+                // 清空并重新添加排序后的行
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+                
+                // 更新按钮状态
+                sortByRankBtn.classList.add('active');
+                sortByTimeBtn.classList.remove('active');
+                
+                currentSort = 'rank';
+            }
+            
+            // 按时间排序
+            function sortByTime() {
+                rows.sort((a, b) => {
+                    const timeA = a.getAttribute('data-time');
+                    const timeB = b.getAttribute('data-time');
+                    
+                    // 处理未设置时间的行（放在最后）
+                    if (timeA === '00:00:00') return 1;
+                    if (timeB === '00:00:00') return -1;
+                    
+                    // 比较时间
+                    return isAscending ? timeA.localeCompare(timeB) : timeB.localeCompare(timeA);
+                });
+                
+                // 清空并重新添加排序后的行
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+                
+                // 更新按钮状态
+                sortByTimeBtn.classList.add('active');
+                sortByRankBtn.classList.remove('active');
+                
+                currentSort = 'time';
+            }
+            
+            // 表头排序
+            table.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', function() {
+                    const sortType = this.getAttribute('data-sort');
+                    
+                    // 如果点击的是当前排序的列，则切换升序/降序
+                    if (sortType === currentSort) {
+                        isAscending = !isAscending;
+                    } else {
+                        // 否则设置为升序
+                        isAscending = true;
+                        currentSort = sortType;
+                    }
+                    
+                    // 移除所有排序箭头
+                    table.querySelectorAll('th').forEach(header => {
+                        header.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    
+                    // 添加当前排序箭头
+                    this.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+                    
+                    // 执行排序
+                    if (sortType === 'rank') {
+                        sortByRank();
+                    } else if (sortType === 'time') {
+                        sortByTime();
+                    } else if (sortType === 'city') {
+                        // 按城市名称排序
+                        rows.sort((a, b) => {
+                            const cityA = a.querySelector('.city-name-cell').textContent;
+                            const cityB = b.querySelector('.city-name-cell').textContent;
+                            return isAscending ? cityA.localeCompare(cityB) : cityB.localeCompare(cityA);
+                        });
+                        
+                        // 清空并重新添加排序后的行
+                        tbody.innerHTML = '';
+                        rows.forEach(row => tbody.appendChild(row));
+                    }
+                });
+            });
+            
+            // 按钮点击事件
+            sortByRankBtn.addEventListener('click', function() {
+                isAscending = currentSort !== 'rank' || !isAscending;
+                sortByRank();
+            });
+            
+            sortByTimeBtn.addEventListener('click', function() {
+                isAscending = currentSort !== 'time' || !isAscending;
+                sortByTime();
+            });
+            
+            // 默认按排名排序
+            sortByRank();
+        });
+    </script>
+</body>
+</html>

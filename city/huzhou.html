@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>湖州区块城市详情 - 58区块城市</title>
+    <meta name="description" content="湖州区块城市详情，包含城市排名、居民信息、基金余额、人气值和区域地图">
+    <meta name="keywords" content="58,区块城市,湖州,元宇宙,BlockCity,DAO,同城服务">
+    
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="city.css" type="text/css" media="all" />    
+    
+    <style>
+    /* 9区地图布局样式 */
+        .huzhou-map-container {
+            display: grid;
+            grid-template-areas:
+                "A B C D Z"
+                "E F G H Z";
+            grid-template-columns: repeat(4, 1fr) 1.5fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .map-area {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            aspect-ratio: 1/1;
+            background-color: #ffefe6;
+            transition: all 0.3s;
+        }
+        
+        .map-area:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 10px rgba(255,107,0,0.2);
+        }
+        
+        .map-area.Z {
+            grid-area: Z;
+            aspect-ratio: auto;
+        }
+        
+        .map-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            transition: transform 0.3s;
+        }
+        
+        .map-area:hover img {
+            transform: scale(1.05);
+        }
+        
+        .area-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            font-size: 12px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-status {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        
+        .area-available {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .area-bookable {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .area-locked {
+            background-color: #9E9E9E;
+            color: white;
+        }
+        
+        /* 图片模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        
+        .modal-content {
+            display: block;
+            margin: auto;
+            max-width: 90%;
+            max-height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #ff6b00;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 城市详情内容 -->
+    <div class="container city-detail-container">
+        <!-- 城市头部信息 -->
+        <div class="city-header">
+            <div class="city-avatar">
+                <img src="https://img.blockcity.vip/user/634624b9138d7136.jpg" alt="湖州城市图标" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ffefe6\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23ff6b00\'>湖</text></svg>';">
+            </div>
+            <div class="city-info">
+                <h1 class="city-name">湖州区块城市</h1>
+                <p class="city-slogan">绿水青山，丝绸之府</p>
+                <div class="city-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">全国排名</div>
+                        <div class="stat-value">第34名</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">现有居民</div>
+                        <div class="stat-value">347人</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">开启区块数</div>
+                        <div class="stat-value">480</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">基金余额</div>
+                        <div class="stat-value">¥7,740</div>
+                    </div>
+                </div>
+                <a href="https://www.blockcity.pub/?iclc=1&areaNo=0572" class="enter-city-btn">进入湖州区块城市</a>
+            </div>
+        </div>
+        
+        <!-- 城市管理信息 - 紧凑版 -->
+        <div class="city-management">
+            <div class="management-card">
+                <h2 class="section-title">
+                    城市管理团队
+                    <span class="administration-term">第3届管理班子</span>
+                </h2>
+                <div class="leader-list">
+                    <!-- 市长 -->
+                    <div class="leader-card">
+                        <div class="leader-avatar-container">
+                            <img class="crown-icon" src="https://www.blockcity.vip/static/mayor.svg" alt="市长标志">
+                            <div class="leader-avatar">
+                                <img src="https://img.blockcity.vip/user/0001/9eb6678d2ff4427e97619a8f082fe185.jpg" alt="湖州市长头像" 
+                                     onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ffdbcc\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23ff6b00\'>钱</text></svg>';"
+                                     style="width:100%;height:100%;object-fit:cover">
+                            </div>
+                        </div>
+                        <div class="leader-details">
+                            <div class="leader-role">市长</div>
+                            <div class="leader-name"><a href="https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0289">湖州A0295</a></div>
+                            <div class="leader-address">区块: <a href="https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0289">0289</a></div>
+                            <div class="leader-popularity">人气值: 2,353</div>
+                        </div>
+                        <div class="leader-qrcode">
+                            <img src="../block/0572-0289.png" alt="市长名片二维码">
+                            <span>扫码联系市长</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 副市长 -->
+                    <div class="leader-card">
+                        <div class="leader-avatar-container">
+                            <img class="crown-icon" src="https://www.blockcity.vip/static/mayor2.svg" alt="副市长标志">
+                            <div class="leader-avatar">
+                                <img src="https://img.blockcity.vip/user/0001/63b6d337cc014ad699e2931ef6df68c9.jpg" alt="湖州市副市长头像" 
+                                     onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ffdbcc\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23ff6b00\'>沈</text></svg>';"
+                                     style="width:100%;height:100%;object-fit:cover">
+                            </div>
+                        </div>
+                        <div class="leader-details">
+                            <div class="leader-role">副市长</div>
+                            <div class="leader-name"><a href="https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0990">湖州A0990</a></div>
+                            <div class="leader-address">区块: <a href="https://www.blockcity.pub/?iclc=1&type=4&areaNo=0572&blockNo=0990">0990</a></div>
+                            <div class="leader-popularity">人气值: 2,275</div>
+                        </div>
+                        <div class="leader-qrcode">
+                            <img src="../block/0572-0990.png" alt="副市长名片二维码">
+                            <span>扫码联系副市长</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="management-card">
+                <h2 class="section-title">城市基础信息及特色亮点</h2>
+                <div class="leader-list">
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🏙️</i> 城市定位</div>
+                        <div class="info-content">
+                            浙江省北部重要城市，太湖流域南岸中心城市，国家生态文明建设示范市，著名的丝绸之府、鱼米之乡和书画之乡。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🏯</i> 城市地标</div>
+                        <div class="info-content">
+                            南浔古镇、莫干山、太湖旅游度假区、安吉竹海、湖州影视城、飞英塔、莲花庄、湖州喜来登温泉度假酒店（月亮酒店）等。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🍜</i> 特色美食</div>
+                        <div class="info-content">
+                            湖州粽子、丁莲芳千张包、周生记馄饨、诸老大粽子、南浔双交面、安吉白茶、长兴紫笋茶、德清青虾等特色美食。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🚄</i> 经济特色</div>
+                        <div class="info-content">
+                            绿色家居产业发达，高端装备制造业集聚，现代纺织业基础雄厚，数字经济快速发展，生态旅游业特色鲜明。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 9块区域地图 -->
+        <div class="city-map">
+            <h2 class="section-title">湖州区块城市地图 (9大区域)</h2>
+            <div class="huzhou-map-container">
+                <!-- A区 -->
+                <a href="javascript:void(0)" class="map-area A" onclick="openModal('A')">
+                    <span class="area-number">A区</span>
+                    <span class="area-status area-available">可购买</span>
+                    <img src="../map/huzhou-A-s.jpg" alt="吴兴区块缩略图">
+                    吴兴区块
+                </a>
+                <!-- B区 -->
+                <a href="javascript:void(0)" class="map-area B" onclick="openModal('B')">
+                    <span class="area-number">B区</span>
+                    <span class="area-status area-bookable">可预订</span>
+                    南浔区块
+                </a>
+                <!-- C区 -->
+                <a href="javascript:void(0)" class="map-area C" onclick="openModal('C')">
+                    <span class="area-number">C区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    德清区块
+                </a>
+                <!-- D区 -->
+                <a href="javascript:void(0)" class="map-area D" onclick="openModal('D')">
+                    <span class="area-number">D区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    长兴区块
+                </a>
+                <!-- E区 -->
+                <a href="javascript:void(0)" class="map-area E" onclick="openModal('E')">
+                    <span class="area-number">E区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    安吉区块
+                </a>
+                <!-- F区 -->
+                <a href="javascript:void(0)" class="map-area F" onclick="openModal('F')">
+                    <span class="area-number">F区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    太湖区块
+                </a>
+                <!-- G区 -->
+                <a href="javascript:void(0)" class="map-area G" onclick="openModal('G')">
+                    <span class="area-number">G区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    织里区块
+                </a>
+                <!-- H区 -->
+                <a href="javascript:void(0)" class="map-area H" onclick="openModal('H')">
+                    <span class="area-number">H区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    埭溪区块
+                </a>
+                <!-- Z区 -->
+                <a href="javascript:void(0)" class="map-area Z" onclick="openModal('Z')">
+                    <span class="area-number">Z区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    南太湖新区块
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.pub/pages/index/help/?iclc=1">新手指南</a></li>
+                        <li><a href="#">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="#">数字资产上架</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
+                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 新增：优惠悬浮窗口 -->
+    <div class="promotion-floating" id="promotionFloating">
+        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
+        <div class="promotion-header">
+            <i>🎉</i> 限时优惠
+        </div>
+        <div class="promotion-content">
+            凡通过本站购买湖州城市区块，一律享<strong style="color:#ff6b00;">八折优惠</strong>！<br>
+            详情请扫描下方二维码添加客服微信咨询。
+        </div>
+        <div class="promotion-qrcode">
+            <img src="../qr.jpg" alt="客服微信二维码">
+        </div>
+        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
+    </div>
+
+    <!-- 图片模态框 -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        // 3秒后显示悬浮窗口
+        setTimeout(function() {
+            document.getElementById('promotionFloating').style.display = 'block';
+        }, 3000);
+        
+        // 图片查看功能
+        function openModal(area) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            
+            // 根据区域设置大图URL
+            let imgUrl = '';
+            switch(area) {
+                case 'A':
+                    imgUrl = 'https://58.tl/map/huzhou-A.jpg';
+                    break;
+                case 'B':
+                    imgUrl = 'https://58.tl/map/huzhou-B.jpg';
+                    break;
+                case 'C':
+                    imgUrl = 'https://58.tl/map/huzhou-C.jpg';
+                    break;
+                case 'D':
+                    imgUrl = 'https://58.tl/map/huzhou-D.jpg';
+                    break;
+                case 'E':
+                    imgUrl = 'https://58.tl/map/huzhou-E.jpg';
+                    break;
+                case 'F':
+                    imgUrl = 'https://58.tl/map/huzhou-F.jpg';
+                    break;
+                case 'G':
+                    imgUrl = 'https://58.tl/map/huzhou-G.jpg';
+                    break;
+                case 'H':
+                    imgUrl = 'https://58.tl/map/huzhou-H.jpg';
+                    break;
+                case 'Z':
+                    imgUrl = 'https://58.tl/map/huzhou-Z.jpg';
+                    break;
+            }
+            
+            modal.style.display = 'block';
+            modalImg.src = imgUrl;
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

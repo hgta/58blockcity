@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帮助中心 - 58区块城市</title>
+    <link rel="stylesheet" href="../city/city.css" type="text/css" media="all" />
+    <style>
+        /* 帮助中心特有样式 */
+        .help-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .help-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .help-header h1 {
+            color: #ff6b00;
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        .help-search {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        
+        .help-search input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #ff6b00;
+            border-radius: 30px;
+            font-size: 16px;
+        }
+        
+        .help-search button {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            background: #ff6b00;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 7px 20px;
+            cursor: pointer;
+        }
+        
+        .help-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .help-category {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .help-category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255,107,0,0.1);
+        }
+        
+        .help-category h2 {
+            color: #ff6b00;
+            font-size: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .help-links {
+            list-style: none;
+        }
+        
+        .help-links li {
+            margin-bottom: 10px;
+        }
+        
+        .help-links a {
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            transition: color 0.3s;
+        }
+        
+        .help-links a:hover {
+            color: #ff6b00;
+        }
+        
+        .help-links a::before {
+            content: "•";
+            color: #ff6b00;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        
+        .quick-links {
+            background: #fff8f5;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+        
+        .quick-links h2 {
+            color: #ff6b00;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .quick-link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .quick-link-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .quick-link-item a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            display: block;
+        }
+        
+        .quick-link-item a:hover {
+            color: #ff6b00;
+        }
+        
+        @media (max-width: 768px) {
+            .help-categories {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-link-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 帮助中心内容 -->
+    <div class="container help-container">
+        <div class="help-header">
+            <h1>帮助中心</h1>
+            <p>在这里找到您需要的所有帮助信息</p>
+        </div>
+        
+        <div class="help-search">
+            <input type="text" placeholder="搜索帮助内容...">
+            <button>搜索</button>
+        </div>
+        
+        <!-- 快速链接 -->
+        <div class="quick-links">
+            <h2>常用快速链接</h2>
+            <div class="quick-link-grid">
+                <div class="quick-link-item">
+                    <a href="create-city.html">创建城市</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#buy-block">购买区块</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#ai-avatar">AI分身训练</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#chat">聊天功能</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#circle">创建圈子</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#mayor">市长选举</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#fund">公共基金</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="#nft">NFT头像</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 帮助分类 -->
+        <div class="help-categories">
+            <!-- 城市创建与管理 -->
+            <div class="help-category">
+                <h2>城市创建与管理</h2>
+                <ul class="help-links">
+                    <li><a href="create-city.html">如何创建城市</a></li>
+                    <li><a href="city-approval-process.html">城市审核流程</a></li>
+                    <li><a href="buy-blocks-guide.html">选购区块指南</a></li>
+                    <li><a href="payment-methods.html">结算支付方式</a></li>
+                    <li><a href="founder-password.html">记录创始密码</a></li>
+                    <li><a href="blockchain-verification.html">关于上链与查证</a></li>
+                    <li><a href="order-payment.html">订单与支付余款</a></li>
+                </ul>
+            </div>
+            
+            <!-- AI分身与形象 -->
+            <div class="help-category">
+                <h2>AI分身与形象</h2>
+                <ul class="help-links">
+                    <li><a href="ai-training-levels.html">1-3级训练说明</a></li>
+                    <li><a href="ai-data-migration.html">AI分身数据迁移</a></li>
+                    <li><a href="avatar-design.html">形象照设计指南</a></li>
+                    <li><a href="archive-management.html">存档管理与展示</a></li>
+                    <li><a href="ask-ai.html">发起问AI功能</a></li>
+                    <li><a href="resident-info.html">居民信息管理</a></li>
+                    <li><a href="photo-album.html">相册管理说明</a></li>
+                </ul>
+            </div>
+            
+            <!-- 社交与聊天功能 -->
+            <div class="help-category">
+                <h2>社交与聊天功能</h2>
+                <ul class="help-links">
+                    <li><a href="private-chat.html">私聊功能使用</a></li>
+                    <li><a href="create-circles.html">创建与管理圈子</a></li>
+                    <li><a href="join-circles.html">加入圈子指南</a></li>
+                    <li><a href="circle-chat-tools.html">圈子聊天工具</a></li>
+                    <li><a href="redpacket-payment.html">红包与收款功能</a></li>
+                    <li><a href="voting-system.html">投票与表决系统</a></li>
+                    <li><a href="lottery-registration.html">报名与抽奖功能</a></li>
+                </ul>
+            </div>
+            
+            <!-- 市政厅与公共事务 -->
+            <div class="help-category">
+                <h2>市政厅与公共事务</h2>
+                <ul class="help-links">
+                    <li><a href="city-data.html">城市数据解读</a></li>
+                    <li><a href="fund-management.html">基金余额管理</a></li>
+                    <li><a href="mayor-election.html">市长选举流程</a></li>
+                    <li><a href="mayor-salary.html">给市长发工资</a></li>
+                    <li><a href="public-fund-voting.html">公共基金投票</a></li>
+                    <li><a href="city-expansion.html">城市扩容说明</a></li>
+                    <li><a href="create-meetings.html">创建会议指南</a></li>
+                </ul>
+            </div>
+            
+            <!-- 账户与设置 -->
+            <div class="help-category">
+                <h2>账户与设置</h2>
+                <ul class="help-links">
+                    <li><a href="account-management.html">登录与账号管理</a></li>
+                    <li><a href="recover-password.html">找回创始密码</a></li>
+                    <li><a href="transaction-records.html">收入支出记录</a></li>
+                    <li><a href="popularity-value.html">人气值明细</a></li>
+                    <li><a href="nft-avatars.html">NFT头像购买</a></li>
+                    <li><a href="block-transfer.html">区块转让设置</a></li>
+                    <li><a href="shareholder-rights.html">持股权益说明</a></li>
+                </ul>
+            </div>
+            
+            <!-- 其他功能 -->
+            <div class="help-category">
+                <h2>其他功能</h2>
+                <ul class="help-links">
+                    <li><a href="fishing-game.html">摸鱼游戏规则</a></li>
+                    <li><a href="skill-exchange.html">技能互助平台</a></li>
+                    <li><a href="benefits-sharing.html">福利分享系统</a></li>
+                    <li><a href="contract-social.html">合约社交功能</a></li>
+                    <li><a href="marriage-notary.html">婚约公证服务</a></li>
+                    <li><a href="partner-platforms.html">关联平台介绍</a></li>
+                    <li><a href="slow-mailbox.html">慢信箱使用指南</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="help.html">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="help.html">新手指南</a></li>
+                        <li><a href="help-detail.html?id=43">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="help.html">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="help-detail.html?id=44">数字资产上架</a></li>
+                        <li><a href="help-detail.html?id=45">9区价格表</a></li>
+                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

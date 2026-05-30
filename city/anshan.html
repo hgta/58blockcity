@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鞍山区块城市详情 - 58区块城市</title>
+    <meta name="description" content="鞍山区块城市详情，包含城市排名、居民信息、基金余额、人气值和区域地图">
+    <meta name="keywords" content="58,区块城市,鞍山,元宇宙,BlockCity,DAO,同城服务">
+    
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <script src="city.js"></script>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="city.css" type="text/css" media="all" />    
+    
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 新增：城市定位提示条 -->
+    <div class="city-location-bar" id="cityLocationBar">
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+    </div>
+    
+    <!-- 城市详情内容 -->
+    <div class="container city-detail-container">
+        <!-- 城市头部信息 -->
+        <div class="city-header">
+            <div class="city-avatar">
+                <img src="https://img.blockcity.vip/user/anshan.jpg" alt="鞍山城市图标" onerror="this.src='data:image/svg+xml;charset=UTF-8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ffefe6\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23ff6b00\'>鞍</text></svg>';">
+            </div>
+            <div class="city-info">
+                <h1 class="city-name">鞍山区块城市</h1>
+                <p class="city-slogan">钢都明珠，千山胜境</p>
+                <div class="city-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">全国排名</div>
+                        <div class="stat-value">第335名</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">现有居民</div>
+                        <div class="stat-value">48人</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">开启区块数</div>
+                        <div class="stat-value">72</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">基金余额</div>
+                        <div class="stat-value">¥4,593.3</div>
+                    </div>
+                </div>
+                <a href="https://www.blockcity.pub/?iclc=1&areaNo=0412" class="enter-city-btn">进入鞍山区块城市</a>
+            </div>
+        </div>
+        
+        <!-- 城市管理信息 - 紧凑版 -->
+        <div class="city-management">
+            <div class="management-card">
+                <h2 class="section-title">
+                    城市管理团队
+                    <span class="administration-term">虚位以待</span>
+                </h2>
+                <div class="leader-list">
+                    <!-- 市长 -->
+                    <div class="vacant-position">
+                        <h3>市长职位虚位以待</h3>
+                        <p>鞍山区块城市正在寻找有远见的领导者！作为市长，您将有机会塑造这座城市的未来。</p>
+                        <a href="https://www.blockcity.pub/pages/mayor/mayor/?iclc=1&areaNo=0412" class="btn">立即参选市长</a>
+                    </div>
+                    
+                    <!-- 副市长 -->
+                    <div class="vacant-position">
+                        <h3>副市长职位开放申请</h3>
+                        <p>协助市长管理城市事务，共同建设美好鞍山区块城市。</p>
+                        <a href="https://www.blockcity.pub/pages/mayor/mayor/?iclc=1&areaNo=0412" class="btn">申请副市长职位</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="management-card">
+                <h2 class="section-title">城市基础信息及特色亮点</h2>
+                <div class="leader-list">
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🏙️</i> 城市定位</div>
+                        <div class="info-content">
+                            辽宁省第三大城市，中国重要的钢铁工业基地，东北地区最大的钢铁工业城市，素有"钢都"之称，国家森林城市，中国优秀旅游城市，沈阳经济区副中心城市。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🏯</i> 城市地标</div>
+                        <div class="info-content">
+                            千山风景区、玉佛苑、鞍钢博物馆、二一九公园、汤岗子温泉、岫岩药山、海城白云山、台安张学良出生地纪念馆等。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🍜</i> 特色美食</div>
+                        <div class="info-content">
+                            海城馅饼、鞍山烧烤、南果梨、岫岩羊汤、台安炖大鹅、千山老边饺子、汤岗子酸奶、牛庄火勺等特色美食。
+                        </div>
+                    </div>
+                    <div class="info-highlight-card">
+                        <div class="info-title"><i>🚄</i> 经济特色</div>
+                        <div class="info-content">
+                            钢铁工业基础雄厚，装备制造业发达，菱镁矿资源丰富，温泉旅游资源独特，南果梨等特色农产品知名，现代服务业快速发展。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 9块区域地图 -->
+        <div class="city-map">
+            <h2 class="section-title">鞍山区块城市地图 (9大区域)</h2>
+            <div class="map-container">
+                <!-- A区 -->
+                <a href="javascript:void(0)" class="map-area A" onclick="openModal('A')">
+                    <span class="area-number">A区</span>
+                    <span class="area-status area-available">可购买</span>
+                    <img src="../map/anshan-A-s.jpg" alt="铁东区块缩略图">
+                    铁东区块
+                </a>
+                <!-- B区 -->
+                <a href="javascript:void(0)" class="map-area B" onclick="openModal('B')">
+                    <span class="area-number">B区</span>
+                    <span class="area-status area-bookable">可预订</span>
+                    铁西区块
+                </a>
+                <!-- C区 -->
+                <a href="javascript:void(0)" class="map-area C" onclick="openModal('C')">
+                    <span class="area-number">C区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    立山区块
+                </a>
+                <!-- D区 -->
+                <a href="javascript:void(0)" class="map-area D" onclick="openModal('D')">
+                    <span class="area-number">D区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    千山区块
+                </a>
+                <!-- E区 -->
+                <a href="javascript:void(0)" class="map-area E" onclick="openModal('E')">
+                    <span class="area-number">E区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    海城区块
+                </a>
+                <!-- F区 -->
+                <a href="javascript:void(0)" class="map-area F" onclick="openModal('F')">
+                    <span class="area-number">F区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    台安区块
+                </a>
+                <!-- G区 -->
+                <a href="javascript:void(0)" class="map-area G" onclick="openModal('G')">
+                    <span class="area-number">G区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    岫岩区块
+                </a>
+                <!-- H区 -->
+                <a href="javascript:void(0)" class="map-area H" onclick="openModal('H')">
+                    <span class="area-number">H区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    高新区块
+                </a>
+                <!-- Z区 -->
+                <a href="javascript:void(0)" class="map-area Z" onclick="openModal('Z')">
+                    <span class="area-number">Z区</span>
+                    <span class="area-status area-locked">未开放</span>
+                    经开区区块
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="../help/help.html">新手指南</a></li>
+                        <li><a href="#">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="#">数字资产上架</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
+                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 新增：优惠悬浮窗口 -->
+    <div class="promotion-floating" id="promotionFloating">
+        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
+        <div class="promotion-header">
+            <i>🎉</i> 限时优惠
+        </div>
+        <div class="promotion-content">
+            凡通过本站购买鞍山城市区块，一律享<strong style="color:#ff6b00;">八折优惠</strong>！<br>
+            详情请扫描下方二维码添加客服微信咨询。
+        </div>
+        <div class="promotion-qrcode">
+            <img src="../qr.jpg" alt="客服微信二维码">
+        </div>
+        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
+    </div>
+
+    <!-- 图片模态框 -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        // 3秒后显示悬浮窗口
+        setTimeout(function() {
+            document.getElementById('promotionFloating').style.display = 'block';
+        }, 3000);
+        
+        // 图片查看功能
+        function openModal(area) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            
+            // 根据区域设置大图URL
+            let imgUrl = '';
+            switch(area) {
+                case 'A':
+                    imgUrl = 'https://58.tl/map/anshan-A.jpg';
+                    break;
+                case 'B':
+                    imgUrl = 'https://58.tl/map/anshan-B.jpg';
+                    break;
+                case 'C':
+                    imgUrl = 'https://58.tl/map/anshan-C.jpg';
+                    break;
+                case 'D':
+                    imgUrl = 'https://58.tl/map/anshan-D.jpg';
+                    break;
+                case 'E':
+                    imgUrl = 'https://58.tl/map/anshan-E.jpg';
+                    break;
+                case 'F':
+                    imgUrl = 'https://58.tl/map/anshan-F.jpg';
+                    break;
+                case 'G':
+                    imgUrl = 'https://58.tl/map/anshan-G.jpg';
+                    break;
+                case 'H':
+                    imgUrl = 'https://58.tl/map/anshan-H.jpg';
+                    break;
+                case 'Z':
+                    imgUrl = 'https://58.tl/map/anshan-Z.jpg';
+                    break;
+            }
+            
+            modal.style.display = 'block';
+            modalImg.src = imgUrl;
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }             
+        
+
+        // 页面加载时获取城市信息
+        window.onload = function() {
+            getCityInfo();
+        };
+    </script>
+</body>
+</html>

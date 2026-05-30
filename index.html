@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>58区块城市 - 元宇宙同城生活服务平台 | 58 BlockCity </title>
+    <meta name="description" content="58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理，为您提供全新的本地生活体验。">
+    <meta name="keywords" content="58,区块城市,区块同城,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市">
+    <meta property="og:title" content="58区块城市 - 元宇宙同城生活服务平台">
+    <meta property="og:description" content="基于元宇宙技术的下一代同城生活服务平台">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.58.tl">
+    <link rel="canonical" href="https://www.58.tl">
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="shortcut icon" href="/favicon.ico" />
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+	<link rel="manifest" href="/site.webmanifest" />
+	<script src="/city/city.js"></script>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #333;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 头部样式 */
+        header {
+            background-color: #ff6b00;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-img {
+            width: 70px;
+            height: 50px;
+            margin-right: 10px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: #ff6b00;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .logo-text span {
+            font-size: 16px;
+            margin-left: 10px;
+            opacity: 0.8;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-button {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* 字母导航 */
+        .letter-nav {
+            background-color: white;
+            padding: 10px 0;
+            position: sticky;
+            top: 80px;
+            z-index: 90;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .letter-nav-container {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 15px;
+            justify-content: center;
+        }
+        
+        .letter-nav-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .letter-link {
+            padding: 5px 12px;
+            font-size: 16px;
+            color: #666;
+            border-radius: 15px;
+            margin-right: 5px;
+        }
+        
+        .letter-link.active, .letter-link:hover {
+            background-color: #ff6b00;
+            color: white;
+        }
+        
+        /* 城市列表 */
+        .city-list-container {
+            padding: 20px 0;
+        }
+        
+        .city-section {
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .city-letter {
+            background-color: #f5f5f5;
+            padding: 10px 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b00;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background-color: #eee;
+        }
+        
+        .city-item {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .city-item:hover {
+            background-color: #fff8f5;
+            color: #ff6b00;
+        }
+        
+        .hot-city {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+        
+        /* 热门城市 */
+        .hot-cities {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .more-cities {
+            font-size: 14px;
+            color: #ff6b00;
+            font-weight: normal;
+        }
+        
+        .hot-city-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+        
+        .hot-city-item {
+            background-color: #fff8f5;
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px;
+            color: #ff6b00;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .hot-city-item:hover {
+            background-color: #ff6b00;
+            color: white;
+            transform: translateY(-3px);
+        }
+        
+        /* 元宇宙特色区块 */
+        .metaverse-features {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .feature-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 30px;
+            color: #ff6b00;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* DAO社区区块 */
+        .dao-community {
+            background-color: #1a1a1a;
+            color: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .dao-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #ff6b00;
+        }
+        
+        .dao-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .dao-text {
+            flex: 1;
+            padding-right: 20px;
+        }
+        
+        .dao-image {
+            width: 200px;
+            height: 150px;
+            background-color: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b00;
+            font-weight: bold;
+        }
+        
+        .dao-button {
+            display: inline-block;
+            background-color: #ff6b00;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        
+        .dao-button:hover {
+            background-color: #e05d00;
+        }
+        
+        /* 底部 */
+        footer {
+            background-color: #333;
+            color: #999;
+            padding: 30px 0;
+            font-size: 14px;
+        }
+        
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        
+        .footer-column h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+            font-size: 12px;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 992px) {
+            .city-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .hot-city-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .footer-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dao-content {
+                flex-direction: column;
+            }
+            
+            .dao-text {
+                padding-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .dao-image {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .logo {
+                margin-bottom: 0;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .city-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .hot-city-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .city-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .hot-city-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo-img {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            .logo-text {
+                font-size: 20px;
+            }
+            
+            .logo-text span {
+                font-size: 14px;
+            }
+            
+            .nav-button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+	<style>
+        /* 在原有样式基础上新增以下样式 */
+        .domain-sale {
+            background-color: #fff8e6;
+            border: 1px solid #ffd700;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .domain-sale-text {
+            font-size: 16px;
+            color: #ff6b00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .domain-sale-link {
+            display: inline-block;
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .domain-sale-link:hover {
+            background-color: #e05d00;
+            transform: translateY(-2px);
+        }
+        
+        .domain-sale-english {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+		
+		/* 新增：优惠悬浮窗口样式 */
+        .promotion-floating {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 300px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 15px;
+            z-index: 999;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: floatIn 0.5s forwards;
+            border: 2px solid #ff6b00;
+        }
+
+        @keyframes floatIn {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .promotion-header {
+            color: #ff6b00;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .promotion-header i {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .promotion-content {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .promotion-qrcode {
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .promotion-qrcode img {
+            width: 150px;
+            height: 150px;
+            border: 1px solid #eee;
+        }
+
+        .promotion-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        .promotion-close:hover {
+            color: #ff6b00;
+        }
+
+        @media (max-width: 768px) {
+            .promotion-floating {
+                width: 250px;
+                right: 15px;
+                bottom: 15px;
+            }
+        }
+		
+		/* 新增：城市定位提示条 */
+        .city-location-bar {
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .city-location-bar a {
+            color: white;
+            text-decoration: underline;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙同城生活服务平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+				<a href="https://nft.58.tl/" class="nav-button">NFT交易</a>
+				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
+				<a href="/rankings/rankings.html" class="nav-button">排行榜</a>
+                <a href="top200city.html" class="nav-button">TOP200城市</a>
+				<a href="hongbao.html" class="nav-button">红包时间表</a>
+                <a href="https://www.blockcity.pub/pages/user/user/?iclc" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+	
+	<!-- 城市定位提示条 -->
+    <div class="city-location-bar" id="cityLocationBar">
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+    </div>
+	
+    <!--
+	<div class="container">
+        <div class="domain-sale">
+            <div class="domain-sale-text">🔥 优质域名出售中 | Premium Domain For Sale</div>
+            <a href="https://domainbatch.com/name/58.tl" class="domain-sale-link">立即询价 | Make an Offer</a>
+            <div class="domain-sale-english">www.58.tl - 优质短域名，适合区块链/元宇宙项目</div>
+        </div>
+    </div>
+    -->	
+    <!-- 字母导航 -->
+    <nav class="letter-nav">
+        <div class="letter-nav-container">
+            <a href="#A" class="letter-link">A</a>
+            <a href="#B" class="letter-link">B</a>
+            <a href="#C" class="letter-link">C</a>
+            <a href="#D" class="letter-link">D</a>
+            <a href="#E" class="letter-link">E</a>
+            <a href="#F" class="letter-link">F</a>
+            <a href="#G" class="letter-link">G</a>
+            <a href="#H" class="letter-link">H</a>
+            <a href="#J" class="letter-link">J</a>
+            <a href="#K" class="letter-link">K</a>
+            <a href="#L" class="letter-link">L</a>
+            <a href="#M" class="letter-link">M</a>
+            <a href="#N" class="letter-link">N</a>
+            <a href="#P" class="letter-link">P</a>
+            <a href="#Q" class="letter-link">Q</a>
+            <a href="#R" class="letter-link">R</a>
+            <a href="#S" class="letter-link">S</a>
+            <a href="#T" class="letter-link">T</a>
+            <a href="#W" class="letter-link">W</a>
+            <a href="#X" class="letter-link">X</a>
+            <a href="#Y" class="letter-link">Y</a>
+            <a href="#Z" class="letter-link">Z</a>
+        </div>
+    </nav>
+    
+    <!-- 主要内容 -->
+    <main class="container">
+        <!-- 热门城市 -->
+        <section class="hot-cities">
+            <h2 class="section-title">
+                热门区块城市
+                <a href="top200city.html" class="more-cities">更多热门城市 →</a>
+            </h2>
+            <div class="hot-city-grid">
+                <a href="/city/beijing.html" class="hot-city-item">北京</a>
+                <a href="/city/hangzhou.html" class="hot-city-item">杭州</a>
+                <a href="/city/shenzhen.html" class="hot-city-item">深圳</a>
+                <a href="/city/shanghai.html" class="hot-city-item">上海</a>
+                <a href="/city/guangzhou.html" class="hot-city-item">广州</a>
+                <a href="/city/chengdu.html" class="hot-city-item">成都</a>
+                <a href="/city/chongqing.html" class="hot-city-item">重庆</a>
+                <a href="/city/xian.html" class="hot-city-item">西安</a>
+                <a href="/city/suzhou.html" class="hot-city-item">苏州</a>
+                <a href="/city/taiyuan.html" class="hot-city-item">太原</a>
+                <a href="/city/wuhan.html" class="hot-city-item">武汉</a>
+                <a href="/city/nanjing.html" class="hot-city-item">南京</a>
+                <a href="/city/hefei.html" class="hot-city-item">合肥</a>
+                <a href="/city/jinan.html" class="hot-city-item">济南</a>
+                <a href="/city/ningbo.html" class="hot-city-item">宁波</a>
+                <a href="/city/changsha.html" class="hot-city-item">长沙</a>
+                <a href="/city/qingdao.html" class="hot-city-item">青岛</a>
+                <a href="/city/tianjin.html" class="hot-city-item">天津</a>
+            </div>
+        </section>
+        
+        <!-- 城市列表 -->
+        <div class="city-list-container">
+            <section id="A" class="city-section">
+                <div class="city-letter">A</div>
+                <div class="city-grid">
+                    <a href="/city/anshun.html" class="city-item hot-city">安顺</a>
+                    <a href="/city/anqing.html" class="city-item">安庆</a>
+                    <a href="/city/anyang.html" class="city-item">安阳</a>
+                    <a href="/city/ankang.html" class="city-item">安康</a>
+                    <a href="/city/aba.html" class="city-item">阿坝</a>
+					<a href="/city/alashanmeng.html" class="city-item">阿拉善盟</a>
+					<a href="/city/akesu.html" class="city-item">阿克苏</a>					
+					<a href="/city/anshan.html" class="city-item">鞍山</a>
+					<a href="/city/aletai.html" class="city-item">阿勒泰</a>
+                </div>
+            </section>
+            
+            <section id="B" class="city-section">
+                <div class="city-letter">B</div>
+                <div class="city-grid">
+                    <a href="/city/beijing.html" class="city-item hot-city" title="北京区块城市详情">北京</a>
+                    <a href="/city/bengbu.html" class="city-item">蚌埠</a>
+                    <a href="/city/binzhou.html" class="city-item">滨州</a>
+                    <a href="/city/baoding.html" class="city-item">保定</a>
+                    <a href="/city/baoji.html" class="city-item">宝鸡</a>
+                    <a href="/city/beihai.html" class="city-item">北海</a>
+					<a href="/city/bozhou.html" class="city-item">毫州</a>
+					<a href="/city/bijie.html" class="city-item">毕节</a>
+					<a href="/city/baise.html" class="city-item">百色</a>
+                    <a href="/city/baotou.html" class="city-item">包头</a>
+					<a href="/city/baishan.html" class="city-item">白山</a>
+					<a href="https://www.blockcity.pub/0898?iclc" class="city-item">白沙</a>
+					<a href="https://www.blockcity.pub/0478?iclc" class="city-item">巴彦卓尔</a>
+					<a href="https://www.blockcity.pub/0943?iclc" class="city-item">白银</a>
+					<a href="https://www.blockcity.pub/0898?iclc" class="city-item">保亭</a>
+					<a href="https://www.blockcity.pub/0875?iclc" class="city-item">保山</a>
+					<a href="https://www.blockcity.pub/0827?iclc" class="city-item">巴中</a>
+					<a href="https://www.blockcity.pub/0996?iclc" class="city-item">巴音郭楞</a>
+					<a href="https://www.blockcity.pub/0436?iclc" class="city-item">白城</a>
+					<a href="https://www.blockcity.pub/0414?iclc" class="city-item">本溪</a>
+					<a href="https://www.blockcity.pub/0909?iclc" class="city-item">博尔塔拉</a>
+                </div>
+            </section>
+            
+            <section id="C" class="city-section">
+                <div class="city-letter">C</div>
+                <div class="city-grid">
+                    <a href="/city/chongqing.html" class="city-item hot-city">重庆</a>
+                    <a href="/city/chengdu.html" class="city-item hot-city">成都</a>
+                    <a href="/city/changsha.html" class="city-item hot-city">长沙</a>
+                    <a href="/city/changzhou.html" class="city-item hot-city">常州</a>
+                    <a href="/city/chaozhou.html" class="city-item hot-city">潮州</a>
+                    <a href="https://www.blockcity.pub/0317?iclc" class="city-item">沧州</a>
+                    <a href="https://www.blockcity.pub/0431?iclc" class="city-item">长春</a>
+					<a href="https://www.blockcity.pub/0566?iclc" class="city-item">池州</a>
+					<a href="https://www.blockcity.pub/0550?iclc" class="city-item">滁州</a>
+                    <a href="https://www.blockcity.pub/0736?iclc" class="city-item">常德</a>
+					<a href="https://www.blockcity.pub/0314?iclc" class="city-item">承德</a>
+					<a href="https://www.blockcity.pub/0551?iclc" class="city-item">巢湖</a>
+					<a href="https://www.blockcity.pub/0355?iclc" class="city-item">长治</a>
+                    <a href="https://www.blockcity.pub/0735?iclc" class="city-item">郴州</a>
+					<a href="https://www.blockcity.pub/0878?iclc" class="city-item">楚雄</a>
+					<a href="https://www.blockcity.pub/0784?iclc" class="city-item">崇左</a>
+                    <a href="https://www.blockcity.pub/0476?iclc" class="city-item">赤峰</a>
+					<a href="https://www.blockcity.pub/12951?iclc" class="city-item">澄迈</a>
+					<a href="https://www.blockcity.pub/0421?iclc" class="city-item">朝阳</a>
+					<a href="https://www.blockcity.pub/0895?iclc" class="city-item">昌都</a>
+					<a href="https://www.blockcity.pub/0994?iclc" class="city-item">昌吉</a>
+					<a href="https://www.blockcity.pub/12966?iclc" class="city-item">昌江</a>
+                </div>
+            </section>
+            
+            <section id="D" class="city-section">
+                <div class="city-letter">D</div>
+                <div class="city-grid">
+                    <a href="/city/dalian.html" class="city-item hot-city">大连</a>
+                    <a href="/city/dongguan.html" class="city-item hot-city">东莞</a>
+					<a href="https://www.blockcity.pub/0534?iclc" class="city-item">德州</a>
+                    <a href="https://www.blockcity.pub/0352?iclc" class="city-item">大同</a>
+                    <a href="https://www.blockcity.pub/0872?iclc" class="city-item">大理</a>
+                    <a href="https://www.blockcity.pub/0546?iclc" class="city-item">东营</a>
+                    <a href="https://www.blockcity.pub/0459?iclc" class="city-item">大庆</a>
+					<a href="https://www.blockcity.pub/0457?iclc" class="city-item">大兴安岭</a>
+					<a href="https://www.blockcity.pub/12956?iclc" class="city-item">儋州</a>
+                    <a href="https://www.blockcity.pub/0932?iclc" class="city-item">定西</a>
+					<a href="https://www.blockcity.pub/12957?iclc" class="city-item">东方</a>					
+					<a href="https://www.blockcity.pub/0692?iclc" class="city-item">德宏</a>
+                    <a href="https://www.blockcity.pub/0838?iclc" class="city-item">德阳</a>
+                    <a href="https://www.blockcity.pub/0818?iclc" class="city-item">达州</a>
+					<a href="https://www.blockcity.pub/12964?iclc" class="city-item">定安</a>
+					<a href="https://www.blockcity.pub/0887?iclc" class="city-item">迪庆</a>
+                    <a href="https://www.blockcity.pub/0415?iclc" class="city-item">丹东</a>
+                </div>
+            </section>
+			
+			<section id="E" class="city-section">
+                <div class="city-letter">E</div>
+                <div class="city-grid">
+                    <a href="https://www.blockcity.pub/0477?iclc" class="city-item">鄂尔多斯</a>
+                    <a href="https://www.blockcity.pub/0718?iclc" class="city-item">恩施</a>
+                    <a href="https://www.blockcity.pub/0711?iclc" class="city-item">鄂州</a>
+                </div>
+            </section>
+            
+            <section id="F" class="city-section">
+                <div class="city-letter">F</div>
+                <div class="city-grid">
+                    <a href="/city/fuzhou.html" class="city-item hot-city">福州</a>
+                    <a href="/city/foshan.html" class="city-item hot-city">佛山</a>
+                    <a href="https://www.blockcity.pub/0558?iclc" class="city-item">阜阳</a>
+                    <a href="https://www.blockcity.pub/0794?iclc" class="city-item">抚州</a>
+                    <a href="https://www.blockcity.pub/0770?iclc" class="city-item">防城港</a>
+                    <a href="https://www.blockcity.pub/0413?iclc" class="city-item">抚顺</a>
+                    <a href="https://www.blockcity.pub/0418?iclc" class="city-item">阜新</a>
+                    <a href="https://www.blockcity.pub/0591?iclc" class="city-item">福清</a>
+                </div>
+            </section>
+            
+            <section id="G" class="city-section">
+                <div class="city-letter">G</div>
+                <div class="city-grid">
+                    <a href="/city/guangzhou.html" class="city-item hot-city">广州</a>
+                    <a href="/city/guiyang.html" class="city-item hot-city">贵阳</a>
+                    <a href="https://www.blockcity.pub/0862?iclc" class="city-item">广安</a>
+                    <a href="https://www.blockcity.pub/0773?iclc" class="city-item">桂林</a>
+                    <a href="https://www.blockcity.pub/0797?iclc" class="city-item">赣州</a>
+                    <a href="https://www.blockcity.pub/0839?iclc" class="city-item">广元</a>
+                    <a href="https://www.blockcity.pub/0780?iclc" class="city-item">贵港</a>
+                    <a href="https://www.blockcity.pub/0836?iclc" class="city-item">甘孜</a>
+                    <a href="https://www.blockcity.pub/0954?iclc" class="city-item">固原</a>
+                    <a href="https://www.blockcity.pub/0975?iclc" class="city-item">果洛</a>
+                    <a href="https://www.blockcity.pub/0941?iclc" class="city-item">甘南</a>
+                </div>
+            </section>
+            
+            <section id="H" class="city-section">
+                <div class="city-letter">H</div>
+                <div class="city-grid">
+                    <a href="/city/hangzhou.html" class="city-item hot-city">杭州</a>
+                    <a href="/city/hefei.html" class="city-item hot-city">合肥</a>
+                    <a href="/city/haerbin.html" class="city-item hot-city">哈尔滨</a>
+                    <a href="/city/haikou.html" class="city-item hot-city">海口</a>
+                    <a href="/city/huzhou.html" class="city-item hot-city">湖州</a>
+                    <a href="/city/huizhou.html" class="city-item hot-city">惠州</a>
+                    <a href="https://www.blockcity.pub/0530?iclc" class="city-item">菏泽</a>
+                    <a href="https://www.blockcity.pub/0471?iclc" class="city-item">呼和浩特</a>
+                    <a href="https://www.blockcity.pub/0392?iclc" class="city-item">鹤壁</a>
+                    <a href="https://www.blockcity.pub/0559?iclc" class="city-item">黄山</a>
+                    <a href="https://www.blockcity.pub/0561?iclc" class="city-item">淮北</a>
+                    <a href="https://www.blockcity.pub/0762?iclc" class="city-item">河源</a>
+                    <a href="https://www.blockcity.pub/0554?iclc" class="city-item">淮南</a>
+                    <a href="https://www.blockcity.pub/0713?iclc" class="city-item">黄冈</a>
+                    <a href="https://www.blockcity.pub/0734?iclc" class="city-item">衡阳</a>
+                    <a href="https://www.blockcity.pub/0310?iclc" class="city-item">邯郸</a>
+                    <a href="https://www.blockcity.pub/0517?iclc" class="city-item">淮安</a>
+                    <a href="https://www.blockcity.pub/0774?iclc" class="city-item">贺州</a>
+                    <a href="https://www.blockcity.pub/0916?iclc" class="city-item">汉中</a>
+                    <a href="https://www.blockcity.pub/0714?iclc" class="city-item">黄石</a>
+                    <a href="https://www.blockcity.pub/0318?iclc" class="city-item">衡水</a>
+                    <a href="https://www.blockcity.pub/0873?iclc" class="city-item">红河</a>
+                    <a href="https://www.blockcity.pub/0745?iclc" class="city-item">怀化</a>
+                    <a href="https://www.blockcity.pub/0778?iclc" class="city-item">河池</a>
+                    <a href="https://www.blockcity.pub/0974?iclc" class="city-item">海南州</a>
+                    <a href="https://www.blockcity.pub/0470?iclc" class="city-item">呼伦贝尔</a>
+                    <a href="https://www.blockcity.pub/0902?iclc" class="city-item">哈密</a>
+                    <a href="https://www.blockcity.pub/0456?iclc" class="city-item">黑河</a>
+                    <a href="https://www.blockcity.pub/0970?iclc" class="city-item">海北</a>
+                    <a href="https://www.blockcity.pub/0468?iclc" class="city-item">鹤岗</a>
+                    <a href="https://www.blockcity.pub/0977?iclc" class="city-item">海西</a>
+                    <a href="https://www.blockcity.pub/0903?iclc" class="city-item">和田</a>
+                    <a href="https://www.blockcity.pub/0429?iclc" class="city-item">葫芦岛</a>
+                    <a href="https://www.blockcity.pub/0972?iclc" class="city-item">海东</a>
+                    <a href="https://www.blockcity.pub/0973?iclc" class="city-item">黄南</a>
+                </div>
+            </section>
+			
+			<section id="J" class="city-section">
+                <div class="city-letter">J</div>
+                <div class="city-grid">
+                    <a href="/city/jinan.html" class="city-item hot-city">济南</a>
+                    <a href="/city/jinhua.html" class="city-item hot-city">金华</a>
+                    <a href="/city/jining.html" class="city-item hot-city">济宁</a>
+                    <a href="/city/jiaxing.html" class="city-item hot-city">嘉兴</a>
+                    <a href="https://www.blockcity.pub/0798?iclc" class="city-item">景德镇</a>
+                    <a href="https://www.blockcity.pub/0391?iclc" class="city-item">焦作</a>
+                    <a href="https://www.blockcity.pub/0792?iclc" class="city-item">九江</a>
+                    <a href="https://www.blockcity.pub/0750?iclc" class="city-item">江门</a>
+                    <a href="https://www.blockcity.pub/0663?iclc" class="city-item">揭阳</a>
+                    <a href="https://www.blockcity.pub/0432?iclc" class="city-item">吉林</a>
+                    <a href="https://www.blockcity.pub/0454?iclc" class="city-item">佳木斯</a>
+                    <a href="https://www.blockcity.pub/0416?iclc" class="city-item">锦州</a>
+                    <a href="https://www.blockcity.pub/0716?iclc" class="city-item">荆州</a>
+                    <a href="https://www.blockcity.pub/0796?iclc" class="city-item">吉安</a>
+                    <a href="https://www.blockcity.pub/0724?iclc" class="city-item">荆门</a>
+                    <a href="https://www.blockcity.pub/0467?iclc" class="city-item">鸡西</a>
+                    <a href="https://www.blockcity.pub/0354?iclc" class="city-item">晋中</a>
+                    <a href="https://www.blockcity.pub/0937?iclc" class="city-item">嘉峪关</a>
+                    <a href="https://www.blockcity.pub/12949?iclc" class="city-item">济源</a>
+                    <a href="https://www.blockcity.pub/0935?iclc" class="city-item">金昌</a>
+                    <a href="https://www.blockcity.pub/0937?iclc" class="city-item">酒泉</a>
+                    <a href="https://www.blockcity.pub/0356?iclc" class="city-item">晋城</a>
+                </div>
+            </section>
+			
+			<section id="K" class="city-section">
+                <div class="city-letter">K</div>
+                <div class="city-grid">
+                    <a href="/city/kunming.html" class="city-item hot-city">昆明</a>
+                    <a href="/city/kaifeng.html" class="city-item hot-city">开封</a>
+                    <a href="https://www.blockcity.pub/0998?iclc" class="city-item">喀什</a>
+                    <a href="https://www.blockcity.pub/0908?iclc" class="city-item">克孜勒苏</a>
+                    <a href="https://www.blockcity.pub/0990?iclc" class="city-item">克拉玛依</a>
+                </div>
+            </section>
+			
+			<section id="L" class="city-section">
+                <div class="city-letter">L</div>
+                <div class="city-grid">
+                    <a href="https://www.blockcity.pub/0539?iclc" class="city-item hot-city">临沂</a>
+                    <a href="https://www.blockcity.pub/0379?iclc" class="city-item hot-city">洛阳</a>
+                    <a href="https://www.blockcity.pub/0518?iclc" class="city-item hot-city">连云港</a>
+                    <a href="https://www.blockcity.pub/0931?iclc" class="city-item hot-city">兰州</a>
+                    <a href="https://www.blockcity.pub/0635?iclc" class="city-item">聊城</a>
+					<a href="https://www.blockcity.pub/0891?iclc" class="city-item">拉萨</a>
+                    <a href="https://www.blockcity.pub/0597?iclc" class="city-item">龙岩</a>
+                    <a href="https://www.blockcity.pub/0316?iclc" class="city-item">廊坊</a>
+                    <a href="https://www.blockcity.pub/0772?iclc" class="city-item">柳州</a>
+                    <a href="https://www.blockcity.pub/0578?iclc" class="city-item">丽水</a>
+                    <a href="https://www.blockcity.pub/0395?iclc" class="city-item">漯河</a>
+                    <a href="https://www.blockcity.pub/0564?iclc" class="city-item">六安</a>
+                    <a href="https://www.blockcity.pub/0634?iclc" class="city-item">莱芜</a>
+                    <a href="https://www.blockcity.pub/0738?iclc" class="city-item">娄底</a>
+                    <a href="https://www.blockcity.pub/0357?iclc" class="city-item">临汾</a>
+                    <a href="https://www.blockcity.pub/0833?iclc" class="city-item">乐山</a>
+                    <a href="https://www.blockcity.pub/0830?iclc" class="city-item">泸州</a>
+                    <a href="https://www.blockcity.pub/0358?iclc" class="city-item">吕梁</a>
+                    <a href="https://www.blockcity.pub/0858?iclc" class="city-item">六盘水</a>
+                    <a href="https://www.blockcity.pub/ocbk?iclc" class="city-item">罗刹海市</a>
+                    <a href="https://www.blockcity.pub/12954?iclc" class="city-item">陵水</a>
+                    <a href="https://www.blockcity.pub/12952?iclc" class="city-item">乐东</a>
+                    <a href="https://www.blockcity.pub/0894?iclc" class="city-item">林芝</a>
+                    <a href="https://www.blockcity.pub/0883?iclc" class="city-item">临沧</a>
+                    <a href="https://www.blockcity.pub/0437?iclc" class="city-item">辽源</a>
+                    <a href="https://www.blockcity.pub/0888?iclc" class="city-item">丽江</a>
+                    <a href="https://www.blockcity.pub/0772?iclc" class="city-item">来宾</a>
+                    <a href="https://www.blockcity.pub/0939?iclc" class="city-item">陇南</a>
+                    <a href="https://www.blockcity.pub/0419?iclc" class="city-item">辽阳</a>
+                    <a href="https://www.blockcity.pub/0834?iclc" class="city-item">凉山</a>
+                    <a href="https://www.blockcity.pub/12953?iclc" class="city-item">临高</a>
+                    <a href="https://www.blockcity.pub/0930?iclc" class="city-item">临夏</a>
+                </div>
+            </section>
+			
+			<section id="M" class="city-section">
+                <div class="city-letter">M</div>
+                <div class="city-grid">
+                    <a href="https://www.blockcity.pub/0555?iclc" class="city-item hot-city">马鞍山</a>
+                    <a href="https://www.blockcity.pub/0668?iclc" class="city-item hot-city">茂名</a>
+                    <a href="https://www.blockcity.pub/0753?iclc" class="city-item">梅州</a>
+                    <a href="https://www.blockcity.pub/0453?iclc" class="city-item">牡丹江</a>
+                    <a href="https://www.blockcity.pub/0816?iclc" class="city-item">绵阳</a>
+                    <a href="https://www.blockcity.pub/0833?iclc" class="city-item">眉山</a>
+                </div>
+            </section>
+			
+			<section id="N" class="city-section">
+                <div class="city-letter">N</div>
+                <div class="city-grid">
+                    <a href="/city/nanjing.html" class="city-item hot-city">南京</a>
+                    <a href="/city/ningbo.html" class="city-item hot-city">宁波</a>
+                    <a href="/city/ningde.html" class="city-item hot-city">宁德</a>
+                    <a href="https://www.blockcity.pub/0791?iclc" class="city-item hot-city">南昌</a>
+                    <a href="https://www.blockcity.pub/0771?iclc" class="city-item">南宁</a>
+					<a href="https://www.blockcity.pub/0599?iclc" class="city-item">南平</a>
+                    <a href="https://www.blockcity.pub/0513?iclc" class="city-item">南通</a>
+                    <a href="https://www.blockcity.pub/0377?iclc" class="city-item">南阳</a>
+                    <a href="https://www.blockcity.pub/0832?iclc" class="city-item">内江</a>
+                    <a href="https://www.blockcity.pub/0817?iclc" class="city-item">南充</a>
+                    <a href="https://www.blockcity.pub/0896?iclc" class="city-item">那曲</a>
+                    <a href="https://www.blockcity.pub/0886?iclc" class="city-item">怒江</a>
+                </div>
+            </section>
+            
+			<section id="P" class="city-section">
+                <div class="city-letter">P</div>
+                <div class="city-grid">
+                    <a href="https://www.blockcity.pub/0594?iclc" class="city-item hot-city">莆田</a>
+                    <a href="https://www.blockcity.pub/0375?iclc" class="city-item hot-city">平顶山</a>
+                    <a href="https://www.blockcity.pub/0393?iclc" class="city-item hot-city">濮阳</a>
+                    <a href="https://www.blockcity.pub/0812?iclc" class="city-item">攀枝花</a>
+                    <a href="https://www.blockcity.pub/0799?iclc" class="city-item">萍乡</a>
+					<a href="https://www.blockcity.pub/0933?iclc" class="city-item">平凉</a>
+                    <a href="https://www.blockcity.pub/0427?iclc" class="city-item">盘锦</a>
+                </div>
+            </section>
+			
+			<section id="Q" class="city-section">
+                <div class="city-letter">Q</div>
+                <div class="city-grid">
+                    <a href="/city/qingdao.html" class="city-item hot-city">青岛</a>
+                    <a href="https://www.blockcity.pub/0595?iclc" class="city-item hot-city">泉州</a>
+                    <a href="https://www.blockcity.pub/0570?iclc" class="city-item hot-city">衢州</a>
+                    <a href="https://www.blockcity.pub/0335?iclc" class="city-item hot-city">秦皇岛</a>
+                    <a href="https://www.blockcity.pub/0763?iclc" class="city-item">清远</a>
+					<a href="https://www.blockcity.pub/0452?iclc" class="city-item">齐齐哈尔</a>
+                    <a href="https://www.blockcity.pub/0874?iclc" class="city-item">曲靖</a>
+                    <a href="https://www.blockcity.pub/0777?iclc" class="city-item">钦州</a>
+                    <a href="https://www.blockcity.pub/0854?iclc" class="city-item">黔南</a>
+                    <a href="https://www.blockcity.pub/0859?iclc" class="city-item">黔西南</a>
+                    <a href="https://www.blockcity.pub/0728?iclc" class="city-item">潜江</a>
+                    <a href="https://www.blockcity.pub/0855?iclc" class="city-item">黔东南</a>
+                    <a href="https://www.blockcity.pub/12955?iclc" class="city-item">琼海</a>
+                    <a href="https://www.blockcity.pub/12961?iclc" class="city-item">琼中</a>
+                    <a href="https://www.blockcity.pub/0464?iclc" class="city-item">七台河</a>
+                    <a href="https://www.blockcity.pub/0934?iclc" class="city-item">庆阳</a>
+                </div>
+            </section>
+			
+			<section id="R" class="city-section">
+                <div class="city-letter">R</div>
+                <div class="city-grid">
+                    <a href="https://www.blockcity.pub/0633?iclc" class="city-item hot-city">日照</a>
+                    <a href="https://www.blockcity.pub/0892?iclc" class="city-item">日喀则</a>
+                </div>
+            </section>
+			
+            <!-- 其他字母城市部分... -->
+            
+            <section id="S" class="city-section">
+                <div class="city-letter">S</div>
+                <div class="city-grid">
+                    <a href="/city/shanghai.html" class="city-item hot-city">上海</a>
+                    <a href="/city/shenzhen.html" class="city-item hot-city">深圳</a>
+                    <a href="/city/suzhou.html" class="city-item hot-city">苏州</a>
+                    <a href="/city/shenyang.html" class="city-item hot-city">沈阳</a>
+                    <a href="https://www.blockcity.pub/0575?iclc" class="city-item hot-city">绍兴</a>
+                    <a href="https://www.blockcity.pub/0311?iclc" class="city-item">石家庄</a>
+                    <a href="https://www.blockcity.pub/0754?iclc" class="city-item">汕头</a>
+                    <a href="https://www.blockcity.pub/0899?iclc" class="city-item">三亚</a>
+                    <a href="https://www.blockcity.pub/0370?iclc" class="city-item">商丘</a>
+                    <a href="https://www.blockcity.pub/0751?iclc" class="city-item">韶关</a>
+                    <a href="https://www.blockcity.pub/0527?iclc" class="city-item">宿迁</a>
+                    <a href="https://www.blockcity.pub/0598?iclc" class="city-item">三明</a>
+                    <a href="https://www.blockcity.pub/0660?iclc" class="city-item">汕尾</a>
+                    <a href="https://www.blockcity.pub/0557?iclc" class="city-item">宿州</a>
+                    <a href="https://www.blockcity.pub/0825?iclc" class="city-item">遂宁</a>
+                    <a href="https://www.blockcity.pub/0398?iclc" class="city-item">三门峡</a>
+                    <a href="https://www.blockcity.pub/0793?iclc" class="city-item">上饶</a>
+                    <a href="https://www.blockcity.pub/0739?iclc" class="city-item">邵阳</a>
+                    <a href="https://www.blockcity.pub/0719?iclc" class="city-item">十堰</a>
+                    <a href="https://www.blockcity.pub/0722?iclc" class="city-item">随州</a>
+                    <a href="https://www.blockcity.pub/0349?iclc" class="city-item">朔州</a>
+                    <a href="https://www.blockcity.pub/0434?iclc" class="city-item">四平</a>
+                    <a href="https://www.blockcity.pub/0952?iclc" class="city-item">石嘴山</a>
+                    <a href="https://www.blockcity.pub/0455?iclc" class="city-item">绥化</a>
+                    <a href="https://www.blockcity.pub/0469?iclc" class="city-item">双鸭山</a>
+                    <a href="https://www.blockcity.pub/12962?iclc" class="city-item">三沙</a>
+                    <a href="https://www.blockcity.pub/0914?iclc" class="city-item">商洛</a>
+                    <a href="https://www.blockcity.pub/0438?iclc" class="city-item">松原</a>
+                    <a href="https://www.blockcity.pub/0993?iclc" class="city-item">石河子</a>
+                    <a href="https://www.blockcity.pub/0893?iclc" class="city-item">山南</a>
+                </div>
+            </section>
+			
+			<section id="T" class="city-section">
+                <div class="city-letter">T</div>
+                <div class="city-grid">
+                    <a href="/city/taiyuan.html" class="city-item hot-city">太原</a>
+                    <a href="/city/tianjin.html" class="city-item hot-city">天津</a>
+                    <a href="https://www.blockcity.pub/0576?iclc" class="city-item hot-city">台州</a>
+                    <a href="https://www.blockcity.pub/0538?iclc" class="city-item hot-city">泰安</a>
+                    <a href="https://www.blockcity.pub/0562?iclc" class="city-item">铜陵</a>
+                    <a href="https://www.blockcity.pub/0523?iclc" class="city-item">泰州</a>
+                    <a href="https://www.blockcity.pub/0315?iclc" class="city-item">唐山</a>
+                    <a href="https://www.blockcity.pub/0856?iclc" class="city-item">铜仁</a>
+                    <a href="https://www.blockcity.pub/0919?iclc" class="city-item">铜川</a>
+                    <a href="https://www.blockcity.pub/0410?iclc" class="city-item">铁岭</a>
+                    <a href="https://www.blockcity.pub/0475?iclc" class="city-item">通辽</a>
+                    <a href="https://www.blockcity.pub/0901?iclc" class="city-item">塔城</a>
+                    <a href="https://www.blockcity.pub/0995?iclc" class="city-item">吐鲁番</a>
+                    <a href="https://www.blockcity.pub/0938?iclc" class="city-item">天水</a>
+                    <a href="https://www.blockcity.pub/12963?iclc" class="city-item">屯昌</a>
+                    <a href="https://www.blockcity.pub/0435?iclc" class="city-item">通化</a>
+                </div>
+            </section>
+			
+			<section id="W" class="city-section">
+                <div class="city-letter">W</div>
+                <div class="city-grid">
+                    <a href="/city/wuhan.html" class="city-item hot-city">武汉</a>
+                    <a href="/city/wuxi.html" class="city-item hot-city">无锡</a>
+                    <a href="https://www.blockcity.pub/0991?iclc" class="city-item hot-city">乌鲁木齐</a>
+                    <a href="https://www.blockcity.pub/0577?iclc" class="city-item hot-city">温州</a>
+                    <a href="https://www.blockcity.pub/0631?iclc" class="city-item">威海</a>
+                    <a href="https://www.blockcity.pub/0536?iclc" class="city-item">潍坊</a>
+                    <a href="https://www.blockcity.pub/0553?iclc" class="city-item">芜湖</a>
+                    <a href="https://www.blockcity.pub/0774?iclc" class="city-item">梧州</a>
+                    <a href="https://www.blockcity.pub/0876?iclc" class="city-item">文山</a>
+                    <a href="https://www.blockcity.pub/0474?iclc" class="city-item">乌兰察布</a>
+                    <a href="https://www.blockcity.pub/0994?iclc" class="city-item">五家渠</a>
+                    <a href="https://www.blockcity.pub/12958?iclc" class="city-item">五指山</a>
+                    <a href="https://www.blockcity.pub/0913?iclc" class="city-item">渭南</a>
+                    <a href="https://www.blockcity.pub/0953?iclc" class="city-item">吴忠</a>
+                    <a href="https://www.blockcity.pub/0935?iclc" class="city-item">武威</a>
+                    <a href="https://www.blockcity.pub/12959?iclc" class="city-item">文昌</a>
+                    <a href="https://www.blockcity.pub/0473?iclc" class="city-item">乌海</a>
+                </div>
+            </section>
+			
+			<section id="X" class="city-section">
+                <div class="city-letter">X</div>
+                <div class="city-grid">
+                    <a href="/city/xian.html" class="city-item hot-city">西安</a>
+                    <a href="/city/xiamen.html" class="city-item hot-city">厦门</a>
+                    <a href="https://www.blockcity.pub/0516?iclc" class="city-item hot-city">徐州</a>
+                    <a href="https://www.blockcity.pub/0971?iclc" class="city-item">西宁</a>
+                    <a href="https://www.blockcity.pub/0731?iclc" class="city-item">湘潭</a>
+                    <a href="https://www.blockcity.pub/0710?iclc" class="city-item">襄阳</a>
+                    <a href="https://www.blockcity.pub/0373?iclc" class="city-item">新乡</a>
+                    <a href="https://www.blockcity.pub/0374?iclc" class="city-item">许昌</a>
+                    <a href="https://www.blockcity.pub/0563?iclc" class="city-item">宣城</a>
+                    <a href="https://www.blockcity.pub/0376?iclc" class="city-item">信阳</a>
+                    <a href="https://www.blockcity.pub/0910?iclc" class="city-item">咸阳</a>
+                    <a href="https://www.blockcity.pub/0715?iclc" class="city-item">咸宁</a>
+                    <a href="https://www.blockcity.pub/0743?iclc" class="city-item">湘西</a>
+                    <a href="https://www.blockcity.pub/0712?iclc" class="city-item">孝感</a>
+                    <a href="https://www.blockcity.pub/0319?iclc" class="city-item">邢台</a>
+                    <a href="https://www.blockcity.pub/0790?iclc" class="city-item">新余</a>
+                    <a href="https://www.blockcity.pub/0350?iclc" class="city-item">忻州</a>
+                    <a href="https://www.blockcity.pub/12948?iclc" class="city-item">仙桃</a>
+                    <a href="https://www.blockcity.pub/lrvs?iclc" class="city-item">雄安新区</a>
+                    <a href="https://www.blockcity.pub/0479?iclc" class="city-item">锡林郭勒</a>
+                    <a href="https://www.blockcity.pub/0482?iclc" class="city-item">兴安盟</a>
+                    <a href="https://www.blockcity.pub/0691?iclc" class="city-item">西双版纳</a>
+                </div>
+            </section>
+			
+			<section id="Y" class="city-section">
+                <div class="city-letter">Y</div>
+                <div class="city-grid">
+                    <a href="/city/yantai.html" class="city-item hot-city">烟台</a>
+                    <a href="https://www.blockcity.pub/0766?iclc" class="city-item hot-city">云浮</a>
+                    <a href="https://www.blockcity.pub/0514?iclc" class="city-item hot-city">扬州</a>
+                    <a href="https://www.blockcity.pub/0951?iclc" class="city-item hot-city">银川</a>
+                    <a href="https://www.blockcity.pub/0730?iclc" class="city-item">岳阳</a>
+                    <a href="https://www.blockcity.pub/0795?iclc" class="city-item">宜春</a>
+                    <a href="https://www.blockcity.pub/0717?iclc" class="city-item">宜昌</a>
+                    <a href="https://www.blockcity.pub/0515?iclc" class="city-item">盐城</a>
+                    <a href="https://www.blockcity.pub/0831?iclc" class="city-item">宜宾</a>
+                    <a href="https://www.blockcity.pub/0417?iclc" class="city-item">营口</a>
+                    <a href="https://www.blockcity.pub/0662?iclc" class="city-item">阳江</a>
+                    <a href="https://www.blockcity.pub/0746?iclc" class="city-item">永州</a>
+                    <a href="https://www.blockcity.pub/0458?iclc" class="city-item">伊春</a>
+                    <a href="https://www.blockcity.pub/0737?iclc" class="city-item">益阳</a>
+                    <a href="https://www.blockcity.pub/0701?iclc" class="city-item">鹰潭</a>
+                    <a href="https://www.blockcity.pub/0359?iclc" class="city-item">运城</a>
+                    <a href="https://www.blockcity.pub/0911?iclc" class="city-item">延安</a>
+                    <a href="https://www.blockcity.pub/0999?iclc" class="city-item">伊犁</a>
+                    <a href="https://www.blockcity.pub/0775?iclc" class="city-item">玉林</a>
+                    <a href="https://www.blockcity.pub/0353?iclc" class="city-item">阳泉</a>
+                    <a href="https://www.blockcity.pub/0976?iclc" class="city-item">玉树</a>
+                    <a href="https://www.blockcity.pub/0912?iclc" class="city-item">榆林</a>
+                    <a href="https://www.blockcity.pub/0433?iclc" class="city-item">延边</a>
+                    <a href="https://www.blockcity.pub/0877?iclc" class="city-item">玉溪</a>
+                    <a href="https://www.blockcity.pub/0835?iclc" class="city-item">雅安</a>
+                </div>
+            </section>
+			
+			<section id="Z" class="city-section">
+                <div class="city-letter">Z</div>
+                <div class="city-grid">
+                    <a href="/city/zhengzhou.html" class="city-item hot-city">郑州</a>
+                    <a href="/city/zhoukou.html" class="city-item hot-city">周口</a>
+                    <a href="/city/zhuhai.html" class="city-item hot-city">珠海</a>
+                    <a href="https://www.blockcity.pub/0632?iclc" class="city-item hot-city">枣庄</a>
+                    <a href="https://www.blockcity.pub/0758?iclc" class="city-item">肇庆</a>
+                    <a href="https://www.blockcity.pub/0893?iclc" class="city-item">藏南</a>
+                    <a href="https://www.blockcity.pub/0580?iclc" class="city-item">舟山</a>
+                    <a href="https://www.blockcity.pub/0760?iclc" class="city-item">中山</a>
+                    <a href="https://www.blockcity.pub/0851?iclc" class="city-item">遵义</a>
+                    <a href="https://www.blockcity.pub/0533?iclc" class="city-item">淄博</a>
+                    <a href="https://www.blockcity.pub/0596?iclc" class="city-item">漳州</a>
+                    <a href="https://www.blockcity.pub/0511?iclc" class="city-item">镇江</a>
+                    <a href="https://www.blockcity.pub/0396?iclc" class="city-item">驻马店</a>
+                    <a href="https://www.blockcity.pub/0759?iclc" class="city-item">湛江</a>
+                    <a href="https://www.blockcity.pub/0731?iclc" class="city-item">株洲</a>
+                    <a href="https://www.blockcity.pub/0744?iclc" class="city-item">张家界</a>
+                    <a href="https://www.blockcity.pub/0313?iclc" class="city-item">张家口</a>
+                    <a href="https://www.blockcity.pub/0813?iclc" class="city-item">自贡</a>
+                    <a href="https://www.blockcity.pub/0870?iclc" class="city-item">昭通</a>
+                    <a href="https://www.blockcity.pub/0821?iclc" class="city-item">资阳</a>
+                </div>
+            </section>
+            
+            <!-- 更多字母城市部分... -->
+        </div>
+        
+        <!-- 元宇宙特色 -->
+        <section class="metaverse-features">
+            <h2 class="section-title">BlockCity元宇宙特色</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">虚拟城市探索</h3>
+                    <p class="feature-desc">通过元宇宙技术，58区块城市为您提供沉浸式的虚拟城市探索体验，足不出户逛遍全城。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🪙</div>
+                    <h3 class="feature-title">数字资产交易</h3>
+                    <p class="feature-desc">基于区块链技术的数字资产交易平台，安全可靠地交易您的虚拟商品和服务。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3 class="feature-title">DAO社区治理</h3>
+                    <p class="feature-desc">58区块城市采用DAO(去中心化自治组织)模式，让用户参与平台治理和决策。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- DAO社区 -->
+        <section class="dao-community">
+            <h2 class="dao-title">加入BlockCity DAO社区</h2>
+            <div class="dao-content">
+                <div class="dao-text">
+                    <p>58区块城市正在构建全球最大的元宇宙同城DAO社区。通过持有平台通证，您可以参与社区治理、投票决策、分享收益，共同打造下一代去中心化城市服务平台。</p>
+                    <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入DAO</a>
+                </div>
+                <div class="dao-image">
+                    BlockCity DAO
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 底部 -->
+    <footer>
+		<!-- 原有footer内容前添加 -->
+		<!--
+        <div class="container">
+            <div class="domain-sale" style="margin-bottom: 30px;">
+                <div class="domain-sale-text">💎 本网站域名诚意出售 | Domain Name For Sale</div>
+                <a href="https://domainbatch.com/name/58.tl" class="domain-sale-link">联系购买 | Contact Now</a>
+                <div class="domain-sale-english">Premium domain "58.tl" available for blockchain/metaverse projects</div>
+            </div>
+        </div>
+		-->
+		
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="/help/help.html">新手指南</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/city/learn/?iclc=1">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>商家服务</h3>
+                    <ul>
+                        <li><a href="news.html">区块新闻</a></li>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
+                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">BlockCity微信公众号</a></li>
+                        <li><a href="#">BlockCity微博</a></li>
+                        <li><a href="#">BlockCity小红书</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">BlockCity在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            </div>
+        </div>
+    </footer>
+	
+	<!-- 新增：优惠悬浮窗口 -->
+    <!--<div class="promotion-floating" id="promotionFloating">
+        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
+        <div class="promotion-header">
+            <i>🎉</i> 限时优惠
+        </div>
+        <div class="promotion-content">
+            凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7折优惠</strong>！<br>
+            详情请扫描下方二维码添加客服微信咨询。
+        </div>
+        <div class="promotion-qrcode">
+            <img src="../qr.jpg" alt="客服微信二维码">
+        </div>
+        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
+    </div>-->
+
+    <script>
+        // 3秒后显示悬浮窗口
+        //setTimeout(function() {
+        //    document.getElementById('promotionFloating').style.display = 'block';
+        //}, 3000);
+		
+		// 页面加载时获取城市信息
+        window.onload = function() {
+            getCityInfo();
+        };
+    </script>
+    
+    <!-- JSON-LD结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "58区块城市",
+      "url": "https://www.58.tl",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.58.tl/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "description": "基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。",
+      "keywords": "58,区块城市,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市"
+    }
+    </script>
+</body>
+</html>

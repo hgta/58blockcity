@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全国城市排行榜大全 - 58区块城市 | 元宇宙城市数据平台</title>
+    <meta name="description" content="58区块城市提供的全国城市排行榜大全，包含城市GDP排名、人口排名、面积排名、人均收入排名等20多个维度的城市数据榜单，是了解中国城市发展的重要参考。">
+    <meta name="keywords" content="城市排行榜,GDP排名,人口排名,城市面积排名,人均收入排名,城市竞争力排名,数字经济排名,城市发展指数">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://58.tl/rankings/rankings.html" />
+    
+    <!-- 社交媒体元标签 -->
+    <meta property="og:title" content="全国城市排行榜大全 - 58区块城市">
+    <meta property="og:description" content="20+维度的中国城市排行榜单，GDP、人口、面积、数字经济等全方位城市数据">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://58.tl/rankings/rankings.html">
+    <meta property="og:image" content="https://58.tl/user/city-rankings-og.jpg">
+    
+    <!-- Twitter卡片 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="全国城市排行榜大全 - 58区块城市">
+    <meta name="twitter:description" content="20+维度的中国城市排行榜单，GDP、人口、面积、数字经济等全方位城市数据">
+    <meta name="twitter:image" content="https://58.tl/user/city-rankings-twitter.jpg">
+    
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "全国城市排行榜大全",
+      "description": "中国城市多维度排名数据平台",
+      "url": "https://58.tl/rankings/rankings.html",
+      "sameAs": [
+        "https://weibo.com/blockcity",
+        "https://www.toutiao.com/c/user/token/MS4wLjABAAAA-blockcity"
+      ]
+    }
+    </script>
+    
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <script src="../city/city.js"></script>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="../city/city.css" type="text/css" media="all" />  
+
+	<style>
+	/* 排行榜页面专用样式 */
+.rankings-container {
+    padding: 20px 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-top: 15px;
+}
+
+.page-title {
+    font-size: 24px;
+    color: #ff6b00;
+    margin-bottom: 5px;
+    padding: 0 15px;
+}
+
+.page-subtitle {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+    padding: 0 15px;
+}
+
+/* 排行榜分类导航 */
+.rankings-nav {
+    display: flex;
+    gap: 5px;
+    padding: 0 15px 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+    overflow-x: auto;
+}
+
+.nav-item {
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border-radius: 20px;
+    font-size: 14px;
+    white-space: nowrap;
+    color: #666;
+    transition: all 0.3s;
+}
+
+.nav-item.active {
+    background-color: #ff6b00;
+    color: white;
+}
+
+.nav-item:hover {
+    background-color: #ffdbcc;
+    color: #333;
+}
+
+/* 排行榜区域 */
+.rankings-section {
+    padding: 0 15px;
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+.section-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background-color: #ff6b00;
+    margin-right: 8px;
+}
+
+/* 排行榜卡片网格 */
+.rankings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.ranking-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+    transition: all 0.3s;
+    display: block;
+}
+
+.ranking-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(255,107,0,0.1);
+    border-color: #ffdbcc;
+}
+
+.ranking-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #ff6b00;
+}
+
+.ranking-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.ranking-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.ranking-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+    border-top: 1px dashed #eee;
+    padding-top: 10px;
+}
+
+.ranking-stats span:last-child {
+    color: #ff6b00;
+    font-weight: bold;
+}
+
+/* 排行榜说明区域 */
+.rankings-description {
+    padding: 20px 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 30px 15px 0;
+}
+
+.description-content h3 {
+    font-size: 16px;
+    color: #333;
+    margin: 20px 0 10px;
+}
+
+.description-content p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .rankings-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rankings-nav {
+        gap: 8px;
+    }
+    
+    .nav-item {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+    }
+    
+    .ranking-card {
+        padding: 12px;
+    }
+    
+    .ranking-title {
+        font-size: 15px;
+    }
+    
+    .ranking-stats {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+	</style>
+</head>
+<body>
+    <!-- 面包屑导航 -->
+    <div class="container breadcrumb">
+        <a href="../index.html">首页</a> &gt; 
+        <a href="../top200city.html">TOP200城市</a> &gt; 
+        <span>全国城市排行榜</span>
+    </div>
+    
+    <!-- 头部区域 -->
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-img">58</div>
+                <div class="logo-text">
+                    区块城市
+                    <span>元宇宙城市数据平台</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="../index.html" class="nav-button">返回首页</a>
+                <a href="../top200city.html" class="nav-button">TOP200城市</a>
+                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 城市定位提示条 -->
+    <div class="city-location-bar" id="cityLocationBar">
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击查看您所在城市的排名</a>
+    </div>
+    
+    <!-- 排行榜主内容区 -->
+    <div class="container rankings-container">
+        <h1 class="page-title">全国城市排行榜大全</h1>
+        <p class="page-subtitle">多维度的中国城市发展数据排名，为您提供全面的城市比较参考</p>
+        
+        <!-- 排行榜分类导航 -->
+        <div class="rankings-nav">
+            <a href="#economic" class="nav-item active">经济类</a>
+            <a href="#population" class="nav-item">人口类</a>
+            <a href="#geography" class="nav-item">地理类</a>
+            <a href="#development" class="nav-item">发展类</a>
+            <a href="#digital" class="nav-item">数字类</a>
+            <a href="#livability" class="nav-item">宜居类</a>
+        </div>
+        
+        <!-- 经济类排行榜 -->
+        <div class="rankings-section" id="economic">
+            <h2 class="section-title">经济类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- GDP总量排名 -->
+                <a href="/rankings/gdp-total.html" class="ranking-card">
+                    <div class="ranking-icon">💰</div>
+                    <h3 class="ranking-title">城市GDP总量排行榜</h3>
+                    <p class="ranking-desc">2023年中国城市GDP总量前100名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.上海 2.北京 3.深圳</span>
+                    </div>
+                </a>
+                
+                <!-- 人均GDP排名 -->
+                <a href="/rankings/gdp-per-capita/" class="ranking-card">
+                    <div class="ranking-icon">💵</div>
+                    <h3 class="ranking-title">人均GDP排行榜</h3>
+                    <p class="ranking-desc">中国城市人均GDP前100名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.克拉玛依 2.深圳 3.无锡</span>
+                    </div>
+                </a>
+                
+                <!-- 财政收入排名 -->
+                <a href="/rankings/fiscal-revenue/" class="ranking-card">
+                    <div class="ranking-icon">🏦</div>
+                    <h3 class="ranking-title">地方财政收入排行榜</h3>
+                    <p class="ranking-desc">2023年城市财政收入前50名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.上海 2.北京 3.深圳</span>
+                    </div>
+                </a>
+                
+                <!-- 上市公司数量排名 -->
+                <a href="/rankings/listed-companies/" class="ranking-card">
+                    <div class="ranking-icon">📈</div>
+                    <h3 class="ranking-title">上市公司数量排行榜</h3>
+                    <p class="ranking-desc">A股上市公司数量城市排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.北京 2.上海 3.深圳</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 人口类排行榜 -->
+        <div class="rankings-section" id="population">
+            <h2 class="section-title">人口类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- 常住人口排名 -->
+                <a href="/rankings/population-total/" class="ranking-card">
+                    <div class="ranking-icon">👥</div>
+                    <h3 class="ranking-title">常住人口排行榜</h3>
+                    <p class="ranking-desc">中国城市常住人口数量排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.重庆 2.上海 3.北京</span>
+                    </div>
+                </a>
+                
+                <!-- 人口密度排名 -->
+                <a href="/rankings/population-density/" class="ranking-card">
+                    <div class="ranking-icon">🏙️</div>
+                    <h3 class="ranking-title">人口密度排行榜</h3>
+                    <p class="ranking-desc">每平方公里人口数量排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.东莞 3.上海</span>
+                    </div>
+                </a>
+                
+                <!-- 人口增量排名 -->
+                <a href="/rankings/population-growth/" class="ranking-card">
+                    <div class="ranking-icon">📊</div>
+                    <h3 class="ranking-title">人口增量排行榜</h3>
+                    <p class="ranking-desc">近5年人口增长最快城市</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.广州 3.成都</span>
+                    </div>
+                </a>
+                
+                <!-- 大学生数量排名 -->
+                <a href="/rankings/college-students/" class="ranking-card">
+                    <div class="ranking-icon">🎓</div>
+                    <h3 class="ranking-title">在校大学生数量排行榜</h3>
+                    <p class="ranking-desc">高等教育在校生人数排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.广州 2.武汉 3.郑州</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 地理类排行榜 -->
+        <div class="rankings-section" id="geography">
+            <h2 class="section-title">地理类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- 城市面积排名 -->
+                <a href="/rankings/city-area/" class="ranking-card">
+                    <div class="ranking-icon">🗺️</div>
+                    <h3 class="ranking-title">城市面积排行榜</h3>
+                    <p class="ranking-desc">中国城市行政区域面积排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.重庆 2.哈尔滨 3.拉萨</span>
+                    </div>
+                </a>
+                
+                <!-- 建成区面积排名 -->
+                <a href="/rankings/built-up-area/" class="ranking-card">
+                    <div class="ranking-icon">🏗️</div>
+                    <h3 class="ranking-title">建成区面积排行榜</h3>
+                    <p class="ranking-desc">城市实际建成区面积排名</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.北京 2.上海 3.重庆</span>
+                    </div>
+                </a>
+                
+                <!-- 海拔高度排名 -->
+                <a href="/rankings/elevation/" class="ranking-card">
+                    <div class="ranking-icon">⛰️</div>
+                    <h3 class="ranking-title">城市海拔高度排行榜</h3>
+                    <p class="ranking-desc">中国主要城市海拔高度对比</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.拉萨 2.西宁 3.昆明</span>
+                    </div>
+                </a>
+                
+                <!-- 气候舒适度排名 -->
+                <a href="/rankings/climate-comfort/" class="ranking-card">
+                    <div class="ranking-icon">☀️</div>
+                    <h3 class="ranking-title">气候舒适度排行榜</h3>
+                    <p class="ranking-desc">中国最适宜居住气候城市</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.昆明 2.贵阳 3.青岛</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 发展类排行榜 -->
+        <div class="rankings-section" id="development">
+            <h2 class="section-title">发展类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- 城市竞争力排名 -->
+                <a href="/rankings/city-competitiveness/" class="ranking-card">
+                    <div class="ranking-icon">🏆</div>
+                    <h3 class="ranking-title">城市综合竞争力排行榜</h3>
+                    <p class="ranking-desc">中国社会科学院发布</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.上海 3.北京</span>
+                    </div>
+                </a>
+                
+                <!-- 营商环境排名 -->
+                <a href="/rankings/business-environment/" class="ranking-card">
+                    <div class="ranking-icon">💼</div>
+                    <h3 class="ranking-title">营商环境排行榜</h3>
+                    <p class="ranking-desc">中国城市营商环境评估</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.上海 3.北京</span>
+                    </div>
+                </a>
+                
+                <!-- 创新指数排名 -->
+                <a href="/rankings/innovation-index/" class="ranking-card">
+                    <div class="ranking-icon">🔬</div>
+                    <h3 class="ranking-title">城市创新指数排行榜</h3>
+                    <p class="ranking-desc">城市科技创新能力评估</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.北京 2.深圳 3.上海</span>
+                    </div>
+                </a>
+                
+                <!-- 城镇化率排名 -->
+                <a href="/rankings/urbanization-rate/" class="ranking-card">
+                    <div class="ranking-icon">🏙️</div>
+                    <h3 class="ranking-title">城镇化率排行榜</h3>
+                    <p class="ranking-desc">城市常住人口城镇化水平</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.上海 3.北京</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 数字类排行榜 -->
+        <div class="rankings-section" id="digital">
+            <h2 class="section-title">数字类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- 数字经济排名 -->
+                <a href="/rankings/digital-economy/" class="ranking-card">
+                    <div class="ranking-icon">💻</div>
+                    <h3 class="ranking-title">数字经济发展排行榜</h3>
+                    <p class="ranking-desc">城市数字经济发展水平</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.杭州 3.北京</span>
+                    </div>
+                </a>
+                
+                <!-- 互联网发展排名 -->
+                <a href="/rankings/internet-development/" class="ranking-card">
+                    <div class="ranking-icon">🌐</div>
+                    <h3 class="ranking-title">互联网发展排行榜</h3>
+                    <p class="ranking-desc">城市互联网产业发达程度</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.北京 2.深圳 3.杭州</span>
+                    </div>
+                </a>
+                
+                <!-- 5G覆盖率排名 -->
+                <a href="/rankings/5g-coverage/" class="ranking-card">
+                    <div class="ranking-icon">📶</div>
+                    <h3 class="ranking-title">5G网络覆盖率排行榜</h3>
+                    <p class="ranking-desc">城市5G基础设施建设水平</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.深圳 2.上海 3.北京</span>
+                    </div>
+                </a>
+                
+                <!-- 智慧城市排名 -->
+                <a href="/rankings/smart-city/" class="ranking-card">
+                    <div class="ranking-icon">🏙️</div>
+                    <h3 class="ranking-title">智慧城市发展排行榜</h3>
+                    <p class="ranking-desc">城市智能化建设水平评估</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.上海 2.深圳 3.杭州</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 宜居类排行榜 -->
+        <div class="rankings-section" id="livability">
+            <h2 class="section-title">宜居类城市排行榜</h2>
+            <div class="rankings-grid">
+                <!-- 宜居城市排名 -->
+                <a href="/rankings/livable-city/" class="ranking-card">
+                    <div class="ranking-icon">🏡</div>
+                    <h3 class="ranking-title">中国宜居城市排行榜</h3>
+                    <p class="ranking-desc">综合评估城市居住舒适度</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.青岛 2.昆明 3.大连</span>
+                    </div>
+                </a>
+                
+                <!-- 空气质量排名 -->
+                <a href="/rankings/air-quality/" class="ranking-card">
+                    <div class="ranking-icon">🌳</div>
+                    <h3 class="ranking-title">空气质量排行榜</h3>
+                    <p class="ranking-desc">城市空气质量优良天数</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.海口 2.拉萨 3.昆明</span>
+                    </div>
+                </a>
+                
+                <!-- 医疗资源排名 -->
+                <a href="/rankings/medical-resources/" class="ranking-card">
+                    <div class="ranking-icon">🏥</div>
+                    <h3 class="ranking-title">医疗资源排行榜</h3>
+                    <p class="ranking-desc">三甲医院数量及医疗水平</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.北京 2.上海 3.广州</span>
+                    </div>
+                </a>
+                
+                <!-- 教育质量排名 -->
+                <a href="/rankings/education-quality/" class="ranking-card">
+                    <div class="ranking-icon">📚</div>
+                    <h3 class="ranking-title">基础教育质量排行榜</h3>
+                    <p class="ranking-desc">中小学教育水平评估</p>
+                    <div class="ranking-stats">
+                        <span>更新于2023-12-31</span>
+                        <span>1.上海 2.北京 3.南京</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 排行榜说明 -->
+        <div class="rankings-description">
+            <h2 class="section-title">关于城市排行榜</h2>
+            <div class="description-content">
+                <h3>数据来源与更新</h3>
+                <p>58区块城市排行榜数据主要来源于国家统计局、各城市统计局官方发布数据、中国社会科学院城市发展报告等权威机构。我们定期更新排行榜数据，确保信息的时效性和准确性。每个排行榜都标注了数据更新时间，方便用户参考。</p>
+                
+                <h3>排行榜计算方法</h3>
+                <p>不同维度的排行榜采用不同的计算方法。经济类排名主要依据官方发布的GDP数据；人口类排名基于第七次全国人口普查及后续年度抽样调查数据；宜居类排名综合考虑空气质量、医疗资源、教育水平等多方面因素加权计算得出。</p>
+                
+                <h3>使用建议</h3>
+                <p>城市排行榜仅供参考，不同排名反映了城市发展的不同侧面。建议用户结合多个维度的排名综合评估城市发展状况。如需详细数据报告或定制化城市对比分析，请联系我们的数据服务团队。</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部 -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <h3>关于58区块城市</h3>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
+                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
+                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>帮助中心</h3>
+                    <ul>
+                        <li><a href="../help/help.html">新手指南</a></li>
+                        <li><a href="#">元宇宙入门</a></li>
+                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>数据服务</h3>
+                    <ul>
+                        <li><a href="#">城市数据API</a></li>
+                        <li><a href="#">定制化报告</a></li>
+                        <li><a href="#">数据合作</a></li>
+                        <li><a href="#">数据更新日志</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>关注我们</h3>
+                    <ul>
+                        <li><a href="#">微信公众号</a></li>
+                        <li><a href="#">微博</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">在线客服</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的城市数据服务平台
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 数据订阅悬浮窗口 -->
+    <div class="promotion-floating" id="promotionFloating">
+        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
+        <div class="promotion-header">
+            <i>📊</i> 数据订阅服务
+        </div>
+        <div class="promotion-content">
+            订阅我们的城市数据服务，获取<strong style="color:#0066cc;">最新排行榜数据</strong>和<strong style="color:#0066cc;">深度分析报告</strong>！<br>
+            专业版用户可下载完整数据集。
+        </div>
+        <div class="promotion-qrcode">
+            <img src="../qr.jpg" alt="58区块城市数据服务微信二维码" loading="lazy">
+        </div>
+        <div style="text-align:center;font-size:12px;color:#999;">扫码咨询数据服务</div>
+    </div>
+
+    <script>
+        // 3秒后显示悬浮窗口
+        setTimeout(function() {
+            document.getElementById('promotionFloating').style.display = 'block';
+        }, 3000);
+        
+        // 页面加载时获取城市信息
+        window.onload = function() {
+            getCityInfo();
+        };
+        
+        // 排行榜分类导航点击效果
+        document.querySelectorAll('.rankings-nav .nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                // 移除所有active类
+                document.querySelectorAll('.rankings-nav .nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                // 添加当前active类
+                this.classList.add('active');
+                // 滚动到对应区域
+                const targetId = this.getAttribute('href');
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
