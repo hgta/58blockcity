@@ -490,6 +490,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         .pano-cell.pm-avail { background-color: #e8f5e8; }
         .pano-cell.pm-sold  { background-color: #ff6b00; }
         .pano-cell.pm-merged { background-color: #1976d2; }
+        .pano-cell.pm-cross-avail { background-color: #a5d6a7; }
+        .pano-cell.pm-cross-sold { background-color: #ff9800; }
         
         .pano-merged-badge {
             font-size: 12px;
@@ -516,6 +518,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         .legend-dot.avail { background: #e8f5e8; border: 1px solid #c8e6c9; }
         .legend-dot.sold { background: #ff6b00; }
         .legend-dot.merged { background: #1976d2; }
+        .legend-dot.cross { background: #a5d6a7; border: 2px dashed #ff9800; }
+        
+        .pano-cross-hint {
+            text-align: center;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #e3f2fd, #fff3e0);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #555;
+            margin: 0 0 10px 0;
+            line-height: 1.6;
+        }
         
         /* 全景响应式 */
         @media (max-width: 768px) {
@@ -618,14 +632,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                     for ($row = 1; $row <= 99; $row++):
                         for ($col = 1; $col <= 101; $col++):
                             $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                            $isBoundary = ($col == 101 || $row == 99); // 跨区边界
                             if (isset($mergedSet[$bn])) {
                                 $cls = 'pm-merged';
                             } elseif (isset($soldSet[$bn])) {
-                                $cls = 'pm-sold';
+                                $cls = $isBoundary ? 'pm-cross-sold' : 'pm-sold';
                             } else {
-                                $cls = 'pm-avail';
+                                $cls = $isBoundary ? 'pm-cross-avail' : 'pm-avail';
                             }
-                            echo "<span class=\"pano-cell {$cls}\"></span>";
+                            echo "<span class=\"pano-cell {$cls}\" title=\"";
+                            if ($isBoundary) echo '跨区边界 ';
+                            echo "{$zone}区 #{$bn}\"></span>";
                         endfor;
                     endfor;
                     ?>
@@ -641,6 +658,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             <span><span class="legend-dot avail"></span> 可认领</span>
             <span><span class="legend-dot sold"></span> 已认领</span>
             <span><span class="legend-dot merged"></span> 合并区块</span>
+            <span><span class="legend-dot cross"></span> 跨区边界 (可跨区合并)</span>
+        </div>
+        <div class="pano-cross-hint">
+            💡 <strong>跨区合并提示：</strong>相邻区域的边界区块可以跨区合并认领，打造横跨多区的大区块！
+            点击相邻区域卡片进入对应区地图，使用"相邻多区块"模式选择边界区块即可。
         </div>
     </div>
     <!-- ========== /九区全景模式 ========== -->
