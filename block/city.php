@@ -47,11 +47,49 @@ $zones = [
     ]
 ];
 
-// 当前选中的区域
-$current_zone = $_GET['zone'] ?? 'A';
+// 视图模式：有zone参数=单区模式，无zone参数=全景模式
+$view_mode = isset($_GET['zone']) ? 'zone' : 'panorama';
+$current_zone = $_GET['zone'] ?? null;
 
-// 处理区块操作
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id) {
+// 全景模式：一次性加载全部9区数据
+$all_zones_data = [];
+$total_sold_all = 0;
+if ($view_mode === 'panorama') {
+    foreach (['A','B','C','D','E','F','G','H','Z'] as $zone) {
+        $zone_blocks_data = $block->getBlocksByCityZone($city_id, $zone);
+        $merged_data = $block->getMergedBlocks($city_id, $zone);
+        
+        $sold_count = 0;
+        $merged_block_numbers = [];
+        foreach ($merged_data as $m) {
+            $merged_block_numbers = array_merge($merged_block_numbers, explode(',', $m['merged_blocks']));
+        }
+        
+        foreach ($zone_blocks_data as $zb) {
+            if ($zb['status'] === 'sold' || $zb['status'] === 'reserved') $sold_count++;
+        }
+        $total_sold_all += $sold_count;
+        
+        $all_zones_data[$zone] = [
+            'blocks' => $zone_blocks_data,
+            'merged' => $merged_data,
+            'sold_count' => $sold_count,
+            'merged_count' => count($merged_data),
+            'merged_numbers' => $merged_block_numbers,
+        ];
+    }
+}
+
+// 单区模式：加载指定区域数据
+$zone_blocks = [];
+$merged_blocks = [];
+if ($view_mode === 'zone') {
+    $zone_blocks = $block->getBlocksByCityZone($city_id, $current_zone);
+    $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
+}
+
+// 处理区块操作（仅单区模式）
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 'zone') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'claim_block') {
@@ -59,7 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id) {
         $selected_blocks = $_POST['selected_blocks'] ?? [];
         
         if (!empty($selected_blocks)) {
-            // 认领多个相邻区块
             $result = $block->claimMultipleBlocks($current_user_id, $city_id, $current_zone, $selected_blocks);
             if ($result) {
                 $success_message = "成功认领 " . count($selected_blocks) . " 个区块！";
@@ -67,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id) {
                 $error_message = "认领失败，请重试";
             }
         } elseif ($block_number) {
-            // 认领单个区块
             $result = $block->claimBlock($current_user_id, $city_id, $current_zone, $block_number);
             if ($result) {
                 $success_message = "成功认领区块 {$block_number}！";
@@ -77,12 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id) {
         }
     }
 }
-
-// 获取当前区域的区块数据
-$zone_blocks = $block->getBlocksByCityZone($city_id, $current_zone);
-
-// 计算合并区块数据（用于显示大区块）
-$merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
 ?>
 
 <?php require_once 'includes/header.php'; ?>
@@ -366,6 +396,146 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
                 justify-content: center;
             }
         }
+        
+        /* ======== 九区全景样式 ======== */
+        .pano-container {
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+        .pano-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+        .pano-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        .pano-total {
+            font-size: 14px;
+            color: #666;
+        }
+        .pano-total strong {
+            color: #ff6b00;
+            font-size: 18px;
+        }
+        
+        .pano-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .pano-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: block;
+        }
+        .pano-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            text-decoration: none;
+            color: inherit;
+        }
+        .pano-card.pano-hot { border-color: #ff6b00; }
+        .pano-card.pano-warm { border-color: #ff9800; }
+        .pano-card.pano-cool { border-color: #e0e0e0; }
+        
+        .pano-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .pano-zone-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .pano-zone-stats {
+            font-size: 13px;
+            color: #666;
+        }
+        .pano-pct {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+        .pano-card.pano-hot .pano-pct { color: #d84315; }
+        .pano-card.pano-warm .pano-pct { color: #e65100; }
+        
+        .pano-mini-map {
+            line-height: 0;
+            margin-bottom: 8px;
+        }
+        
+        /* 迷你色块：3x3px */
+        .pano-cell {
+            display: inline-block;
+            width: 3px;
+            height: 3px;
+            margin: 0;
+            padding: 0;
+            vertical-align: top;
+        }
+        .pano-cell.pm-avail { background-color: #e8f5e8; }
+        .pano-cell.pm-sold  { background-color: #ff6b00; }
+        .pano-cell.pm-merged { background-color: #1976d2; }
+        
+        .pano-merged-badge {
+            font-size: 12px;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        
+        .pano-legend {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            padding: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .legend-dot.avail { background: #e8f5e8; border: 1px solid #c8e6c9; }
+        .legend-dot.sold { background: #ff6b00; }
+        .legend-dot.merged { background: #1976d2; }
+        
+        /* 全景响应式 */
+        @media (max-width: 768px) {
+            .pano-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .pano-card {
+                padding: 10px;
+            }
+            .pano-cell {
+                width: 2px;
+                height: 2px;
+            }
+        }
+        @media (max-width: 480px) {
+            .pano-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 	
 <div class="city-header">
@@ -389,26 +559,96 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
     <?php if (isset($success_message)): ?>
         <div class="alert alert-success"><?= $success_message ?></div>
     <?php endif; ?>
-    
     <?php if (isset($error_message)): ?>
         <div class="alert alert-danger"><?= $error_message ?></div>
     <?php endif; ?>
     
+    <!-- 区域选择器 -->
+    <div class="zone-selector">
+        <div class="zone-tabs">
+            <a href="?name=<?= $city_pinyin ?>" 
+               class="zone-tab <?= $view_mode === 'panorama' ? 'active' : '' ?>">
+                🏙️ 全城
+            </a>
+            <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $zone): ?>
+                <a href="?name=<?= $city_pinyin ?>&zone=<?= $zone ?>" 
+                   class="zone-tab <?= ($view_mode === 'zone' && $current_zone == $zone) ? 'active' : '' ?>">
+                    <?= $zone ?>区
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    
+    <?php if ($view_mode === 'panorama'): ?>
+    <!-- ========== 九区全景模式 ========== -->
+    <div class="pano-container">
+        <div class="pano-header">
+            <h2 class="pano-title"><?= htmlspecialchars($city_name) ?> · 九区全景</h2>
+            <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 89,991 个区块</span>
+        </div>
+        
+        <div class="pano-grid">
+            <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $zone):
+                $zd = $all_zones_data[$zone];
+                $pct = $zd['sold_count'] > 0 ? round($zd['sold_count'] / 9999 * 100) : 0;
+                // 热度等级
+                if ($pct >= 30) $heat = 'hot';
+                elseif ($pct >= 10) $heat = 'warm';
+                else $heat = 'cool';
+            ?>
+            <a href="?name=<?= $city_pinyin ?>&zone=<?= $zone ?>" class="pano-card pano-<?= $heat ?>">
+                <div class="pano-card-header">
+                    <span class="pano-zone-label"><?= $zone ?>区</span>
+                    <span class="pano-zone-stats">
+                        <?= number_format($zd['sold_count']) ?>/9,999
+                        <span class="pano-pct">(<?= $pct ?>%)</span>
+                    </span>
+                </div>
+                <div class="pano-mini-map">
+                    <?php
+                    // 将已售/合并区块号转换为快速查找集合
+                    $soldSet = [];
+                    foreach ($zd['blocks'] as $zb) {
+                        if ($zb['status'] === 'sold' || $zb['status'] === 'reserved') {
+                            $soldSet[$zb['block_number']] = true;
+                        }
+                    }
+                    $mergedSet = array_flip($zd['merged_numbers']);
+                    
+                    for ($row = 1; $row <= 99; $row++):
+                        for ($col = 1; $col <= 101; $col++):
+                            $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                            if (isset($mergedSet[$bn])) {
+                                $cls = 'pm-merged';
+                            } elseif (isset($soldSet[$bn])) {
+                                $cls = 'pm-sold';
+                            } else {
+                                $cls = 'pm-avail';
+                            }
+                            echo "<span class=\"pano-cell {$cls}\"></span>";
+                        endfor;
+                    endfor;
+                    ?>
+                </div>
+                <?php if ($zd['merged_count'] > 0): ?>
+                <div class="pano-merged-badge">🏗️ <?= $zd['merged_count'] ?>个合并区块</div>
+                <?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        
+        <div class="pano-legend">
+            <span><span class="legend-dot avail"></span> 可认领</span>
+            <span><span class="legend-dot sold"></span> 已认领</span>
+            <span><span class="legend-dot merged"></span> 合并区块</span>
+        </div>
+    </div>
+    <!-- ========== /九区全景模式 ========== -->
+    
+    <?php else: ?>
+    <!-- ========== 单区详细模式 ========== -->
     <div class="row">
         <div class="col-md-9">
-            <!-- 区域选择器 -->
-            <div class="zone-selector">
-                <div class="zone-tabs">
-                    <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $zone): ?>
-                        <a href="?zone=<?= $zone ?>" 
-                           class="zone-tab <?= $current_zone == $zone ? 'active' : '' ?>">
-                            <?= $zone ?>区
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            
-            <!-- 区块地图 -->
             <div class="block-map-container">
                 <div class="map-controls">
                     <div class="form-group">
@@ -424,20 +664,6 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
                     </div>
                 </div>
                 
-                <!--<div class="map-header">
-                    <div class="row-numbers">
-                        <div class="row-number"></div>
-                        <?php for ($row = 1; $row <= 99; $row++): ?>
-                            <div class="row-number"><?= str_pad($row, 2, '0', STR_PAD_LEFT) ?></div>
-                        <?php endfor; ?>
-                    </div>
-                    <div class="col-numbers">
-                        <?php for ($col = 1; $col <= 101; $col++): ?>
-                            <div class="col-number"><?= str_pad($col, 2, '0', STR_PAD_LEFT) ?></div>
-                        <?php endfor; ?>
-                    </div>
-                </div>-->
-                
                 <div class="block-map">
                     <div class="map-rows">
                         <?php for ($row = 1; $row <= 99; $row++): ?>
@@ -447,13 +673,11 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
 										$block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
 										$block_price = calculateBlockPrice($current_zone, $block_number, $zones);
 										
-										// 检查区块状态 - 默认为可用
 										$block_status = 'available';
 										$block_owner = null;
 										$is_merged = false;
 										$merged_size = '1x1';
 										
-										// 如果在数据库中找到该区块记录，则使用数据库中的状态
 										foreach ($zone_blocks as $zone_block) {
 											if ($zone_block['block_number'] == $block_number) {
 												$block_status = $zone_block['status'];
@@ -462,7 +686,6 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
 											}
 										}
 										
-										// 检查是否为合并区块
 										foreach ($merged_blocks as $merged) {
 											if (in_array($block_number, explode(',', $merged['merged_blocks']))) {
 												$is_merged = true;
@@ -498,7 +721,6 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
         </div>
         
         <div class="col-md-3">
-            <!-- 区块详情面板 -->
             <div class="block-detail-panel">
                 <div class="block-info">
                     <h3>区块信息</h3>
@@ -524,13 +746,9 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
                             <span class="meta-value" id="detail-block-owner">--</span>
                         </div>
                     </div>
-                    
-                    <!-- 单个区块操作 -->
                     <div class="block-actions" id="single-block-actions">
                         <button class="btn-buy" id="buy-button" disabled>选择区块查看详情</button>
                     </div>
-                    
-                    <!-- 多区块操作 -->
                     <div class="block-actions" id="multiple-block-actions" style="display: none;">
                         <div class="selected-blocks-list" id="selected-blocks-list"></div>
                         <button class="btn-buy" id="claim-multiple-button">认领选中区块</button>
@@ -539,10 +757,13 @@ $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
             </div>
         </div>
     </div>
+    <!-- ========== /单区详细模式 ========== -->
+    <?php endif; ?>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
 
+<?php if ($view_mode === 'zone'): ?>
 <script>
 // 选中的区块数组
 let selectedBlocks = [];
@@ -776,6 +997,7 @@ document.querySelectorAll('.block-cell').forEach(cell => {
     });
 });
 </script>
+<?php endif; ?>
 
 <style>
 /* 合并区块样式 */
