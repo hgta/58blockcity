@@ -28,601 +28,113 @@ $letters = range('A', 'Z');
 	<link rel="manifest" href="/site.webmanifest" />
 	<script src="/city/city.js"></script>
     <style>
-        /* 全局样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        :root {
+            --bg: #f0f2f5;
+            --card: #fff;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+            --primary: #2563eb;
+            --accent: #f59e0b;
+            --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
+            --radius: 12px;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
+        a { text-decoration:none; color:inherit; }
+        .container { max-width:1200px; margin:0 auto; padding:0 20px; }
         
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
+        /* 头部 */
+        header { background:#fff; padding:0; box-shadow:0 1px 0 rgba(0,0,0,.06); position:sticky; top:0; z-index:100; }
+        .header-container { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; max-width:1200px; margin:0 auto; }
+        .logo { display:flex; align-items:center; gap:10px; }
+        .logo-img { width:38px; height:38px; background:var(--primary); color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; }
+        .logo-text { font-size:18px; font-weight:700; color:var(--text); }
+        .logo-text span { display:block; font-size:11px; font-weight:400; color:var(--muted); }
+        .user-actions { display:flex; gap:4px; flex-wrap:wrap; }
+        .nav-button { display:inline-flex; align-items:center; padding:6px 14px; border-radius:6px; font-size:13px; color:#4b5563; transition:all .2s; white-space:nowrap; }
+        .nav-button:hover { background:#f3f4f6; color:var(--primary); }
         
-        a {
-            text-decoration: none;
-            color: #333;
-        }
-        
-        ul {
-            list-style: none;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-        
-        /* 头部样式 */
-        header {
-            background-color: #ff6b00;
-            color: white;
-            padding: 15px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-        }
-        
-        .logo-img {
-            width: 70px;
-            height: 50px;
-            margin-right: 10px;
-            background-color: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
-            color: #ff6b00;
-        }
-        
-        .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        
-        .logo-text span {
-            font-size: 16px;
-            margin-left: 10px;
-            opacity: 0.8;
-        }
-        
-        .user-actions {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .nav-button {
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-        
-        .nav-button:hover {
-            background-color: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
+        /* 城市定位条 */
+        .city-location-bar { background:linear-gradient(135deg,#eff6ff,#f0f9ff); color:#1e40af; text-align:center; padding:10px; font-size:14px; border-bottom:1px solid #dbeafe; }
+        .city-location-bar a { color:#2563eb; font-weight:600; }
         
         /* 字母导航 */
-        .letter-nav {
-            background-color: white;
-            padding: 10px 0;
-            position: sticky;
-            top: 80px;
-            z-index: 90;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+        .letter-nav { background:#fff; position:sticky; top:63px; z-index:99; border-bottom:1px solid #f3f4f6; }
+        .letter-nav-container { display:flex; max-width:1200px; margin:0 auto; overflow-x:auto; }
+        .letter-link { padding:8px 13px; font-size:13px; color:#9ca3af; font-weight:600; flex-shrink:0; }
+        .letter-link:hover { color:var(--primary); }
         
-        .letter-nav-container {
-            display: flex;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            padding: 0 15px;
-            justify-content: center;
-        }
-        
-        .letter-nav-container::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .letter-link {
-            padding: 5px 12px;
-            font-size: 16px;
-            color: #666;
-            border-radius: 15px;
-            margin-right: 5px;
-        }
-        
-        .letter-link.active, .letter-link:hover {
-            background-color: #ff6b00;
-            color: white;
-        }
-        
-        /* 城市列表 */
-        .city-list-container {
-            padding: 20px 0;
-        }
-        
-        .city-section {
-            background-color: white;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .city-letter {
-            background-color: #f5f5f5;
-            padding: 10px 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #ff6b00;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .city-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 1px;
-            background-color: #eee;
-        }
-        
-        .city-item {
-            background-color: white;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        
-        .city-item:hover {
-            background-color: #fff8f5;
-            color: #ff6b00;
-        }
-        
-        .hot-city {
-            color: #ff6b00;
-            font-weight: bold;
-        }
+        /* Hero Banner */
+        .banner-section { margin:30px 0 40px; }
+        .hero { background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 50%,#7c3aed 100%); border-radius:var(--radius); padding:60px 50px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:40px; }
+        .hero-left h1 { font-size:36px; font-weight:800; line-height:1.2; margin-bottom:12px; }
+        .hero-left p { font-size:16px; opacity:.85; margin-bottom:24px; max-width:420px; }
+        .hero-btns { display:flex; gap:12px; }
+        .hero-btns a { padding:10px 24px; border-radius:8px; font-size:14px; font-weight:600; transition:all .2s; }
+        .btn-primary { background:#fff; color:#1e3a5f; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
+        .btn-outline { border:1.5px solid rgba(255,255,255,.4); color:#fff; }
+        .btn-outline:hover { background:rgba(255,255,255,.1); }
+        .hero-right { font-size:80px; opacity:.15; }
         
         /* 热门城市 */
-        .hot-cities {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            position: relative;
-        }
+        .hot-cities { padding:0 0 30px; }
+        .section-title { font-size:22px; font-weight:700; color:var(--text); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; }
+        .more-cities { font-size:13px; color:var(--primary); font-weight:500; }
+        .more-cities:hover { text-decoration:underline; }
+        .hot-city-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+        .hot-city-item { background:var(--card); padding:20px 12px; text-align:center; border-radius:var(--radius); font-size:15px; font-weight:600; color:var(--text); box-shadow:var(--shadow); transition:all .25s; }
+        .hot-city-item:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); color:var(--primary); }
         
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* 城市列表 */
+        .city-list-container { margin:20px 0 40px; }
+        .city-section { margin-bottom:28px; }
+        .city-letter { font-size:18px; font-weight:700; color:var(--primary); padding:8px 0; border-bottom:2px solid #e5e7eb; margin-bottom:12px; }
+        .city-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+        .city-item { background:var(--card); padding:7px 4px; text-align:center; border-radius:6px; font-size:12px; color:#6b7280; transition:all .2s; }
+        .city-item:hover { background:#eff6ff; color:var(--primary); }
+        .city-item.hot-city { font-weight:600; color:#374151; }
         
-        .more-cities {
-            font-size: 14px;
-            color: #ff6b00;
-            font-weight: normal;
-        }
+        /* 特色促销区 */
+        .featured-section { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:30px 0; }
+        .promo-banner { padding:30px; border-radius:var(--radius); color:#fff; text-align:center; }
+        .promo-banner.shop { background:linear-gradient(135deg,#059669,#10b981); }
+        .promo-banner.red { background:linear-gradient(135deg,#dc2626,#ef4444); }
+        .promo-title { font-size:20px; font-weight:700; margin-bottom:6px; }
+        .promo-desc { font-size:13px; opacity:.9; margin-bottom:16px; }
+        .promo-btn { display:inline-block; background:#fff; padding:8px 22px; border-radius:20px; font-size:13px; font-weight:600; }
         
-        .hot-city-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 15px;
-        }
+        /* 元宇宙特色 */
+        .metaverse-features { padding:40px 0; text-align:center; }
+        .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:20px; }
+        .feature-card { background:var(--card); padding:30px 20px; border-radius:var(--radius); box-shadow:var(--shadow); transition:all .3s; }
+        .feature-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); }
+        .feature-icon { font-size:44px; margin-bottom:12px; }
+        .feature-title { font-size:16px; font-weight:700; margin-bottom:8px; color:var(--text); }
+        .feature-desc { font-size:13px; color:var(--muted); line-height:1.6; }
         
-        .hot-city-item {
-            background-color: #fff8f5;
-            padding: 15px;
-            text-align: center;
-            border-radius: 5px;
-            color: #ff6b00;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
+        /* DAO社区 */
+        .dao-community { background:linear-gradient(135deg,#1e3a5f,#312e81); color:#fff; padding:44px 40px; border-radius:var(--radius); margin:30px 0 40px; text-align:center; }
+        .dao-title { font-size:26px; font-weight:700; margin-bottom:12px; }
+        .dao-text { font-size:15px; line-height:1.7; opacity:.9; margin-bottom:20px; max-width:600px; margin-left:auto; margin-right:auto; }
+        .dao-button { display:inline-block; background:#fff; color:#1e3a5f; padding:12px 30px; border-radius:24px; font-size:14px; font-weight:700; transition:all .2s; }
+        .dao-button:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,.2); }
         
-        .hot-city-item:hover {
-            background-color: #ff6b00;
-            color: white;
-            transform: translateY(-3px);
+        /* 响应式 */
+        @media(max-width:768px){
+            .header-container{flex-direction:column;gap:10px}
+            .user-actions{justify-content:center}
+            .hero{flex-direction:column;text-align:center;padding:40px 24px}
+            .hero-btns{justify-content:center}
+            .hot-city-grid{grid-template-columns:repeat(3,1fr)}
+            .city-grid{grid-template-columns:repeat(4,1fr)}
+            .feature-grid{grid-template-columns:1fr}
+            .featured-section{grid-template-columns:1fr}
         }
-        
-        /* 元宇宙特色区块 */
-        .metaverse-features {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-        
-        .feature-card {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s;
-        }
-        
-        .feature-card:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transform: translateY(-5px);
-        }
-        
-        .feature-icon {
-            font-size: 30px;
-            color: #ff6b00;
-            margin-bottom: 15px;
-        }
-        
-        .feature-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .feature-desc {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        /* DAO社区区块 */
-        .dao-community {
-            background-color: #1a1a1a;
-            color: white;
-            border-radius: 8px;
-            padding: 30px;
-            margin-bottom: 20px;
-        }
-        
-        .dao-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #ff6b00;
-        }
-        
-        .dao-content {
-            display: flex;
-            align-items: center;
-        }
-        
-        .dao-text {
-            flex: 1;
-            padding-right: 20px;
-        }
-        
-        .dao-image {
-            width: 200px;
-            height: 150px;
-            background-color: #333;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ff6b00;
-            font-weight: bold;
-        }
-        
-        .dao-button {
-            display: inline-block;
-            background-color: #ff6b00;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            margin-top: 15px;
-            transition: all 0.3s;
-        }
-        
-        .dao-button:hover {
-            background-color: #e05d00;
-        }
-        
-        /* 底部 */
-        footer {
-            background-color: #333;
-            color: #999;
-            padding: 30px 0;
-            font-size: 14px;
-        }
-        
-        .footer-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-        }
-        
-        .footer-column h3 {
-            color: white;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        
-        .footer-column ul li {
-            margin-bottom: 10px;
-        }
-        
-        .footer-column a {
-            color: #999;
-            transition: color 0.3s;
-        }
-        
-        .footer-column a:hover {
-            color: white;
-        }
-        
-        .copyright {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #444;
-            font-size: 12px;
-        }
-        
-        /* 移动端适配 */
-        @media (max-width: 992px) {
-            .city-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .hot-city-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .feature-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .footer-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .dao-content {
-                flex-direction: column;
-            }
-            
-            .dao-text {
-                padding-right: 0;
-                margin-bottom: 20px;
-            }
-            
-            .dao-image {
-                width: 100%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .logo {
-                margin-bottom: 0;
-            }
-            
-            .user-actions {
-                width: 100%;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            .city-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .hot-city-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .city-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .hot-city-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .feature-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .logo-img {
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
-            }
-            
-            .logo-text {
-                font-size: 20px;
-            }
-            
-            .logo-text span {
-                font-size: 14px;
-            }
-            
-            .nav-button {
-                padding: 8px 15px;
-                font-size: 14px;
-            }
-        }
-    </style>
-	<style>
-        /* 在原有样式基础上新增以下样式 */
-        .domain-sale {
-            background-color: #fff8e6;
-            border: 1px solid #ffd700;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-            position: relative;
-        }
-        
-        .domain-sale-text {
-            font-size: 16px;
-            color: #ff6b00;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .domain-sale-link {
-            display: inline-block;
-            background-color: #ff6b00;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        
-        .domain-sale-link:hover {
-            background-color: #e05d00;
-            transform: translateY(-2px);
-        }
-        
-        .domain-sale-english {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-		
-		/* 新增：优惠悬浮窗口样式 */
-        .promotion-floating {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 300px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            padding: 15px;
-            z-index: 999;
-            transform: translateY(20px);
-            opacity: 0;
-            animation: floatIn 0.5s forwards;
-            border: 2px solid #ff6b00;
-        }
-
-        @keyframes floatIn {
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .promotion-header {
-            color: #ff6b00;
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-        }
-
-        .promotion-header i {
-            margin-right: 8px;
-            font-size: 20px;
-        }
-
-        .promotion-content {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-        }
-
-        .promotion-qrcode {
-            width: 100%;
-            text-align: center;
-            margin: 10px 0;
-        }
-
-        .promotion-qrcode img {
-            width: 150px;
-            height: 150px;
-            border: 1px solid #eee;
-        }
-
-        .promotion-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            color: #999;
-            font-size: 16px;
-            text-align: center;
-            line-height: 20px;
-        }
-
-        .promotion-close:hover {
-            color: #ff6b00;
-        }
-
-        @media (max-width: 768px) {
-            .promotion-floating {
-                width: 250px;
-                right: 15px;
-                bottom: 15px;
-            }
-        }
-		
-		/* 新增：城市定位提示条 */
-        .city-location-bar {
-            background-color: #ff6b00;
-            color: white;
-            padding: 8px 0;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .city-location-bar a {
-            color: white;
-            text-decoration: underline;
-            margin-left: 5px;
+        @media(max-width:480px){
+            .hot-city-grid{grid-template-columns:repeat(2,1fr)}
+            .city-grid{grid-template-columns:repeat(3,1fr)}
         }
     </style>
 </head>
@@ -638,12 +150,13 @@ $letters = range('A', 'Z');
                 </div>
             </div>
             <div class="user-actions">
-				<a href="https://nft.58.tl/" class="nav-button">NFT交易</a>
+				<a href="https://block.58.tl/" class="nav-button">区块交易</a>
+				<a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
+				<a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
+				<a href="https://mall.58.tl/" class="nav-button">人气商城</a>
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
-				<a href="/rankings/rankings.html" class="nav-button">排行榜</a>
-                <a href="top200city.php" class="nav-button">TOP200城市</a>
-				<a href="hongbao.php" class="nav-button">红包时间表</a>
-                <a href="https://www.blockcity.pub/pages/user/user/?iclc" class="nav-button">我的区块</a>
+				<a href="top200city.php" class="nav-button">TOP200</a>
+				<a href="hongbao.php" class="nav-button">红包</a>
             </div>
         </div>
     </header>
@@ -690,6 +203,23 @@ $letters = range('A', 'Z');
         </div>
     </nav>
     
+    <!-- Hero Banner -->
+    <div class="banner-section">
+        <div class="container">
+            <div class="hero">
+                <div class="hero-left">
+                    <h1>探索元宇宙<br>城市生态</h1>
+                    <p>58区块城市 — 基于区块链的虚拟城市交易平台，发现、认领、交易你的数字领地</p>
+                    <div class="hero-btns">
+                        <a href="https://block.58.tl/" class="btn-primary">开始探索</a>
+                        <a href="https://bct.58.tl/" class="btn-outline">了解BCT</a>
+                    </div>
+                </div>
+                <div class="hero-right">🏙️</div>
+            </div>
+        </div>
+    </div>
+
     <!-- 主要内容 -->
     <main class="container">
         <!-- 热门城市 -->
@@ -705,6 +235,20 @@ $letters = range('A', 'Z');
             </div>
         </section>
         
+        <!-- 促销区 -->
+        <div class="featured-section">
+            <div class="promo-banner shop">
+                <div class="promo-title">🛍️ 人气商城</div>
+                <div class="promo-desc">BCT支付购物，区块城市专属商城</div>
+                <a href="https://mall.58.tl/" class="promo-btn">立即购物</a>
+            </div>
+            <div class="promo-banner red">
+                <div class="promo-title">🧧 红包时间表</div>
+                <div class="promo-desc">各城市红包发放时间，定好闹钟来抢</div>
+                <a href="hongbao.php" class="promo-btn">查看时间表</a>
+            </div>
+        </div>
+
         <!-- 城市列表 -->
         <div class="city-list-container">
             <?php foreach ($letters as $letter): 
