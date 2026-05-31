@@ -432,7 +432,7 @@
     <!-- 头部区域 -->
     <header>
         <div class="container header-container">
-            <a href="../index.html" class="logo">
+            <a href="../index.php" class="logo">
                 <div class="logo-img">58</div>
                 <div class="logo-text">
                     区块城市
@@ -440,11 +440,11 @@
                 </div>
             </a>
             <div class="user-actions">
-                <a href="../index.html" class="nav-button">
+                <a href="../index.php" class="nav-button">
                     <i class="fas fa-home"></i>
                     <span>返回首页</span>
                 </a>
-                <a href="../top200city.html" class="nav-button">
+                <a href="../top200city.php" class="nav-button">
                     <i class="fas fa-city"></i>
                     <span>TOP200城市</span>
                 </a>
@@ -482,7 +482,7 @@
                             </span>
                         </div>
                         <p class="news-excerpt">
-                            继上周人气值飙升47%跃居全国第二后，<a href="../index.html">区块城市</a>杭州A区再创奇迹！今日凌晨，杭州A区所有区块在开放48小时内全部售罄，创下平台最快销售纪录。分析指出，这与杭州数字经济发展优势和区块城市近期推出的"数字景观共建计划"密不可分。首批投资者预计将获得不低于上海A区的分红收益...
+                            继上周人气值飙升47%跃居全国第二后，<a href="../index.php">区块城市</a>杭州A区再创奇迹！今日凌晨，杭州A区所有区块在开放48小时内全部售罄，创下平台最快销售纪录。分析指出，这与杭州数字经济发展优势和区块城市近期推出的"数字景观共建计划"密不可分。首批投资者预计将获得不低于上海A区的分红收益...
                         </p>
                         <div class="news-tags">
                             <span class="news-tag">
@@ -513,7 +513,7 @@
                             </span>
                         </div>
                         <p class="news-excerpt">
-                            BlockCity<a href="../index.html">区块城市</a>今日宣布重大品牌升级，原Slogan"务实元宇宙的先行者"正式变更为"来做元宇宙的先行者"。这一变化标志着平台将从"务实建设"阶段迈向"开放共创"新纪元，邀请全球用户共同参与元宇宙建设...
+                            BlockCity<a href="../index.php">区块城市</a>今日宣布重大品牌升级，原Slogan"务实元宇宙的先行者"正式变更为"来做元宇宙的先行者"。这一变化标志着平台将从"务实建设"阶段迈向"开放共创"新纪元，邀请全球用户共同参与元宇宙建设...
                         </p>
                         <div class="news-tags">
                             <span class="news-tag">
@@ -540,7 +540,7 @@
                             </span>
                         </div>
                         <p class="news-excerpt">
-                            上海<a href="../index.html">区块城市</a>A区今日正式宣布售罄，成为首个完成全部区块销售的核心区域。根据DAO治理协议，首批购买居民将获得超额分红，平均收益率高达218%。庆祝活动将在元宇宙中持续一周...
+                            上海<a href="../index.php">区块城市</a>A区今日正式宣布售罄，成为首个完成全部区块销售的核心区域。根据DAO治理协议，首批购买居民将获得超额分红，平均收益率高达218%。庆祝活动将在元宇宙中持续一周...
                         </p>
                         <div class="news-tags">
                             <span class="news-tag">
@@ -567,7 +567,7 @@
                             </span>
                         </div>
                         <p class="news-excerpt">
-                            惊人逆袭！杭州<a href="../index.html">区块城市</a>人气值两天暴涨47%，连续超越深圳和上海，目前仅次于北京，稳居全国第二。分析认为这与杭州数字经济优势和近期推出的"西湖数字景观"计划密切相关...
+                            惊人逆袭！杭州<a href="../index.php">区块城市</a>人气值两天暴涨47%，连续超越深圳和上海，目前仅次于北京，稳居全国第二。分析认为这与杭州数字经济优势和近期推出的"西湖数字景观"计划密切相关...
                         </p>
                         <div class="news-tags">
                             <span class="news-tag">

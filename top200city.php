@@ -436,8 +436,8 @@
                 </div>
             </div>
             <div class="user-actions">
-                <a href="index.html" class="nav-button">返回首页</a>
-                <a href="news.html" class="nav-button">区块城市新闻</a>
+                <a href="index.php" class="nav-button">返回首页</a>
+                <a href="news.php" class="nav-button">区块城市新闻</a>
                 <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
             </div>
         </div>
@@ -562,7 +562,7 @@
                 <div class="footer-column">
                     <h3>商家服务</h3>
                     <ul>
-                        <li><a href="news.html">区块新闻</a></li>
+                        <li><a href="news.php">区块新闻</a></li>
                         <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
                         <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
                         <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
