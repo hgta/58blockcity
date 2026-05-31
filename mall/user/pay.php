@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once '../../config/database.php';
 require_once '../../classes/Order.php';
+require_once '../../classes/BCTTransaction.php';
 
 $order = new Order($pdo);
 
@@ -60,6 +61,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->rowCount() > 0) {
             $success = true;
             $orderInfo['status'] = 'paid';
+            
+            // 创建 BCT 交易凭证记录
+            try {
+                $bctTx = new BCTTransaction($pdo);
+                // 获取卖家ID（通过 shop 表 owner）
+                $shopStmt = $pdo->prepare("SELECT user_id FROM shops WHERE id = ?");
+                $shopStmt->execute([$orderInfo['shop_id']]);
+                $sellerId = $shopStmt->fetchColumn();
+                
+                $bctTx->create(
+                    $orderId,                          // order_id
+                    $_SESSION['user_id'],              // from_user (买家)
+                    $sellerId ?: 0,                    // to_user (卖家)
+                    $orderInfo['payment_city'] ?? '',  // city
+                    intval($orderInfo['payment_amount'] ?? 0), // amount
+                    1.0,                               // price
+                    0,                                 // fee
+                    null,                              // fee_type
+                    floatval($orderInfo['payment_amount'] ?? 0), // net_amount
+                    'trade'                            // tx_type
+                );
+            } catch (Exception $txEx) {
+                // 交易记录创建失败不影响主流程
+                error_log("BCTTransaction create failed for order {$orderId}: " . $txEx->getMessage());
+            }
         } else {
             $error = '确认失败，订单状态可能已变更';
         }

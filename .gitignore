@@ -27,3 +27,6 @@ Thumbs.db
 
 # ACME SSL 证书验证临时文件
 .well-known/
+
+# PHP 用户配置
+.user.ini

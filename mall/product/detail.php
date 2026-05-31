@@ -533,9 +533,9 @@ if (isset($_SESSION['user_id'])) {
                         <button type="submit" name="add_to_cart" class="btn btn-cart">
                             <i class="fas fa-shopping-cart"></i> 加入购物车
                         </button>
-                        <a href="../cart/checkout.php?product_id=<?php echo $productId; ?>&quantity=1" class="btn btn-buy">
+                        <button type="button" class="btn btn-buy" onclick="buyNow(<?php echo $productId; ?>, this)">
                             <i class="fas fa-bolt"></i> 立即购买
-                        </a>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -666,6 +666,34 @@ if (isset($_SESSION['user_id'])) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 添加中...';
         });
+        
+        // 立即购买：先加入购物车，再跳转结算
+        function buyNow(productId, btn) {
+            var qty = document.getElementById('quantity-input').value;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+            
+            fetch('../cart/add_to_cart.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'product_id=' + productId + '&quantity=' + qty
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = '../cart/checkout.php';
+                } else {
+                    alert(data.message || '操作失败');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-bolt"></i> 立即购买';
+                }
+            })
+            .catch(function() {
+                alert('网络错误，请重试');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> 立即购买';
+            });
+        }
     </script>
     
     <?php include '../includes/footer.php'; ?>
