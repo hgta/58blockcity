@@ -275,6 +275,7 @@ $cities = $cityObj->getAllCities();
     <?php endif; ?>
     
     <form class="register-form" action="register.php" method="POST" id="registerForm">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
         <div class="form-group">
             <label for="username">用户名</label>
             <input type="text" id="username" name="username" 

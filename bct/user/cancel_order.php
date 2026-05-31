@@ -11,6 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF验证
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    echo json_encode(['success' => false, 'message' => '非法请求']);
+    exit;
+}
+
 // 获取订单ID
 $orderId = $_POST['order_id'] ?? 0;
 if (!$orderId) {

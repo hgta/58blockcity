@@ -679,6 +679,7 @@ $tradeTypeText = [
 
 <!-- 在文件末尾的JavaScript部分替换为以下代码 -->
 <script>
+var csrfToken = '<?= $_SESSION['csrf_token'] ?>';
 // 模态框管理函数
 function showEditModal() {
     // 更新预览
@@ -721,6 +722,7 @@ function cancelOrder(orderId) {
         // 创建表单数据
         const formData = new FormData();
         formData.append('order_id', orderId);
+        formData.append('csrf_token', csrfToken);
         
         // 使用fetch API发送请求
         fetch('cancel_order.php', {

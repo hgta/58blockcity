@@ -30,3 +30,16 @@ Thumbs.db
 
 # PHP 用户配置
 .user.ini
+
+# 旧版本文件（保留本地但不上传git）
+*_v1.php
+*_v2.php
+*_old.php
+*-v2.php
+*-new.php
+login-v2.php
+index_v1.php
+index_old.php
+header-new.php
+header_v1.php
+auth_v2.php

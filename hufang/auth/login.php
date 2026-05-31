@@ -117,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     
     <form class="login-form" action="login.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
         <div class="form-group">
             <label for="username">用户名</label>
             <input type="text" id="username" name="username" required 
