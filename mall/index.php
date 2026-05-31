@@ -497,7 +497,7 @@ $categories = $category->getPopularCategories(8);
                     <?php foreach ($newProducts as $product): ?>
                         <a href="product/detail.php?id=<?php echo $product['id']; ?>" class="product-card">
                             <div class="product-image">
-                                <img src="<?php echo '../' . htmlspecialchars($product['main_image'] ?: 'assets/images/default-product.jpg'); ?>" 
+                                <img src="<?php echo '../' . htmlspecialchars($product['image_url'] ?: 'assets/images/default-product.jpg'); ?>" 
                                      alt="<?php echo htmlspecialchars($product['name']); ?>">
                                 <div style="position: absolute; top: 10px; left: 10px; background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">NEW</div>
                             </div>
@@ -546,7 +546,7 @@ $categories = $category->getPopularCategories(8);
                             </div>
                             <div class="shop-stats">
                                 <span>商品: <?php echo $shop['product_count'] ?? 0; ?></span>
-                                <span>销量: <?php echo $shop['sales_count'] ?? 0; ?></span>
+                                <span>销量: <?php echo $shop['total_sales'] ?? 0; ?></span>
                             </div>
                         </a>
                     <?php endforeach; ?>
@@ -556,6 +556,49 @@ $categories = $category->getPopularCategories(8);
                         <div>暂无热门店铺</div>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- 购物指南 -->
+        <div class="section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="section-header">
+                <h2>📖 购物指南</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 10px;">
+                <div style="text-align: center; padding: 25px 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #3498db, #2980b9); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                        <i class="fas fa-shopping-bag" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <h3 style="font-size: 16px; margin-bottom: 8px; color: #333;">① 浏览商品</h3>
+                    <p style="font-size: 13px; color: #666; line-height: 1.6;">在商城中浏览商品，点击"加入购物车"</p>
+                </div>
+                <div style="text-align: center; padding: 25px 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                        <i class="fas fa-credit-card" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <h3 style="font-size: 16px; margin-bottom: 8px; color: #333;">② 提交订单</h3>
+                    <p style="font-size: 13px; color: #666; line-height: 1.6;">结算时填写收货地址，选择BCT支付</p>
+                </div>
+                <div style="text-align: center; padding: 25px 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #27ae60, #219a52); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                        <i class="fas fa-link" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <h3 style="font-size: 16px; margin-bottom: 8px; color: #333;">③ 确认支付</h3>
+                    <p style="font-size: 13px; color: #666; line-height: 1.6;">在 <strong>blockcity.vip</strong> 完成BCT转账后，回到商城点击"我已支付"确认</p>
+                </div>
+            </div>
+            
+            <!-- 开店引导 -->
+            <div style="margin-top: 25px; padding: 25px; background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; color: white; text-align: center;">
+                <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">
+                    <i class="fas fa-store-alt"></i> 想开店吗？
+                </div>
+                <div style="font-size: 14px; margin-bottom: 15px; opacity: 0.9;">
+                    免费开通店铺，上架商品接受BCT支付，将你的BlockCity人气值变现
+                </div>
+                <a href="shop/create.php" style="display: inline-block; padding: 12px 30px; background: white; color: #e67e22; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    <i class="fas fa-plus"></i> 立即开店
+                </a>
             </div>
         </div>
     </div>

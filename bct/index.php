@@ -8,6 +8,13 @@ if (isset($_SESSION['message'])) {
     echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
     unset($_SESSION['message']);
 }
+if (isset($_SESSION['error'])) {
+    echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>';
+    unset($_SESSION['error']);
+}
+
+// 输出 CSRF token 供 AJAX 使用
+echo '<meta name="csrf-token" content="' . generateCsrfToken() . '">';
 
 if (isset($_SESSION['error'])) {
     echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>';
@@ -695,12 +702,33 @@ function executeTrade() {
     // 显示加载状态
     $('#confirmTrade').prop('disabled', true).html('<i class="glyphicon glyphicon-refresh glyphicon-spin"></i> 处理中...');
     
-    // 模拟API调用
-    setTimeout(() => {
-        alert(`交易提交成功！\n订单ID: ${orderId}\n类型: ${type === 'buy' ? '购买' : '出售'}\n数量: ${amount} BCT\n单价: ${price} 元\n方式: ${getTradeTypeText(executeType)}`);
-        $('#tradeModal').modal('hide');
-        $('#confirmTrade').prop('disabled', false).text('确认交易');
-    }, 1000);
+    // 获取 CSRF token
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // 真实 API 调用
+    $.ajax({
+        url: 'api/execute_trade.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            order_id: orderId,
+            amount: amount,
+            csrf_token: csrfToken
+        },
+        success: function(res) {
+            if (res.success) {
+                alert('交易成功！页面将刷新。');
+                location.reload();
+            } else {
+                alert('交易失败：' + res.message);
+                $('#confirmTrade').prop('disabled', false).text('确认交易');
+            }
+        },
+        error: function() {
+            alert('网络错误，请重试');
+            $('#confirmTrade').prop('disabled', false).text('确认交易');
+        }
+    });
 }
 
 function getTradeTypeText(type) {

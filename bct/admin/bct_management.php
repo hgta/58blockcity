@@ -1,8 +1,8 @@
 <?php
-require_once '../config/database.php';
+require_once '../../config/database.php';
 require_once '../includes/auth.php';
-require_once '../classes/UserBCTAccount.php';
-require_once '../classes/User.php';
+require_once '../../classes/UserBCTAccount.php';
+require_once '../../classes/User.php';
 
 //checkAdminLogin(); // 需要管理员权限
 checkAdmin();

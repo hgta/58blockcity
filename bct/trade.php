@@ -31,84 +31,6 @@ if ($selectedCity) {
 
 $userAccount = $selectedCity && $cityInfo ? $account->getAccount($_SESSION['user_id'], $selectedCity) : null;
 
-// 处理表单提交
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $type = $_POST['type'] ?? '';
-    $city = $_POST['city'] ?? '';
-    $amount = (int)($_POST['amount'] ?? 0);
-    $price = floatval($_POST['price'] ?? 0); // 用户填写的单价
-    $tradeType = $_POST['trade_type'] ?? '';
-    $contactInfo = $_POST['contact_info'] ?? '';
-    $mediatorId = $_POST['mediator_id'] ?? null;
-    
-    // 简单验证
-    if (!$city || $amount <= 0 || $price <= 0 || !in_array($tradeType, ['platform', 'mediator', 'direct'])) {
-        $_SESSION['error'] = '请填写完整的交易信息';
-        header('Location: trade.php?city=' . urlencode($city));
-        exit;
-    }
-    
-    // 验证价格不低于基础价格 (修改为0.01元)
-    if ($price < 0.01) {
-        $_SESSION['error'] = '单价不能低于0.01元';
-        header('Location: trade.php?city=' . urlencode($city));
-        exit;
-    }
-    
-    // 移除出售时的余额检查，简化流程
-    // if ($type === 'sell') {
-    //     $userAccount = $account->getAccount($_SESSION['user_id'], $city);
-    //     if (!$userAccount || $userAccount['balance'] - $userAccount['frozen'] < $amount) {
-    //         $_SESSION['error'] = '可用余额不足';
-    //         header('Location: trade.php?city=' . urlencode($city));
-    //         exit;
-    //     }
-    // }
-    
-    // 创建订单 - 使用直接数据库操作
-    try {
-        $pdo->beginTransaction();
-        
-        // 生成订单号
-        $orderNo = date('YmdHis') . mt_rand(1000, 9999);
-        $totalAmount = $amount * $price;
-        
-        // 插入订单
-        $stmt = $pdo->prepare("INSERT INTO bct_orders 
-                              (order_no, user_id, city, type, amount, price, total_amount, trade_type, contact_info) 
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $orderNo,
-            $_SESSION['user_id'],
-            $city,
-            $type,
-            $amount,
-            $price,
-            $totalAmount,
-            $tradeType,
-            $contactInfo
-        ]);
-        
-        // 如果是出售订单，不再冻结余额（简化流程）
-        // if ($type === 'sell') {
-        //     $stmt = $pdo->prepare("UPDATE user_bct_account SET frozen = frozen + ? 
-        //                           WHERE user_id = ? AND city = ?");
-        //     $stmt->execute([$amount, $_SESSION['user_id'], $city]);
-        // }
-        
-        $pdo->commit();
-        $_SESSION['message'] = '交易发布成功！';
-        header('Location: index.php');
-        exit;
-        
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $_SESSION['error'] = '交易发布失败，请重试';
-        header('Location: trade.php?city=' . urlencode($city));
-        exit;
-    }
-}
-
 // 显示消息
 if (isset($_SESSION['message'])) {
     echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
@@ -196,7 +118,8 @@ if (isset($_SESSION['error'])) {
                     </div>
 
                     <!-- 交易表单 -->
-                    <form id="tradeForm" method="post" action="trade.php">
+                    <form id="tradeForm" method="post" action="process_order.php">
+                        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                         <input type="hidden" name="city" value="<?= htmlspecialchars($selectedCity) ?>">
                         <input type="hidden" name="type" id="tradeType" value="buy">
                         

@@ -78,15 +78,29 @@ class BCTOrder {
                 throw new Exception("订单不存在或不可匹配");
             }
             
-            // 查找匹配订单
+            // 查找匹配订单：同城市、相反方向、价格交叉、平台交易
             $matchType = $order['type'] == 'buy' ? 'sell' : 'buy';
-            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
-                WHERE city = ? AND type = ? AND status = 'pending' 
-                AND trade_type = 'platform' 
-                ORDER BY created_at 
-                LIMIT 1 FOR UPDATE");
+            
+            if ($order['type'] == 'buy') {
+                // 买单：找卖单价格 <= 买单价格的订单，按价格从低到高，同价格按时间优先
+                $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
+                    WHERE city = ? AND type = ? AND status = 'pending' 
+                    AND trade_type = 'platform' 
+                    AND price <= ?
+                    ORDER BY price ASC, created_at ASC 
+                    LIMIT 1 FOR UPDATE");
+                $stmt->execute([$order['city'], $matchType, $order['price']]);
+            } else {
+                // 卖单：找买单价格 >= 卖单价格的订单，按价格从高到低，同价格按时间优先
+                $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
+                    WHERE city = ? AND type = ? AND status = 'pending' 
+                    AND trade_type = 'platform' 
+                    AND price >= ?
+                    ORDER BY price DESC, created_at ASC 
+                    LIMIT 1 FOR UPDATE");
+                $stmt->execute([$order['city'], $matchType, $order['price']]);
+            }
                 
-            $stmt->execute([$order['city'], $matchType]);
             $matchOrder = $stmt->fetch();
             
             if(!$matchOrder) {
@@ -95,6 +109,10 @@ class BCTOrder {
             
             // 确定交易数量
             $tradeAmount = min($order['amount'], $matchOrder['amount']);
+            
+            // 保存交易前订单数量（用于冻结余额修复）
+            $orderBeforeTrade = $order;
+            $matchBeforeTrade = $matchOrder;
             
             // 执行交易
             $this->executeTrade($order, $matchOrder, $tradeAmount, 'platform');
@@ -107,6 +125,66 @@ class BCTOrder {
         }
     }
     
+    /**
+     * 手动匹配两个订单并执行交易（供 API 调用）
+     * 
+     * @param int $orderId1 买方订单ID
+     * @param int $orderId2 卖方订单ID
+     * @param int $amount   交易数量
+     * @param string $tradeType 交易类型
+     * @return array ['success' => bool, 'message' => string, 'tx_id' => int]
+     */
+    public function matchAndExecute($orderId1, $orderId2, $amount, $tradeType = 'direct') {
+        try {
+            $this->pdo->beginTransaction();
+            
+            // 获取两个订单
+            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending' FOR UPDATE");
+            $stmt->execute([$orderId1]);
+            $order1 = $stmt->fetch();
+            
+            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending' FOR UPDATE");
+            $stmt->execute([$orderId2]);
+            $order2 = $stmt->fetch();
+            
+            if (!$order1 || !$order2) {
+                throw new Exception("订单不存在或已不可交易");
+            }
+            
+            // 验证方向相反
+            if ($order1['type'] == $order2['type']) {
+                throw new Exception("两个订单方向相同，无法交易");
+            }
+            
+            // 验证城市相同
+            if ($order1['city'] != $order2['city']) {
+                throw new Exception("两个订单城市不同，无法交易");
+            }
+            
+            // 验证价格交叉
+            $buyOrder = $order1['type'] == 'buy' ? $order1 : $order2;
+            $sellOrder = $order1['type'] == 'sell' ? $order1 : $order2;
+            
+            if ($buyOrder['price'] < $sellOrder['price']) {
+                throw new Exception("买卖价格不匹配（买方出价¥" . $buyOrder['price'] . " < 卖方要价¥" . $sellOrder['price'] . "）");
+            }
+            
+            // 验证数量
+            if ($amount > $order1['amount'] || $amount > $order2['amount']) {
+                throw new Exception("交易数量超过订单剩余数量");
+            }
+            
+            // 执行交易
+            $this->executeTrade($order1, $order2, $amount, $tradeType);
+            
+            $this->pdo->commit();
+            return ['success' => true, 'message' => '交易成功'];
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
     // 执行交易
     private function executeTrade($order1, $order2, $amount, $tradeType) {
         $account = new UserBCTAccount($this->pdo);
@@ -116,10 +194,14 @@ class BCTOrder {
         $buyOrder = $order1['type'] == 'buy' ? $order1 : $order2;
         $sellOrder = $order1['type'] == 'sell' ? $order1 : $order2;
         
+        // 成交价取卖方价格
+        $tradePrice = $sellOrder['price'];
+        
         // 计算手续费
         $feeRate = $tradeType == 'platform' ? 0.10 : ($tradeType == 'mediator' ? 0.02 : 0);
-        $fee = $amount * $sellOrder['price'] * $feeRate;
-        $netAmount = $amount * $sellOrder['price'] - $fee;
+        $totalAmount = $amount * $tradePrice;
+        $fee = round($totalAmount * $feeRate, 2);
+        $netAmount = round($totalAmount - $fee, 2);
         
         // 转账流程
         // 1. 解冻卖方冻结的BCT
@@ -128,17 +210,14 @@ class BCTOrder {
         // 2. 将BCT从卖方转到买方
         $account->transfer($sellOrder['user_id'], $buyOrder['user_id'], $sellOrder['city'], $amount);
         
-        // 3. 将资金从买方转到卖方
-        // 实际项目中这里应该对接支付系统，简化版只记录交易
-        
-        // 创建交易记录
-        $tx->createTransaction(
+        // 3. 创建交易记录
+        $tx->create(
             $buyOrder['id'], 
-            $buyOrder['user_id'], 
             $sellOrder['user_id'], 
+            $buyOrder['user_id'], 
             $sellOrder['city'], 
             $amount, 
-            $sellOrder['price'], 
+            $tradePrice, 
             $fee, 
             $feeRate > 0 ? ($tradeType == 'platform' ? 'platform_fee' : 'mediator_fee') : null,
             $netAmount,
@@ -147,22 +226,33 @@ class BCTOrder {
         
         // 更新订单状态
         $this->updateOrderAfterTrade($buyOrder['id'], $amount);
-        $this->updateOrderAfterTrade($sellOrder['id'], $amount);
+        $this->updateOrderAfterTrade($sellOrder['id'], $amount, $sellOrder['user_id'], $sellOrder['city']);
     }
     
-    private function updateOrderAfterTrade($orderId, $tradedAmount) {
-        // 检查订单是否全部完成
-        $stmt = $this->pdo->prepare("SELECT amount FROM bct_orders WHERE id = ?");
+    private function updateOrderAfterTrade($orderId, $tradedAmount, $sellerId = null, $city = null) {
+        // 获取订单原始数量
+        $stmt = $this->pdo->prepare("SELECT amount, type, user_id, city FROM bct_orders WHERE id = ?");
         $stmt->execute([$orderId]);
-        $originalAmount = $stmt->fetchColumn();
+        $order = $stmt->fetch();
+        $originalAmount = $order['amount'];
         
         if($tradedAmount >= $originalAmount) {
             // 全部完成
             $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = 0, status = 'completed' WHERE id = ?");
+            $stmt->execute([$orderId]);
         } else {
             // 部分完成
-            $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = amount - ?, status = 'processing' WHERE id = ?");
-            $stmt->execute([$tradedAmount, $orderId]);
+            $remainingAmount = $originalAmount - $tradedAmount;
+            $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = ?, status = 'processing' WHERE id = ?");
+            $stmt->execute([$remainingAmount, $orderId]);
+            
+            // 如果是卖单，解冻未成交部分的余额
+            if ($order['type'] == 'sell') {
+                $account = new UserBCTAccount($this->pdo);
+                // 解冻: updateBalance 的 $isFrozen=true 时 $amount 加到 frozen 字段
+                // 要减少 frozen，传负数
+                $account->updateBalance($order['user_id'], $order['city'], -$remainingAmount, true);
+            }
         }
     }
 	

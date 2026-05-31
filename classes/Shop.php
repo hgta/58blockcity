@@ -564,13 +564,13 @@ public function getSupportedCities() {
             $orderBy = "s.created_at DESC";
             switch ($filters['sort'] ?? 'newest') {
                 case 'popular':
-                    $orderBy = "s.view_count DESC, s.sales_count DESC";
+                    $orderBy = "s.total_sales DESC, s.created_at DESC";
                     break;
                 case 'product_count':
                     $orderBy = "product_count DESC";
                     break;
                 case 'sales':
-                    $orderBy = "s.sales_count DESC";
+                    $orderBy = "s.total_sales DESC";
                     break;
                 default:
                     $orderBy = "s.created_at DESC";
@@ -776,10 +776,9 @@ public function getSupportedCities() {
      */
     public function incrementViewCount($shopId) {
         try {
-            $sql = "UPDATE shops SET view_count = view_count + 1, updated_at = NOW() 
-                    WHERE id = ?";
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$shopId]);
+            // shops 表无 view_count 列，使用 total_sales 作为热度近似替代
+            // 如需真正的浏览量统计，可在 shops 表新增 view_count 列
+            return true;
         } catch (Exception $e) {
             error_log("增加店铺浏览量失败: " . $e->getMessage());
             return false;
@@ -794,8 +793,7 @@ public function getSupportedCities() {
             $sql = "SELECT 
                         COUNT(*) as total_shops,
                         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_shops,
-                        AVG(view_count) as avg_views,
-                        AVG(sales_count) as avg_sales,
+                        AVG(total_sales) as avg_sales,
                         SUM(product_count) as total_products
                     FROM (
                         SELECT s.*, 

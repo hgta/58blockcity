@@ -70,12 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // 创建订单
             $orderData = [
+                'user_id' => $userId,
+                'shop_id' => $validItems[0]['shop_id'] ?? 0,
                 'total_amount' => $totalAmount,
+                'payment_city' => ($paymentMethod == 'bct') ? ($validItems[0]['payment_city'] ?? '') : '',
+                'payment_amount' => ($paymentMethod == 'bct') ? $totalAmount : 0,
+                'payment_method' => $paymentMethod,
                 'shipping_address' => $shippingAddress,
-                'payment_method' => $paymentMethod
+                'buyer_note' => $remark
             ];
             
-            $orderId = $order->createOrder($userId, $orderData);
+            $orderId = $order->createOrder($orderData);
             
             if (!$orderId) {
                 throw new Exception("创建订单失败");

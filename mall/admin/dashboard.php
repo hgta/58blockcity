@@ -547,7 +547,7 @@ $shopStats = $shop->getShopStats();
                         <?php if (!empty($recentOrders)): ?>
                             <?php foreach ($recentOrders as $order): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($order['order_number']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['order_no']); ?></td>
                                     <td>用户<?php echo $order['user_id']; ?></td>
                                     <td>¥<?php echo number_format($order['total_amount'], 2); ?></td>
                                     <td>

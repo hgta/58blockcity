@@ -437,12 +437,12 @@ class Product {
             
             // 价格范围筛选
             if (!empty($filters['min_price'])) {
-                $whereConditions[] = "p.price >= ?";
+                $whereConditions[] = "p.price_bct >= ?";
                 $params[] = $filters['min_price'];
             }
             
             if (!empty($filters['max_price'])) {
-                $whereConditions[] = "p.price <= ?";
+                $whereConditions[] = "p.price_bct <= ?";
                 $params[] = $filters['max_price'];
             }
             
@@ -499,7 +499,10 @@ class Product {
      */
     public function getNewProducts($limit = 8) {
         try {
-            $sql = "SELECT p.*, s.shop_name, c.name as category_name
+            $sql = "SELECT p.*, 
+                           p.main_image as image_url,
+                           p.price_bct as price,
+                           s.shop_name, c.name as category_name
                     FROM products p
                     LEFT JOIN shops s ON p.shop_id = s.id
                     LEFT JOIN product_categories c ON p.category_id = c.id
@@ -532,7 +535,7 @@ class Product {
                     LEFT JOIN product_categories c ON p.category_id = c.id
                     WHERE p.status = 'active'  
                     AND p.stock > 0
-                    ORDER BY p.view_count DESC, p.sales_count DESC
+                    ORDER BY p.view_count DESC, p.sold_count DESC
                     LIMIT ?";
             
             $stmt = $this->pdo->prepare($sql);

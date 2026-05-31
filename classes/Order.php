@@ -273,7 +273,7 @@ class Order {
             
             // 搜索筛选
             if (!empty($filters['search'])) {
-                $whereConditions[] = "(o.order_number LIKE ? OR od.product_name LIKE ?)";
+                $whereConditions[] = "(o.order_no LIKE ? OR oi.product_name LIKE ?)";
                 $searchTerm = "%" . $filters['search'] . "%";
                 $params[] = $searchTerm;
                 $params[] = $searchTerm;
@@ -290,7 +290,7 @@ class Order {
             
             $sql = "SELECT DISTINCT o.*
                     FROM orders o
-                    LEFT JOIN order_details od ON o.id = od.order_id
+                    LEFT JOIN order_items oi ON o.id = oi.order_id
                     WHERE {$whereClause}
                     ORDER BY o.created_at DESC
                     {$limit}";
@@ -321,7 +321,7 @@ class Order {
             
             // 搜索筛选
             if (!empty($filters['search'])) {
-                $whereConditions[] = "(o.order_number LIKE ? OR od.product_name LIKE ?)";
+                $whereConditions[] = "(o.order_no LIKE ? OR oi.product_name LIKE ?)";
                 $searchTerm = "%" . $filters['search'] . "%";
                 $params[] = $searchTerm;
                 $params[] = $searchTerm;
@@ -331,7 +331,7 @@ class Order {
             
             $sql = "SELECT COUNT(DISTINCT o.id) as total
                     FROM orders o
-                    LEFT JOIN order_details od ON o.id = od.order_id
+                    LEFT JOIN order_items oi ON o.id = oi.order_id
                     WHERE {$whereClause}";
             
             $stmt = $this->pdo->prepare($sql);
@@ -350,11 +350,11 @@ class Order {
      */
     public function getOrderDetails($orderId) {
         try {
-            $sql = "SELECT od.*, p.image_url
-                    FROM order_details od
-                    LEFT JOIN products p ON od.product_id = p.id
-                    WHERE od.order_id = ?
-                    ORDER BY od.created_at ASC";
+            $sql = "SELECT oi.*, p.main_image as image_url
+                    FROM order_items oi
+                    LEFT JOIN products p ON oi.product_id = p.id
+                    WHERE oi.order_id = ?
+                    ORDER BY oi.id ASC";
             
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$orderId]);
@@ -464,18 +464,21 @@ class Order {
      */
     public function addOrderDetail($orderId, $productData) {
         try {
-            $sql = "INSERT INTO order_details (order_id, product_id, product_name, price, quantity, specification, image_url, created_at) 
+            $sql = "INSERT INTO order_items (order_id, product_id, product_name, product_image, quantity, unit_price, total_price, created_at) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
             $stmt = $this->pdo->prepare($sql);
+            
+            $unitPrice = $productData['price'] ?? 0;
+            $quantity = $productData['quantity'] ?? 1;
             
             return $stmt->execute([
                 $orderId,
                 $productData['product_id'],
                 $productData['product_name'],
-                $productData['price'],
-                $productData['quantity'],
-                $productData['specification'] ?? '',
-                $productData['image_url'] ?? ''
+                $productData['image_url'] ?? '',
+                $quantity,
+                $unitPrice,
+                $unitPrice * $quantity
             ]);
         } catch (Exception $e) {
             error_log("添加订单详情失败: " . $e->getMessage());

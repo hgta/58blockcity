@@ -163,7 +163,7 @@ class Cart {
      */
     public function getTotalAmount($userId) {
         try {
-            $sql = "SELECT SUM(ci.quantity * p.price) as total_amount
+            $sql = "SELECT SUM(ci.quantity * p.price_bct) as total_amount
                     FROM cart_items ci
                     INNER JOIN products p ON ci.product_id = p.id
                     WHERE ci.user_id = ? AND ci.deleted_at IS NULL 

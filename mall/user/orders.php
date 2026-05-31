@@ -473,7 +473,7 @@ $statusClassMap = [
                         <div class="order-header">
                             <div class="order-info">
                                 <div class="order-number">
-                                    订单号: <?php echo htmlspecialchars($orderItem['order_number']); ?>
+                                    订单号: <?php echo htmlspecialchars($orderItem['order_no']); ?>
                                 </div>
                                 <div class="order-time">
                                     下单时间: <?php echo date('Y-m-d H:i:s', strtotime($orderItem['created_at'])); ?>
