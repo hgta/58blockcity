@@ -74,14 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		} else {
 			$_SESSION['error_message'] = '认领失败，请重试';    
 		}
-        
-        if ($blockInfo && $nft->claimNft($nftId, $userId, $cityId, $blockId)) {
-            $_SESSION['success_message'] = '认领成功！';            
-            header("Location: /user/collection.php");
-            exit;
-        } else {
-            $_SESSION['error_message'] = '认领失败，请重试';    
-        }
     }
 }  
 

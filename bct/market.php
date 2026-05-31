@@ -81,8 +81,12 @@ if (isset($_SESSION['error'])) {
                     <div class="hot-city-name"><?= htmlspecialchars($cityInfo['city']) ?></div>
                     <div class="hot-city-price"><?= number_format($cityInfo['current_price'], 2) ?>元</div>
                     <div class="hot-city-change">
-                        <i class="glyphicon glyphicon-arrow-up text-success"></i>
-                        +2.5%
+                        <?php if (!empty($cityInfo['change_24h'])): ?>
+                            <i class="glyphicon glyphicon-arrow-<?= $cityInfo['change_24h'] >= 0 ? 'up' : 'down' ?> <?= $cityInfo['change_24h'] >= 0 ? 'text-success' : 'text-danger' ?>"></i>
+                            <?= $cityInfo['change_24h'] >= 0 ? '+' : '' ?><?= number_format($cityInfo['change_24h'], 1) ?>%
+                        <?php else: ?>
+                            <span class="text-muted">--</span>
+                        <?php endif; ?>
                     </div>
                 </a>
                 <?php endif; endforeach; ?>
@@ -125,10 +129,14 @@ if (isset($_SESSION['error'])) {
                             <td><?= number_format($city['circulating_supply']) ?></td>
                             <td><?= number_format($city['total_supply']) ?></td>
                             <td>
-                                <span class="text-success">
-                                    <i class="glyphicon glyphicon-arrow-up"></i>
-                                    +1.2%
-                                </span>
+                                <?php if (!empty($city['change_24h'])): ?>
+                                    <span class="<?= $city['change_24h'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                        <i class="glyphicon glyphicon-arrow-<?= $city['change_24h'] >= 0 ? 'up' : 'down' ?>"></i>
+                                        <?= $city['change_24h'] >= 0 ? '+' : '' ?><?= number_format($city['change_24h'], 1) ?>%
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-muted">--</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <a href="trade.php?city=<?= urlencode($city['city']) ?>" class="btn btn-sm btn-primary">
