@@ -24,3 +24,6 @@ Thumbs.db
 
 # 项目元数据
 .codebuddy/
+
+# ACME SSL 证书验证临时文件
+.well-known/
