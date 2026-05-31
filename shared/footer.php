@@ -54,41 +54,8 @@ if (!empty($site_config['footer_extra'])) {
 }
 ?>
 
-<script>
-// 城市定位：通过IP获取用户所在城市
-(function(){
-    var cityEl = document.getElementById('userCity');
-    if (!cityEl) return;
-    
-    // 尝试从sessionStorage读取缓存的定位结果
-    var cached = sessionStorage.getItem('userCityName');
-    if (cached) { cityEl.textContent = cached; return; }
-    
-    // 调用免费IP定位API
-    fetch('https://api.ip.sb/geoip', {mode:'cors'})
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-            var city = d.city || d.region || '';
-            if (city) {
-                cityEl.textContent = city;
-                sessionStorage.setItem('userCityName', city);
-            }
-        })
-        .catch(function(){
-            // 备选：使用备用API
-            fetch('https://ipapi.co/json/', {mode:'cors'})
-                .then(function(r){ return r.json(); })
-                .then(function(d){
-                    var city = d.city || d.region || '';
-                    if (city) {
-                        cityEl.textContent = city;
-                        sessionStorage.setItem('userCityName', city);
-                    }
-                })
-                .catch(function(){});
-        });
-})();
-</script>
+<script src="/city/city.js"></script>
+<script>getCityInfo();</script>
 
 </body>
 </html>

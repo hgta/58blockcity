@@ -847,27 +847,9 @@ $letters = range('A', 'Z');
         //}, 3000);
 		
 		// 页面加载时获取城市信息
-        (function getCityInfo(){
-            var cityEl = document.getElementById('userCity');
-            if (!cityEl) return;
-            var cached = sessionStorage.getItem('userCityName');
-            if (cached) { cityEl.textContent = cached; return; }
-            fetch('https://api.ip.sb/geoip', {mode:'cors'})
-                .then(function(r){ return r.json(); })
-                .then(function(d){
-                    var city = d.city || d.region || '';
-                    if (city) { cityEl.textContent = city; sessionStorage.setItem('userCityName', city); }
-                })
-                .catch(function(){
-                    fetch('https://ipapi.co/json/', {mode:'cors'})
-                        .then(function(r){ return r.json(); })
-                        .then(function(d){
-                            var city = d.city || d.region || '';
-                            if (city) { cityEl.textContent = city; sessionStorage.setItem('userCityName', city); }
-                        })
-                        .catch(function(){});
-                });
-        })();
+        window.onload = function() {
+            if (typeof getCityInfo === 'function') getCityInfo();
+        };
     </script>
     
     <!-- JSON-LD结构化数据 -->
