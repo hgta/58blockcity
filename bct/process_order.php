@@ -16,6 +16,7 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 $type = $_POST['type'] ?? '';
 $city = $_POST['city'] ?? '';
 $amount = intval($_POST['amount'] ?? 0);
+$price = floatval($_POST['price'] ?? 0);
 $tradeType = $_POST['trade_type'] ?? '';
 $mediatorId = intval($_POST['mediator_id'] ?? 0);
 $contactInfo = $_POST['contact_info'] ?? '';
@@ -70,7 +71,8 @@ $orderId = $order->createOrder(
     $type,
     $amount,
     $tradeType,
-    $tradeType === 'direct' ? $contactInfo : null
+    $tradeType === 'direct' ? $contactInfo : null,
+    $price > 0 ? $price : null
 );
 
 if (!$orderId) {

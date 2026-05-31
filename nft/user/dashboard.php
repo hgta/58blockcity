@@ -112,8 +112,8 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                             <?= $tx['buyer_id'] == $userId ? '卖家: '.htmlspecialchars($tx['seller_name']) : '买家: '.htmlspecialchars($tx['buyer_name']) ?>
                                         </td>
                                         <td>
-                                            <a href="../nft/process_transaction.php?id=<?= $tx['id'] ?>&action=accept" class="btn btn-sm btn-success">接受</a>
-                                            <a href="../nft/process_transaction.php?id=<?= $tx['id'] ?>&action=reject" class="btn btn-sm btn-danger">拒绝</a>
+                                            <a href="process_transaction.php?id=<?= $tx['id'] ?>&action=accept" class="btn btn-sm btn-success">接受</a>
+                                            <a href="process_transaction.php?id=<?= $tx['id'] ?>&action=reject" class="btn btn-sm btn-danger">拒绝</a>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>

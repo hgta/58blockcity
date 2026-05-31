@@ -750,11 +750,11 @@ function cancelOrder(orderId) {
 }
 
 function buyFromOrder(orderId) {
-    window.location.href = '../bct/trade.php?action=buy&order_id=' + orderId;
+    window.location.href = '../trade.php?action=buy&order_id=' + orderId;
 }
 
 function sellToOrder(orderId) {
-    window.location.href = '../bct/trade.php?action=sell&order_id=' + orderId;
+    window.location.href = '../trade.php?action=sell&order_id=' + orderId;
 }
 
 // 页面加载完成后初始化

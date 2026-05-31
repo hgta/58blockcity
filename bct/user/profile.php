@@ -277,7 +277,7 @@ if (isset($_SESSION['error'])) {
                                 </ul>
                             </div>
                             <div class="text-center mt-3">
-                                <a href="../bct/market.php" class="btn btn-sm btn-default">查看行情</a>
+                                <a href="../market.php" class="btn btn-sm btn-default">查看行情</a>
                             </div>
                         </div>
                     <?php endif; ?>

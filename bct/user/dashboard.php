@@ -152,7 +152,7 @@ if (isset($_SESSION['error'])) {
                                         <td><?= number_format($account['balance'] * $account['current_price'], 2) ?>元</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <a href="../bct/trade.php?city=<?= urlencode($account['city']) ?>" class="btn btn-default">
+                                                <a href="../trade.php?city=<?= urlencode($account['city']) ?>" class="btn btn-default">
                                                     交易
                                                 </a>
                                                 <a href="transfer.php?city=<?= urlencode($account['city']) ?>" class="btn btn-default">
@@ -187,7 +187,7 @@ if (isset($_SESSION['error'])) {
                                     </div>
                                     <h4>暂无购买订单</h4>
                                     <p>您尚未创建任何购买订单</p>
-                                    <a href="../bct/market.php" class="btn btn-primary">去购买</a>
+                                    <a href="../market.php" class="btn btn-primary">去购买</a>
                                 </div>
                             <?php else: ?>
                                 <div class="table-responsive">
@@ -236,7 +236,7 @@ if (isset($_SESSION['error'])) {
                                     </div>
                                     <h4>暂无出售订单</h4>
                                     <p>您尚未创建任何出售订单</p>
-                                    <a href="../bct/market.php" class="btn btn-primary">去出售</a>
+                                    <a href="../market.php" class="btn btn-primary">去出售</a>
                                 </div>
                             <?php else: ?>
                                 <div class="table-responsive">
