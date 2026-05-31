@@ -20,10 +20,13 @@
 // 对于子站直接包含的场景，site_config 已设置
 if (!isset($site_config)) { die('缺少站点配置'); }
 
+// 共享库路径（绝对路径，不依赖子站上下文）
+$sharedIncludes = dirname(__DIR__) . '/includes';
+
 require_once $site_config['db_path'];
 require_once $site_config['class_path'] . 'User.php';
-require_once $site_config['includes_path'] . 'functions.php';
-require_once $site_config['includes_path'] . 'auth.php';
+require_once $sharedIncludes . '/functions.php';
+require_once $sharedIncludes . '/auth.php';
 
 $error = '';
 $user = new User($pdo);
