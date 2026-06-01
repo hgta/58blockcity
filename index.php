@@ -311,59 +311,55 @@ $letters = range('A', 'Z');
     </main>
     
     <!-- 底部 -->
-    <footer>
-		<!-- 原有footer内容前添加 -->
-		<!--
+    <footer style="background:#1a1a2e;color:#94a3b8;padding:48px 0 20px;margin-top:40px;">
         <div class="container">
-            <div class="domain-sale" style="margin-bottom: 30px;">
-                <div class="domain-sale-text">💎 本网站域名诚意出售 | Domain Name For Sale</div>
-                <a href="https://domainbatch.com/name/58.tl" class="domain-sale-link">联系购买 | Contact Now</a>
-                <div class="domain-sale-english">Premium domain "58.tl" available for blockchain/metaverse projects</div>
-            </div>
-        </div>
-		-->
-		
-        <div class="container">
-            <div class="footer-container">
-                <div class="footer-column">
-                    <h3>关于58区块城市</h3>
-                    <ul>
-                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
-                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
-                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
-                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr;gap:30px;margin-bottom:30px;">
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关于58区块城市</h4>
+                    <p style="font-size:13px;line-height:1.8;color:#64748b;">
+                        58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理，为用户提供虚拟城市探索、数字资产交易的一站式体验。
+                    </p>
+                </div>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">快速链接</h4>
+                    <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
+                        <li><a href="https://block.58.tl/" style="color:#64748b;">区块交易</a></li>
+                        <li><a href="https://bct.58.tl/" style="color:#64748b;">BCT交易</a></li>
+                        <li><a href="https://mall.58.tl/" style="color:#64748b;">人气商城</a></li>
+                        <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
                     </ul>
                 </div>
-                <div class="footer-column">
-                    <h3>帮助中心</h3>
-                    <ul>
-                        <li><a href="/help/help.html">新手指南</a></li>
-                        <li><a href="https://www.blockcity.pub/pages/city/learn/?iclc=1">元宇宙入门</a></li>
-                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
-                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">帮助支持</h4>
+                    <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1" style="color:#64748b;">使用指南</a></li>
+                        <li><a href="https://www.blockcity.pub/?iclc=1" style="color:#64748b;">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/naquba/" style="color:#64748b;">元宇宙店铺</a></li>
+                        <li><a href="news.php" style="color:#64748b;">区块新闻</a></li>
                     </ul>
                 </div>
-                <div class="footer-column">
-                    <h3>商家服务</h3>
-                    <ul>
-                        <li><a href="news.php">区块新闻</a></li>
-                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
-                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
-                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
-                    </ul>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关注我们</h4>
+                    <div style="display:flex;gap:12px;">
+                        <img src="/hufang/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
+                        <img src="/hufang/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
+                    </div>
+                    <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:12px;">
+                        <span style="width:80px;text-align:center;">7.5折购地</span>
+                        <span style="width:80px;text-align:center;">客服微信</span>
+                    </div>
                 </div>
-                <div class="footer-column">
-                    <h3>关注我们</h3>
-                    <ul>
-                        <li><a href="#">BlockCity微信公众号</a></li>
-                        <li><a href="#">BlockCity微博</a></li>
-                        <li><a href="#">BlockCity小红书</a></li>
-                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">BlockCity在线客服</a></li>
-                    </ul>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">联系我们</h4>
+                    <p style="font-size:13px;color:#64748b;line-height:2;">
+                        📧 support@58.tl<br>
+                        🌐 www.58.tl<br>
+                        📍 元宇宙同城生态
+                    </p>
                 </div>
             </div>
-            <div class="copyright">
-                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            <div style="border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#475569;">
+                © 2025 58区块城市 | BlockCity 版权所有 | 基于元宇宙技术的下一代同城服务平台
             </div>
         </div>
     </footer>
