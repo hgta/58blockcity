@@ -13,14 +13,6 @@ if (isset($_SESSION['error'])) {
     unset($_SESSION['error']);
 }
 
-// 输出 CSRF token 供 AJAX 使用
-echo '<meta name="csrf-token" content="' . generateCsrfToken() . '">';
-
-if (isset($_SESSION['error'])) {
-    echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>';
-    unset($_SESSION['error']);
-}
-
 // 从数据库获取真实的订单数据
 try {
     // 获取售卖订单 (type = 'sell')
@@ -713,6 +705,8 @@ function executeTrade() {
         data: {
             order_id: orderId,
             amount: amount,
+            price: price,
+            execute_type: executeType,
             csrf_token: csrfToken
         },
         success: function(res) {

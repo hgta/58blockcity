@@ -12,17 +12,17 @@ class BCTOrder {
     }
     
     // 创建订单
-    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null) {
+    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null) {
         try {
             $this->pdo->beginTransaction();
             
-            // 获取当前城市价格
+            // 获取当前城市价格，用户可覆盖
             $cityBCT = new CityBCT($this->pdo);
             $cityInfo = $cityBCT->getCityBCT($city);
-            $price = $cityInfo['current_price'];
+            $price = ($userPrice > 0) ? $userPrice : $cityInfo['current_price'];
             
             // 计算总金额
-            $total = $type == 'buy' ? $amount * $price : $amount;
+            $total = $amount * $price;
             
             // 如果是出售订单，检查并冻结余额
             if($type == 'sell') {

@@ -109,10 +109,9 @@ if (isset($_SESSION['error'])) {
                                 <i class="glyphicon glyphicon-eye-open"></i>
                             </a>
                             <?php if ($order['status'] === 'pending'): ?>
-                            <a href="cancel_order.php?id=<?= $order['id'] ?>" class="btn btn-danger" title="取消订单" 
-                               onclick="return confirm('确定要取消此订单吗？')">
+                            <button onclick="cancelBctOrder(<?= $order['id'] ?>)" class="btn btn-danger" title="取消订单">
                                 <i class="glyphicon glyphicon-remove"></i>
-                            </a>
+                            </button>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -138,16 +137,28 @@ if (isset($_SESSION['error'])) {
 <!-- 页面特定JavaScript -->
 <script>
 $(document).ready(function() {
-    // 初始化工具提示
     $('[title]').tooltip();
-    
-    // 选项卡切换保持URL参数
     $('.nav-tabs a').click(function(e) {
         e.preventDefault();
-        var url = $(this).attr('href');
-        window.location.href = 'orders.php' + (url.includes('?') ? url.replace('?', '?') : url);
+        window.location.href = 'orders.php' + $(this).attr('href');
     });
 });
+
+function cancelBctOrder(orderId) {
+    if (!confirm('确定要取消此订单吗？')) return;
+    var csrf = $('meta[name="csrf-token"]').attr('content') || '';
+    $.ajax({
+        url: 'cancel_order.php',
+        type: 'POST',
+        dataType: 'json',
+        data: { order_id: orderId, csrf_token: csrf },
+        success: function(res) {
+            alert(res.message || (res.success ? '已取消' : '取消失败'));
+            if (res.success) location.reload();
+        },
+        error: function() { alert('请求失败，请重试'); }
+    });
+}
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

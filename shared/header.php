@@ -17,6 +17,7 @@
 
 if (!isset($site_config)) { die('缺少站点配置'); }
 if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
 $nav_links = $site_config['nav_links'] ?? [];
 $extra_head = $site_config['extra_head'] ?? '';
@@ -31,6 +32,9 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
     <meta name="description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta name="keywords" content="<?= htmlspecialchars($site_config['keywords']) ?>">
     <link rel="icon" href="https://58.tl/assets/images/favicon.ico">
+    <?php if (!empty($_SESSION['csrf_token'])): ?>
+    <meta name="csrf-token" content="<?= $_SESSION['csrf_token'] ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/main.css">
