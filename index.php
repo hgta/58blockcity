@@ -14,6 +14,7 @@
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
     <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
 <?php
+session_start();
 require_once 'config/database.php';
 require_once 'classes/City.php';
 $city = new City($pdo);
@@ -157,6 +158,13 @@ $letters = range('A', 'Z');
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
 				<a href="top200city.php" class="nav-button">TOP200</a>
 				<a href="hongbao.php" class="nav-button">红包</a>
+				<?php if (isset($_SESSION['user_id'])): ?>
+					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#2563eb;color:#fff;">个人中心</a>
+					<a href="https://block.58.tl/auth/logout.php" class="nav-button">退出</a>
+				<?php else: ?>
+					<a href="https://block.58.tl/auth/login.php" class="nav-button" style="background:#2563eb;color:#fff;">登录</a>
+					<a href="https://block.58.tl/auth/register.php" class="nav-button">注册</a>
+				<?php endif; ?>
             </div>
         </div>
     </header>
@@ -230,7 +238,7 @@ $letters = range('A', 'Z');
             </h2>
             <div class="hot-city-grid">
                 <?php foreach ($hotCities as $c): ?>
-                    <a href="/block/city.php?name=<?= urlencode($c['pinyin']) ?>" class="hot-city-item"><?= htmlspecialchars($c['name']) ?></a>
+                    <a href="/city/<?= urlencode($c['pinyin']) ?>.html" class="hot-city-item"><?= htmlspecialchars($c['name']) ?></a>
                 <?php endforeach; ?>
             </div>
         </section>
@@ -260,7 +268,7 @@ $letters = range('A', 'Z');
                     <?php foreach ($citiesByLetter[$letter] as $c): 
                         if (strtoupper(substr($c['pinyin'], 0, 1)) !== $letter) continue;
                     ?>
-                        <a href="/block/city.php?name=<?= urlencode($c['pinyin']) ?>" 
+                        <a href="/city/<?= urlencode($c['pinyin']) ?>.html" 
                            class="city-item <?= $c['is_hot'] ? 'hot-city' : '' ?>">
                             <?= htmlspecialchars($c['name']) ?>
                         </a>
@@ -341,8 +349,8 @@ $letters = range('A', 'Z');
                 <div>
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关注我们</h4>
                     <div style="display:flex;gap:12px;">
-                        <img src="/hufang/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
-                        <img src="/hufang/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
+                        <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
+                        <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
                     </div>
                     <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:12px;">
                         <span style="width:80px;text-align:center;">7.5折购地</span>

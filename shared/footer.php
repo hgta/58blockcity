@@ -36,8 +36,8 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             <div>
                 <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">专属福利</h4>
                 <div style="display:flex;gap:10px;">
-                    <img src="/hufang/images/qr-discount.png" alt="7.5折购地" style="width:75px;height:75px;background:#fff;border-radius:6px;padding:3px;">
-                    <img src="/hufang/images/qr-customer-service.png" alt="客服微信" style="width:75px;height:75px;background:#fff;border-radius:6px;padding:3px;">
+                    <img src="/images/qr-discount.png" alt="7.5折购地" style="width:75px;height:75px;background:#fff;border-radius:6px;padding:3px;">
+                    <img src="/images/qr-customer-service.png" alt="客服微信" style="width:75px;height:75px;background:#fff;border-radius:6px;padding:3px;">
                 </div>
                 <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:10px;">
                     <span style="width:75px;text-align:center;">7.5折购地</span>
