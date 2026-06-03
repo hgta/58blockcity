@@ -14,6 +14,9 @@ $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $error = '非法请求';
+    } else {
     $fromCity = $_POST['from_city'] ?? '';
     $toCity = $_POST['to_city'] ?? '';
     $toUser = trim($_POST['to_user'] ?? '');
@@ -46,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = '转账失败: ' . $e->getMessage();
         }
     }
+    }  // close csrf else
 }
 ?>
 <?php require_once '../includes/header.php'; ?>
@@ -89,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
             <div class="form-group">
                 <label class="form-label">转出城市</label>
                 <select name="from_city" class="form-select" required>

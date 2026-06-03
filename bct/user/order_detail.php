@@ -87,7 +87,7 @@ try {
 
 } catch (PDOException $e) {
     $_SESSION['error'] = '获取订单信息失败';
-    header('Location: ..//index.php');
+    header('Location: ../index.php');
     exit;
 }
 

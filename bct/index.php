@@ -686,7 +686,7 @@ function updateTradePreview() {
     
     const total = amount * price;
     const fee = total * feeRate;
-    const net = type === 'buy' ? total + fee : total - fee;
+    const net = type === 'buy' ? total : total - fee;  // 手续费从卖方扣，买方实付=总价
     
     $('#previewAmount').text(amount.toLocaleString());
     $('#previewPrice').text(price.toFixed(2));
