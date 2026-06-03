@@ -7,13 +7,14 @@ require_once '../../classes/BCTOrder.php';
 checkLogin();
 
 $type = $_GET['type'] ?? 'all';
+$page = max(1, intval($_GET['page'] ?? 1));
+$perPage = 15;
 $userId = $_SESSION['user_id'];
 
-// 实例化订单类
 $order = new BCTOrder($pdo);
-
-// 获取用户订单数据
-$orders = $order->getUserOrders($userId, $type);
+$orders = $order->getUserOrders($userId, $type, $page, $perPage);
+$total = $order->getUserOrderCount($userId, $type);
+$totalPages = ceil($total / $perPage);
 
 // 显示成功/错误消息
 if (isset($_SESSION['message'])) {
@@ -123,15 +124,23 @@ if (isset($_SESSION['error'])) {
     </div>
     
     <!-- 分页导航 -->
+    <?php if ($totalPages > 1): ?>
     <div class="text-center">
         <ul class="pagination">
-            <li class="disabled"><a href="#">&laquo;</a></li>
-            <li class="active"><a href="#">1</a></li>
-            <li><a href="#">2</a></li>
-            <li><a href="#">3</a></li>
-            <li><a href="#">&raquo;</a></li>
+            <li class="<?= $page <= 1 ? 'disabled' : '' ?>">
+                <a href="?type=<?= $type ?>&page=<?= max(1, $page-1) ?>">&laquo;</a>
+            </li>
+            <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
+            <li class="<?= $i == $page ? 'active' : '' ?>">
+                <a href="?type=<?= $type ?>&page=<?= $i ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+            <li class="<?= $page >= $totalPages ? 'disabled' : '' ?>">
+                <a href="?type=<?= $type ?>&page=<?= min($totalPages, $page+1) ?>">&raquo;</a>
+            </li>
         </ul>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- 页面特定JavaScript -->
@@ -140,7 +149,7 @@ $(document).ready(function() {
     $('[title]').tooltip();
     $('.nav-tabs a').click(function(e) {
         e.preventDefault();
-        window.location.href = 'orders.php' + $(this).attr('href');
+        window.location.href = 'orders.php' + $(this).attr('href') + '&page=1';
     });
 });
 

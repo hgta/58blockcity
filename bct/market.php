@@ -7,6 +7,26 @@ require_once '../classes/CityBCT.php';
 $cityBCT = new CityBCT($pdo);
 $cities = $cityBCT->getAllCitiesBCT();
 
+// 动态计算每个城市24h价格变化
+$changes = [];
+try {
+    $stmt = $pdo->query("
+        SELECT t.city, 
+            (t.current_price - COALESCE(t.prev_price, t.current_price)) / NULLIF(COALESCE(t.prev_price, t.current_price), 0) * 100 as change_pct
+        FROM (
+            SELECT city, 
+                (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
+                (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
+            FROM city_bct cb
+        ) t
+    ");
+    while ($row = $stmt->fetch()) {
+        $changes[$row['city']] = round($row['change_pct'], 1);
+    }
+} catch (Exception $e) {
+    $changes = [];
+}
+
 // 显示消息
 if (isset($_SESSION['message'])) {
     echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
@@ -81,9 +101,9 @@ if (isset($_SESSION['error'])) {
                     <div class="hot-city-name"><?= htmlspecialchars($cityInfo['city']) ?></div>
                     <div class="hot-city-price"><?= number_format($cityInfo['current_price'], 2) ?>元</div>
                     <div class="hot-city-change">
-                        <?php if (!empty($cityInfo['change_24h'])): ?>
-                            <i class="glyphicon glyphicon-arrow-<?= $cityInfo['change_24h'] >= 0 ? 'up' : 'down' ?> <?= $cityInfo['change_24h'] >= 0 ? 'text-success' : 'text-danger' ?>"></i>
-                            <?= $cityInfo['change_24h'] >= 0 ? '+' : '' ?><?= number_format($cityInfo['change_24h'], 1) ?>%
+                        <?php if (!empty($changes[$cityInfo['city']] ?? null)): ?>
+                            <i class="glyphicon glyphicon-arrow-<?= $changes[$cityInfo['city']] ?? null >= 0 ? 'up' : 'down' ?> <?= $changes[$cityInfo['city']] ?? null >= 0 ? 'text-success' : 'text-danger' ?>"></i>
+                            <?= $changes[$cityInfo['city']] ?? null >= 0 ? '+' : '' ?><?= number_format($changes[$cityInfo['city']] ?? null, 1) ?>%
                         <?php else: ?>
                             <span class="text-muted">--</span>
                         <?php endif; ?>
@@ -129,10 +149,10 @@ if (isset($_SESSION['error'])) {
                             <td><?= number_format($city['circulating_supply']) ?></td>
                             <td><?= number_format($city['total_supply']) ?></td>
                             <td>
-                                <?php if (!empty($city['change_24h'])): ?>
-                                    <span class="<?= $city['change_24h'] >= 0 ? 'text-success' : 'text-danger' ?>">
-                                        <i class="glyphicon glyphicon-arrow-<?= $city['change_24h'] >= 0 ? 'up' : 'down' ?>"></i>
-                                        <?= $city['change_24h'] >= 0 ? '+' : '' ?><?= number_format($city['change_24h'], 1) ?>%
+                                <?php if (!empty($changes[$city['city']] ?? null)): ?>
+                                    <span class="<?= $changes[$city['city']] ?? null >= 0 ? 'text-success' : 'text-danger' ?>">
+                                        <i class="glyphicon glyphicon-arrow-<?= $changes[$city['city']] ?? null >= 0 ? 'up' : 'down' ?>"></i>
+                                        <?= $changes[$city['city']] ?? null >= 0 ? '+' : '' ?><?= number_format($changes[$city['city']] ?? null, 1) ?>%
                                     </span>
                                 <?php else: ?>
                                     <span class="text-muted">--</span>

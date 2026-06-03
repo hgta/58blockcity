@@ -71,7 +71,29 @@ try {
             <i class="glyphicon glyphicon-transfer"></i>
             人气值(BCT)交易市场
         </h1>
-        <p class="text-muted">安全、便捷的人气值交易平台，支持多种交易方式</p>
+        <p class="text-muted">官方BCT交易增强版 · 百万级交易 · 低至0%手续费</p>
+    </div>
+
+    <!-- 核心优势 -->
+    <div class="advantage-banner" style="background:linear-gradient(135deg,#1e3a5f,#2563eb,#7c3aed);color:#fff;border-radius:10px;padding:20px 25px;margin-bottom:20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+        <div style="flex:1;min-width:200px;">
+            <h3 style="margin:0 0 4px 0;font-size:18px;"><i class="glyphicon glyphicon-star"></i> 为什么选择 bct.58.tl？</h3>
+            <p style="font-size:13px;opacity:.85;margin:0;">官方BCT交易市场的增强替代方案</p>
+        </div>
+        <div style="display:flex;gap:25px;flex-wrap:wrap;">
+            <div style="text-align:center;">
+                <div style="font-size:24px;font-weight:800;">100,000</div>
+                <div style="font-size:11px;opacity:.8;">单笔最大BCT <span style="text-decoration:line-through;opacity:.6;">(官方500)</span></div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:24px;font-weight:800;">0-10%</div>
+                <div style="font-size:11px;opacity:.8;">灵活手续费 <span style="text-decoration:line-through;opacity:.6;">(官方固定10%)</span></div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:24px;font-weight:800;">3种</div>
+                <div style="font-size:11px;opacity:.8;">交易方式 <span style="text-decoration:line-through;opacity:.6;">(官方仅1种)</span></div>
+            </div>
+        </div>
     </div>
 
     <!-- 快速统计 -->

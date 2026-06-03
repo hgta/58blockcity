@@ -263,22 +263,31 @@ class BCTOrder {
 	 * @param string $type 订单类型: all/buy/sell
 	 * @return array
 	 */
-	public function getUserOrders($userId, $type = 'all') {
+	public function getUserOrders($userId, $type = 'all', $page = 1, $perPage = 15) {
 		$sql = "SELECT * FROM bct_orders WHERE user_id = ?";
 		$params = [$userId];
 		
-		// 根据类型添加条件
 		if ($type === 'buy') {
 			$sql .= " AND type = 'buy'";
 		} elseif ($type === 'sell') {
 			$sql .= " AND type = 'sell'";
 		}
 		
-		$sql .= " ORDER BY created_at DESC LIMIT 50";
+		$sql .= " ORDER BY created_at DESC LIMIT " . (int)$perPage . " OFFSET " . ((int)$page - 1) * (int)$perPage;
 		
 		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($params);
 		return $stmt->fetchAll();
+	}
+	
+	public function getUserOrderCount($userId, $type = 'all') {
+		$sql = "SELECT COUNT(*) FROM bct_orders WHERE user_id = ?";
+		$params = [$userId];
+		if ($type === 'buy') { $sql .= " AND type = 'buy'"; }
+		elseif ($type === 'sell') { $sql .= " AND type = 'sell'"; }
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return (int)$stmt->fetchColumn();
 	}
 	
 	// 在 classes/BCTOrder.php 的 BCTOrder 类中添加以下方法
