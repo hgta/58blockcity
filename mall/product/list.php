@@ -529,7 +529,7 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                                                 <i class="fas fa-cart-plus"></i> 加购物车
                                             </button>
                                         <?php else: ?>
-                                            <a href="../auth/login.php" class="btn btn-cart">
+                                            <a href="../auth/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-cart">
                                                 <i class="fas fa-cart-plus"></i> 加购物车
                                             </a>
                                         <?php endif; ?>
@@ -594,22 +594,27 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('商品已成功添加到购物车！');
-                    // 更新购物车数量
+                    showToast('已添加到购物车', 'success');
                     if (data.cart_count !== undefined) {
                         const cartBadge = document.querySelector('.cart-badge');
-                        if (cartBadge) {
-                            cartBadge.textContent = data.cart_count;
-                        }
+                        if (cartBadge) cartBadge.textContent = data.cart_count;
                     }
                 } else {
-                    alert('添加失败: ' + data.message);
+                    showToast(data.message || '添加失败', 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('添加商品到购物车时发生错误');
+                showToast('网络错误，请重试', 'error');
             });
+        }
+        function showToast(msg, type) {
+            var t = document.createElement('div');
+            t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;animation:fadeIn .3s;' + (type==='success'?'background:#27ae60;':'background:#e74c3c;');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ t.remove(); },300); },2000);
+        }
         }
     </script>
     

@@ -460,21 +460,21 @@ $shopStats = $shop->getShopStats();
                     <div class="stat-icon"><i class="fas fa-box"></i></div>
                     <div class="stat-value"><?php echo number_format($totalProducts); ?></div>
                     <div class="stat-label">商品总数</div>
-                    <div class="stat-change positive">+12% 较上月</div>
+                    <div class="stat-change positive">开发中</div>
                 </div>
                 
                 <div class="stat-card shops">
                     <div class="stat-icon"><i class="fas fa-store"></i></div>
                     <div class="stat-value"><?php echo number_format($totalShops); ?></div>
                     <div class="stat-label">店铺总数</div>
-                    <div class="stat-change positive">+8% 较上月</div>
+                    <div class="stat-change positive">开发中</div>
                 </div>
                 
                 <div class="stat-card users">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
                     <div class="stat-value"><?php echo number_format($totalUsers); ?></div>
                     <div class="stat-label">注册用户</div>
-                    <div class="stat-change positive">+15% 较上月</div>
+                    <div class="stat-change positive">开发中</div>
                 </div>
                 
                 <div class="stat-card orders">

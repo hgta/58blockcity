@@ -622,11 +622,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="summary-row">
                                 <span>运费</span>
-                                <span>¥0.00</span>
+                                <span style="color:#27ae60;">暂免</span>
                             </div>
                             <div class="summary-row">
                                 <span>优惠</span>
-                                <span>-¥0.00</span>
+                                <span style="color:#999;">暂无</span>
                             </div>
                             <div class="summary-row summary-total">
                                 <span>应付总额</span>
