@@ -397,15 +397,17 @@ $categories = $category->getPopularCategories(8);
     <?php include 'includes/header.php'; ?>
     
     <div class="container">
-        <!-- 轮播图 -->
-        <div class="banner-section">
-            <div class="banner-slider">
-                <div class="banner-slide">
-                    <div>
-                        <div style="font-size: 48px; margin-bottom: 10px;">58人气值购物商城</div>
-                        <div style="font-size: 20px;">基于区块城市BlockCity的BCT商城交易平台</div>
-                    </div>
-                </div>
+        <!-- Banner + 搜索 -->
+        <div class="banner-section" style="margin:20px 0 30px;">
+            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:12px;padding:40px 30px;color:#fff;text-align:center;">
+                <h1 style="font-size:32px;font-weight:800;margin:0 0 10px;">58人气值购物商城</h1>
+                <p style="font-size:16px;opacity:.85;margin:0 0 20px;">基于区块城市BlockCity的BCT商城交易平台</p>
+                <form method="GET" action="product/list.php" style="max-width:500px;margin:0 auto;display:flex;gap:8px;">
+                    <input type="text" name="search" placeholder="搜索商品..." style="flex:1;padding:12px 16px;border:none;border-radius:8px;font-size:15px;outline:none;">
+                    <button type="submit" style="padding:12px 24px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                </form>
             </div>
         </div>
         
@@ -537,7 +539,7 @@ $categories = $category->getPopularCategories(8);
                                 <div>
                                     <div class="shop-name"><?php echo htmlspecialchars($shop['shop_name']); ?></div>
                                     <div class="shop-rating">
-                                        <i class="fas fa-star"></i> 4.8
+                                        <i class="fas fa-star"></i> --
                                     </div>
                                 </div>
                             </div>

@@ -551,7 +551,7 @@ if (isset($_SESSION['user_id'])) {
                     <div style="flex: 1;">
                         <div class="shop-name"><?php echo htmlspecialchars($shopInfo['shop_name']); ?></div>
                         <div class="shop-rating">
-                            <i class="fas fa-star"></i> 4.8
+                            <i class="fas fa-star"></i> --
                         </div>
                     </div>
                     <div class="shop-actions">

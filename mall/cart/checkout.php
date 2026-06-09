@@ -590,25 +590,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <input type="radio" name="payment_method" value="bct" checked style="display: none;">
                                 </div>
-                                <div class="payment-method" onclick="selectPayment('wechat')">
-                                    <div class="payment-icon">
-                                        <i class="fab fa-weixin"></i>
-                                    </div>
+                                <div class="payment-method" style="opacity:0.5;cursor:not-allowed;">
+                                    <div class="payment-icon"><i class="fab fa-weixin"></i></div>
                                     <div class="payment-info">
-                                        <div class="payment-name">微信支付</div>
-                                        <div class="payment-desc">推荐微信用户使用</div>
+                                        <div class="payment-name">微信支付 <small style="color:#999;">(即将开放)</small></div>
                                     </div>
-                                    <input type="radio" name="payment_method" value="wechat" style="display: none;">
                                 </div>
-                                <div class="payment-method" onclick="selectPayment('alipay')">
-                                    <div class="payment-icon">
-                                        <i class="fab fa-alipay"></i>
-                                    </div>
+                                <div class="payment-method" style="opacity:0.5;cursor:not-allowed;">
+                                    <div class="payment-icon"><i class="fab fa-alipay"></i></div>
                                     <div class="payment-info">
-                                        <div class="payment-name">支付宝</div>
-                                        <div class="payment-desc">推荐支付宝用户使用</div>
+                                        <div class="payment-name">支付宝 <small style="color:#999;">(即将开放)</small></div>
                                     </div>
-                                    <input type="radio" name="payment_method" value="alipay" style="display: none;">
                                 </div>
                             </div>
                         </div>

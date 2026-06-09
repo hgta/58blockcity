@@ -39,6 +39,7 @@ $orderStats = $shop->getOrderStats($shopId);
 
 // 分页参数
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$currentSort = $_GET['sort'] ?? 'newest';
 $perPage = 12;
 $totalProducts = count($products);
 $totalPages = ceil($totalProducts / $perPage);
@@ -178,16 +179,11 @@ $currentPageProducts = array_slice($products, $startIndex, $perPage);
                 <h4 class="mb-0">店铺商品 (<?= $totalProducts ?>)</h4>
             </div>
             <div class="col-md-6 text-right">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
-                        排序方式
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="?id=<?= $shopId ?>&sort=newest">最新上架</a>
-                        <a class="dropdown-item" href="?id=<?= $shopId ?>&sort=price_asc">价格从低到高</a>
-                        <a class="dropdown-item" href="?id=<?= $shopId ?>&sort=price_desc">价格从高到低</a>
-                        <a class="dropdown-item" href="?id=<?= $shopId ?>&sort=sales">销量最高</a>
-                    </div>
+                <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                    <a href="?id=<?= $shopId ?>&sort=newest" class="btn btn-sm <?= $currentSort=='newest'?'btn-primary':'btn-outline-secondary' ?>">最新</a>
+                    <a href="?id=<?= $shopId ?>&sort=price_asc" class="btn btn-sm <?= $currentSort=='price_asc'?'btn-primary':'btn-outline-secondary' ?>">价格↑</a>
+                    <a href="?id=<?= $shopId ?>&sort=price_desc" class="btn btn-sm <?= $currentSort=='price_desc'?'btn-primary':'btn-outline-secondary' ?>">价格↓</a>
+                    <a href="?id=<?= $shopId ?>&sort=sales" class="btn btn-sm <?= $currentSort=='sales'?'btn-primary':'btn-outline-secondary' ?>">销量</a>
                 </div>
             </div>
         </div>
@@ -236,7 +232,7 @@ $currentPageProducts = array_slice($products, $startIndex, $perPage);
                     <ul class="pagination justify-content-center">
                         <?php if ($page > 1): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page - 1 ?>">
+                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page - 1 ?>page=<?= $page - 1 ?>&sort=<?= $currentSort ?>">
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             </li>
@@ -244,13 +240,13 @@ $currentPageProducts = array_slice($products, $startIndex, $perPage);
 
                         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                             <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $i ?>"><?= $i ?></a>
+                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $i ?>page=<?= $i ?>&sort=<?= $currentSort ?>"><?= $i ?></a>
                             </li>
                         <?php endfor; ?>
 
                         <?php if ($page < $totalPages): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page + 1 ?>">
+                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page + 1 ?>page=<?= $page + 1 ?>&sort=<?= $currentSort ?>">
                                     <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
