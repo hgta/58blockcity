@@ -543,7 +543,7 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                                         <div class="stat-label">评分</div>
                                     </div>
                                 </div>
-                                <a href="detail.php?id=<?php echo $featuredShop['id']; ?>" class="btn btn-visit" style="margin-top: 10px;">
+                                <a href="view.php?id=<?php echo $featuredShop['id']; ?>" class="btn btn-visit" style="margin-top: 10px;">
                                     进入店铺
                                 </a>
                             </div>
@@ -581,7 +581,12 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                     <h3 class="filter-title">快速操作</h3>
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <?php
-                        $hasShop = getUserShopStatus($pdo, $_SESSION['user_id']);
+                        $hasShop = false;
+                        try {
+                            require_once '../../classes/Shop.php';
+                            $shopCheck = new Shop($pdo);
+                            $hasShop = $shopCheck->userHasShop($_SESSION['user_id']);
+                        } catch (Exception $e) {}
                         if ($hasShop): ?>
                             <a href="manage.php" class="btn btn-visit" style="display: block; text-align: center; margin-bottom: 10px;">
                                 管理我的店铺
@@ -671,7 +676,7 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                                     </div>
                                     
                                     <div class="shop-actions">
-                                        <a href="detail.php?id=<?php echo $shopItem['id']; ?>" class="btn btn-visit">
+                                        <a href="view.php?id=<?php echo $shopItem['id']; ?>" class="btn btn-visit">
                                             <i class="fas fa-store"></i> 进入店铺
                                         </a>
                                         <a href="../product/list.php?shop=<?php echo $shopItem['id']; ?>" class="btn btn-products">

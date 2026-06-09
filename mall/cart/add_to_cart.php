@@ -31,6 +31,11 @@ if ($productId <= 0) {
 }
 
 try {
+    // "立即购买"模式：先清空购物车再加入
+    if (!empty($_POST['clear_first'])) {
+        $cart->clearCart($_SESSION['user_id']);
+    }
+    
     $result = $cart->addItem($_SESSION['user_id'], $productId, $quantity);
     
     // 获取购物车数量

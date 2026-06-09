@@ -6,9 +6,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once '../../config/database.php';
 
-// 简单鉴权：检查是否已登录（管理员可以手动通过此页面初始化数据）
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../../auth/login.php?redirect=" . urlencode($_SERVER['REQUEST_URI']));
+// 管理员鉴权：只有管理员可访问
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+    header("Location: ../auth/login.php");
     exit();
 }
 

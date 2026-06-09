@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id'],              // from_user (买家)
                     $sellerId ?: 0,                    // to_user (卖家)
                     $orderInfo['payment_city'] ?? '',  // city
-                    intval($orderInfo['payment_amount'] ?? 0), // amount
+                    floatval($orderInfo['payment_amount'] ?? 0), // amount
                     1.0,                               // price
                     0,                                 // fee
                     null,                              // fee_type

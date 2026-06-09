@@ -555,7 +555,7 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     </div>
                     <div class="shop-actions">
-                        <a href="../shop/detail.php?id=<?php echo $shopInfo['id']; ?>" class="btn-shop">
+                        <a href="../shop/view.php?id=<?php echo $shopInfo['id']; ?>" class="btn-shop">
                             进入店铺
                         </a>
                         <a href="../product/list.php?shop=<?php echo $shopInfo['id']; ?>" class="btn-shop">
@@ -591,7 +591,7 @@ if (isset($_SESSION['user_id'])) {
                 <h3 class="section-title">相关推荐</h3>
                 <div class="products-grid">
                     <?php foreach ($relatedProducts as $relatedProduct): ?>
-                        <a href="detail.php?id=<?php echo $relatedProduct['id']; ?>" class="product-card">
+                        <a href="view.php?id=<?php echo $relatedProduct['id']; ?>" class="product-card">
                             <img src="<?php echo htmlspecialchars($relatedProduct['main_image'] ?: '../assets/images/default-product.jpg'); ?>" 
                                  alt="<?php echo htmlspecialchars($relatedProduct['name']); ?>" 
                                  class="product-card-image">
@@ -676,7 +676,7 @@ if (isset($_SESSION['user_id'])) {
             fetch('../cart/add_to_cart.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'product_id=' + productId + '&quantity=' + qty
+                body: 'product_id=' + productId + '&quantity=' + qty + '&clear_first=1'
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {

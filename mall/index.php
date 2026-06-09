@@ -528,7 +528,7 @@ $categories = $category->getPopularCategories(8);
             <div class="shop-grid">
                 <?php if (!empty($featuredShops)): ?>
                     <?php foreach ($featuredShops as $shop): ?>
-                        <a href="shop/detail.php?id=<?php echo $shop['id']; ?>" class="shop-card">
+                        <a href="shop/view.php?id=<?php echo $shop['id']; ?>" class="shop-card">
                             <div class="shop-header">
                                 <div class="shop-logo">
                                     <img src="<?php echo htmlspecialchars($shop['avatar_url'] ?: 'assets/images/default-shop.jpg'); ?>" 
