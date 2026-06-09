@@ -56,10 +56,10 @@ $allTags = $nft->getAllTags();
     font-weight: 300;
 }
 
-/* 一行显示10个头像的网格 */
+/* 每行固定8个头像 */
 .nft-grid-10 {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     gap: 15px;
     margin-bottom: 30px;
 }
@@ -283,111 +283,8 @@ $allTags = $nft->getAllTags();
     font-size: 0.95rem;
 }
 
-/* 响应式设计 - 保持一行10个在桌面端，移动端自适应 */
-@media (max-width: 1400px) {
-    .nft-grid-10 {
-        grid-template-columns: repeat(8, 1fr);
-        gap: 12px;
-    }
-}
 
-@media (max-width: 1200px) {
-    .nft-grid-10 {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
-    }
-}
-
-@media (max-width: 992px) {
-    .nft-grid-10 {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
-    }
-    
-    .nft-avatar-circle {
-        width: 90px;
-        height: 90px;
-    }
-}
-
-@media (max-width: 768px) {
-    .page-header-one-line {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 15px;
-    }
-    
-    .page-header-one-line .lead {
-        margin-left: 0;
-        font-size: 0.85rem;
-    }
-    
-    .nft-grid-10 {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-    }
-    
-    .nft-avatar-circle {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .nft-code {
-        font-size: 1rem;
-    }
-    
-    .pagination-container {
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .search-card .card-body {
-        padding: 15px;
-    }
-}
-
-@media (max-width: 576px) {
-    .nft-grid-10 {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    
-    .nft-avatar-circle {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .nft-item {
-        padding: 12px 8px;
-    }
-    
-    .nft-code {
-        font-size: 0.9rem;
-    }
-    
-    .nft-action-btn {
-        padding: 6px 8px;
-        font-size: 0.85rem;
-    }
-    
-    .page-header-one-line h1 {
-        font-size: 1.3rem;
-    }
-    
-    .stats-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 400px) {
-    .nft-grid-10 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-</style>
+/* 固定每行8个，不因屏幕放大而增加 */</style>
 
 <div class="container">
     <!-- 一行显示的头部 -->
