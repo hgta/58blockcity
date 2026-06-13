@@ -18,7 +18,18 @@
  */
 
 // 对于子站直接包含的场景，site_config 已设置
-if (!isset($site_config)) { die('缺少站点配置'); }
+// 主站直接访问时，使用默认配置
+if (!isset($site_config)) {
+    $site_config = [
+        'name'                   => '58区块城市',
+        'desc'                   => '登录您的账户',
+        'redirect_after_login'   => '../index.php',
+        'home_url'               => '../index.php',
+        'db_path'                => '../config/database.php',
+        'class_path'             => '../classes/',
+        'includes_path'          => '../includes/',
+    ];
+}
 
 // 共享库路径（绝对路径，不依赖子站上下文）
 $sharedIncludes = dirname(__DIR__) . '/includes';

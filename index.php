@@ -163,10 +163,10 @@ $letters = range('A', 'Z');
 				<a href="hongbao.php" class="nav-button">红包</a>
 				<?php if (isset($_SESSION['user_id'])): ?>
 					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#2563eb;color:#fff;">个人中心</a>
-					<a href="https://block.58.tl/auth/logout.php" class="nav-button">退出</a>
+					<a href="auth/logout.php" class="nav-button">退出</a>
 				<?php else: ?>
-					<a href="https://block.58.tl/auth/login.php" class="nav-button" style="background:#2563eb;color:#fff;">登录</a>
-					<a href="https://block.58.tl/auth/register.php" class="nav-button">注册</a>
+					<a href="auth/login.php" class="nav-button" style="background:#2563eb;color:#fff;">登录</a>
+					<a href="auth/register.php" class="nav-button">注册</a>
 				<?php endif; ?>
             </div>
         </div>

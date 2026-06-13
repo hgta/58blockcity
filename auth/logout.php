@@ -4,7 +4,8 @@
  * 子站 auth/logout.php: <?php require_once '../../auth/logout.php';
  */
 session_start();
-require_once '../../config/database.php';
+$projectRoot = dirname(__DIR__);
+require_once $projectRoot . '/config/database.php';
 
 $userId = $_SESSION['user_id'] ?? '未知用户';
 error_log("用户退出: ID={$userId}, 时间=" . date('Y-m-d H:i:s'));
