@@ -443,13 +443,14 @@ if (isset($_SESSION['user_id'])) {
         <div class="product-detail">
             <!-- 商品图片区域 -->
             <div class="product-gallery">
-                <img src="<?php echo '../' . htmlspecialchars($productDetail['main_image'] ?: '../assets/images/default-product.jpg'); ?>" 
+                <?php $mainImagePath = $productDetail['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                <img src="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" 
                      alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
                      class="main-image" id="main-image">
                 
                 <!-- 商品图集（如果有的话） -->
                 <div class="image-thumbnails">
-                    <img src="<?php echo '../' . htmlspecialchars($productDetail['main_image'] ?: '../assets/images/default-product.jpg'); ?>" 
+                    <img src="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" 
                          alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
                          class="thumbnail active" 
                          onclick="changeMainImage(this.src)">
@@ -592,7 +593,8 @@ if (isset($_SESSION['user_id'])) {
                 <div class="products-grid">
                     <?php foreach ($relatedProducts as $relatedProduct): ?>
                         <a href="view.php?id=<?php echo $relatedProduct['id']; ?>" class="product-card">
-                            <img src="<?php echo htmlspecialchars($relatedProduct['main_image'] ?: '../assets/images/default-product.jpg'); ?>" 
+                            <?php $relatedImage = $relatedProduct['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                            <img src="<?php echo '../' . htmlspecialchars($relatedImage); ?>" 
                                  alt="<?php echo htmlspecialchars($relatedProduct['name']); ?>" 
                                  class="product-card-image">
                             <div class="product-card-info">

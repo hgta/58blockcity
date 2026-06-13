@@ -197,7 +197,8 @@ require_once '../includes/header.php';
                         <div class="product-card">
                             <a href="../product/detail.php?id=<?= $productItem['id'] ?>" class="product-link">
                                 <div class="product-image">
-                                    <img src="../<?= htmlspecialchars($productItem['main_image']) ?>" 
+                                    <?php $itemImage = $productItem['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                                    <img src="../<?= htmlspecialchars($itemImage) ?>" 
                                          alt="<?= htmlspecialchars($productItem['name']) ?>"
                                          class="img-fluid">
                                     <?php if ($productItem['status'] !== 'active'): ?>

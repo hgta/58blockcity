@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'category_id' => $categoryId,
                     'name' => $name,
                     'description' => $description,
-                    'main_image' => $mainImage ?: 'assets/images/default-product.png',
+                    'main_image' => $mainImage ?: 'assets/images/default-product.jpg',
                     'images' => !empty($extraImages) ? json_encode($extraImages) : null,
                     'price_type' => 'fixed',
                     'price_bct' => $priceBct,
@@ -724,7 +724,8 @@ require_once '../includes/header.php';
                                                 <input type="checkbox" name="product_ids[]" value="<?= $productItem['id'] ?>" class="product-checkbox">
                                             </div>
                                             <div class="product-image-wrap">
-                                                <img src="../<?= htmlspecialchars($productItem['main_image']) ?>" alt="">
+                                                <?php $listImage = $productItem['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                                                <img src="../<?= htmlspecialchars($listImage) ?>" alt="">
                                                 <?php if ($productItem['is_recommended']): ?>
                                                     <span class="product-badge">推荐</span>
                                                 <?php endif; ?>

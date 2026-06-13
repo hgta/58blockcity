@@ -302,7 +302,8 @@ require_once '../includes/header.php';
                                     <div class="product-card-small">
                                         <a href="../product/detail.php?id=<?= $p['id'] ?>">
                                             <div class="product-image">
-                                                <img src="../<?= htmlspecialchars($p['main_image']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
+                                                <?php $dashImage = $p['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                                                <img src="../<?= htmlspecialchars($dashImage) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
                                             </div>
                                             <div class="product-info">
                                                 <h6 class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 16)) ?><?= mb_strlen($p['name']) > 16 ? '...' : '' ?></h6>

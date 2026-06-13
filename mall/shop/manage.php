@@ -338,7 +338,7 @@ require_once '../includes/header.php';
                             <?php foreach ($topProducts as $index => $p): ?>
                                 <div class="top-product-item">
                                     <div class="rank <?= $index < 3 ? 'top' : '' ?>"><?= $index + 1 ?></div>
-                                    <img src="../<?= htmlspecialchars($p['main_image'] ?? 'assets/images/default-product.png') ?>" alt="" class="product-thumb-sm">
+                                    <img src="../<?= htmlspecialchars($p['main_image'] ?: 'assets/images/default-product.jpg') ?>" alt="" class="product-thumb-sm">
                                     <div class="product-info">
                                         <div class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 20)) ?></div>
                                         <div class="product-meta">
