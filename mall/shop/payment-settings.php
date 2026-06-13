@@ -79,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if ($shop->updatePaymentSettings($shopId, $paymentSettings)) {
                     $success = '支付设置更新成功';
-                    // 刷新支付设置
                     $paymentSettings = $shop->getPaymentSettings($shopId);
                 } else {
                     $error = '支付设置更新失败';
@@ -154,9 +153,9 @@ foreach ($paymentSettings as $setting) {
         
         <div class="col-md-9">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h4 class="card-title mb-0">支付设置</h4>
-                    <span class="text-muted">店铺: <?= htmlspecialchars($userShop['shop_name']) ?></span>
+                    <span class="text-muted"><?= htmlspecialchars($userShop['shop_name']) ?></span>
                 </div>
                 <div class="card-body">
                     <?php if ($error): ?>
@@ -175,17 +174,27 @@ foreach ($paymentSettings as $setting) {
                         </p>
                     </div>
                     
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <button type="button" class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#batchSettingsModal">
+                                <i class="fas fa-copy"></i> 批量设置
+                            </button>
+                        </div>
+                        <div class="text-muted small">
+                            已配置 <?= count($paymentSettings) ?> 个城市，其中 <?= count($activePayments) ?> 个已启用
+                        </div>
+                    </div>
+                    
                     <form method="POST" id="paymentSettingsForm">
                         <div class="table-responsive">
                             <table class="table table-bordered">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th width="120">城市</th>
+                                        <th width="100">城市</th>
                                         <th>区块ID *</th>
-                                        <th width="100">启用支付</th>
-                                        <th width="120">最小金额 (BCT)</th>
-                                        <th width="120">兑换率</th>
-                                        <th width="100">操作</th>
+                                        <th width="80">启用</th>
+                                        <th width="160">支付参数</th>
+                                        <th width="80">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -224,24 +233,29 @@ foreach ($paymentSettings as $setting) {
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="number" class="form-control form-control-sm min-amount-input"
-                                                       name="min_amount[<?= $cityCode ?>]"
-                                                       value="<?= number_format($setting['min_amount'], 0) ?>"
-                                                       step="1" min="1"
-                                                       data-city="<?= $cityCode ?>">
-                                            </td>
-                                            <td>
-                                                <input type="number" class="form-control form-control-sm exchange-rate-input" 
-                                                       name="exchange_rate[<?= $cityCode ?>]" 
-                                                       value="<?= number_format($setting['exchange_rate'], 4) ?>" 
-                                                       step="0.0001" min="0.0001" 
-                                                       data-city="<?= $cityCode ?>">
+                                                <div class="param-row">
+                                                    <span class="param-label">最小金额:</span>
+                                                    <input type="number" class="form-control form-control-sm min-amount-input"
+                                                           name="min_amount[<?= $cityCode ?>]"
+                                                           value="<?= number_format($setting['min_amount'], 0) ?>"
+                                                           step="1" min="1"
+                                                           data-city="<?= $cityCode ?>">
+                                                    <span class="param-unit">BCT</span>
+                                                </div>
+                                                <div class="param-row mt-1">
+                                                    <span class="param-label">兑换率:</span>
+                                                    <input type="number" class="form-control form-control-sm exchange-rate-input" 
+                                                           name="exchange_rate[<?= $cityCode ?>]" 
+                                                           value="<?= number_format($setting['exchange_rate'], 4) ?>" 
+                                                           step="0.0001" min="0.0001" 
+                                                           data-city="<?= $cityCode ?>">
+                                                </div>
                                             </td>
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn" 
                                                         data-city="<?= $cityCode ?>" data-city-name="<?= htmlspecialchars($cityName) ?>"
                                                         <?= empty($setting['block_id']) ? 'disabled' : '' ?>>
-                                                    <i class="fas fa-test-tube"></i> 测试
+                                                    <i class="fas fa-vial"></i> 测试
                                                 </button>
                                             </td>
                                         </tr>
@@ -250,56 +264,13 @@ foreach ($paymentSettings as $setting) {
                             </table>
                         </div>
                         
-                        <div class="form-group mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                        <div class="form-group mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> 保存支付设置
                             </button>
-                            <a href="manage.php?id=<?= $shopId ?>" class="btn btn-secondary btn-lg">返回店铺管理</a>
-                            
-                            <button type="button" class="btn btn-outline-info btn-lg float-right" data-toggle="modal" data-target="#batchSettingsModal">
-                                <i class="fas fa-copy"></i> 批量设置
-                            </button>
+                            <a href="manage.php?id=<?= $shopId ?>" class="btn btn-secondary">返回店铺管理</a>
                         </div>
                     </form>
-                </div>
-            </div>
-            
-            <!-- 当前支付设置概览 -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">当前支付设置概览</h5>
-                </div>
-                <div class="card-body">
-                    <?php if ($paymentSettings): ?>
-                        <div class="row">
-                            <?php foreach ($paymentSettings as $setting): ?>
-                                <div class="col-md-4 mb-3">
-                                    <div class="card <?= $setting['is_active'] ? 'border-success' : 'border-secondary' ?>">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-1"><?= htmlspecialchars($supportedCities[$setting['city']] ?? $setting['city']) ?></h6>
-                                                    <p class="text-muted small mb-1">区块ID: <?= htmlspecialchars($setting['block_id']) ?></p>
-                                                    <p class="text-muted small mb-0">
-                                                        最小金额: <?= number_format($setting['min_amount'], 0) ?> BCT
-                                                        | 兑换率: <?= number_format($setting['exchange_rate'], 4) ?>
-                                                    </p>
-                                                </div>
-                                                <span class="badge badge-<?= $setting['is_active'] ? 'success' : 'secondary' ?>">
-                                                    <?= $setting['is_active'] ? '启用' : '禁用' ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-credit-card fa-2x mb-3"></i>
-                            <p>暂无支付设置，请在上方表格中配置支付方式</p>
-                        </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -307,13 +278,13 @@ foreach ($paymentSettings as $setting) {
 </div>
 
 <!-- 批量设置模态框 -->
-<div class="modal fade" id="batchSettingsModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="batchSettingsModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">批量设置</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="关闭">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -338,44 +309,7 @@ foreach ($paymentSettings as $setting) {
     </div>
 </div>
 
-<!-- 支付测试模态框 -->
-<div class="modal fade" id="testPaymentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">支付连接测试</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="testResult"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
-.payment-setting-row:hover {
-    background-color: #f8f9fa;
-}
-.block-id-input:invalid {
-    border-color: #dc3545;
-}
-.min-amount-input, .exchange-rate-input {
-    text-align: right;
-}
-.custom-switch {
-    transform: scale(1.2);
-}
-.test-payment-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* ===== 侧边栏（统一风格） ===== */
 .shop-sidebar { width: 100%; }
 .sidebar-nav { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
@@ -390,15 +324,89 @@ foreach ($paymentSettings as $setting) {
 .sidebar-stat-row:last-child { border-bottom: none; }
 .sidebar-stat-row .label { color: #64748b; }
 .sidebar-stat-row .value { font-weight: 600; }
+
+/* ===== Bootstrap 组件样式补充 ===== */
+
+/* Alert */
+.alert { position: relative; padding: 12px 16px; margin-bottom: 16px; border: 1px solid transparent; border-radius: 8px; font-size: 14px; }
+.alert-info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; }
+.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+.alert h6 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.alert p { margin: 0; }
+
+/* Badge */
+.badge { display: inline-block; padding: 4px 8px; font-size: 12px; font-weight: 600; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 4px; }
+.badge-success { color: #fff; background-color: #28a745; }
+.badge-secondary { color: #fff; background-color: #6c757d; }
+.badge-warning { color: #212529; background-color: #ffc107; }
+
+/* Form Control */
+.form-control { display: block; width: 100%; padding: 6px 10px; font-size: 14px; line-height: 1.5; color: #495057; background-color: #fff; background-clip: padding-box; border: 1px solid #ced4da; border-radius: 6px; transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
+.form-control-sm { padding: 4px 8px; font-size: 13px; border-radius: 4px; }
+.form-control:focus { color: #495057; background-color: #fff; border-color: #ff6b00; outline: 0; box-shadow: 0 0 0 3px rgba(255,107,0,0.15); }
+.form-group { margin-bottom: 16px; }
+.form-text { display: block; margin-top: 4px; font-size: 12px; color: #6c757d; }
+
+/* Custom Switch */
+.custom-control { position: relative; display: block; min-height: 20px; padding-left: 44px; }
+.custom-control-input { position: absolute; left: 0; z-index: -1; width: 20px; height: 20px; opacity: 0; }
+.custom-control-label { position: relative; margin-bottom: 0; vertical-align: top; cursor: pointer; }
+.custom-control-label::before { position: absolute; top: 2px; left: -44px; display: block; width: 36px; height: 20px; pointer-events: all; content: ""; background-color: #dee2e6; border-radius: 10px; transition: background-color .15s ease-in-out; }
+.custom-control-label::after { position: absolute; top: 4px; left: -42px; display: block; width: 16px; height: 16px; content: ""; background-color: #fff; border-radius: 50%; transition: transform .15s ease-in-out; }
+.custom-control-input:checked ~ .custom-control-label::before { background-color: #ff6b00; }
+.custom-control-input:checked ~ .custom-control-label::after { transform: translateX(16px); }
+.custom-switch { padding-left: 44px; }
+
+/* Table */
+.table { width: 100%; max-width: 100%; margin-bottom: 16px; background-color: transparent; border-collapse: collapse; }
+.table th, .table td { padding: 10px 12px; vertical-align: middle; border-top: 1px solid #dee2e6; font-size: 14px; }
+.table thead th { vertical-align: bottom; border-bottom: 2px solid #dee2e6; background-color: #f8f9fa; font-weight: 600; color: #495057; }
+.table-bordered { border: 1px solid #dee2e6; }
+.table-bordered th, .table-bordered td { border: 1px solid #dee2e6; }
+.table-bordered thead th { border-bottom-width: 2px; }
+
+/* Modal */
+.modal { position: fixed; top: 0; left: 0; z-index: 1050; display: none; width: 100%; height: 100%; overflow: hidden; outline: 0; }
+.modal.show { display: block; }
+.modal.fade .modal-dialog { transition: transform .3s ease-out, opacity .3s ease-out; transform: translateY(-50px); opacity: 0; }
+.modal.show .modal-dialog { transform: translateY(0); opacity: 1; }
+.modal-dialog { position: relative; width: auto; max-width: 500px; margin: 48px auto; pointer-events: none; }
+.modal-content { position: relative; display: flex; flex-direction: column; width: 100%; pointer-events: auto; background-color: #fff; background-clip: padding-box; border: 1px solid rgba(0,0,0,0.2); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); outline: 0; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e9ecef; border-radius: 12px 12px 0 0; }
+.modal-header .close { padding: 0; margin: 0; background: transparent; border: none; font-size: 24px; line-height: 1; color: #6c757d; cursor: pointer; }
+.modal-header .close:hover { color: #1a1a2e; }
+.modal-title { margin: 0; font-size: 16px; font-weight: 600; }
+.modal-body { position: relative; flex: 1 1 auto; padding: 20px; }
+.modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid #e9ecef; border-radius: 0 0 12px 12px; }
+.modal-backdrop { position: fixed; top: 0; left: 0; z-index: 1040; width: 100vw; height: 100vh; background-color: #000; opacity: 0; transition: opacity .15s linear; }
+.modal-backdrop.show { opacity: 0.5; }
+
+/* 页面专用样式 */
+.payment-setting-row:hover { background-color: #f8f9fa; }
+.param-row { display: flex; align-items: center; gap: 6px; }
+.param-label { font-size: 12px; color: #6c757d; white-space: nowrap; }
+.param-unit { font-size: 12px; color: #6c757d; }
+.min-amount-input, .exchange-rate-input { text-align: right; max-width: 90px; }
+.test-payment-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.d-flex { display: flex !important; }
+.justify-content-between { justify-content: space-between !important; }
+.align-items-center { align-items: center !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.gap-2 { gap: 8px !important; }
+.mb-3 { margin-bottom: 16px !important; }
+.mt-1 { margin-top: 4px !important; }
+.mt-3 { margin-top: 16px !important; }
+.mt-4 { margin-top: 24px !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.text-center { text-align: center !important; }
+.text-muted { color: #6c757d !important; }
 </style>
 
 <script>
-// 启用/禁用支付开关的联动效果
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化状态
     updateInputsState();
     
-    // 绑定开关事件
     document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
         toggle.addEventListener('change', function() {
             const city = this.getAttribute('data-city');
@@ -406,7 +414,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 绑定区块ID输入事件
     document.querySelectorAll('.block-id-input').forEach(function(input) {
         input.addEventListener('input', function() {
             const city = this.getAttribute('data-city');
@@ -423,42 +430,33 @@ function updateInputsState() {
 }
 
 function updateCityInputsState(city) {
-    const toggle = document.querySelector(`#is_active_${city}`);
-    const blockIdInput = document.querySelector(`input[name="block_id[${city}]"]`);
-    const minAmountInput = document.querySelector(`input[name="min_amount[${city}]"]`);
-    const exchangeRateInput = document.querySelector(`input[name="exchange_rate[${city}]"]`);
-    const testButton = document.querySelector(`button[data-city="${city}"]`);
+    const toggle = document.querySelector('#is_active_' + city);
+    const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
+    const testButton = document.querySelector('button[data-city="' + city + '"]');
     
     const isActive = toggle.checked;
     const hasBlockId = blockIdInput.value.trim() !== '';
     
-    // 如果启用但区块ID为空，标记为无效
     if (isActive && !hasBlockId) {
         blockIdInput.classList.add('is-invalid');
     } else {
         blockIdInput.classList.remove('is-invalid');
     }
     
-    // 更新测试按钮状态
     updateTestButtonState(city);
 }
 
 function updateTestButtonState(city) {
-    const toggle = document.querySelector(`#is_active_${city}`);
-    const blockIdInput = document.querySelector(`input[name="block_id[${city}]"]`);
-    const testButton = document.querySelector(`button[data-city="${city}"]`);
+    const toggle = document.querySelector('#is_active_' + city);
+    const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
+    const testButton = document.querySelector('button[data-city="' + city + '"]');
     
     const isActive = toggle.checked;
     const hasBlockId = blockIdInput.value.trim() !== '';
     
-    if (isActive && hasBlockId) {
-        testButton.disabled = false;
-    } else {
-        testButton.disabled = true;
-    }
+    testButton.disabled = !(isActive && hasBlockId);
 }
 
-// 批量设置功能
 function applyBatchSettings() {
     const minAmount = document.getElementById('batch_min_amount').value;
     const exchangeRate = document.getElementById('batch_exchange_rate').value;
@@ -474,9 +472,8 @@ function applyBatchSettings() {
     
     if (blockIdPrefix) {
         document.querySelectorAll('.block-id-input').forEach(function(input) {
-            const city = input.getAttribute('data-city');
             if (!input.value) {
-                input.value = blockIdPrefix + city;
+                input.value = blockIdPrefix + input.getAttribute('data-city');
             }
         });
     }
@@ -485,58 +482,13 @@ function applyBatchSettings() {
     updateInputsState();
 }
 
-// 支付测试功能
+// 测试按钮改为简单提示
 document.querySelectorAll('.test-payment-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        const city = this.getAttribute('data-city');
         const cityName = this.getAttribute('data-city-name');
-        const blockId = document.querySelector(`input[name="block_id[${city}]"]`).value;
-        
-        testPaymentConnection(city, cityName, blockId);
+        alert('「' + cityName + '」支付测试功能开发中，敬请期待');
     });
 });
-
-function testPaymentConnection(city, cityName, blockId) {
-    const testResult = document.getElementById('testResult');
-    testResult.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary mb-3" role="status">
-                <span class="sr-only">测试中...</span>
-            </div>
-            <p>正在测试 ${cityName} 支付连接...</p>
-            <p class="small text-muted">区块ID: ${blockId}</p>
-        </div>
-    `;
-    
-    $('#testPaymentModal').modal('show');
-    
-    // 模拟测试过程（实际项目中这里应该调用真实的API）
-    setTimeout(function() {
-        const success = Math.random() > 0.3; // 70% 成功率模拟
-        
-        if (success) {
-            testResult.innerHTML = `
-                <div class="alert alert-success">
-                    <h6><i class="fas fa-check-circle"></i> 连接测试成功</h6>
-                    <p class="mb-0">${cityName} 支付连接正常，区块ID有效。</p>
-                </div>
-            `;
-        } else {
-            testResult.innerHTML = `
-                <div class="alert alert-danger">
-                    <h6><i class="fas fa-exclamation-triangle"></i> 连接测试失败</h6>
-                    <p class="mb-0">${cityName} 支付连接失败，请检查区块ID是否正确。</p>
-                    <small class="d-block mt-2">可能的原因：</small>
-                    <ul class="small mb-0">
-                        <li>区块ID格式错误</li>
-                        <li>网络连接问题</li>
-                        <li>该城市支付服务暂时不可用</li>
-                    </ul>
-                </div>
-            `;
-        }
-    }, 2000);
-}
 
 // 表单提交验证
 document.getElementById('paymentSettingsForm').addEventListener('submit', function(e) {
@@ -545,13 +497,12 @@ document.getElementById('paymentSettingsForm').addEventListener('submit', functi
     
     document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
         const city = toggle.getAttribute('data-city');
-        const cityName = document.querySelector(`strong:contains('${city}')`) ? 
-                         document.querySelector(`strong:contains('${city}')`).textContent : city;
-        const blockIdInput = document.querySelector(`input[name="block_id[${city}]"]`);
+        const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
+        const cityName = blockIdInput.closest('tr').querySelector('td strong').textContent;
         
         if (toggle.checked && !blockIdInput.value.trim()) {
             hasError = true;
-            errorMessages.push(`城市 "${cityName}" 已启用但未设置区块ID`);
+            errorMessages.push('城市 "' + cityName + '" 已启用但未设置区块ID');
             blockIdInput.classList.add('is-invalid');
         } else {
             blockIdInput.classList.remove('is-invalid');

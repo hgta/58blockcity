@@ -54,7 +54,7 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             </div>
         </div>
         <div class="footer-bottom">
-            © 2025 <?= htmlspecialchars($footerName) ?> | 58 BlockCity 版权所有
+            © 2026 <?= htmlspecialchars($footerName) ?> | 58 BlockCity 版权所有
         </div>
     </div>
 </footer>
