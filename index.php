@@ -260,26 +260,42 @@ $letters = range('A', 'Z');
             </div>
         </div>
 
-        <!-- 城市列表 -->
+        <!-- 城市列表（仅展示前200个） -->
         <div class="city-list-container">
-            <?php foreach ($letters as $letter): 
+            <?php
+            $displayedCount = 0;
+            $maxCities = 200;
+            foreach ($letters as $letter):
                 if (empty($citiesByLetter[$letter])) continue;
             ?>
             <section id="<?= $letter ?>" class="city-section">
                 <div class="city-letter"><?= $letter ?></div>
                 <div class="city-grid">
-                    <?php foreach ($citiesByLetter[$letter] as $c): 
+                    <?php foreach ($citiesByLetter[$letter] as $c):
+                        if ($displayedCount >= $maxCities) break;
                         if (strtoupper(substr($c['pinyin'], 0, 1)) !== $letter) continue;
+                        $displayedCount++;
                     ?>
-                        <a href="/city/<?= urlencode($c['pinyin']) ?>.html" 
+                        <a href="/city/<?= urlencode($c['pinyin']) ?>.html"
                            class="city-item <?= $c['is_hot'] ? 'hot-city' : '' ?>">
                             <?= htmlspecialchars($c['name']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
             </section>
-            <?php endforeach; ?>
+            <?php
+                if ($displayedCount >= $maxCities) break;
+            endforeach;
+            ?>
         </div>
+
+        <?php if ($displayedCount >= $maxCities): ?>
+        <div class="more-cities-bar" style="text-align:center;padding:24px 0 40px;">
+            <a href="top200city.php" class="btn-primary" style="display:inline-block;padding:12px 32px;border-radius:8px;font-size:15px;">
+                查看更多城市（共 <?= count($city->getAllCities()) ?> 个）→
+            </a>
+        </div>
+        <?php endif; ?>
         
         
         
