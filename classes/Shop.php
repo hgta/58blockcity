@@ -360,7 +360,7 @@ class Shop {
      * 更新店铺信息
      */
     public function updateShop($shopId, $data) {
-        $allowedFields = ['shop_name', 'shop_description', 'contact_info', 'shop_logo', 'shop_banner'];
+        $allowedFields = ['shop_name', 'shop_description', 'contact_info', 'shop_logo', 'shop_banner', 'theme_color', 'announcement'];
         $setParts = [];
         $params = [];
         

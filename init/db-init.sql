@@ -555,6 +555,8 @@ CREATE TABLE IF NOT EXISTS `shops` (
   `shop_name` varchar(100) NOT NULL COMMENT '店铺名称',
   `shop_logo` varchar(255) DEFAULT NULL COMMENT '店铺Logo',
   `shop_banner` varchar(255) DEFAULT NULL COMMENT '店铺横幅',
+  `theme_color` varchar(20) DEFAULT '#ff6b00' COMMENT '主题色',
+  `announcement` varchar(500) DEFAULT NULL COMMENT '店铺公告',
   `shop_description` text COMMENT '店铺描述',
   `category_id` int(11) DEFAULT NULL,
   `contact_info` varchar(255) DEFAULT NULL COMMENT '联系方式',
