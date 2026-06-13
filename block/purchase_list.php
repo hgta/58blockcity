@@ -5,36 +5,84 @@ require_once '../classes/City.php';
 
 $city = new City($pdo);
 
-// Get purchase requests
-$stmt = $pdo->query("SELECT pr.*, c.name as city_name, u.username 
+// 筛选参数
+$filterCity = $_GET['city'] ?? '';
+$filterZone = $_GET['zone'] ?? '';
+
+$page = max(1, intval($_GET['page'] ?? 1));
+$perPage = 20;
+$offset = ($page - 1) * $perPage;
+
+// 构建查询
+$where = ["pr.status = 'active'"];
+$params = [];
+if ($filterCity) {
+    $where[] = "c.name LIKE ?";
+    $params[] = "%$filterCity%";
+}
+if ($filterZone && preg_match('/^[A-HZ]$/', $filterZone)) {
+    $where[] = "pr.zone = ?";
+    $params[] = $filterZone;
+}
+$whereSql = implode(' AND ', $where);
+
+$stmt = $pdo->prepare("SELECT pr.*, c.name as city_name, u.username 
     FROM purchase_requests pr 
     JOIN cities c ON pr.city_id = c.id 
     LEFT JOIN users u ON pr.user_id = u.id 
-    WHERE pr.status = 'active' 
-    ORDER BY pr.created_at DESC LIMIT 50");
+    WHERE $whereSql 
+    ORDER BY pr.created_at DESC LIMIT ? OFFSET ?");
+$stmt->execute(array_merge($params, [$perPage, $offset]));
 $requests = $stmt->fetchAll();
+
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM purchase_requests pr JOIN cities c ON pr.city_id = c.id WHERE $whereSql");
+$countStmt->execute($params);
+$total = $countStmt->fetchColumn();
+$totalPages = ceil($total / $perPage);
+
+$hotCities = $city->getHotCitiesList(20);
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-<style>
-.container { max-width:1000px; margin:0 auto; padding:20px; }
-.page-title { font-size:24px; font-weight:bold; margin-bottom:20px; color:#333; }
-.req-list { display:grid; gap:15px; }
-.req-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-.req-card h3 { font-size:16px; margin-bottom:8px; color:#333; }
-.req-card .meta { font-size:13px; color:#666; }
-.req-card .price { color:#e74c3c; font-weight:bold; }
-.zone-tag { display:inline-block; background:#1976d2; color:white; padding:2px 10px; border-radius:12px; font-size:12px; margin-right:8px; }
-.empty-state { text-align:center; padding:60px; color:#999; }
-</style>
+<div class="container page-container">
+    <div class="page-header-with-action">
+        <h1 class="page-title"><i class="fas fa-hand-holding-usd"></i> 求购列表</h1>
+        <a href="purchase_create.php" class="btn-primary"><i class="fas fa-plus"></i> 发布求购</a>
+    </div>
 
-<div class="container">
-    <h1 class="page-title"><i class="fas fa-hand-holding-usd"></i> 求购列表</h1>
-    
+    <!-- 筛选栏 -->
+    <form class="filter-bar" method="get">
+        <div class="filter-group">
+            <label>城市</label>
+            <select name="city">
+                <option value="">全部城市</option>
+                <?php foreach ($hotCities as $hc): ?>
+                <option value="<?= htmlspecialchars($hc['name']) ?>" <?= $filterCity===$hc['name']?'selected':'' ?>><?= htmlspecialchars($hc['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>区域</label>
+            <select name="zone">
+                <option value="">全部区域</option>
+                <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
+                <option value="<?= $z ?>" <?= $filterZone===$z?'selected':'' ?>><?= $z ?>区</option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter">筛选</button>
+            <a href="purchase_list.php" class="btn-reset">重置</a>
+        </div>
+    </form>
+
+    <div class="result-count">共 <?= number_format($total) ?> 条记录</div>
+
     <?php if (empty($requests)): ?>
         <div class="empty-state">
             <i class="fas fa-search"></i>
             <p>暂无求购请求</p>
+            <a href="purchase_create.php" class="btn-primary" style="margin-top:15px;display:inline-block;">发布第一条求购</a>
         </div>
     <?php else: ?>
         <div class="req-list">
@@ -52,6 +100,20 @@ $requests = $stmt->fetchAll();
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination-clean">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">上一页</a>
+            <?php endif; ?>
+            <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
+                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">下一页</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 

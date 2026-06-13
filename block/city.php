@@ -83,9 +83,22 @@ if ($view_mode === 'panorama') {
 // 单区模式：加载指定区域数据
 $zone_blocks = [];
 $merged_blocks = [];
+$owners_map = [];
 if ($view_mode === 'zone') {
     $zone_blocks = $block->getBlocksByCityZone($city_id, $current_zone);
     $merged_blocks = $block->getMergedBlocks($city_id, $current_zone);
+
+    // 预加载拥有者用户名映射
+    $owner_ids = array_unique(array_column($zone_blocks, 'owner_id'));
+    $owner_ids = array_filter($owner_ids);
+    if (!empty($owner_ids)) {
+        $placeholders = implode(',', array_fill(0, count($owner_ids), '?'));
+        $owner_stmt = $pdo->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+        $owner_stmt->execute(array_values($owner_ids));
+        while ($o = $owner_stmt->fetch(PDO::FETCH_ASSOC)) {
+            $owners_map[$o['id']] = $o['username'];
+        }
+    }
 }
 
 // 处理区块操作（仅单区模式）
@@ -391,11 +404,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                 flex-direction: column;
                 gap: 10px;
             }
-            
+
             .zone-tabs {
                 justify-content: center;
             }
+
+            /* 移动端隐藏桌面地图，显示列表 */
+            #desktopMap { display: none !important; }
+            #mobileList { display: block !important; }
         }
+
+        /* 移动端区块列表样式 */
+        .mobile-block-list {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .mobile-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .mobile-list-header h4 { margin: 0; font-size: 16px; }
+        .mobile-list-count { font-size: 12px; color: #999; }
+        .mobile-list-filter {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+        }
+        .mobile-filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            background: white;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .mobile-filter-btn.active {
+            background: #ff6b00;
+            color: white;
+            border-color: #ff6b00;
+        }
+        .mobile-list-items {
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        .mobile-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background .2s;
+        }
+        .mobile-list-item:active { background: #fff8f5; }
+        .mobile-item-main { display: flex; align-items: center; gap: 8px; }
+        .mobile-item-number { font-family: monospace; font-size: 14px; font-weight: bold; color: #333; }
+        .mobile-item-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+        .mobile-item-status.status-available { background: #e8f5e8; color: #2e7d32; }
+        .mobile-item-status.status-sold { background: #ffebee; color: #c62828; }
+        .mobile-item-status.status-reserved { background: #fff3e0; color: #ef6c00; }
+        .mobile-item-merged { font-size: 10px; background: #e3f2fd; color: #1976d2; padding: 1px 6px; border-radius: 8px; }
+        .mobile-item-meta { display: flex; align-items: center; gap: 10px; }
+        .mobile-item-price { color: #ff6b00; font-weight: bold; font-size: 13px; }
+        .mobile-item-owner { font-size: 12px; color: #999; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         /* ======== 九区全景样式 ======== */
         .pano-container {
@@ -478,20 +558,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             margin-bottom: 8px;
         }
         
-        /* 迷你色块：3x3px */
-        .pano-cell {
-            display: inline-block;
-            width: 3px;
-            height: 3px;
-            margin: 0;
-            padding: 0;
-            vertical-align: top;
+        /* 热力图图片 */
+        .pano-heatmap {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+            image-rendering: pixelated;
         }
-        .pano-cell.pm-avail { background-color: #e8f5e8; }
-        .pano-cell.pm-sold  { background-color: #ff6b00; }
-        .pano-cell.pm-merged { background-color: #1976d2; }
-        .pano-cell.pm-cross-avail { background-color: #a5d6a7; }
-        .pano-cell.pm-cross-sold { background-color: #ff9800; }
         
         .pano-merged-badge {
             font-size: 12px;
@@ -540,10 +614,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             .pano-card {
                 padding: 10px;
             }
-            .pano-cell {
-                width: 2px;
-                height: 2px;
-            }
+
         }
         @media (max-width: 480px) {
             .pano-grid {
@@ -619,33 +690,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                     </span>
                 </div>
                 <div class="pano-mini-map">
-                    <?php
-                    // 将已售/合并区块号转换为快速查找集合
-                    $soldSet = [];
-                    foreach ($zd['blocks'] as $zb) {
-                        if ($zb['status'] === 'sold' || $zb['status'] === 'reserved') {
-                            $soldSet[$zb['block_number']] = true;
-                        }
-                    }
-                    $mergedSet = array_flip($zd['merged_numbers']);
-                    
-                    for ($row = 1; $row <= 99; $row++):
-                        for ($col = 1; $col <= 101; $col++):
-                            $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
-                            $isBoundary = ($col == 101 || $row == 99); // 跨区边界
-                            if (isset($mergedSet[$bn])) {
-                                $cls = 'pm-merged';
-                            } elseif (isset($soldSet[$bn])) {
-                                $cls = $isBoundary ? 'pm-cross-sold' : 'pm-sold';
-                            } else {
-                                $cls = $isBoundary ? 'pm-cross-avail' : 'pm-avail';
-                            }
-                            echo "<span class=\"pano-cell {$cls}\" title=\"";
-                            if ($isBoundary) echo '跨区边界 ';
-                            echo "{$zone}区 #{$bn}\"></span>";
-                        endfor;
-                    endfor;
-                    ?>
+                    <img class="pano-heatmap"
+                         src="api/heatmap.php?city_id=<?= $city_id ?>&zone=<?= $zone ?>"
+                         alt="<?= $zone ?>区热力图"
+                         loading="lazy"
+                         width="101" height="99"
+                         style="width:100%;height:auto;display:block;">
                 </div>
                 <?php if ($zd['merged_count'] > 0): ?>
                 <div class="pano-merged-badge">🏗️ <?= $zd['merged_count'] ?>个合并区块</div>
@@ -670,8 +720,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
     <?php else: ?>
     <!-- ========== 单区详细模式 ========== -->
     <div class="row">
-        <div class="col-md-9">
-            <div class="block-map-container">
+                                <div class="col-md-9">
+            <!-- 桌面端：网格地图 -->
+            <div class="block-map-container" id="desktopMap">
                 <div class="map-controls">
                     <div class="form-group">
                         <label>选择模式:</label>
@@ -685,7 +736,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                         <button id="clear-selection" class="btn btn-sm btn-default">清空选择</button>
                     </div>
                 </div>
-                
+
                 <div class="block-map">
                     <div class="map-rows">
                         <?php for ($row = 1; $row <= 99; $row++): ?>
@@ -694,20 +745,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                                    <?php
 										$block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
 										$block_price = calculateBlockPrice($current_zone, $block_number, $zones);
-										
+
 										$block_status = 'available';
 										$block_owner = null;
+										$owner_name = null;
 										$is_merged = false;
 										$merged_size = '1x1';
-										
+
 										foreach ($zone_blocks as $zone_block) {
 											if ($zone_block['block_number'] == $block_number) {
 												$block_status = $zone_block['status'];
 												$block_owner = $zone_block['owner_id'];
+												$owner_name = $block_owner ? ($owners_map[$block_owner] ?? '用户'.$block_owner) : null;
 												break;
 											}
 										}
-										
+
 										foreach ($merged_blocks as $merged) {
 											if (in_array($block_number, explode(',', $merged['merged_blocks']))) {
 												$is_merged = true;
@@ -715,18 +768,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
 												break;
 											}
 										}
-										
+
 										$block_class = "block-cell {$block_status}";
 										if ($is_merged) {
 											$block_class .= " merged {$merged_size}";
 										}
 										?>
-										<div class="<?= $block_class ?>" 
+										<div class="<?= $block_class ?>"
 											 data-block-id="<?= $block_number ?>"
 											 data-block-number="<?= $block_number ?>"
 											 data-price="<?= $block_price ?>"
 											 data-status="<?= $block_status ?>"
 											 data-owner="<?= $block_owner ?>"
+											 data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
 											 data-row="<?= $row ?>"
 											 data-col="<?= $col ?>"
 											 title="区块 <?= $block_number ?> - 价格: <?= $block_price ?>元">
@@ -738,6 +792,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                             </div>
                         <?php endfor; ?>
                     </div>
+                </div>
+            </div>
+
+            <!-- 移动端：列表视图 -->
+            <div class="mobile-block-list" id="mobileList">
+                <div class="mobile-list-header">
+                    <h4><?= $current_zone ?>区 区块列表</h4>
+                    <span class="mobile-list-count">共 <?= count($zone_blocks) ?> 条记录</span>
+                </div>
+                <div class="mobile-list-filter">
+                    <button class="mobile-filter-btn active" data-filter="all">全部</button>
+                    <button class="mobile-filter-btn" data-filter="available">可认领</button>
+                    <button class="mobile-filter-btn" data-filter="sold">已认领</button>
+                </div>
+                <div class="mobile-list-items">
+                    <?php
+                    $listBlocks = [];
+                    for ($row = 1; $row <= 99; $row++) {
+                        for ($col = 1; $col <= 101; $col++) {
+                            $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                            $price = calculateBlockPrice($current_zone, $bn, $zones);
+                            $status = 'available';
+                            $owner = null;
+                            $oname = null;
+                            foreach ($zone_blocks as $zb) {
+                                if ($zb['block_number'] == $bn) {
+                                    $status = $zb['status'];
+                                    $owner = $zb['owner_id'];
+                                    $oname = $owner ? ($owners_map[$owner] ?? '用户'.$owner) : null;
+                                    break;
+                                }
+                            }
+                            $isMerged = false;
+                            foreach ($merged_blocks as $m) {
+                                if (in_array($bn, explode(',', $m['merged_blocks']))) {
+                                    $isMerged = true; break;
+                                }
+                            }
+                            $listBlocks[] = ['n'=>$bn,'s'=>$status,'p'=>$price,'o'=>$oname,'m'=>$isMerged,'r'=>$row,'c'=>$col];
+                        }
+                    }
+                    foreach ($listBlocks as $lb):
+                    ?>
+                    <div class="mobile-list-item" data-status="<?= $lb['s'] ?>" data-block="<?= $lb['n'] ?>">
+                        <div class="mobile-item-main">
+                            <span class="mobile-item-number"><?= $lb['n'] ?></span>
+                            <span class="mobile-item-status status-<?= $lb['s'] ?>"><?= $lb['s']==='available'?'可认领':($lb['s']==='sold'?'已认领':'已预订') ?></span>
+                            <?php if ($lb['m']): ?><span class="mobile-item-merged">合并</span><?php endif; ?>
+                        </div>
+                        <div class="mobile-item-meta">
+                            <span class="mobile-item-price">¥<?= number_format($lb['p']) ?></span>
+                            <?php if ($lb['o']): ?><span class="mobile-item-owner"><?= htmlspecialchars($lb['o']) ?></span><?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -935,8 +1044,9 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
     
     // 拥有者信息
     const ownerInfo = document.getElementById('owner-info');
+    const ownerName = blockCell ? blockCell.getAttribute('data-owner-name') : '';
     if (blockOwner && blockOwner !== 'null') {
-        document.getElementById('detail-block-owner').textContent = '用户' + blockOwner;
+        document.getElementById('detail-block-owner').textContent = ownerName || ('用户' + blockOwner);
         ownerInfo.style.display = 'flex';
     } else {
         ownerInfo.style.display = 'none';
@@ -1011,11 +1121,23 @@ document.querySelectorAll('.block-cell').forEach(cell => {
     cell.addEventListener('mouseenter', function() {
         this.style.zIndex = '100';
     });
-    
+
     cell.addEventListener('mouseleave', function() {
         if (!this.classList.contains('selected')) {
             this.style.zIndex = '';
         }
+    });
+});
+
+// 移动端列表筛选
+document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.mobile-filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.getAttribute('data-filter');
+        document.querySelectorAll('.mobile-list-item').forEach(item => {
+            item.style.display = (filter === 'all' || item.getAttribute('data-status') === filter) ? 'flex' : 'none';
+        });
     });
 });
 </script>
@@ -1073,19 +1195,34 @@ document.querySelectorAll('.block-cell').forEach(cell => {
 // 计算区块价格的函数（按行列递减）
 function calculateBlockPrice($zone, $block_id, $zones) {
     if ($zone === 'Z') {
-        // Z区特殊处理（简化版）
-        return 1000;
+        // Z区三段式价格
+        $num = intval($block_id);
+        if ($num >= 9701 && $num <= 9999) {
+            $base = 11429;
+            $col = floor($num / 100); // 97-99
+            $row = $num % 100;
+        } elseif ($num >= 1 && $num <= 99) {
+            $base = 34101;
+            $col = 0; // 前导零视为第0列
+            $row = $num;
+        } else {
+            $base = 34020;
+            $col = floor($num / 100); // 01-98
+            $row = $num % 100;
+        }
+        $price_decrease = $col + ($row - 1);
+        return max($base - $price_decrease, 1);
     } else {
         // A-H区处理：按行列递减
         $col = floor($block_id / 100);
         $row = $block_id % 100;
-        
+
         $base_price = $zones[$zone]['base_price'];
-        
+
         // 价格递减规则：每增加一行减1元，每增加一列减1元
         $price_decrease = ($col - 1) + ($row - 1);
         $price = $base_price - $price_decrease;
-        
+
         return max($price, 1); // 最低1元
     }
 }

@@ -1,53 +1,112 @@
 <?php
 require_once '../config/database.php';
 require_once 'includes/auth.php';
+require_once '../classes/City.php';
 
-// Recently claimed blocks (status='sold', ordered by created_at)
-$stmt = $pdo->query("SELECT b.*, c.name as city_name, u.username 
+$city = new City($pdo);
+
+// 筛选参数
+$filterCity = $_GET['city'] ?? '';
+$filterZone = $_GET['zone'] ?? '';
+
+$page = max(1, intval($_GET['page'] ?? 1));
+$perPage = 20;
+$offset = ($page - 1) * $perPage;
+
+// 构建查询
+$where = ["b.status = 'sold'"];
+$params = [];
+if ($filterCity) {
+    $where[] = "c.name LIKE ?";
+    $params[] = "%$filterCity%";
+}
+if ($filterZone && preg_match('/^[A-HZ]$/', $filterZone)) {
+    $where[] = "b.zone = ?";
+    $params[] = $filterZone;
+}
+$whereSql = implode(' AND ', $where);
+
+$stmt = $pdo->prepare("SELECT b.*, c.name as city_name, u.username 
     FROM blocks b 
     JOIN cities c ON b.city_id = c.id 
     LEFT JOIN users u ON b.owner_id = u.id 
-    WHERE b.status = 'sold' 
-    ORDER BY b.created_at DESC LIMIT 30");
+    WHERE $whereSql 
+    ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
+$stmt->execute(array_merge($params, [$perPage, $offset]));
 $blocks = $stmt->fetchAll();
+
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks b JOIN cities c ON b.city_id = c.id WHERE $whereSql");
+$countStmt->execute($params);
+$total = $countStmt->fetchColumn();
+$totalPages = ceil($total / $perPage);
+
+$hotCities = $city->getHotCitiesList(20);
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-<style>
-.container { max-width:1000px; margin:0 auto; padding:20px; }
-.page-title { font-size:24px; font-weight:bold; margin-bottom:20px; color:#333; }
-.block-list { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-.block-card { background:white; border-radius:8px; padding:12px 15px; box-shadow:0 1px 5px rgba(0,0,0,0.06); text-decoration:none; color:inherit; display:flex; justify-content:space-between; align-items:center; }
-.block-card:hover { box-shadow:0 3px 12px rgba(0,0,0,0.1); }
-.block-card .info { flex:1; }
-.block-card .city { color:#666; font-size:12px; }
-.block-card .owner { color:#999; font-size:12px; }
-.zone-tag { display:inline-block; background:#e8f5e8; color:#2e7d32; padding:2px 10px; border-radius:12px; font-size:12px; margin-right:6px; }
-.empty-state { text-align:center; padding:60px; color:#999; }
-@media(max-width:768px){ .block-list { grid-template-columns:1fr; } }
-</style>
-
-<div class="container">
+<div class="container page-container">
     <h1 class="page-title"><i class="fas fa-hand-holding-heart"></i> 最近认领</h1>
-    
+
+    <!-- 筛选栏 -->
+    <form class="filter-bar" method="get">
+        <div class="filter-group">
+            <label>城市</label>
+            <select name="city">
+                <option value="">全部城市</option>
+                <?php foreach ($hotCities as $hc): ?>
+                <option value="<?= htmlspecialchars($hc['name']) ?>" <?= $filterCity===$hc['name']?'selected':'' ?>><?= htmlspecialchars($hc['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>区域</label>
+            <select name="zone">
+                <option value="">全部区域</option>
+                <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
+                <option value="<?= $z ?>" <?= $filterZone===$z?'selected':'' ?>><?= $z ?>区</option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter">筛选</button>
+            <a href="claim_list.php" class="btn-reset">重置</a>
+        </div>
+    </form>
+
+    <div class="result-count">共 <?= number_format($total) ?> 条记录</div>
+
     <?php if (empty($blocks)): ?>
         <div class="empty-state">
             <i class="fas fa-map-marked-alt"></i>
             <p>暂无认领记录</p>
         </div>
     <?php else: ?>
-        <div class="block-list">
+        <div class="block-grid compact">
             <?php foreach ($blocks as $b): ?>
-                <a href="block/view.php?id=<?= $b['id'] ?>" class="block-card">
-                    <div class="info">
+                <a href="block/view.php?id=<?= $b['id'] ?>" class="block-card compact">
+                    <div class="card-info">
                         <span class="zone-tag"><?= $b['zone'] ?>区</span>
                         <?= htmlspecialchars($b['city_name']) ?> #<?= $b['block_number'] ?>
-                        <div class="owner"><?= htmlspecialchars($b['username'] ?? '匿名') ?></div>
+                        <div class="card-owner"><?= htmlspecialchars($b['username'] ?? '匿名') ?></div>
                     </div>
-                    <span style="color:#ff6b00;font-weight:bold;">¥<?= number_format($b['price'] ?? 0, 2) ?></span>
+                    <span class="card-price">¥<?= number_format($b['price'] ?? 0, 2) ?></span>
                 </a>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination-clean">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">上一页</a>
+            <?php endif; ?>
+            <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
+                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">下一页</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 

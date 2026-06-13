@@ -7,71 +7,135 @@ require_once '../classes/City.php';
 $block = new Block($pdo);
 $city = new City($pdo);
 
-// Get blocks for sale (status='available' with owner_id set = listed for sale)
+// 筛选参数
+$filterCity = $_GET['city'] ?? '';
+$filterZone = $_GET['zone'] ?? '';
+$filterMinPrice = isset($_GET['min_price']) ? floatval($_GET['min_price']) : null;
+$filterMaxPrice = isset($_GET['max_price']) ? floatval($_GET['max_price']) : null;
+
 $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 20;
+$offset = ($page - 1) * $perPage;
 
-// Get all sold blocks that could be resold
-$stmt = $pdo->prepare("SELECT b.*, c.name as city_name FROM blocks b 
-    JOIN cities c ON b.city_id = c.id 
-    WHERE b.status = 'sold' 
-    ORDER BY b.updated_at DESC 
-    LIMIT " . (($page-1)*$perPage) . "," . $perPage);
-$stmt->execute();
+// 构建查询
+$where = ["b.status = 'sold'"];
+$params = [];
+if ($filterCity) {
+    $where[] = "c.name LIKE ?";
+    $params[] = "%$filterCity%";
+}
+if ($filterZone && preg_match('/^[A-HZ]$/', $filterZone)) {
+    $where[] = "b.zone = ?";
+    $params[] = $filterZone;
+}
+if ($filterMinPrice !== null && $filterMinPrice >= 0) {
+    $where[] = "b.price >= ?";
+    $params[] = $filterMinPrice;
+}
+if ($filterMaxPrice !== null && $filterMaxPrice > 0) {
+    $where[] = "b.price <= ?";
+    $params[] = $filterMaxPrice;
+}
+
+$whereSql = implode(' AND ', $where);
+
+// 数据查询（使用参数绑定 LIMIT）
+$sql = "SELECT b.*, c.name as city_name, u.username as owner_name
+    FROM blocks b
+    JOIN cities c ON b.city_id = c.id
+    LEFT JOIN users u ON b.owner_id = u.id
+    WHERE $whereSql
+    ORDER BY b.updated_at DESC
+    LIMIT ? OFFSET ?";
+$stmt = $pdo->prepare($sql);
+$stmt->execute(array_merge($params, [$perPage, $offset]));
 $blocks = $stmt->fetchAll();
 
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status = 'sold'");
-$total = $totalStmt->fetchColumn();
+// 总数查询
+$countSql = "SELECT COUNT(*) FROM blocks b JOIN cities c ON b.city_id = c.id WHERE $whereSql";
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$total = $countStmt->fetchColumn();
 $totalPages = ceil($total / $perPage);
+
+// 热门城市列表（用于筛选下拉）
+$hotCities = $city->getHotCitiesList(20);
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-<style>
-.container { max-width:1000px; margin:0 auto; padding:20px; }
-.page-title { font-size:24px; font-weight:bold; margin-bottom:20px; color:#333; }
-.block-list { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; }
-.block-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-decoration:none; color:inherit; transition:all .3s; }
-.block-card:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,0.12); }
-.block-card h3 { font-size:16px; color:#333; margin-bottom:8px; }
-.block-card .zone-tag { display:inline-block; background:#ff6b00; color:white; padding:2px 10px; border-radius:12px; font-size:12px; margin-right:8px; }
-.block-card .price { color:#e74c3c; font-weight:bold; font-size:16px; }
-.block-card .city { color:#666; font-size:13px; }
-.empty-state { text-align:center; padding:60px; color:#999; }
-.empty-state i { font-size:48px; margin-bottom:15px; }
-.pagination { display:flex; justify-content:center; gap:8px; margin-top:25px; }
-.pagination a { padding:8px 14px; border:1px solid #ddd; border-radius:4px; color:#333; text-decoration:none; }
-.pagination a.active { background:#ff6b00; color:white; border-color:#ff6b00; }
-@media(max-width:768px){ .block-list { grid-template-columns:1fr; } }
-</style>
+<div class="container page-container">
+    <h1 class="page-title"><i class="fas fa-tag"></i> 已售区块</h1>
 
-<div class="container">
-    <h1 class="page-title"><i class="fas fa-tag"></i> 售卖中的区块</h1>
-    
+    <!-- 筛选栏 -->
+    <form class="filter-bar" method="get">
+        <div class="filter-group">
+            <label>城市</label>
+            <select name="city">
+                <option value="">全部城市</option>
+                <?php foreach ($hotCities as $hc): ?>
+                <option value="<?= htmlspecialchars($hc['name']) ?>" <?= $filterCity===$hc['name']?'selected':'' ?>><?= htmlspecialchars($hc['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>区域</label>
+            <select name="zone">
+                <option value="">全部区域</option>
+                <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
+                <option value="<?= $z ?>" <?= $filterZone===$z?'selected':'' ?>><?= $z ?>区</option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>最低价格</label>
+            <input type="number" name="min_price" value="<?= $filterMinPrice !== null ? $filterMinPrice : '' ?>" placeholder="¥" min="0">
+        </div>
+        <div class="filter-group">
+            <label>最高价格</label>
+            <input type="number" name="max_price" value="<?= $filterMaxPrice !== null ? $filterMaxPrice : '' ?>" placeholder="¥" min="0">
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter">筛选</button>
+            <a href="sale_list.php" class="btn-reset">重置</a>
+        </div>
+    </form>
+
+    <div class="result-count">共 <?= number_format($total) ?> 条记录</div>
+
     <?php if (empty($blocks)): ?>
         <div class="empty-state">
             <i class="fas fa-box-open"></i>
-            <p>暂无可售区块</p>
-            <a href="city.php?name=beijing" class="btn" style="display:inline-block;margin-top:15px;padding:10px 20px;background:#ff6b00;color:white;border-radius:6px;text-decoration:none;">浏览区块城市</a>
+            <p>暂无记录</p>
+            <a href="city.php?name=beijing" class="btn-primary">浏览区块城市</a>
         </div>
     <?php else: ?>
-        <div class="block-list">
+        <div class="block-grid">
             <?php foreach ($blocks as $b): ?>
                 <a href="block/view.php?id=<?= $b['id'] ?>" class="block-card">
                     <h3>
                         <span class="zone-tag"><?= $b['zone'] ?>区</span>
                         <?= htmlspecialchars($b['city_name']) ?> #<?= $b['block_number'] ?>
                     </h3>
+                    <div class="card-meta">
+                        <span class="owner">拥有者: <?= htmlspecialchars($b['owner_name'] ?? '匿名') ?></span>
+                    </div>
                     <div class="price">¥<?= number_format($b['price'] ?? 0, 2) ?></div>
                     <div class="city"><?= htmlspecialchars($b['city_name']) ?></div>
                 </a>
             <?php endforeach; ?>
         </div>
-        
+
         <?php if ($totalPages > 1): ?>
-        <div class="pagination">
-            <?php for ($i=1; $i<=$totalPages; $i++): ?>
-                <a href="?page=<?=$i?>" class="<?=$i==$page?'active':''?>"><?=$i?></a>
+        <div class="pagination-clean">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">上一页</a>
+            <?php endif; ?>
+            <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
+                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
             <?php endfor; ?>
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">下一页</a>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
     <?php endif; ?>

@@ -1,6 +1,7 @@
 <?php
 require_once '../config/database.php';
 require_once '../classes/City.php';
+require_once '../classes/User.php';
 
 /*
 // 获取热门城市数据
@@ -15,31 +16,80 @@ if ($hot_result && $hot_result->num_rows > 0) {
 
 
 // 初始化城市类
-$city = new City($pdo);
+$cityObj = new City($pdo);
 
 // 获取热门城市数据
-$hot_cities = $city->getHotCitiesList(18);
+$hot_cities = $cityObj->getHotCitiesList(18);
 
-$cities_by_letter = $city->getCitiesByLetter();
-$letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z']; 
+$cities_by_letter = $cityObj->getCitiesByLetter();
+$letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'];
+
+// 平台实时统计
+$totalCities = $cityObj->getTotalCitiesCount();
+$totalUsers = (new User($pdo))->getUserCount();
+$stmtActivated = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status = 'sold'");
+$totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
 ?>
 
 <?php require_once 'includes/header.php'; ?>
-    
-    <!-- 城市定位提示条 -->
-    <div class="city-location-bar" id="cityLocationBar">
-        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
-    </div>
-    
+
+    <!-- 平台实时统计面板 -->
+    <section class="platform-stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card-block">
+                    <div class="stat-icon-block">🏙️</div>
+                    <div class="stat-info-block">
+                        <div class="stat-value-block" data-count="<?= $totalCities ?>">0</div>
+                        <div class="stat-label-block">城市总数</div>
+                    </div>
+                </div>
+                <div class="stat-card-block">
+                    <div class="stat-icon-block">🧱</div>
+                    <div class="stat-info-block">
+                        <div class="stat-value-block" data-count="<?= $totalActivated ?>">0</div>
+                        <div class="stat-label-block">已激活区块</div>
+                    </div>
+                </div>
+                <div class="stat-card-block">
+                    <div class="stat-icon-block">👥</div>
+                    <div class="stat-info-block">
+                        <div class="stat-value-block" data-count="<?= $totalUsers ?>">0</div>
+                        <div class="stat-label-block">注册用户</div>
+                    </div>
+                </div>
+                <div class="stat-card-block">
+                    <div class="stat-icon-block">🔗</div>
+                    <div class="stat-info-block">
+                        <div class="stat-value-block" data-count="<?= number_format($totalActivated / max($totalCities,1), 1) ?>">0</div>
+                        <div class="stat-label-block">平均激活/城</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 城市搜索框 -->
+    <section class="city-search-section">
+        <div class="container">
+            <div class="city-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="citySearchInput" placeholder="输入城市名或拼音快速定位..." autocomplete="off">
+                <span id="citySearchClear" style="display:none;cursor:pointer;color:#999;">✕</span>
+            </div>
+            <div id="citySearchEmpty" class="city-search-empty" style="display:none;">未找到匹配的城市</div>
+        </div>
+    </section>
+
     <!-- 字母导航 -->
     <nav class="letter-nav">
         <div class="letter-nav-container">
             <?php foreach ($letters as $letter): ?>
-                <a href="#<?= $letter ?>" class="letter-link"><?= $letter ?></a>
+                <a href="#<?= $letter ?>" class="letter-link" data-letter="<?= $letter ?>"><?= $letter ?></a>
             <?php endforeach; ?>
         </div>
     </nav>
-    
+
     <!-- 主要内容 -->
     <main class="container">
         <!-- 热门城市 -->
@@ -112,15 +162,88 @@ $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P'
         
 
     <script>
-        // 3秒后显示悬浮窗口
-        //setTimeout(function() {
-        //    document.getElementById('promotionFloating').style.display = 'block';
-        //}, 3000);
-        
         // 页面加载时获取城市信息
         window.onload = function() {
             getCityInfo();
         };
+
+        // 平台统计数字动画
+        (function() {
+            function animateValue(el, target, duration) {
+                var start = 0;
+                var startTime = null;
+                function step(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    var progress = Math.min((timestamp - startTime) / duration, 1);
+                    var value = Math.floor(progress * target);
+                    el.textContent = value.toLocaleString();
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        el.textContent = target.toLocaleString();
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+            document.querySelectorAll('.stat-value-block[data-count]').forEach(function(el) {
+                var target = parseFloat(el.getAttribute('data-count').toString().replace(/,/g, ''));
+                if (!isNaN(target)) animateValue(el, target, 1200);
+            });
+        })();
+
+        // 城市搜索
+        (function() {
+            var input = document.getElementById('citySearchInput');
+            var clearBtn = document.getElementById('citySearchClear');
+            var emptyMsg = document.getElementById('citySearchEmpty');
+            if (!input) return;
+
+            var allCities = [];
+            document.querySelectorAll('.city-item').forEach(function(item) {
+                var name = item.textContent.trim();
+                var pinyin = item.getAttribute('href').replace('/city.php?name=', '');
+                allCities.push({ el: item, name: name, pinyin: pinyin, letter: item.closest('.city-section').id });
+            });
+
+            function doSearch() {
+                var query = input.value.trim().toLowerCase();
+                clearBtn.style.display = query ? 'inline' : 'none';
+                var hasMatch = false;
+                var matchedLetters = {};
+
+                allCities.forEach(function(c) {
+                    var match = c.name.indexOf(query) !== -1 || c.pinyin.indexOf(query) !== -1;
+                    c.el.style.display = match ? '' : 'none';
+                    c.el.classList.toggle('highlighted', match && query.length >= 1);
+                    if (match) {
+                        hasMatch = true;
+                        matchedLetters[c.letter] = true;
+                    }
+                });
+
+                document.querySelectorAll('.city-section').forEach(function(sec) {
+                    sec.classList.toggle('hidden', query.length > 0 && !matchedLetters[sec.id]);
+                });
+
+                document.querySelectorAll('.letter-link').forEach(function(link) {
+                    link.classList.toggle('active', !!matchedLetters[link.getAttribute('data-letter')]);
+                });
+
+                emptyMsg.style.display = (query.length > 0 && !hasMatch) ? 'block' : 'none';
+
+                if (hasMatch && query.length > 0) {
+                    var first = document.querySelector('.city-item.highlighted');
+                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            input.addEventListener('input', doSearch);
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                doSearch();
+                input.focus();
+            });
+        })();
     </script>
     
     <!-- JSON-LD结构化数据 -->

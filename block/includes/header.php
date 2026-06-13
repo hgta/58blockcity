@@ -9,9 +9,10 @@ $site_config['logo_sub']    = '区块';
 $site_config['logo_tag']    = 'BlockCity区块交易市场';
 $site_config['nav_links']   = [
     ['url'=>'../','icon'=>'home','text'=>'返回首页'],
-    ['url'=>'../sale_list.php','icon'=>'tag','text'=>'售卖'],
+    ['url'=>'../sale_list.php','icon'=>'tag','text'=>'已售区块'],
     ['url'=>'../purchase_list.php','icon'=>'hand-holding-usd','text'=>'求购'],
     ['url'=>'../claim_list.php','icon'=>'hand-holding-heart','text'=>'认领'],
+    ['url'=>'../top200city.php','icon'=>'trophy','text'=>'排行'],
 ];
 $site_config['extra_head']  = '<script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script><script>LA.init({id:"KplyYLrcc6uYhdjv",ck:"KplyYLrcc6uYhdjv"})</script>';
 require_once __DIR__ . '/../../shared/header.php';
