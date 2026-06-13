@@ -162,23 +162,23 @@ require_once '../includes/header.php';
                                     <div class="form-group">
                                         <label>优惠类型 *</label>
                                         <select name="type" class="form-control" required>
-                                            <option value="fixed" <?= ($editCoupon && $editCoupon['type'] === 'fixed') ? 'selected' : '' ?>>固定金额减免（元）</option>
-                                            <option value="percent" <?= ($editCoupon && $editCoupon['type'] === 'percent') ? 'selected' : '' ?>>百分比折扣（%）</option>
+                                        <option value="fixed" <?= ($editCoupon && $editCoupon['type'] === 'fixed') ? 'selected' : '' ?>>固定金额减免（BCT）</option>
+                                        <option value="percent" <?= ($editCoupon && $editCoupon['type'] === 'percent') ? 'selected' : '' ?>>百分比折扣（%）</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label>优惠值 *</label>
-                                        <input type="number" name="value" class="form-control" step="0.01" min="0.01" required value="<?= $editCoupon ? $editCoupon['value'] : '' ?>">
+                                        <input type="number" name="value" class="form-control" step="1" min="1" required value="<?= $editCoupon ? intval($editCoupon['value']) : '' ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>最低订单金额（0为无限制）</label>
-                                        <input type="number" name="min_order_amount" class="form-control" step="0.01" min="0" value="<?= $editCoupon ? $editCoupon['min_order_amount'] : '0' ?>">
+                                        <input type="number" name="min_order_amount" class="form-control" step="1" min="0" value="<?= $editCoupon ? intval($editCoupon['min_order_amount']) : '0' ?>">
                                     </div>
                                     <div class="form-group">
                                         <label>最大优惠金额（百分比时生效，留空不限制）</label>
-                                        <input type="number" name="max_discount" class="form-control" step="0.01" min="0" value="<?= $editCoupon ? ($editCoupon['max_discount'] ?: '') : '' ?>">
+                                        <input type="number" name="max_discount" class="form-control" step="1" min="0" value="<?= $editCoupon ? ($editCoupon['max_discount'] ? intval($editCoupon['max_discount']) : '') : '' ?>">
                                     </div>
                                     <div class="form-group">
                                         <label>发行总量（0为不限量）</label>

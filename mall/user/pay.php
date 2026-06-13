@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         <div class="pay-step">
             <i class="fas fa-coins"></i> 支付金额：
-            <span class="pay-amount"><?php echo number_format($orderInfo['payment_amount'], 2); ?> BCT</span>
+            <span class="pay-amount"><?php echo number_format($orderInfo['payment_amount'], 0); ?> BCT</span>
         </div>
         <?php if ($shopBlockId): ?>
         <div class="pay-step">

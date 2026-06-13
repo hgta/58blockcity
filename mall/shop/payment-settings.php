@@ -240,10 +240,10 @@ foreach ($paymentSettings as $setting) {
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="number" class="form-control form-control-sm min-amount-input" 
-                                                       name="min_amount[<?= $cityCode ?>]" 
-                                                       value="<?= number_format($setting['min_amount'], 2) ?>" 
-                                                       step="0.01" min="0.01" 
+                                                <input type="number" class="form-control form-control-sm min-amount-input"
+                                                       name="min_amount[<?= $cityCode ?>]"
+                                                       value="<?= number_format($setting['min_amount'], 0) ?>"
+                                                       step="1" min="1"
                                                        data-city="<?= $cityCode ?>">
                                             </td>
                                             <td>
@@ -297,7 +297,7 @@ foreach ($paymentSettings as $setting) {
                                                     <h6 class="mb-1"><?= htmlspecialchars($supportedCities[$setting['city']] ?? $setting['city']) ?></h6>
                                                     <p class="text-muted small mb-1">区块ID: <?= htmlspecialchars($setting['block_id']) ?></p>
                                                     <p class="text-muted small mb-0">
-                                                        最小金额: <?= number_format($setting['min_amount'], 2) ?> BCT
+                                                        最小金额: <?= number_format($setting['min_amount'], 0) ?> BCT
                                                         | 兑换率: <?= number_format($setting['exchange_rate'], 4) ?>
                                                     </p>
                                                 </div>
@@ -335,7 +335,7 @@ foreach ($paymentSettings as $setting) {
             <div class="modal-body">
                 <div class="form-group">
                     <label for="batch_min_amount">统一最小金额 (BCT)</label>
-                    <input type="number" class="form-control" id="batch_min_amount" step="0.01" min="0.01" value="0.01">
+                    <input type="number" class="form-control" id="batch_min_amount" step="1" min="1" value="1">
                 </div>
                 <div class="form-group">
                     <label for="batch_exchange_rate">统一兑换率</label>

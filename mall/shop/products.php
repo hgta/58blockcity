@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
     $categoryId = intval($_POST['category_id']);
-    $priceBct = floatval($_POST['price_bct']);
+    $priceBct = intval($_POST['price_bct']);
     $priceCny = floatval($_POST['price_cny']);
     $stock = intval($_POST['stock']);
     $status = $_POST['status'];
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
     $categoryId = intval($_POST['category_id']);
-    $priceBct = floatval($_POST['price_bct']);
+    $priceBct = intval($_POST['price_bct']);
     $priceCny = floatval($_POST['price_cny']);
     $stock = intval($_POST['stock']);
     $status = $_POST['status'];
@@ -506,8 +506,8 @@ require_once '../includes/header.php';
                                                     <div class="input-group">
                                                         <div class="input-group-prepend"><span class="input-group-text">BCT</span></div>
                                                         <input type="number" class="form-control" id="price_bct" name="price_bct"
-                                                               value="<?= isset($editProduct) ? $editProduct['price_bct'] : (isset($_POST['price_bct']) ? $_POST['price_bct'] : '') ?>"
-                                                               step="0.01" min="0.01" required placeholder="0.00">
+                                                               value="<?= isset($editProduct) ? intval($editProduct['price_bct']) : (isset($_POST['price_bct']) ? intval($_POST['price_bct']) : '') ?>"
+                                                               step="1" min="1" required placeholder="例如 100">
                                                     </div>
                                                 </div>
                                             </div>
@@ -738,7 +738,7 @@ require_once '../includes/header.php';
                                             <div class="product-body">
                                                 <h4 class="product-title"><?= htmlspecialchars($productItem['name']) ?></h4>
                                                 <div class="product-prices">
-                                                    <span class="price-bct"><?= number_format($productItem['price_bct'], 2) ?> BCT</span>
+                                                    <span class="price-bct"><?= number_format($productItem['price_bct'], 0) ?> BCT</span>
                                                     <?php if ($productItem['price_cny']): ?>
                                                         <span class="price-cny">¥<?= number_format($productItem['price_cny'], 2) ?></span>
                                                     <?php endif; ?>

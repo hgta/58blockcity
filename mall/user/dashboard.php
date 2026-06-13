@@ -309,7 +309,7 @@ $recentProducts = $product->getRecentProducts(6);
                                             <div class="product-info">
                                                 <h6 class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 16)) ?><?= mb_strlen($p['name']) > 16 ? '...' : '' ?></h6>
                                                 <div class="product-price">
-                                                    <span class="bct-price"><?= number_format($p['price_bct'], 2) ?> BCT</span>
+                                                    <span class="bct-price"><?= number_format($p['price_bct'], 0) ?> BCT</span>
                                                 </div>
                                             </div>
                                         </a>

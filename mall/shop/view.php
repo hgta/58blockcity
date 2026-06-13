@@ -210,7 +210,7 @@ $currentPageProducts = array_slice($products, $startIndex, $perPage);
                                 <div class="product-info">
                                     <h5 class="product-name"><?= htmlspecialchars($productItem['name']) ?></h5>
                                     <div class="product-price">
-                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 2) ?> BCT</span>
+                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 0) ?> BCT</span>
                                         <?php if ($productItem['price_cny']): ?>
                                             <span class="cny-price">≈ ¥<?= number_format($productItem['price_cny'], 2) ?></span>
                                         <?php endif; ?>

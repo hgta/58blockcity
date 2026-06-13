@@ -166,7 +166,7 @@ $statusClassMap = [
         </div>
         <div class="info-row">
             <span class="info-label">BCT金额</span>
-            <span class="info-value"><?php echo number_format($orderInfo['payment_amount'], 2); ?> BCT</span>
+            <span class="info-value"><?php echo number_format($orderInfo['payment_amount'], 0); ?> BCT</span>
         </div>
         <?php if ($orderInfo['payment_block_id']): ?>
         <div class="info-row">

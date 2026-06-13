@@ -475,7 +475,7 @@ if (isset($_SESSION['user_id'])) {
                     <?php if ($productDetail['price_type'] == 'bct'): ?>
                         <!-- 人气值支付商品 -->
                         <div class="bct-price">
-                            <span class="bct-symbol">Ⓟ</span><?php echo number_format($productDetail['price_bct'], 2); ?> 人气值
+                            <span class="bct-symbol">Ⓟ</span><?php echo number_format($productDetail['price_bct'], 0); ?> 人气值
                         </div>
                         
                         <?php if ($productDetail['price_cny']): ?>
@@ -599,7 +599,7 @@ if (isset($_SESSION['user_id'])) {
                                 <div class="product-card-name"><?php echo htmlspecialchars($relatedProduct['name']); ?></div>
                                 <div class="product-card-price">
                                     <?php if ($relatedProduct['price_type'] == 'bct'): ?>
-                                        <span class="bct-symbol">Ⓟ</span><?php echo number_format($relatedProduct['price_bct'], 2); ?>
+                                        <span class="bct-symbol">Ⓟ</span><?php echo number_format($relatedProduct['price_bct'], 0); ?>
                                     <?php else: ?>
                                         ¥<?php echo number_format($relatedProduct['price_cny'], 2); ?>
                                     <?php endif; ?>

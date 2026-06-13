@@ -439,10 +439,10 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                     <h3 class="filter-title">价格范围</h3>
                     <form method="GET" action="">
                         <div class="price-filter">
-                            <input type="number" name="min_price" class="price-input" placeholder="最低价" 
-                                   value="<?php echo $minPrice ?: ''; ?>" min="0" step="0.01">
-                            <input type="number" name="max_price" class="price-input" placeholder="最高价" 
-                                   value="<?php echo $maxPrice ?: ''; ?>" min="0" step="0.01">
+                            <input type="number" name="min_price" class="price-input" placeholder="最低价"
+                                   value="<?php echo $minPrice ?: ''; ?>" min="0" step="1">
+                            <input type="number" name="max_price" class="price-input" placeholder="最高价"
+                                   value="<?php echo $maxPrice ?: ''; ?>" min="0" step="1">
                         </div>
                         <?php if ($categoryId): ?>
                             <input type="hidden" name="category" value="<?php echo $categoryId; ?>">

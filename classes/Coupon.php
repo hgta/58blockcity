@@ -157,7 +157,7 @@ class Coupon {
 
             // 检查最低订单金额
             if ($coupon['min_order_amount'] > 0 && $orderAmount < $coupon['min_order_amount']) {
-                return ['valid' => false, 'message' => '订单金额未满 ' . $coupon['min_order_amount'] . ' 元'];
+                return ['valid' => false, 'message' => '订单金额未满 ' . $coupon['min_order_amount'] . ' BCT'];
             }
 
             // 检查剩余数量

@@ -72,7 +72,7 @@ if (isset($_POST['create_product'])) {
     $categoryId = intval($_POST['category_id'] ?? 0);
     $productName = trim($_POST['product_name'] ?? '');
     $productDesc = trim($_POST['product_description'] ?? '');
-    $priceBCT = floatval($_POST['price_bct'] ?? 0);
+    $priceBCT = intval($_POST['price_bct'] ?? 0);
     $stock = intval($_POST['stock'] ?? 999);
     $mainImage = trim($_POST['main_image'] ?? '');
     
@@ -244,7 +244,7 @@ $categories = $pdo->query("SELECT * FROM product_categories WHERE status = 'acti
                 </div>
                 <div class="form-group">
                     <label class="form-label">BCT价格 *</label>
-                    <input type="number" name="price_bct" class="form-input" placeholder="例如：100" step="0.01" min="0.01" required>
+                    <input type="number" name="price_bct" class="form-input" placeholder="例如：100" step="1" min="1" required>
                     <div class="hint">人气值(BCT)价格</div>
                 </div>
                 <div class="form-group" style="grid-column: 1 / -1;">
