@@ -47,9 +47,33 @@ $zones = [
     ]
 ];
 
-// 视图模式：有zone参数=单区模式，无zone参数=全景模式
-$view_mode = isset($_GET['zone']) ? 'zone' : 'panorama';
+// 视图模式：默认单区(A区)，?view=all=全景模式，?zone=X=指定区
 $current_zone = $_GET['zone'] ?? null;
+$view_all = isset($_GET['view']) && $_GET['view'] === 'all';
+
+if ($view_all) {
+    $view_mode = 'panorama';
+    $current_zone = null;
+} elseif ($current_zone) {
+    $view_mode = 'zone';
+} else {
+    // 默认进入 A 区单区模式
+    $view_mode = 'zone';
+    $current_zone = 'A';
+}
+
+// 各区的列范围（用于单区网格渲染）
+$zone_col_ranges = [
+    'A' => [1, 12], 'B' => [13, 24], 'C' => [25, 36], 'D' => [37, 48],
+    'E' => [49, 60], 'F' => [61, 72], 'G' => [73, 84], 'H' => [85, 96],
+    'Z' => [97, 99],
+];
+
+// 列号到区的映射（用于全景网格分区着色）
+$col_to_zone = [];
+foreach ($zone_col_ranges as $z => $r) {
+    for ($c = $r[0]; $c <= $r[1]; $c++) $col_to_zone[$c] = $z;
+}
 
 // 全景模式：一次性加载全部9区数据
 $all_zones_data = [];
@@ -642,6 +666,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         }
         .legend-dot.avail { background: #e8f5e8; border: 1px solid #c8e6c9; }
         .legend-dot.sold { background: #ff6b00; }
+        .legend-dot.reserved { background: #ffca28; }
         .legend-dot.merged { background: #1976d2; }
         .legend-dot.cross { background: #a5d6a7; border: 2px dashed #ff9800; }
 
@@ -656,21 +681,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             line-height: 1.7;
             border: 1px solid rgba(255,107,0,0.08);
         }
+
+        /* ========== 全城九区合并大网格样式 ========== */
+        .panorama-map-container {
+            overflow-x: auto;
+            padding: 16px;
+        }
+        .panorama-map {
+            min-width: 800px;
+        }
+        .panorama-map .block-cell {
+            width: 8px;
+            height: 8px;
+            border: none;
+            font-size: 0;
+            margin: 0;
+        }
+        .panorama-map .map-row {
+            height: 8px;
+        }
+        .pano-zone-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .pano-zone-tag {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .pano-zone-tag:hover { transform: scale(1.05); text-decoration: none; color: white; }
+        .zone-tag-A { background: #4caf50; }
+        .zone-tag-B { background: #2196f3; }
+        .zone-tag-C { background: #ff9800; }
+        .zone-tag-D { background: #9c27b0; }
+        .zone-tag-E { background: #009688; }
+        .zone-tag-F { background: #e91e63; }
+        .zone-tag-G { background: #3f51b5; }
+        .zone-tag-H { background: #ffc107; color: #333; }
+        .zone-tag-H:hover { color: #333; }
+        .zone-tag-Z { background: #f44336; }
+
+        /* 全景网格各区背景色 */
+        .pano-cell.zone-bg-A { background-color: #e8f5e9; }
+        .pano-cell.zone-bg-B { background-color: #e3f2fd; }
+        .pano-cell.zone-bg-C { background-color: #fff3e0; }
+        .pano-cell.zone-bg-D { background-color: #f3e5f5; }
+        .pano-cell.zone-bg-E { background-color: #e0f2f1; }
+        .pano-cell.zone-bg-F { background-color: #fce4ec; }
+        .pano-cell.zone-bg-G { background-color: #e8eaf6; }
+        .pano-cell.zone-bg-H { background-color: #fff8e1; }
+        .pano-cell.zone-bg-Z { background-color: #ffebee; }
+
+        .pano-cell.sold { background-color: #ff6b00 !important; }
+        .pano-cell.reserved { background-color: #ffca28 !important; }
+        .pano-cell.zone-boundary { border-right: 1px solid rgba(0,0,0,0.25) !important; }
+
+        /* 单区网格优化 */
+        .single-zone-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #fff8f5, #f0f7ff);
+            border-radius: 8px;
+            display: inline-block;
+        }
         
         /* 全景响应式 */
         @media (max-width: 768px) {
-            .pano-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
+            .panorama-map .block-cell {
+                width: 6px;
+                height: 6px;
             }
-            .pano-card {
-                padding: 10px;
+            .panorama-map .map-row {
+                height: 6px;
             }
-
-        }
-        @media (max-width: 480px) {
-            .pano-grid {
-                grid-template-columns: 1fr;
+            .pano-zone-bar {
+                gap: 4px;
+            }
+            .pano-zone-tag {
+                padding: 4px 10px;
+                font-size: 11px;
             }
         }
     </style>
@@ -703,9 +802,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
     <!-- 区域选择器 -->
     <div class="zone-selector">
         <div class="zone-tabs">
-            <a href="?name=<?= $city_pinyin ?>" 
+            <a href="?name=<?= $city_pinyin ?>&view=all" 
                class="zone-tab <?= $view_mode === 'panorama' ? 'active' : '' ?>">
-                🏙️ 全城
+                <i class="fas fa-th-large"></i> 全城
             </a>
             <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $zone): ?>
                 <a href="?name=<?= $city_pinyin ?>&zone=<?= $zone ?>" 
@@ -724,57 +823,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 89,991 个区块</span>
         </div>
         
-        <div class="pano-grid">
-            <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $zone):
-                $zd = $all_zones_data[$zone];
-                $pct = $zd['sold_count'] > 0 ? round($zd['sold_count'] / 9999 * 100) : 0;
-                // 热度等级
-                if ($pct >= 30) $heat = 'hot';
-                elseif ($pct >= 10) $heat = 'warm';
-                else $heat = 'cool';
-            ?>
-            <a href="?name=<?= $city_pinyin ?>&zone=<?= $zone ?>" class="pano-card pano-<?= $heat ?>">
-                <div class="pano-card-header">
-                    <span class="pano-zone-label"><?= $zone ?>区</span>
-                    <span class="pano-zone-stats">
-                        <?= number_format($zd['sold_count']) ?>/9,999
-                        <span class="pano-pct">(<?= $pct ?>%)</span>
-                    </span>
+        <!-- 全城九区合并大网格 -->
+        <?php
+        $all_blocks_map = [];
+        foreach ($all_zones_data as $z => $zd) {
+            foreach ($zd['blocks'] as $b) {
+                $all_blocks_map[$b['block_number']] = ['status' => $b['status'], 'zone' => $z];
+            }
+        }
+        ?>
+        <div class="block-map-container panorama-map-container">
+            <div class="pano-zone-bar">
+                <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
+                    <a href="?name=<?= $city_pinyin ?>&zone=<?= $z ?>" class="pano-zone-tag zone-tag-<?= $z ?>"><?= $z ?>区</a>
+                <?php endforeach; ?>
+            </div>
+            <div class="block-map panorama-map">
+                <div class="map-rows">
+                    <?php for ($row = 1; $row <= 99; $row++): ?>
+                        <div class="map-row">
+                            <?php for ($col = 1; $col <= 101; $col++): ?>
+                                <?php
+                                $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                                $bz = $col_to_zone[$col] ?? null;
+                                $bs = 'available';
+                                if (isset($all_blocks_map[$block_number])) {
+                                    $bs = $all_blocks_map[$block_number]['status'];
+                                }
+                                $bc = "block-cell pano-cell";
+                                if ($bz) $bc .= " zone-bg-{$bz}";
+                                $bc .= " {$bs}";
+                                $is_boundary = in_array($col, [12,13,24,25,36,37,48,49,60,61,72,73,84,85,96,97]);
+                                if ($is_boundary) $bc .= " zone-boundary";
+                                ?>
+                                <div class="<?= $bc ?>"
+                                     data-block-number="<?= $block_number ?>"
+                                     data-zone="<?= $bz ?>"
+                                     data-status="<?= $bs ?>"
+                                     title="<?= $bz ? $bz.'区 ' : '' ?><?= $block_number ?>">
+                                </div>
+                            <?php endfor; ?>
+                        </div>
+                    <?php endfor; ?>
                 </div>
-                <div class="pano-mini-map">
-                    <img class="pano-heatmap"
-                         src="api/heatmap.php?city_id=<?= $city_id ?>&zone=<?= $zone ?>"
-                         alt="<?= $zone ?>区热力图"
-                         loading="lazy"
-                         width="101" height="99"
-                         style="width:100%;height:auto;display:block;">
-                </div>
-                <?php if ($zd['merged_count'] > 0): ?>
-                <div class="pano-merged-badge">🏗️ <?= $zd['merged_count'] ?>个合并区块</div>
-                <?php endif; ?>
-            </a>
-            <?php endforeach; ?>
+            </div>
         </div>
         
         <div class="pano-legend">
             <span><span class="legend-dot avail"></span> 可认领</span>
             <span><span class="legend-dot sold"></span> 已认领</span>
-            <span><span class="legend-dot merged"></span> 合并区块</span>
-            <span><span class="legend-dot cross"></span> 跨区边界 (可跨区合并)</span>
+            <span><span class="legend-dot reserved"></span> 已预订</span>
+            <span>—— 各区域以不同底色区分，点击上方区标签可进入单区</span>
         </div>
         <div class="pano-cross-hint">
-            💡 <strong>跨区合并提示：</strong>相邻区域的边界区块可以跨区合并认领，打造横跨多区的大区块！
-            点击相邻区域卡片进入对应区地图，使用"相邻多区块"模式选择边界区块即可。
+            <i class="fas fa-lightbulb"></i> <strong>跨区合并提示：</strong>相邻区域的边界区块可以跨区合并认领，打造横跨多区的大区块！
+            点击上方区标签进入对应区地图，使用"相邻多区块"模式选择边界区块即可。
         </div>
     </div>
     <!-- ========== /九区全景模式 ========== -->
     
     <?php else: ?>
     <!-- ========== 单区详细模式 ========== -->
+    <?php
+    $col_range = $zone_col_ranges[$current_zone] ?? [1, 101];
+    $col_start = $col_range[0];
+    $col_end = $col_range[1];
+    ?>
     <div class="row">
                                 <div class="col-md-9">
             <!-- 桌面端：网格地图 -->
             <div class="block-map-container" id="desktopMap">
+                <div class="single-zone-title">
+                    <i class="fas fa-map-marked-alt"></i> <?= $current_zone ?>区区块地图
+                </div>
                 <div class="map-controls">
                     <div class="form-group">
                         <label>选择模式:</label>
@@ -793,7 +914,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                     <div class="map-rows">
                         <?php for ($row = 1; $row <= 99; $row++): ?>
                             <div class="map-row">
-                                <?php for ($col = 1; $col <= 101; $col++): ?>
+                                <?php for ($col = $col_start; $col <= $col_end; $col++): ?>
                                    <?php
 										$block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
 										$block_price = calculateBlockPrice($current_zone, $block_number, $zones);
