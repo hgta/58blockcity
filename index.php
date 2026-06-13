@@ -135,10 +135,12 @@ $letters = range('A', 'Z');
             .city-grid{grid-template-columns:repeat(4,1fr)}
             .feature-grid{grid-template-columns:1fr}
             .featured-section{grid-template-columns:1fr}
+            .footer-grid{grid-template-columns:repeat(2,1fr)!important}
         }
         @media(max-width:480px){
             .hot-city-grid{grid-template-columns:repeat(2,1fr)}
             .city-grid{grid-template-columns:repeat(3,1fr)}
+            .footer-grid{grid-template-columns:1fr!important}
         }
     </style>
 </head>
@@ -340,7 +342,7 @@ $letters = range('A', 'Z');
     <!-- 底部 -->
     <footer style="background:#1a1a2e;color:#94a3b8;padding:48px 0 20px;margin-top:40px;">
         <div class="container">
-            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr;gap:30px;margin-bottom:30px;">
+            <div class="footer-grid" style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr;gap:30px;margin-bottom:30px;">
                 <div>
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关于58区块城市</h4>
                     <p style="font-size:13px;line-height:1.8;color:#64748b;">
@@ -367,9 +369,9 @@ $letters = range('A', 'Z');
                 </div>
                 <div>
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关注我们</h4>
-                    <div style="display:flex;gap:12px;">
-                        <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
-                        <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;background:#fff;border-radius:6px;padding:3px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                        <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
                     </div>
                     <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:12px;">
                         <span style="width:80px;text-align:center;">7.5折购地</span>
