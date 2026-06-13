@@ -5,8 +5,8 @@ require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Product.php';
+require_once '../../classes/Coupon.php';
 
-// 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit;
@@ -15,181 +15,186 @@ if (!isset($_SESSION['user_id'])) {
 $shop = new Shop($pdo);
 $order = new Order($pdo);
 $product = new Product($pdo);
+$coupon = new Coupon($pdo);
 
 $userId = $_SESSION['user_id'];
 
 // 获取用户信息
-$userStmt = $pdo->prepare("SELECT username, email, created_at FROM users WHERE id = ?");
+$userStmt = $pdo->prepare("SELECT username, email, created_at, avatar FROM users WHERE id = ?");
 $userStmt->execute([$userId]);
 $userInfo = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-// 获取用户店铺信息
+// 店铺信息
 $userShop = $shop->getShopByUserId($userId);
 $hasShop = !empty($userShop);
+$shopId = $hasShop ? $userShop['id'] : 0;
 
-// 获取用户订单统计
+// 订单统计
 $orderStats = $order->getUserOrderStats($userId);
+$recentOrders = $order->getUserOrders($userId, ['page' => 1, 'per_page' => 5]);
 
-// 获取最近订单
-$recentOrders = $order->getUserOrders($userId, 5);
-
-// 获取用户店铺的商品统计（如果有店铺）
+// 店铺数据（如果有）
+$shopDailyStats = [];
 $shopProductStats = [];
+$shopCouponStats = [];
 if ($hasShop) {
-    $shopProductStats = $product->getShopProductStats($userShop['id']);
+    $shopDailyStats = $shop->getShopDailyStats($shopId);
+    $shopProductStats = $product->getShopProductStats($shopId);
+    $shopCouponStats = $coupon->getShopCouponStats($shopId);
 }
 
-// 获取用户收藏或浏览历史（这里简化为最近浏览的商品）
 $recentProducts = $product->getRecentProducts(6);
 ?>
 
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <!-- 用户侧边栏 -->
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">用户中心</h5>
-                </div>
+                <div class="card-header"><h5 class="card-title mb-0">用户中心</h5></div>
                 <div class="list-group list-group-flush">
-                    <a href="dashboard.php" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-tachometer-alt"></i> 仪表板
-                    </a>
-                    <a href="orders.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-shopping-cart"></i> 我的订单
-                    </a>
-                    <a href="profile.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user-edit"></i> 个人信息
-                    </a>
-                    <a href="shops.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-store"></i> 我的店铺
-                    </a>
-                    <a href="address.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-address-book"></i> 收货地址
-                    </a>
-                    <a href="security.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-shield-alt"></i> 安全设置
-                    </a>
+                    <a href="dashboard.php" class="list-group-item list-group-item-action active"><i class="fas fa-tachometer-alt"></i> 仪表板</a>
+                    <a href="orders.php" class="list-group-item list-group-item-action"><i class="fas fa-shopping-cart"></i> 我的订单</a>
+                    <a href="profile.php" class="list-group-item list-group-item-action"><i class="fas fa-user-edit"></i> 个人信息</a>
+                    <a href="shops.php" class="list-group-item list-group-item-action"><i class="fas fa-store"></i> 我的店铺</a>
+                    <a href="address.php" class="list-group-item list-group-item-action"><i class="fas fa-address-book"></i> 收货地址</a>
+                    <a href="security.php" class="list-group-item list-group-item-action"><i class="fas fa-shield-alt"></i> 安全设置</a>
                 </div>
             </div>
-            
-            <!-- 用户信息卡片 -->
+
             <div class="card mt-3">
                 <div class="card-body text-center">
                     <div class="user-avatar mb-3">
-                        <i class="fas fa-user-circle fa-3x text-primary"></i>
+                        <?php if (!empty($userInfo['avatar'])): ?>
+                            <img src="<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                        <?php else: ?>
+                            <div class="avatar-placeholder-lg"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
+                        <?php endif; ?>
                     </div>
                     <h6 class="mb-1"><?= htmlspecialchars($userInfo['username']) ?></h6>
                     <p class="text-muted small mb-2"><?= htmlspecialchars($userInfo['email']) ?></p>
-                    <p class="text-muted small">
-                        注册时间: <?= date('Y-m-d', strtotime($userInfo['created_at'])) ?>
-                    </p>
+                    <p class="text-muted small">注册于 <?= date('Y-m-d', strtotime($userInfo['created_at'])) ?></p>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-9">
             <!-- 欢迎横幅 -->
-            <div class="card bg-primary text-white mb-4">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h4 class="card-title mb-2">欢迎回来，<?= htmlspecialchars($userInfo['username']) ?>！</h4>
-                            <p class="card-text mb-0">今天是 <?= date('Y年m月d日') ?>，祝您购物愉快！</p>
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h4>欢迎回来，<?= htmlspecialchars($userInfo['username']) ?>！</h4>
+                    <p>今天是 <?= date('Y年m月d日 l') ?>，祝您购物愉快！</p>
+                </div>
+                <div class="welcome-icon"><i class="fas fa-shopping-bag"></i></div>
+            </div>
+
+            <!-- 用户数据卡片 -->
+            <div class="dashboard-stats-row">
+                <div class="dash-stat-card stat-blue">
+                    <div class="dash-stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="dash-stat-info">
+                        <div class="dash-stat-value"><?= $orderStats['total_orders'] ?? 0 ?></div>
+                        <div class="dash-stat-label">总订单</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card stat-green">
+                    <div class="dash-stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="dash-stat-info">
+                        <div class="dash-stat-value"><?= $orderStats['completed_orders'] ?? 0 ?></div>
+                        <div class="dash-stat-label">已完成</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card stat-orange">
+                    <div class="dash-stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="dash-stat-info">
+                        <div class="dash-stat-value"><?= ($orderStats['pending_orders'] ?? 0) + ($orderStats['paid_orders'] ?? 0) ?></div>
+                        <div class="dash-stat-label">待处理</div>
+                    </div>
+                </div>
+                <div class="dash-stat-card stat-purple">
+                    <div class="dash-stat-icon"><i class="fas fa-truck"></i></div>
+                    <div class="dash-stat-info">
+                        <div class="dash-stat-value"><?= $orderStats['shipped_orders'] ?? 0 ?></div>
+                        <div class="dash-stat-label">运输中</div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if ($hasShop): ?>
+            <!-- 店铺数据看板 -->
+            <div class="shop-dashboard-section">
+                <div class="section-header">
+                    <h5><i class="fas fa-store text-primary mr-2"></i>店铺数据看板</h5>
+                    <a href="../shop/manage.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-primary">进入店铺管理</a>
+                </div>
+                <div class="dashboard-stats-row">
+                    <div class="dash-stat-card stat-red">
+                        <div class="dash-stat-icon"><i class="fas fa-yen-sign"></i></div>
+                        <div class="dash-stat-info">
+                            <div class="dash-stat-value">¥<?= number_format($shopDailyStats['today']['revenue'] ?? 0, 0) ?></div>
+                            <div class="dash-stat-label">今日营收</div>
+                            <?php if (($shopDailyStats['yesterday']['revenue'] ?? 0) > 0): ?>
+                                <div class="dash-stat-trend <?= ($shopDailyStats['today']['revenue'] ?? 0) >= ($shopDailyStats['yesterday']['revenue'] ?? 0) ? 'up' : 'down' ?>">
+                                    <?= ($shopDailyStats['today']['revenue'] ?? 0) >= ($shopDailyStats['yesterday']['revenue'] ?? 0) ? '↑' : '↓' ?>
+                                    <?= number_format(abs(($shopDailyStats['today']['revenue'] ?? 0) - ($shopDailyStats['yesterday']['revenue'] ?? 0)), 0) ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <div class="col-md-4 text-right">
-                            <i class="fas fa-shopping-bag fa-3x opacity-50"></i>
+                    </div>
+                    <div class="dash-stat-card stat-teal">
+                        <div class="dash-stat-icon"><i class="fas fa-file-invoice"></i></div>
+                        <div class="dash-stat-info">
+                            <div class="dash-stat-value"><?= $shopDailyStats['today']['orders'] ?? 0 ?></div>
+                            <div class="dash-stat-label">今日订单</div>
+                        </div>
+                    </div>
+                    <div class="dash-stat-card stat-indigo">
+                        <div class="dash-stat-icon"><i class="fas fa-box"></i></div>
+                        <div class="dash-stat-info">
+                            <div class="dash-stat-value"><?= $shopProductStats['active_products'] ?? 0 ?></div>
+                            <div class="dash-stat-label">在售商品</div>
+                        </div>
+                    </div>
+                    <div class="dash-stat-card stat-pink">
+                        <div class="dash-stat-icon"><i class="fas fa-ticket-alt"></i></div>
+                        <div class="dash-stat-info">
+                            <div class="dash-stat-value"><?= $shopCouponStats['active'] ?? 0 ?></div>
+                            <div class="dash-stat-label">进行中优惠券</div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- 统计卡片 -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-shopping-cart text-primary"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value"><?= $orderStats['total_orders'] ?? 0 ?></div>
-                            <div class="stat-label">总订单</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-check-circle text-success"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value"><?= $orderStats['completed_orders'] ?? 0 ?></div>
-                            <div class="stat-label">已完成</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock text-warning"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value"><?= $orderStats['pending_orders'] ?? 0 ?></div>
-                            <div class="stat-label">待处理</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-store text-info"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value"><?= $hasShop ? '1' : '0' ?></div>
-                            <div class="stat-label">我的店铺</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+            <?php endif; ?>
+
             <div class="row">
                 <!-- 最近订单 -->
-                <div class="col-md-6">
+                <div class="col-md-7">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">最近订单</h5>
                             <a href="orders.php" class="btn btn-sm btn-outline-primary">查看全部</a>
                         </div>
-                        <div class="card-body">
-                            <?php if ($recentOrders && count($recentOrders) > 0): ?>
-                                <?php foreach ($recentOrders as $order): ?>
-                                    <div class="order-item mb-3 pb-3 border-bottom">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h6 class="mb-1">订单号: <?= htmlspecialchars($order['order_no']) ?></h6>
-                                                <p class="text-muted small mb-1">
-                                                    金额: <?= number_format($order['total_amount'], 2) ?> BCT
-                                                </p>
-                                                <p class="text-muted small mb-0">
-                                                    时间: <?= date('m-d H:i', strtotime($order['created_at'])) ?>
-                                                </p>
+                        <div class="card-body p-0">
+                            <?php if (!empty($recentOrders)): ?>
+                                <div class="order-mini-list">
+                                    <?php foreach ($recentOrders as $o): ?>
+                                        <div class="order-mini-item">
+                                            <div class="order-mini-left">
+                                                <div class="order-mini-no"><?= htmlspecialchars($o['order_no']) ?></div>
+                                                <div class="order-mini-time"><?= date('m-d H:i', strtotime($o['created_at'])) ?></div>
                                             </div>
-                                            <span class="badge badge-<?= 
-                                                $order['status'] == 'completed' ? 'success' : 
-                                                ($order['status'] == 'pending' ? 'warning' : 
-                                                ($order['status'] == 'paid' ? 'info' : 'secondary')) 
-                                            ?>">
-                                                <?= $order['status'] == 'completed' ? '已完成' : 
-                                                    ($order['status'] == 'pending' ? '待支付' : 
-                                                    ($order['status'] == 'paid' ? '已支付' : 
-                                                    ($order['status'] == 'shipped' ? '已发货' : $order['status']))) 
-                                                ?>
-                                            </span>
+                                            <div class="order-mini-center">
+                                                <span class="order-mini-status status-<?= $o['status'] ?>">
+                                                    <?= ['pending' => '待付款', 'paid' => '待发货', 'shipped' => '运输中', 'completed' => '已完成', 'cancelled' => '已取消'][$o['status']] ?? $o['status'] ?>
+                                                </span>
+                                            </div>
+                                            <div class="order-mini-right">
+                                                <div class="order-mini-amount">¥<?= number_format($o['total_amount'], 2) ?></div>
+                                            </div>
                                         </div>
-                                    </div>
-                                <?php endforeach; ?>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php else: ?>
-                                <div class="text-center text-muted py-4">
+                                <div class="text-center text-muted py-5">
                                     <i class="fas fa-shopping-cart fa-2x mb-3"></i>
                                     <p>暂无订单记录</p>
                                     <a href="../product/list.php" class="btn btn-primary">去购物</a>
@@ -198,98 +203,93 @@ $recentProducts = $product->getRecentProducts(6);
                         </div>
                     </div>
                 </div>
-                
-                <!-- 店铺管理（如果有店铺） -->
-                <div class="col-md-6">
+
+                <!-- 快速操作 + 店铺摘要 -->
+                <div class="col-md-5">
                     <?php if ($hasShop): ?>
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">店铺管理</h5>
-                                <a href="../shop/manage.php?id=<?= $userShop['id'] ?>" class="btn btn-sm btn-outline-primary">管理店铺</a>
+                                <h5 class="card-title mb-0">我的店铺</h5>
+                                <a href="../shop/manage.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-primary">管理</a>
                             </div>
                             <div class="card-body">
-                                <div class="shop-info mb-3">
-                                    <h6 class="text-primary"><?= htmlspecialchars($userShop['shop_name']) ?></h6>
-                                    <p class="text-muted small mb-2">
-                                        <?= htmlspecialchars(mb_substr($userShop['shop_description'], 0, 50)) ?>...
-                                    </p>
-                                    <div class="d-flex justify-content-between text-muted small">
-                                        <span>状态: 
-                                            <span class="badge badge-<?= 
-                                                $userShop['status'] == 'active' ? 'success' : 
-                                                ($userShop['status'] == 'pending' ? 'warning' : 'danger')
-                                            ?>">
-                                                <?= $userShop['status'] == 'active' ? '营业中' : 
-                                                    ($userShop['status'] == 'pending' ? '审核中' : '已关闭')
-                                                ?>
-                                            </span>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="shop-avatar mr-3">
+                                        <?php if (!empty($userShop['shop_logo'])): ?>
+                                            <img src="../<?= htmlspecialchars($userShop['shop_logo']) ?>" alt="" class="rounded" style="width:48px;height:48px;object-fit:cover;">
+                                        <?php else: ?>
+                                            <div class="shop-avatar-placeholder"><i class="fas fa-store"></i></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1"><?= htmlspecialchars($userShop['shop_name']) ?></h6>
+                                        <span class="badge badge-<?= $userShop['status'] === 'active' ? 'success' : 'warning' ?>">
+                                            <?= $userShop['status'] === 'active' ? '营业中' : '审核中' ?>
                                         </span>
-                                        <span>评分: <?= number_format($userShop['rating'], 1) ?></span>
                                     </div>
                                 </div>
-                                
-                                <?php if ($shopProductStats): ?>
-                                <div class="shop-stats">
-                                    <div class="row text-center">
-                                        <div class="col-4">
-                                            <div class="stat-number"><?= $shopProductStats['total_products'] ?? 0 ?></div>
-                                            <div class="stat-label small">商品数</div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="stat-number"><?= $shopProductStats['active_products'] ?? 0 ?></div>
-                                            <div class="stat-label small">在售</div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="stat-number"><?= $userShop['total_sales'] ?></div>
-                                            <div class="stat-label small">总销量</div>
-                                        </div>
+                                <div class="shop-mini-stats">
+                                    <div class="shop-mini-stat">
+                                        <div class="sms-value"><?= $shopProductStats['total_products'] ?? 0 ?></div>
+                                        <div class="sms-label">商品</div>
+                                    </div>
+                                    <div class="shop-mini-stat">
+                                        <div class="sms-value"><?= $userShop['total_sales'] ?? 0 ?></div>
+                                        <div class="sms-label">销量</div>
+                                    </div>
+                                    <div class="shop-mini-stat">
+                                        <div class="sms-value"><?= number_format($userShop['rating'] ?? 5, 1) ?></div>
+                                        <div class="sms-label">评分</div>
+                                    </div>
+                                    <div class="shop-mini-stat">
+                                        <div class="sms-value"><?= $shopCouponStats['total'] ?? 0 ?></div>
+                                        <div class="sms-label">优惠券</div>
                                     </div>
                                 </div>
-                                <?php endif; ?>
+                                <div class="mt-3 d-flex gap-2">
+                                    <a href="../shop/products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">商品</a>
+                                    <a href="../shop/orders.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">订单</a>
+                                    <a href="../shop/coupons.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">优惠券</a>
+                                </div>
                             </div>
                         </div>
                     <?php else: ?>
                         <div class="card">
-                            <div class="card-body text-center">
+                            <div class="card-body text-center py-4">
                                 <i class="fas fa-store fa-2x text-muted mb-3"></i>
                                 <h6>您还没有店铺</h6>
-                                <p class="text-muted small mb-3">开启您的电商之旅，创建个人店铺</p>
+                                <p class="text-muted small mb-3">开启您的电商之旅</p>
                                 <a href="../shop/create.php" class="btn btn-primary">创建店铺</a>
                             </div>
                         </div>
                     <?php endif; ?>
-                    
-                    <!-- 快速操作 -->
+
                     <div class="card mt-3">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">快速操作</h5>
-                        </div>
+                        <div class="card-header"><h5 class="card-title mb-0">快速操作</h5></div>
                         <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-4">
-                                    <a href="../product/list.php" class="quick-action">
-                                        <i class="fas fa-shopping-bag fa-2x text-primary mb-2"></i>
-                                        <div class="small">浏览商品</div>
-                                    </a>
-                                </div>
-                                <div class="col-4">
-                                    <a href="orders.php" class="quick-action">
-                                        <i class="fas fa-list-alt fa-2x text-success mb-2"></i>
-                                        <div class="small">我的订单</div>
-                                    </a>
-                                </div>
-                                <div class="col-4">
-                                    <a href="profile.php" class="quick-action">
-                                        <i class="fas fa-user-cog fa-2x text-info mb-2"></i>
-                                        <div class="small">个人设置</div>
-                                    </a>
-                                </div>
+                            <div class="quick-actions-grid">
+                                <a href="../product/list.php" class="qa-item">
+                                    <i class="fas fa-shopping-bag text-primary"></i>
+                                    <span>浏览商品</span>
+                                </a>
+                                <a href="orders.php" class="qa-item">
+                                    <i class="fas fa-list-alt text-success"></i>
+                                    <span>我的订单</span>
+                                </a>
+                                <a href="profile.php" class="qa-item">
+                                    <i class="fas fa-user-cog text-info"></i>
+                                    <span>个人设置</span>
+                                </a>
+                                <a href="../shop/coupons.php?id=<?= $shopId ?>" class="qa-item">
+                                    <i class="fas fa-ticket-alt text-warning"></i>
+                                    <span>优惠券</span>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- 推荐商品 -->
             <div class="card mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -298,19 +298,18 @@ $recentProducts = $product->getRecentProducts(6);
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <?php if ($recentProducts && count($recentProducts) > 0): ?>
-                            <?php foreach ($recentProducts as $product): ?>
+                        <?php if (!empty($recentProducts)): ?>
+                            <?php foreach ($recentProducts as $p): ?>
                                 <div class="col-md-4 col-6 mb-3">
                                     <div class="product-card-small">
-                                        <a href="../product/detail.php?id=<?= $product['id'] ?>">
+                                        <a href="../product/detail.php?id=<?= $p['id'] ?>">
                                             <div class="product-image">
-                                                <img src="<?= '../' . htmlspecialchars($product['main_image']) ?>" 
-                                                     alt="<?= htmlspecialchars($product['name']) ?>">
+                                                <img src="../<?= htmlspecialchars($p['main_image']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
                                             </div>
                                             <div class="product-info">
-                                                <h6 class="product-name"><?= htmlspecialchars(mb_substr($product['name'], 0, 15)) ?>...</h6>
+                                                <h6 class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 16)) ?><?= mb_strlen($p['name']) > 16 ? '...' : '' ?></h6>
                                                 <div class="product-price">
-                                                    <span class="bct-price"><?= number_format($product['price_bct'], 2) ?> BCT</span>
+                                                    <span class="bct-price"><?= number_format($p['price_bct'], 2) ?> BCT</span>
                                                 </div>
                                             </div>
                                         </a>
@@ -331,93 +330,110 @@ $recentProducts = $product->getRecentProducts(6);
 </div>
 
 <style>
-.stat-card {
+.welcome-banner {
+    background: linear-gradient(135deg, #ff6b00 0%, #ff8533 100%);
+    color: #fff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.welcome-banner h4 { margin-bottom: 6px; font-weight: 700; }
+.welcome-banner p { margin: 0; opacity: 0.9; }
+.welcome-icon { font-size: 48px; opacity: 0.25; }
+
+.avatar-placeholder-lg {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b00, #ff8533);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; margin: 0 auto;
+}
+
+.dashboard-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+.dash-stat-card {
+    border-radius: 12px;
+    padding: 16px;
+    color: #fff;
     display: flex;
     align-items: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-.stat-icon {
-    font-size: 24px;
-    margin-right: 15px;
-    width: 50px;
-    text-align: center;
-}
-.stat-content {
-    flex: 1;
-}
-.stat-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #2c3e50;
-    line-height: 1;
-}
-.stat-label {
-    font-size: 14px;
-    color: #6c757d;
-    margin-top: 5px;
-}
-.order-item:last-child {
-    border-bottom: none !important;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-.quick-action {
-    display: block;
-    color: #495057;
-    text-decoration: none;
-    transition: all 0.3s;
-    padding: 10px 5px;
-    border-radius: 5px;
-}
-.quick-action:hover {
-    background: #f8f9fa;
-    color: #007bff;
-    text-decoration: none;
-}
-.product-card-small {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: all 0.3s;
-}
-.product-card-small:hover {
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-.product-card-small .product-image {
-    height: 100px;
+    gap: 12px;
+    position: relative;
     overflow: hidden;
 }
-.product-card-small .product-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.dash-stat-card::after {
+    content: ''; position: absolute; right: -10px; bottom: -10px;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
 }
-.product-card-small .product-info {
-    padding: 10px;
-}
-.product-card-small .product-name {
-    font-size: 14px;
-    margin-bottom: 5px;
-    color: #2c3e50;
-}
-.product-card-small .product-price {
-    font-size: 12px;
-    color: #e74c3c;
-    font-weight: bold;
-}
-.shop-stats .stat-number {
-    font-size: 18px;
-    font-weight: bold;
-    color: #2c3e50;
-}
-.shop-stats .stat-label {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 2px;
+.stat-blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.stat-green { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.stat-orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.stat-purple { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+.stat-red { background: linear-gradient(135deg, #ff5858 0%, #f09819 100%); }
+.stat-teal { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+.stat-indigo { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.stat-pink { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+
+.dash-stat-icon { font-size: 22px; width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dash-stat-info { flex: 1; }
+.dash-stat-value { font-size: 22px; font-weight: 800; line-height: 1; }
+.dash-stat-label { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+.dash-stat-trend { position: absolute; top: 10px; right: 12px; font-size: 11px; background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 10px; }
+.dash-stat-trend.up::before { content: '↑ '; }
+.dash-stat-trend.down::before { content: '↓ '; }
+
+.shop-dashboard-section { margin-bottom: 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.section-header h5 { margin: 0; font-weight: 700; color: #1a1a2e; }
+
+.order-mini-list { }
+.order-mini-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f1f3f5; transition: background 0.15s; }
+.order-mini-item:hover { background: #f8f9fa; }
+.order-mini-item:last-child { border-bottom: none; }
+.order-mini-left { flex: 1; min-width: 0; }
+.order-mini-no { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.order-mini-time { font-size: 12px; color: #6c757d; }
+.order-mini-center { margin: 0 12px; }
+.order-mini-status { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: 500; }
+.order-mini-status.status-pending { background: #fff3cd; color: #856404; }
+.order-mini-status.status-paid { background: #d1ecf1; color: #0c5460; }
+.order-mini-status.status-shipped { background: #d4edda; color: #155724; }
+.order-mini-status.status-completed { background: #e2e3e5; color: #383d41; }
+.order-mini-status.status-cancelled { background: #f8d7da; color: #721c24; }
+.order-mini-right { text-align: right; }
+.order-mini-amount { font-size: 14px; font-weight: 700; color: #e74c3c; }
+
+.shop-avatar-placeholder { width: 48px; height: 48px; border-radius: 8px; background: #ff6b00; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.shop-mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.shop-mini-stat { background: #f8f9fa; border-radius: 8px; padding: 10px 4px; }
+.sms-value { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+.sms-label { font-size: 11px; color: #6c757d; margin-top: 2px; }
+
+.quick-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.qa-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; background: #f8f9fa; color: #495057; text-decoration: none; transition: all 0.2s; }
+.qa-item:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); color: #ff6b00; text-decoration: none; }
+.qa-item i { font-size: 18px; width: 32px; height: 32px; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; }
+.qa-item span { font-size: 13px; font-weight: 500; }
+
+.product-card-small { border: 1px solid #e9ecef; border-radius: 10px; overflow: hidden; transition: all 0.2s; }
+.product-card-small:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.product-card-small a { color: inherit; text-decoration: none; }
+.product-card-small .product-image { height: 120px; overflow: hidden; background: #f8f9fa; }
+.product-card-small .product-image img { width: 100%; height: 100%; object-fit: cover; }
+.product-card-small .product-info { padding: 10px; }
+.product-card-small .product-name { font-size: 13px; margin-bottom: 6px; color: #1a1a2e; font-weight: 600; line-height: 1.4; }
+.product-card-small .product-price { font-size: 13px; color: #ff6b00; font-weight: 700; }
+
+@media (max-width: 768px) {
+    .dashboard-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .welcome-banner { flex-direction: column; text-align: center; gap: 10px; }
 }
 </style>
 
