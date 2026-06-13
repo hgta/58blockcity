@@ -3,6 +3,12 @@
  * 主站总控后台 — 数据汇总看板
  */
 
+// 统一后台框架配置
+$admin_site_config = [
+    'site'       => 'main',
+    'page_title' => '总控数据看板',
+];
+
 require_once '../config/database.php';
 require_once '../shared/admin/admin-header.php';
 
