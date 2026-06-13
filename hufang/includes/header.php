@@ -1,7 +1,9 @@
 <?php
 $site_config['title']       = '58互访圈 - 城市间互访交流平台 | 58 Hufang';
-$site_config['description'] = '58互访圈是基于区块城市BlockCity的城市间互访交流平台。';
-$site_config['keywords']    = '58,互访圈,区块城市,BlockCity,DAO,同城交流,互访';
+$site_config['description'] = '58互访圈是基于区块城市BlockCity的城市间互访交流平台，支持创建互访圈、跨城互访、访问记录管理，打造城市社交新体验。';
+$site_config['keywords']    = '58,互访圈,区块城市,BlockCity,DAO,同城交流,互访,城市社交';
+$site_config['canonical_url'] = 'https://v.58.tl/';
+$site_config['og_image']    = 'https://58.tl/assets/images/og-hufang.jpg';
 $site_config['logo_main']   = '58';
 $site_config['logo_sub']    = '互访圈';
 $site_config['logo_tag']    = '城市间互访交流平台';

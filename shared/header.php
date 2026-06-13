@@ -31,10 +31,37 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
     <title><?= htmlspecialchars($site_config['title']) ?></title>
     <meta name="description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta name="keywords" content="<?= htmlspecialchars($site_config['keywords']) ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($site_config['canonical_url'] ?? '') ?>">
+    <!-- Open Graph (Facebook / X / LinkedIn / Discord 通用) -->
+    <meta property="og:title" content="<?= htmlspecialchars($site_config['og_title'] ?? $site_config['title']) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($site_config['og_description'] ?? $site_config['description']) ?>">
+    <meta property="og:type" content="<?= htmlspecialchars($site_config['og_type'] ?? 'website') ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($site_config['og_url'] ?? ($site_config['canonical_url'] ?? '')) ?>">
+    <?php if (!empty($site_config['og_image'])): ?>
+    <meta property="og:image" content="<?= htmlspecialchars($site_config['og_image']) ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <?php endif; ?>
     <link rel="icon" href="https://58.tl/assets/images/favicon.ico">
     <?php if (!empty($_SESSION['csrf_token'])): ?>
     <meta name="csrf-token" content="<?= $_SESSION['csrf_token'] ?>">
     <?php endif; ?>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "<?= htmlspecialchars($site_config['og_title'] ?? $site_config['title']) ?>",
+      "url": "<?= htmlspecialchars($site_config['og_url'] ?? ($site_config['canonical_url'] ?? '')) ?>",
+      "description": "<?= htmlspecialchars($site_config['og_description'] ?? $site_config['description']) ?>"
+      <?php if (!empty($site_config['schema_search'])): ?>,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "<?= htmlspecialchars($site_config['schema_search']) ?>",
+        "query-input": "required name=search_term_string"
+      }
+      <?php endif; ?>
+    }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/main.css">

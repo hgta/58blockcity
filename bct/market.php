@@ -54,7 +54,7 @@ if (isset($_SESSION['error'])) {
         <div class="card-header">
             <div class="row">
                 <div class="col-md-6">
-                    <h3><i class="glyphicon glyphicon-filter"></i> 城市筛选</h3>
+                    <h2><i class="glyphicon glyphicon-filter"></i> 城市筛选</h2>
                 </div>
                 <div class="col-md-6 text-right">
                     <div class="input-group">
@@ -84,7 +84,7 @@ if (isset($_SESSION['error'])) {
     <!-- 热门城市行情 -->
     <div class="card mt-4">
         <div class="card-header">
-            <h3><i class="glyphicon glyphicon-fire"></i> 热门城市行情</h3>
+            <h2><i class="glyphicon glyphicon-fire"></i> 热门城市行情</h2>
         </div>
         <div class="card-body">
             <div class="hot-city-grid">
@@ -117,7 +117,7 @@ if (isset($_SESSION['error'])) {
     <!-- 全部城市行情 -->
     <div class="card mt-4">
         <div class="card-header">
-            <h3><i class="glyphicon glyphicon-globe"></i> 全部城市行情</h3>
+            <h2><i class="glyphicon glyphicon-globe"></i> 全部城市行情</h2>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -175,7 +175,7 @@ if (isset($_SESSION['error'])) {
     <!-- 行情说明 -->
     <div class="card mt-4">
         <div class="card-header">
-            <h3><i class="glyphicon glyphicon-info-sign"></i> 行情说明</h3>
+            <h2><i class="glyphicon glyphicon-info-sign"></i> 行情说明</h2>
         </div>
         <div class="card-body">
             <div class="row">

@@ -10,6 +10,9 @@
     <meta property="og:description" content="基于元宇宙技术的下一代同城生活服务平台">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.58.tl">
+    <meta property="og:image" content="https://58.tl/assets/images/og-main.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <link rel="canonical" href="https://www.58.tl">
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
     <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>

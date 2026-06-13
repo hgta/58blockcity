@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.58.tl/sitemap.xml
+
+Disallow: /config/
+Disallow: /classes/
+Disallow: /includes/
+Disallow: /shared/
+Disallow: /auth/
+Disallow: /.well-known/
+Disallow: /.user.ini
+Disallow: /*.sql

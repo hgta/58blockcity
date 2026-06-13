@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.58.tl/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.58.tl/top200city.php</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://block.58.tl/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://bct.58.tl/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://bct.58.tl/market.php</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mall.58.tl/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mall.58.tl/product/list.php</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nft.58.tl/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://v.58.tl/</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+</urlset>
