@@ -195,6 +195,43 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['produ
     exit;
 }
 
+// 处理上架商品
+if (isset($_GET['action']) && $_GET['action'] === 'activate' && isset($_GET['product_id'])) {
+    $productId = intval($_GET['product_id']);
+    $productInfo = $product->getProductById($productId);
+    if ($productInfo && $productInfo['shop_id'] == $shopId) {
+        if ($product->updateProduct($productId, ['status' => 'active'])) {
+            $success = '商品已上架';
+        } else {
+            $error = '商品上架失败';
+        }
+    } else {
+        $error = '商品不存在或无权操作';
+    }
+    header('Location: products.php?id=' . $shopId . '&' . ($error ? 'error=' . urlencode($error) : 'success=' . urlencode($success)));
+    exit;
+}
+
+// 处理批量操作
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action']) && !empty($_POST['product_ids'])) {
+    $batchAction = $_POST['batch_action'];
+    $productIds = array_map('intval', $_POST['product_ids']);
+
+    if ($batchAction === 'activate') {
+        $product->batchUpdateStatus($productIds, $shopId, 'active');
+        $success = '已批量上架 ' . count($productIds) . ' 个商品';
+    } elseif ($batchAction === 'deactivate') {
+        $product->batchUpdateStatus($productIds, $shopId, 'inactive');
+        $success = '已批量下架 ' . count($productIds) . ' 个商品';
+    } elseif ($batchAction === 'delete') {
+        $product->batchDeleteProducts($productIds, $shopId);
+        $success = '已批量删除 ' . count($productIds) . ' 个商品';
+    }
+
+    header('Location: products.php?id=' . $shopId . '&success=' . urlencode($success));
+    exit;
+}
+
 // 图片上传函数
 function uploadImage($file) {
     $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
@@ -464,96 +501,103 @@ if (isset($_GET['error'])) {
                         <?php endif; ?>
                         
                         <?php
-                        // 获取店铺商品列表
-                        $products = $product->getProductsByShop($shopId, 50);
+                        // 筛选与搜索参数
+                        $listFilter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+                        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+                        // 获取店铺商品列表（支持筛选和搜索）
+                        $products = $product->getProductsByShopWithFilter($shopId, $listFilter, $search, 100);
                         ?>
                         
                         <?php if ($products): ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>图片</th>
-                                            <th>商品信息</th>
-                                            <th>价格</th>
-                                            <th>库存/销量</th>
-                                            <th>状态</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($products as $productItem): ?>
-                                            <tr>
-                                                <td>
-                                                    <img src="../<?= htmlspecialchars($productItem['main_image']) ?>" 
-                                                         alt="<?= htmlspecialchars($productItem['name']) ?>" 
-                                                         class="product-thumb" style="width: 60px; height: 60px; object-fit: cover;">
-                                                </td>
-                                                <td>
-                                                    <div>
-                                                        <strong><?= htmlspecialchars($productItem['name']) ?></strong>
-                                                        <?php if ($productItem['is_recommended']): ?>
-                                                            <span class="badge badge-success badge-sm ml-1">推荐</span>
-                                                        <?php endif; ?>
-                                                        <div class="text-muted small mt-1">
-                                                            <?= htmlspecialchars(mb_substr($productItem['description'], 0, 50)) ?>...
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="small">
-                                                        <div class="text-primary"><?= number_format($productItem['price_bct'], 2) ?> BCT</div>
-                                                        <?php if ($productItem['price_cny']): ?>
-                                                            <div class="text-muted">¥<?= number_format($productItem['price_cny'], 2) ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="small">
-                                                        <div>库存: <?= $productItem['stock'] ?></div>
-                                                        <div>销量: <?= $productItem['sold_count'] ?></div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge badge-<?= 
-                                                        $productItem['status'] == 'active' ? 'success' : 
-                                                        ($productItem['status'] == 'draft' ? 'secondary' : 
-                                                        ($productItem['status'] == 'sold_out' ? 'warning' : 'danger'))
-                                                    ?>">
-                                                        <?= $productItem['status'] == 'active' ? '在售' : 
-                                                            ($productItem['status'] == 'draft' ? '草稿' : 
-                                                            ($productItem['status'] == 'sold_out' ? '售罄' : '下架'))
-                                                        ?>
+                            <!-- 筛选与批量操作栏 -->
+                            <div class="product-toolbar">
+                                <div class="toolbar-left">
+                                    <label class="check-all-wrap">
+                                        <input type="checkbox" id="checkAll" onchange="toggleAll(this)">
+                                        <span>全选</span>
+                                    </label>
+                                    <div class="batch-actions" id="batchActions" style="display:none;">
+                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="batchAction('activate')">
+                                            <i class="fas fa-play"></i> 批量上架
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="batchAction('deactivate')">
+                                            <i class="fas fa-pause"></i> 批量下架
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="batchAction('delete')">
+                                            <i class="fas fa-trash"></i> 批量删除
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="toolbar-right">
+                                    <div class="filter-tabs">
+                                        <a href="?id=<?= $shopId ?>" class="filter-tab <?= $listFilter == 'all' ? 'active' : '' ?>">全部</a>
+                                        <a href="?id=<?= $shopId ?>&filter=active" class="filter-tab <?= $listFilter == 'active' ? 'active' : '' ?>">在售</a>
+                                        <a href="?id=<?= $shopId ?>&filter=inactive" class="filter-tab <?= $listFilter == 'inactive' ? 'active' : '' ?>">下架</a>
+                                        <a href="?id=<?= $shopId ?>&filter=draft" class="filter-tab <?= $listFilter == 'draft' ? 'active' : '' ?>">草稿</a>
+                                    </div>
+                                    <div class="search-box-sm">
+                                        <input type="text" id="productSearch" placeholder="搜索商品名称..." value="<?= htmlspecialchars($search) ?>">
+                                        <button onclick="doSearch()"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form id="batchForm" method="POST" action="products.php?id=<?= $shopId ?>">
+                                <input type="hidden" name="batch_action" id="batchActionInput" value="">
+                                <div class="product-grid">
+                                    <?php foreach ($products as $productItem): ?>
+                                        <div class="product-card" data-status="<?= $productItem['status'] ?>" data-name="<?= htmlspecialchars($productItem['name']) ?>">
+                                            <div class="product-select">
+                                                <input type="checkbox" name="product_ids[]" value="<?= $productItem['id'] ?>" class="product-checkbox">
+                                            </div>
+                                            <div class="product-image-wrap">
+                                                <img src="../<?= htmlspecialchars($productItem['main_image']) ?>" alt="">
+                                                <?php if ($productItem['is_recommended']): ?>
+                                                    <span class="product-badge">推荐</span>
+                                                <?php endif; ?>
+                                                <div class="product-overlay">
+                                                    <a href="../product/detail.php?id=<?= $productItem['id'] ?>" target="_blank" class="overlay-btn" title="查看">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="products.php?action=edit&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" class="overlay-btn" title="编辑">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="product-body">
+                                                <h4 class="product-title"><?= htmlspecialchars($productItem['name']) ?></h4>
+                                                <div class="product-prices">
+                                                    <span class="price-bct"><?= number_format($productItem['price_bct'], 2) ?> BCT</span>
+                                                    <?php if ($productItem['price_cny']): ?>
+                                                        <span class="price-cny">¥<?= number_format($productItem['price_cny'], 2) ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="product-metrics">
+                                                    <span>库存 <?= $productItem['stock'] ?></span>
+                                                    <span>已售 <?= $productItem['sold_count'] ?></span>
+                                                </div>
+                                                <div class="product-footer">
+                                                    <span class="status-pill status-<?= $productItem['status'] ?>">
+                                                        <?= $productItem['status'] == 'active' ? '在售' : ($productItem['status'] == 'draft' ? '草稿' : ($productItem['status'] == 'sold_out' ? '售罄' : '下架')) ?>
                                                     </span>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="../product/detail.php?id=<?= $productItem['id'] ?>" 
-                                                           class="btn btn-outline-primary" target="_blank" title="查看">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="products.php?action=edit&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" 
-                                                           class="btn btn-outline-secondary" title="编辑">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
+                                                    <div class="quick-actions">
                                                         <?php if ($productItem['status'] == 'active'): ?>
-                                                            <a href="products.php?action=delete&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" 
-                                                               class="btn btn-outline-warning" title="下架" onclick="return confirm('确定要下架这个商品吗？')">
+                                                            <a href="products.php?action=delete&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" class="qa-btn qa-warning" title="下架" onclick="return confirm('下架此商品？')">
                                                                 <i class="fas fa-pause"></i>
                                                             </a>
                                                         <?php else: ?>
-                                                            <a href="products.php?action=activate&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" 
-                                                               class="btn btn-outline-success" title="上架" onclick="return confirm('确定要上架这个商品吗？')">
+                                                            <a href="products.php?action=activate&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" class="qa-btn qa-success" title="上架" onclick="return confirm('上架此商品？')">
                                                                 <i class="fas fa-play"></i>
                                                             </a>
                                                         <?php endif; ?>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </form>
                         <?php else: ?>
                             <div class="text-center py-5">
                                 <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
@@ -572,20 +616,256 @@ if (isset($_GET['error'])) {
 </div>
 
 <style>
-.product-thumb {
-    border-radius: 4px;
-    border: 1px solid #dee2e6;
+/* 商品卡片网格 */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
 }
-.badge-sm {
-    font-size: 0.7em;
-    padding: 0.25em 0.4em;
+.product-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    transition: all 0.2s;
+    position: relative;
 }
-.table td {
-    vertical-align: middle;
+.product-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
 }
-.btn-group-sm > .btn {
-    padding: 0.25rem 0.5rem;
+.product-select {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 3;
 }
+.product-select input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #ff6b00;
+}
+.product-image-wrap {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    background: #f8f9fa;
+    overflow: hidden;
+}
+.product-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.product-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #28a745;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    z-index: 2;
+}
+.product-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+}
+.product-card:hover .product-overlay {
+    opacity: 1;
+}
+.overlay-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.overlay-btn:hover {
+    background: #ff6b00;
+    color: #fff;
+}
+.product-body {
+    padding: 12px;
+}
+.product-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 40px;
+}
+.product-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.price-bct {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ff6b00;
+}
+.price-cny {
+    font-size: 12px;
+    color: #6b7280;
+}
+.product-metrics {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.status-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+.status-active { background: #d4edda; color: #155724; }
+.status-inactive { background: #f8d7da; color: #721c24; }
+.status-draft { background: #e2e3e5; color: #383d41; }
+.status-sold_out { background: #fff3cd; color: #856404; }
+.quick-actions {
+    display: flex;
+    gap: 4px;
+}
+.qa-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.qa-warning { background: #fff3cd; color: #856404; }
+.qa-warning:hover { background: #ffc107; color: #000; }
+.qa-success { background: #d4edda; color: #155724; }
+.qa-success:hover { background: #28a745; color: #fff; }
+
+/* 工具栏 */
+.product-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.check-all-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+}
+.batch-actions {
+    display: flex;
+    gap: 6px;
+    animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.filter-tabs {
+    display: flex;
+    gap: 2px;
+    background: #f1f3f5;
+    border-radius: 8px;
+    padding: 3px;
+}
+.filter-tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6c757d;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.filter-tab:hover {
+    color: #495057;
+    background: rgba(255,255,255,0.6);
+}
+.filter-tab.active {
+    background: #fff;
+    color: #ff6b00;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.search-box-sm {
+    display: flex;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 200px;
+}
+.search-box-sm input {
+    border: none;
+    outline: none;
+    padding: 6px 10px;
+    font-size: 13px;
+    flex: 1;
+}
+.search-box-sm button {
+    border: none;
+    background: #f8f9fa;
+    padding: 0 10px;
+    color: #6c757d;
+    cursor: pointer;
+}
+.search-box-sm button:hover {
+    background: #e9ecef;
+}
+
+/* 图片上传 */
 .image-upload-container {
     border: 2px dashed #dee2e6;
     border-radius: 8px;
@@ -651,6 +931,59 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
         alert('库存不能为负数');
         e.preventDefault();
         return;
+    }
+});
+
+/* ========== 商品列表批量操作与搜索 ========== */
+function toggleAll(checkbox) {
+    const boxes = document.querySelectorAll('.product-checkbox');
+    boxes.forEach(b => b.checked = checkbox.checked);
+    updateBatchActions();
+}
+
+function updateBatchActions() {
+    const checked = document.querySelectorAll('.product-checkbox:checked');
+    const batchActions = document.getElementById('batchActions');
+    batchActions.style.display = checked.length > 0 ? 'flex' : 'none';
+}
+
+function batchAction(action) {
+    const checked = document.querySelectorAll('.product-checkbox:checked');
+    if (checked.length === 0) {
+        alert('请至少选择一个商品');
+        return;
+    }
+    const labels = { activate: '上架', deactivate: '下架', delete: '删除' };
+    if (!confirm('确定要批量' + labels[action] + ' ' + checked.length + ' 个商品吗？')) return;
+    document.getElementById('batchActionInput').value = action;
+    document.getElementById('batchForm').submit();
+}
+
+function doSearch() {
+    const keyword = document.getElementById('productSearch').value.trim();
+    const url = new URL(window.location.href);
+    if (keyword) {
+        url.searchParams.set('search', keyword);
+    } else {
+        url.searchParams.delete('search');
+    }
+    window.location.href = url.toString();
+}
+
+// 监听各商品复选框变化
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('product-checkbox')) {
+        updateBatchActions();
+    }
+});
+
+// 搜索框回车触发
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('productSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') doSearch();
+        });
     }
 });
 </script>

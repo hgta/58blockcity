@@ -608,5 +608,76 @@ class Product {
             return [];
         }
     }
+
+    /**
+     * 获取店铺商品（支持状态筛选和搜索）
+     */
+    public function getProductsByShopWithFilter($shopId, $filter = 'all', $search = '', $limit = 50) {
+        try {
+            $where = "shop_id = ?";
+            $params = [$shopId];
+
+            if ($filter === 'active') {
+                $where .= " AND status = 'active'";
+            } elseif ($filter === 'inactive') {
+                $where .= " AND status = 'inactive'";
+            } elseif ($filter === 'draft') {
+                $where .= " AND status = 'draft'";
+            } elseif ($filter === 'sold_out') {
+                $where .= " AND status = 'sold_out'";
+            }
+
+            if (!empty($search)) {
+                $where .= " AND name LIKE ?";
+                $params[] = "%$search%";
+            }
+
+            $limit = intval($limit);
+            $stmt = $this->pdo->prepare("
+                SELECT * FROM products 
+                WHERE $where 
+                ORDER BY created_at DESC 
+                LIMIT $limit
+            ");
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("获取店铺商品失败: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * 批量更新商品状态
+     */
+    public function batchUpdateStatus($productIds, $shopId, $status) {
+        try {
+            if (empty($productIds)) return false;
+            // 验证状态值
+            $allowed = ['active', 'inactive', 'draft', 'sold_out'];
+            if (!in_array($status, $allowed)) return false;
+
+            $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+            $params = array_merge($productIds, [$shopId]);
+
+            $stmt = $this->pdo->prepare("
+                UPDATE products 
+                SET status = ?, updated_at = NOW() 
+                WHERE id IN ($placeholders) AND shop_id = ?
+            ");
+            array_unshift($params, $status);
+            return $stmt->execute($params);
+        } catch (Exception $e) {
+            error_log("批量更新商品状态失败: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 批量删除商品（软删除：设为 inactive）
+     */
+    public function batchDeleteProducts($productIds, $shopId) {
+        return $this->batchUpdateStatus($productIds, $shopId, 'inactive');
+    }
 }
 ?>
