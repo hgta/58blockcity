@@ -561,8 +561,122 @@ class Order {
             return [];
         }
     }
+
+    /**
+     * 获取店铺订单列表（支持状态筛选和搜索）
+     */
+    public function getShopOrdersWithFilter($shopId, $filters = []) {
+        try {
+            $params = [$shopId];
+            $whereConditions = ["o.shop_id = ?"];
+
+            // 状态筛选
+            if (!empty($filters['status']) && $filters['status'] != 'all') {
+                $whereConditions[] = "o.status = ?";
+                $params[] = $filters['status'];
+            }
+
+            // 搜索筛选（订单号或买家名）
+            if (!empty($filters['search'])) {
+                $whereConditions[] = "(o.order_no LIKE ? OR u.username LIKE ? OR oi.product_name LIKE ?)";
+                $searchTerm = "%" . $filters['search'] . "%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+
+            $whereClause = implode(" AND ", $whereConditions);
+
+            // 分页
+            $limit = "";
+            if (!empty($filters['page']) && !empty($filters['per_page'])) {
+                $offset = ($filters['page'] - 1) * $filters['per_page'];
+                $limit = "LIMIT {$offset}, {$filters['per_page']}";
+            }
+
+            $sql = "SELECT DISTINCT o.*, u.username as buyer_name, u.avatar as buyer_avatar, u.phone as buyer_phone
+                    FROM orders o
+                    LEFT JOIN users u ON o.user_id = u.id
+                    LEFT JOIN order_items oi ON o.id = oi.order_id
+                    WHERE {$whereClause}
+                    ORDER BY o.created_at DESC
+                    {$limit}";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("获取店铺订单失败: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * 获取店铺订单总数（支持状态筛选和搜索）
+     */
+    public function getShopOrderCountWithFilter($shopId, $filters = []) {
+        try {
+            $params = [$shopId];
+            $whereConditions = ["o.shop_id = ?"];
+
+            if (!empty($filters['status']) && $filters['status'] != 'all') {
+                $whereConditions[] = "o.status = ?";
+                $params[] = $filters['status'];
+            }
+
+            if (!empty($filters['search'])) {
+                $whereConditions[] = "(o.order_no LIKE ? OR u.username LIKE ? OR oi.product_name LIKE ?)";
+                $searchTerm = "%" . $filters['search'] . "%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+
+            $whereClause = implode(" AND ", $whereConditions);
+
+            $sql = "SELECT COUNT(DISTINCT o.id) as total
+                    FROM orders o
+                    LEFT JOIN users u ON o.user_id = u.id
+                    LEFT JOIN order_items oi ON o.id = oi.order_id
+                    WHERE {$whereClause}";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['total'] ?? 0;
+        } catch (Exception $e) {
+            error_log("获取店铺订单总数失败: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 获取店铺各状态订单数量统计
+     */
+    public function getShopOrderStatusStats($shopId) {
+        try {
+            $sql = "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid,
+                        SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped,
+                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+                    FROM orders
+                    WHERE shop_id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$shopId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("获取店铺订单状态统计失败: " . $e->getMessage());
+            return ['total' => 0, 'pending' => 0, 'paid' => 0, 'shipped' => 0, 'completed' => 0, 'cancelled' => 0];
+        }
+    }
 }
 ?>
+
+
+
 
 
  
