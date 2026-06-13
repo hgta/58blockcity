@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 
@@ -47,6 +46,8 @@ $totalPages = ceil($totalProducts / $perPage);
 // 获取当前页的商品
 $startIndex = ($page - 1) * $perPage;
 $currentPageProducts = array_slice($products, $startIndex, $perPage);
+
+require_once '../includes/header.php';
 ?>
 
 <div class="container mt-4">

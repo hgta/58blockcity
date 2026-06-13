@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Order.php';
@@ -38,6 +37,8 @@ if ($hasShop) {
     $shopCouponStats = $coupon->getShopCouponStats($shopId);
     $shopDailyStats = $shop->getShopDailyStats($shopId);
 }
+
+require_once '../includes/header.php';
 ?>
 
 <div class="container mt-4">
