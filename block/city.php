@@ -152,58 +152,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         
         /* 头部样式 */
         .city-header {
-            background: linear-gradient(135deg, #ff6b00, #ff9500);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: white;
-            padding: 20px 0;
-            margin-bottom: 20px;
+            padding: 40px 0 32px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
         }
-        
+        .city-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,107,0,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
         .city-title {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            position: relative;
+            letter-spacing: -0.5px;
         }
-        
+
         .city-stats {
             display: flex;
-            gap: 20px;
+            gap: 28px;
             font-size: 14px;
+            position: relative;
         }
-        
+
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            color: rgba(255,255,255,0.7);
         }
-        
+        .stat-item i {
+            color: #ff9500;
+            font-size: 12px;
+        }
+
         /* 区域选择器 */
         .zone-selector {
             background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 18px 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid #f0f0f0;
         }
-        
+
         .zone-tabs {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
-        
+
         .zone-tab {
-            padding: 8px 20px;
-            background-color: #f5f5f5;
-            border-radius: 20px;
+            padding: 10px 24px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
             text-decoration: none;
-            color: #666;
-            font-weight: bold;
-            transition: all 0.3s;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: 1px solid transparent;
         }
-        
-        .zone-tab:hover, .zone-tab.active {
-            background-color: #ff6b00;
+
+        .zone-tab:hover {
+            background-color: #fff8f5;
+            color: #ff6b00;
+            border-color: rgba(255,107,0,0.2);
+            transform: translateY(-2px);
+        }
+        .zone-tab.active {
+            background: linear-gradient(135deg, #ff6b00, #ff9500);
             color: white;
+            box-shadow: 0 4px 15px rgba(255,107,0,0.3);
         }
         
         /* 区块地图容器 */
@@ -301,71 +331,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         /* 区块详情面板 */
         .block-detail-panel {
             background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.06);
             position: sticky;
             top: 20px;
+            border: 1px solid #f5f5f5;
         }
-        
+
         .block-info h3 {
-            color: #ff6b00;
-            margin-bottom: 15px;
+            color: #1a1a2e;
+            margin-bottom: 20px;
             font-size: 18px;
+            font-weight: 700;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f5f5f5;
         }
-        
+
         .block-meta {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        
+
         .meta-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f8f8f8;
         }
-        
+
         .meta-label {
-            font-weight: bold;
-            color: #666;
+            font-weight: 600;
+            color: #888;
+            font-size: 13px;
         }
-        
+
         .meta-value {
             color: #333;
+            font-weight: 500;
         }
-        
+
         .price-highlight {
             color: #ff6b00;
-            font-weight: bold;
-            font-size: 18px;
+            font-weight: 800;
+            font-size: 20px;
         }
-        
+
         .block-actions {
-            margin-top: 20px;
+            margin-top: 24px;
         }
-        
+
         .btn-buy {
             display: block;
             width: 100%;
-            background-color: #ff6b00;
+            background: linear-gradient(135deg, #ff6b00, #ff9500);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,107,0,0.25);
         }
-        
-        .btn-buy:hover {
-            background-color: #e05d00;
+
+        .btn-buy:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255,107,0,0.35);
         }
-        
+
         .btn-buy:disabled {
-            background-color: #ccc;
+            background: #e0e0e0;
             cursor: not-allowed;
+            box-shadow: none;
         }
         
         /* 响应式设计 */
@@ -481,55 +520,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         .pano-container {
             max-width: 1050px;
             margin: 0 auto;
+            padding: 10px 0 30px;
         }
         .pano-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 28px;
             padding: 0 5px;
         }
         .pano-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a1a2e;
+            letter-spacing: -0.3px;
         }
         .pano-total {
             font-size: 14px;
-            color: #666;
+            color: #888;
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 20px;
         }
         .pano-total strong {
             color: #ff6b00;
             font-size: 18px;
+            font-weight: 800;
         }
-        
+
         .pano-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 28px;
         }
-        
+
         .pano-card {
             background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             text-decoration: none;
             color: inherit;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            transition: all 0.35s ease;
+            border: 1px solid #f0f0f0;
             display: block;
         }
         .pano-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.1);
             text-decoration: none;
             color: inherit;
+            border-color: transparent;
         }
-        .pano-card.pano-hot { border-color: #ff6b00; }
-        .pano-card.pano-warm { border-color: #ff9800; }
-        .pano-card.pano-cool { border-color: #e0e0e0; }
+        .pano-card.pano-hot { border-color: rgba(255,107,0,0.3); }
+        .pano-card.pano-warm { border-color: rgba(255,152,0,0.3); }
+        .pano-card.pano-cool { border-color: #e8e8e8; }
         
         .pano-card-header {
             display: flex;
@@ -575,34 +621,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         
         .pano-legend {
             display: flex;
-            gap: 25px;
+            gap: 24px;
             justify-content: center;
-            padding: 15px;
+            padding: 16px;
             font-size: 13px;
-            color: #666;
+            color: #888;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
         .legend-dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            margin-right: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-right: 6px;
             vertical-align: middle;
         }
         .legend-dot.avail { background: #e8f5e8; border: 1px solid #c8e6c9; }
         .legend-dot.sold { background: #ff6b00; }
         .legend-dot.merged { background: #1976d2; }
         .legend-dot.cross { background: #a5d6a7; border: 2px dashed #ff9800; }
-        
+
         .pano-cross-hint {
             text-align: center;
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #e3f2fd, #fff3e0);
-            border-radius: 8px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #f0f7ff, #fff8f0);
+            border-radius: 12px;
             font-size: 13px;
-            color: #555;
-            margin: 0 0 10px 0;
-            line-height: 1.6;
+            color: #666;
+            margin: 0 0 16px 0;
+            line-height: 1.7;
+            border: 1px solid rgba(255,107,0,0.08);
         }
         
         /* 全景响应式 */

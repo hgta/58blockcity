@@ -38,28 +38,28 @@ $totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-card-block">
-                    <div class="stat-icon-block">🏙️</div>
+                    <div class="stat-icon-block"><i class="fas fa-city"></i></div>
                     <div class="stat-info-block">
                         <div class="stat-value-block" data-count="<?= $totalCities ?>">0</div>
                         <div class="stat-label-block">城市总数</div>
                     </div>
                 </div>
                 <div class="stat-card-block">
-                    <div class="stat-icon-block">🧱</div>
+                    <div class="stat-icon-block"><i class="fas fa-cubes"></i></div>
                     <div class="stat-info-block">
                         <div class="stat-value-block" data-count="<?= $totalActivated ?>">0</div>
                         <div class="stat-label-block">已激活区块</div>
                     </div>
                 </div>
                 <div class="stat-card-block">
-                    <div class="stat-icon-block">👥</div>
+                    <div class="stat-icon-block"><i class="fas fa-users"></i></div>
                     <div class="stat-info-block">
                         <div class="stat-value-block" data-count="<?= $totalUsers ?>">0</div>
                         <div class="stat-label-block">注册用户</div>
                     </div>
                 </div>
                 <div class="stat-card-block">
-                    <div class="stat-icon-block">🔗</div>
+                    <div class="stat-icon-block"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-info-block">
                         <div class="stat-value-block" data-count="<?= number_format($totalActivated / max($totalCities,1), 1) ?>">0</div>
                         <div class="stat-label-block">平均激活/城</div>
@@ -75,9 +75,9 @@ $totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
             <div class="city-search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="citySearchInput" placeholder="输入城市名或拼音快速定位..." autocomplete="off">
-                <span id="citySearchClear" style="display:none;cursor:pointer;color:#999;">✕</span>
+                <span id="citySearchClear"><i class="fas fa-times"></i></span>
             </div>
-            <div id="citySearchEmpty" class="city-search-empty" style="display:none;">未找到匹配的城市</div>
+            <div id="citySearchEmpty" class="city-search-empty" style="display:none;"><i class="fas fa-search-minus"></i> 未找到匹配的城市</div>
         </div>
     </section>
 
@@ -94,65 +94,78 @@ $totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
     <main class="container">
         <!-- 热门城市 -->
         <section class="hot-cities">
-            <h2 class="section-title">
-                热门区块城市
-                <a href="top200city.php" class="more-cities">更多热门城市 →</a>
-            </h2>
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-fire-alt"></i> 热门区块城市</h2>
+                <a href="top200city.php" class="more-cities">查看全部 <i class="fas fa-arrow-right"></i></a>
+            </div>
             <div class="hot-city-grid">
                 <?php foreach ($hot_cities as $city): ?>
-                    <a href="/city.php?name=<?= $city['pinyin'] ?>" class="hot-city-item"><?= $city['name'] ?></a>
+                    <a href="/city.php?name=<?= $city['pinyin'] ?>" class="hot-city-item">
+                        <span class="hc-name"><?= $city['name'] ?></span>
+                        <?php if ($city['is_hot']): ?><span class="hc-badge">HOT</span><?php endif; ?>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </section>
-        
+
         <!-- 城市列表 -->
         <div class="city-list-container">
             <?php foreach ($cities_by_letter as $letter => $cities): ?>
                 <section id="<?= $letter ?>" class="city-section">
-                    <div class="city-letter"><?= $letter ?></div>
+                    <div class="city-section-header">
+                        <span class="city-letter"><?= $letter ?></span>
+                        <span class="city-count"><?= count($cities) ?> 个城市</span>
+                    </div>
                     <div class="city-grid">
                         <?php foreach ($cities as $city): ?>
                             <a href="/city.php?name=<?= $city['pinyin'] ?>" class="city-item <?= $city['is_hot'] ? 'hot-city' : '' ?>">
-                                <?= $city['name'] ?>
+                                <span class="ci-name"><?= $city['name'] ?></span>
+                                <i class="fas fa-chevron-right ci-arrow"></i>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </section>
             <?php endforeach; ?>
         </div>
-        
+
         <!-- 元宇宙特色 -->
         <section class="metaverse-features">
-            <h2 class="section-title">BlockCity元宇宙特色</h2>
+            <div class="section-header center">
+                <h2 class="section-title">BlockCity 元宇宙特色</h2>
+                <p class="section-subtitle">探索下一代去中心化城市服务平台</p>
+            </div>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">🌐</div>
+                    <div class="feature-icon"><i class="fas fa-globe-asia"></i></div>
                     <h3 class="feature-title">虚拟城市探索</h3>
-                    <p class="feature-desc">通过元宇宙技术，58区块城市为您提供沉浸式的虚拟城市探索体验，足不出户逛遍全城。</p>
+                    <p class="feature-desc">通过元宇宙技术，为您提供沉浸式的虚拟城市探索体验，足不出户逛遍全城。</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🪙</div>
+                    <div class="feature-icon"><i class="fas fa-coins"></i></div>
                     <h3 class="feature-title">数字资产交易</h3>
                     <p class="feature-desc">基于区块链技术的数字资产交易平台，安全可靠地交易您的虚拟商品和服务。</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">👥</div>
-                    <h3 class="feature-title">DAO社区治理</h3>
-                    <p class="feature-desc">58区块城市采用DAO(去中心化自治组织)模式，让用户参与平台治理和决策。</p>
+                    <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
+                    <h3 class="feature-title">DAO 社区治理</h3>
+                    <p class="feature-desc">采用 DAO 去中心化自治组织模式，让用户参与平台治理和重大决策。</p>
                 </div>
             </div>
         </section>
-        
+
         <!-- DAO社区 -->
         <section class="dao-community">
-            <h2 class="dao-title">加入BlockCity DAO社区</h2>
             <div class="dao-content">
                 <div class="dao-text">
-                    <p>58区块城市正在构建全球最大的元宇宙同城DAO社区。通过持有平台通证，您可以参与社区治理、投票决策、分享收益，共同打造下一代去中心化城市服务平台。</p>
-                    <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入DAO</a>
+                    <span class="dao-tag"><i class="fas fa-rocket"></i> 社区共建</span>
+                    <h2 class="dao-title">加入 BlockCity DAO 社区</h2>
+                    <p>58区块城市正在构建全球最大的元宇宙同城 DAO 社区。通过持有平台通证，您可以参与社区治理、投票决策、分享收益，共同打造下一代去中心化城市服务平台。</p>
+                    <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入 DAO <i class="fas fa-arrow-right"></i></a>
                 </div>
-                <div class="dao-image">
-                    BlockCity DAO
+                <div class="dao-visual">
+                    <div class="dao-circle">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
                 </div>
             </div>
         </section>
@@ -207,7 +220,7 @@ $totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
 
             function doSearch() {
                 var query = input.value.trim().toLowerCase();
-                clearBtn.style.display = query ? 'inline' : 'none';
+                clearBtn.style.display = query ? 'flex' : 'none';
                 var hasMatch = false;
                 var matchedLetters = {};
 
