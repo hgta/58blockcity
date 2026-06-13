@@ -32,7 +32,13 @@ $stmt = $pdo->prepare("SELECT b.*, c.name as city_name, u.username
     LEFT JOIN users u ON b.owner_id = u.id 
     WHERE $whereSql 
     ORDER BY b.created_at DESC LIMIT ? OFFSET ?");
-$stmt->execute(array_merge($params, [$perPage, $offset]));
+// 显式绑定字符串参数
+for ($i = 0; $i < count($params); $i++) {
+    $stmt->bindValue($i + 1, $params[$i]);
+}
+$stmt->bindValue(count($params) + 1, (int)$perPage, PDO::PARAM_INT);
+$stmt->bindValue(count($params) + 2, (int)$offset, PDO::PARAM_INT);
+$stmt->execute();
 $blocks = $stmt->fetchAll();
 
 $countStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks b JOIN cities c ON b.city_id = c.id WHERE $whereSql");

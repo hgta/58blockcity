@@ -48,7 +48,13 @@ $sql = "SELECT b.*, c.name as city_name, u.username as owner_name
     ORDER BY b.updated_at DESC
     LIMIT ? OFFSET ?";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(array_merge($params, [$perPage, $offset]));
+// 显式绑定字符串参数
+for ($i = 0; $i < count($params); $i++) {
+    $stmt->bindValue($i + 1, $params[$i]);
+}
+$stmt->bindValue(count($params) + 1, (int)$perPage, PDO::PARAM_INT);
+$stmt->bindValue(count($params) + 2, (int)$offset, PDO::PARAM_INT);
+$stmt->execute();
 $blocks = $stmt->fetchAll();
 
 // 总数查询
