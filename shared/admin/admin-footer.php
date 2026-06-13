@@ -9,6 +9,6 @@
     </main>
 </div>
 
-<script src="/assets/js/admin.js"></script>
+<script src="https://www.58.tl/assets/js/admin.js"></script>
 </body>
 </html>
