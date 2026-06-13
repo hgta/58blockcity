@@ -63,17 +63,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
         $error = '库存不能为负数';
     } else {
         try {
-            // 处理图片上传
+            // 处理主图上传
             $mainImage = '';
             if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = uploadImage($_FILES['main_image']);
+                $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
                 if ($uploadResult['success']) {
                     $mainImage = $uploadResult['file_path'];
                 } else {
                     $error = $uploadResult['error'];
                 }
             }
-            
+
+            // 处理多图上传
+            $extraImages = [];
+            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
+                $imgError = '';
+                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
+                if ($imgError) {
+                    $error = '副图上传失败：' . $imgError;
+                }
+            }
+
             if (!$error) {
                 // 准备商品数据
                 $productData = [
@@ -82,16 +92,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'name' => $name,
                     'description' => $description,
                     'main_image' => $mainImage ?: 'assets/images/default-product.png',
+                    'images' => !empty($extraImages) ? json_encode($extraImages) : null,
                     'price_type' => 'fixed',
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
                     'stock' => $stock,
                     'status' => $status
                 ];
-                
+
                 // 创建商品
                 $productId = $product->createProduct($productData);
-                
+
                 if ($productId) {
                     $success = '商品添加成功！';
                     // 重定向到商品列表
@@ -131,17 +142,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
         $error = '库存不能为负数';
     } else {
         try {
-            // 处理图片上传
+            // 处理主图上传
             $mainImage = '';
             if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = uploadImage($_FILES['main_image']);
+                $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
                 if ($uploadResult['success']) {
                     $mainImage = $uploadResult['file_path'];
                 } else {
                     $error = $uploadResult['error'];
                 }
             }
-            
+
+            // 处理多图上传
+            $extraImages = [];
+            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
+                $imgError = '';
+                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
+                if ($imgError) {
+                    $error = '副图上传失败：' . $imgError;
+                }
+            }
+
             if (!$error) {
                 // 准备更新数据
                 $updateData = [
@@ -153,11 +174,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'stock' => $stock,
                     'status' => $status
                 ];
-                
+
                 if ($mainImage) {
                     $updateData['main_image'] = $mainImage;
                 }
-                
+
+                // 合并保留的旧副图与新上传的副图
+                $existingImages = [];
+                if (isset($_POST['keep_images'])) {
+                    $existingImages = array_values(array_filter($_POST['keep_images'], 'strlen'));
+                }
+                $allImages = array_merge($existingImages, $extraImages);
+                if (!empty($allImages)) {
+                    $updateData['images'] = json_encode(array_values($allImages));
+                } else {
+                    $updateData['images'] = null;
+                }
+
                 // 更新商品
                 if ($product->updateProduct($productId, $updateData)) {
                     $success = '商品更新成功！';
@@ -231,35 +264,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action']) && !e
     exit;
 }
 
-// 图片上传函数
-function uploadImage($file) {
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    $maxSize = 5 * 1024 * 1024; // 5MB
-    
+// 图片压缩与上传函数
+function uploadImage($file, $maxWidth = 1200, $maxHeight = 1200, $quality = 85) {
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    $maxSize = 10 * 1024 * 1024; // 10MB（前端压缩前允许更大）
+
     if (!in_array($file['type'], $allowedTypes)) {
-        return ['success' => false, 'error' => '只允许上传 JPG, PNG, GIF 格式的图片'];
+        return ['success' => false, 'error' => '只允许上传 JPG, PNG, GIF, WebP 格式的图片'];
     }
-    
+
     if ($file['size'] > $maxSize) {
-        return ['success' => false, 'error' => '图片大小不能超过 5MB'];
+        return ['success' => false, 'error' => '图片大小不能超过 10MB'];
     }
-    
-    // 创建上传目录
-    $uploadDir = '../assets/uploads/products/';
+
+    // 创建上传目录（按日期分目录，减少单目录文件数）
+    $subDir = date('Ym') . '/';
+    $uploadDir = '../assets/uploads/products/' . $subDir;
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    
-    // 生成唯一文件名
-    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $fileName = uniqid() . '_' . time() . '.' . $fileExtension;
+
+    // 生成唯一文件名（统一用 jpg 以减小体积）
+    $fileName = uniqid() . '_' . time() . '.jpg';
     $filePath = $uploadDir . $fileName;
-    
-    if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        return ['success' => true, 'file_path' => 'assets/uploads/products/' . $fileName];
-    } else {
-        return ['success' => false, 'error' => '图片上传失败'];
+    $relativePath = 'assets/uploads/products/' . $subDir . $fileName;
+
+    // 读取原图
+    $src = null;
+    switch ($file['type']) {
+        case 'image/jpeg':
+        case 'image/jpg':
+            $src = @imagecreatefromjpeg($file['tmp_name']);
+            break;
+        case 'image/png':
+            $src = @imagecreatefrompng($file['tmp_name']);
+            break;
+        case 'image/gif':
+            $src = @imagecreatefromgif($file['tmp_name']);
+            break;
+        case 'image/webp':
+            $src = @imagecreatefromwebp($file['tmp_name']);
+            break;
     }
+
+    if (!$src) {
+        // GD 读取失败，尝试原样保存
+        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+            return ['success' => true, 'file_path' => $relativePath];
+        }
+        return ['success' => false, 'error' => '图片处理失败'];
+    }
+
+    // 获取原图尺寸
+    $origW = imagesx($src);
+    $origH = imagesy($src);
+
+    // 计算压缩后尺寸（保持比例）
+    $ratio = min($maxWidth / $origW, $maxHeight / $origH, 1.0);
+    $newW = (int) round($origW * $ratio);
+    $newH = (int) round($origH * $ratio);
+
+    // 创建新画布
+    $dst = imagecreatetruecolor($newW, $newH);
+
+    // PNG/GIF 保留透明背景
+    if ($file['type'] === 'image/png' || $file['type'] === 'image/gif') {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefill($dst, 0, 0, $transparent);
+    }
+
+    // 缩放
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+    imagedestroy($src);
+
+    // 保存为 JPEG（质量 85%，体积较小）
+    $result = imagejpeg($dst, $filePath, $quality);
+    imagedestroy($dst);
+
+    if ($result) {
+        return ['success' => true, 'file_path' => $relativePath];
+    }
+    return ['success' => false, 'error' => '图片保存失败'];
+}
+
+// 多图上传辅助函数
+function uploadMultipleImages($files, &$errorMsg) {
+    $images = [];
+    if (empty($files) || empty($files['name'][0])) {
+        return $images;
+    }
+    $count = count($files['name']);
+    for ($i = 0; $i < $count; $i++) {
+        if ($files['error'][$i] !== UPLOAD_ERR_OK) continue;
+        $file = [
+            'name'     => $files['name'][$i],
+            'type'     => $files['type'][$i],
+            'tmp_name' => $files['tmp_name'][$i],
+            'error'    => $files['error'][$i],
+            'size'     => $files['size'][$i],
+        ];
+        $result = uploadImage($file, 1200, 1200, 85);
+        if ($result['success']) {
+            $images[] = $result['file_path'];
+        } else {
+            $errorMsg = $result['error'];
+        }
+    }
+    return $images;
 }
 
 // 显示成功消息
@@ -275,60 +388,52 @@ require_once '../includes/header.php';
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <!-- 店铺管理侧边栏 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">店铺管理</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="manage.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt"></i> 店铺概览
+            <aside class="shop-sidebar">
+                <nav class="sidebar-nav">
+                    <a href="manage.php?id=<?= $shopId ?>" class="nav-item">
+                        <i class="fas fa-tachometer-alt"></i> 数据看板
                     </a>
-                    <a href="products.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action <?= $action === 'list' ? 'active' : '' ?>">
+                    <a href="products.php?id=<?= $shopId ?>" class="nav-item <?= $action === 'list' ? 'active' : '' ?>">
                         <i class="fas fa-box"></i> 商品管理
+                        <?php
+                        $sbStats = $product->getShopProductStats($shopId);
+                        ?>
+                        <span class="nav-badge"><?= $sbStats['total_products'] ?? 0 ?></span>
                     </a>
-                    <a href="products.php?action=add&id=<?= $shopId ?>" class="list-group-item list-group-item-action <?= $action === 'add' ? 'active' : '' ?>">
+                    <a href="products.php?action=add&id=<?= $shopId ?>" class="nav-item <?= $action === 'add' || $action === 'edit' ? 'active' : '' ?>">
                         <i class="fas fa-plus"></i> 添加商品
                     </a>
-                    <a href="orders.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="orders.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-shopping-cart"></i> 订单管理
                     </a>
-                    <a href="coupons.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="coupons.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-ticket-alt"></i> 优惠券
                     </a>
-                    <a href="payment-settings.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="payment-settings.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-cog"></i> 支付设置
                     </a>
-                </div>
-            </div>
-            
-            <!-- 商品统计 -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h6>商品统计</h6>
-                    <?php
-                    $productStats = $product->getShopProductStats($shopId);
-                    ?>
-                    <div class="small">
-                        <div class="d-flex justify-content-between">
-                            <span>总商品:</span>
-                            <span class="text-primary"><?= $productStats['total_products'] ?? 0 ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>在售:</span>
-                            <span class="text-success"><?= $productStats['active_products'] ?? 0 ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>售罄:</span>
-                            <span class="text-warning"><?= $productStats['sold_out_products'] ?? 0 ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>总销量:</span>
-                            <span class="text-info"><?= $productStats['total_sales'] ?? 0 ?></span>
-                        </div>
+                </nav>
+
+                <div class="sidebar-card">
+                    <h4>商品概览</h4>
+                    <div class="sidebar-stat-row">
+                        <span class="label">在售商品</span>
+                        <span class="value text-success"><?= $sbStats['active_products'] ?? 0 ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">已售罄</span>
+                        <span class="value text-warning"><?= $sbStats['sold_out_products'] ?? 0 ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">草稿/下架</span>
+                        <span class="value text-muted"><?= ($sbStats['total_products'] ?? 0) - ($sbStats['active_products'] ?? 0) - ($sbStats['sold_out_products'] ?? 0) ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">总销量</span>
+                        <span class="value text-info"><?= $sbStats['total_sales'] ?? 0 ?></span>
                     </div>
                 </div>
-            </div>
+            </aside>
         </div>
         
         <div class="col-md-9">
@@ -360,126 +465,188 @@ require_once '../includes/header.php';
                                     require_once '../includes/footer.php';
                                     exit;
                                 }
+                                $existingImages = [];
+                                if (!empty($editProduct['images'])) {
+                                    $decoded = json_decode($editProduct['images'], true);
+                                    if (is_array($decoded)) $existingImages = $decoded;
+                                }
                                 ?>
                                 <input type="hidden" name="product_id" value="<?= $editProductId ?>">
                                 <input type="hidden" name="action" value="edit">
                             <?php else: ?>
                                 <input type="hidden" name="action" value="add">
                             <?php endif; ?>
-                            
+
                             <div class="row">
+                                <!-- 左侧表单 -->
                                 <div class="col-md-8">
-                                    <div class="form-group">
-                                        <label for="name">商品名称 *</label>
-                                        <input type="text" class="form-control" id="name" name="name" 
-                                               value="<?= isset($editProduct) ? htmlspecialchars($editProduct['name']) : (isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '') ?>" 
-                                               required maxlength="200">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="description">商品描述 *</label>
-                                        <textarea class="form-control" id="description" name="description" 
-                                                  rows="6" required><?= isset($editProduct) ? htmlspecialchars($editProduct['description']) : (isset($_POST['description']) ? htmlspecialchars($_POST['description']) : '') ?></textarea>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="category_id">商品分类 *</label>
-                                                <select class="form-control" id="category_id" name="category_id" required>
-                                                    <option value="">请选择分类</option>
-                                                    <?php foreach ($categories as $cat): ?>
-                                                        <option value="<?= $cat['id'] ?>" 
-                                                            <?= (isset($editProduct) && $editProduct['category_id'] == $cat['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $cat['id']) ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($cat['name']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
+                                    <div class="form-section">
+                                        <h5 class="section-title"><i class="fas fa-tag"></i> 基本信息</h5>
+                                        <div class="form-group">
+                                            <label for="name">商品名称 *</label>
+                                            <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                                   placeholder="请输入商品名称"
+                                                   value="<?= isset($editProduct) ? htmlspecialchars($editProduct['name']) : (isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '') ?>"
+                                                   required maxlength="200">
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="stock">库存数量 *</label>
-                                                <input type="number" class="form-control" id="stock" name="stock" 
-                                                       value="<?= isset($editProduct) ? $editProduct['stock'] : (isset($_POST['stock']) ? $_POST['stock'] : 0) ?>" 
-                                                       min="0" required>
-                                            </div>
+
+                                        <div class="form-group">
+                                            <label for="description">商品描述 *</label>
+                                            <textarea class="form-control" id="description" name="description"
+                                                      rows="5" required placeholder="详细描述商品特点、规格、售后等信息"><?= isset($editProduct) ? htmlspecialchars($editProduct['description']) : (isset($_POST['description']) ? htmlspecialchars($_POST['description']) : '') ?></textarea>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="price_bct">人气值价格 (BCT) *</label>
-                                                <input type="number" class="form-control" id="price_bct" name="price_bct" 
-                                                       value="<?= isset($editProduct) ? $editProduct['price_bct'] : (isset($_POST['price_bct']) ? $_POST['price_bct'] : '') ?>" 
-                                                       step="0.01" min="0.01" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="price_cny">人民币价格 (¥)</label>
-                                                <input type="number" class="form-control" id="price_cny" name="price_cny" 
-                                                       value="<?= isset($editProduct) ? $editProduct['price_cny'] : (isset($_POST['price_cny']) ? $_POST['price_cny'] : '') ?>" 
-                                                       step="0.01" min="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="status">商品状态 *</label>
-                                        <select class="form-control" id="status" name="status" required>
-                                            <option value="draft" <?= (isset($editProduct) && $editProduct['status'] == 'draft') || (isset($_POST['status']) && $_POST['status'] == 'draft') ? 'selected' : '' ?>>草稿</option>
-                                            <option value="active" <?= (isset($editProduct) && $editProduct['status'] == 'active') || (isset($_POST['status']) && $_POST['status'] == 'active') || !isset($editProduct) ? 'selected' : '' ?>>上架销售</option>
-                                            <option value="inactive" <?= (isset($editProduct) && $editProduct['status'] == 'inactive') || (isset($_POST['status']) && $_POST['status'] == 'inactive') ? 'selected' : '' ?>>下架</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="main_image">商品主图</label>
-                                        <div class="image-upload-container">
-                                            <?php if (isset($editProduct) && !empty($editProduct['main_image'])): ?>
-                                                <div class="current-image mb-3">
-                                                    <img src="../<?= htmlspecialchars($editProduct['main_image']) ?>" 
-                                                         alt="当前图片" class="img-fluid rounded" style="max-height: 200px;">
-                                                    <div class="text-center mt-2">
-                                                        <small class="text-muted">当前图片</small>
+
+                                    <div class="form-section">
+                                        <h5 class="section-title"><i class="fas fa-coins"></i> 价格与库存</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="price_bct">人气值价格 (BCT) *</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend"><span class="input-group-text">BCT</span></div>
+                                                        <input type="number" class="form-control" id="price_bct" name="price_bct"
+                                                               value="<?= isset($editProduct) ? $editProduct['price_bct'] : (isset($_POST['price_bct']) ? $_POST['price_bct'] : '') ?>"
+                                                               step="0.01" min="0.01" required placeholder="0.00">
                                                     </div>
                                                 </div>
-                                            <?php endif; ?>
-                                            
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="main_image" name="main_image" accept="image/*">
-                                                <label class="custom-file-label" for="main_image">选择图片</label>
                                             </div>
-                                            <small class="form-text text-muted">
-                                                支持 JPG, PNG, GIF 格式，大小不超过 5MB
-                                            </small>
-                                            
-                                            <div class="image-preview mt-3 d-none">
-                                                <img id="imagePreview" src="#" alt="图片预览" class="img-fluid rounded" style="max-height: 200px;">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="price_cny">人民币价格 (¥)</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend"><span class="input-group-text">¥</span></div>
+                                                        <input type="number" class="form-control" id="price_cny" name="price_cny"
+                                                               value="<?= isset($editProduct) ? $editProduct['price_cny'] : (isset($_POST['price_cny']) ? $_POST['price_cny'] : '') ?>"
+                                                               step="0.01" min="0" placeholder="可选">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="category_id">商品分类 *</label>
+                                                    <select class="form-control" id="category_id" name="category_id" required>
+                                                        <option value="">请选择分类</option>
+                                                        <?php foreach ($categories as $cat): ?>
+                                                            <option value="<?= $cat['id'] ?>"
+                                                                <?= (isset($editProduct) && $editProduct['category_id'] == $cat['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $cat['id']) ? 'selected' : '' ?>>
+                                                                <?= htmlspecialchars($cat['name']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="stock">库存数量 *</label>
+                                                    <input type="number" class="form-control" id="stock" name="stock"
+                                                           value="<?= isset($editProduct) ? $editProduct['stock'] : (isset($_POST['stock']) ? $_POST['stock'] : 0) ?>"
+                                                           min="0" required>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="form-group">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="is_recommended" name="is_recommended" value="1"
-                                                <?= (isset($editProduct) && $editProduct['is_recommended']) || (isset($_POST['is_recommended']) && $_POST['is_recommended']) ? 'checked' : '' ?>>
-                                            <label class="form-check-label" for="is_recommended">推荐商品</label>
+
+                                    <div class="form-section">
+                                        <h5 class="section-title"><i class="fas fa-sliders-h"></i> 状态设置</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="status">商品状态 *</label>
+                                                    <select class="form-control" id="status" name="status" required>
+                                                        <option value="draft" <?= (isset($editProduct) && $editProduct['status'] == 'draft') || (isset($_POST['status']) && $_POST['status'] == 'draft') ? 'selected' : '' ?>>草稿（暂不上架）</option>
+                                                        <option value="active" <?= (isset($editProduct) && $editProduct['status'] == 'active') || (isset($_POST['status']) && $_POST['status'] == 'active') || !isset($editProduct) ? 'selected' : '' ?>>上架销售</option>
+                                                        <option value="inactive" <?= (isset($editProduct) && $editProduct['status'] == 'inactive') || (isset($_POST['status']) && $_POST['status'] == 'inactive') ? 'selected' : '' ?>>下架</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>推荐设置</label>
+                                                    <div class="form-check mt-2">
+                                                        <input type="checkbox" class="form-check-input" id="is_recommended" name="is_recommended" value="1"
+                                                            <?= (isset($editProduct) && $editProduct['is_recommended']) || (isset($_POST['is_recommended']) && $_POST['is_recommended']) ? 'checked' : '' ?>>
+                                                        <label class="form-check-label" for="is_recommended">
+                                                            <i class="fas fa-star text-warning"></i> 设为推荐商品
+                                                        </label>
+                                                    </div>
+                                                    <small class="form-text text-muted">推荐商品会在首页优先展示</small>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <small class="form-text text-muted">推荐商品会在首页展示</small>
+                                    </div>
+                                </div>
+
+                                <!-- 右侧图片 -->
+                                <div class="col-md-4">
+                                    <div class="form-section sticky-top" style="top:80px;z-index:10;">
+                                        <h5 class="section-title"><i class="fas fa-images"></i> 商品图片</h5>
+
+                                        <!-- 主图 -->
+                                        <div class="form-group">
+                                            <label>商品主图 <small class="text-muted">(首张展示图)</small></label>
+                                            <div class="img-upload-area" id="mainImageArea">
+                                                <input type="file" id="main_image" name="main_image" accept="image/*" class="d-none">
+                                                <?php if (isset($editProduct) && !empty($editProduct['main_image'])): ?>
+                                                    <div class="upload-preview active">
+                                                        <img src="../<?= htmlspecialchars($editProduct['main_image']) ?>" alt="主图">
+                                                        <button type="button" class="btn-remove-img" onclick="document.getElementById('main_image').click()">
+                                                            <i class="fas fa-sync-alt"></i> 更换
+                                                        </button>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div class="upload-placeholder" onclick="document.getElementById('main_image').click()">
+                                                        <i class="fas fa-camera"></i>
+                                                        <span>点击上传主图</span>
+                                                        <small>支持 JPG/PNG/GIF/WebP</small>
+                                                    </div>
+                                                    <div class="upload-preview d-none">
+                                                        <img id="mainPreview" src="#" alt="预览">
+                                                        <button type="button" class="btn-remove-img" onclick="resetMainImage()">
+                                                            <i class="fas fa-trash"></i> 移除
+                                                        </button>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div id="mainImageInfo" class="img-info text-muted small mt-1"></div>
+                                        </div>
+
+                                        <!-- 副图 -->
+                                        <div class="form-group">
+                                            <label>商品副图 <small class="text-muted">(最多8张)</small></label>
+                                            <div class="extra-images-grid" id="extraImagesGrid">
+                                                <!-- 已有副图 -->
+                                                <?php if (!empty($existingImages)): ?>
+                                                    <?php foreach ($existingImages as $idx => $imgPath): ?>
+                                                        <div class="extra-img-item existing" data-index="<?= $idx ?>">
+                                                            <img src="../<?= htmlspecialchars($imgPath) ?>" alt="副图<?= $idx+1 ?>">
+                                                            <button type="button" class="btn-remove" onclick="removeExistingImage(this)" title="删除">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                            <input type="hidden" name="keep_images[]" value="<?= htmlspecialchars($imgPath) ?>">
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                                <!-- 添加按钮 -->
+                                                <div class="extra-img-item add-btn" onclick="openExtraImages()">
+                                                    <i class="fas fa-plus"></i>
+                                                    <span>添加图片</span>
+                                                </div>
+                                            </div>
+                                            <div id="extraImageInfo" class="img-info text-muted small mt-1"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="form-group mt-4">
+
+                            <div class="form-actions-bar">
                                 <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-save"></i> <?= $action === 'add' ? '添加商品' : '更新商品' ?>
+                                    <i class="fas fa-save"></i> <?= $action === 'add' ? '添加商品' : '保存修改' ?>
                                 </button>
-                                <a href="products.php?id=<?= $shopId ?>" class="btn btn-secondary btn-lg">取消</a>
+                                <a href="products.php?id=<?= $shopId ?>" class="btn btn-outline-secondary btn-lg">取消返回</a>
                             </div>
                         </form>
                     </div>
@@ -619,6 +786,60 @@ require_once '../includes/header.php';
 </div>
 
 <style>
+/* ===== 侧边栏（manage.php 风格） ===== */
+.shop-sidebar { width: 100%; }
+.sidebar-nav { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: all .2s; position: relative; }
+.nav-item:hover { background: #f1f5f9; color: #1e293b; text-decoration: none; }
+.nav-item.active { background: #fff7ed; color: #ea580c; }
+.nav-badge { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.nav-item.active .nav-badge { background: #fed7aa; color: #c2410c; }
+.sidebar-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.sidebar-card h4 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 12px; }
+.sidebar-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.sidebar-stat-row:last-child { border-bottom: none; }
+.sidebar-stat-row .label { color: #64748b; }
+.sidebar-stat-row .value { font-weight: 600; }
+
+/* ===== 表单分节 ===== */
+.form-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; }
+.section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.section-title i { color: #ff6b00; }
+.form-group label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+.form-control { border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; }
+.form-control:focus { border-color: #ff6b00; box-shadow: 0 0 0 3px rgba(255,107,0,0.1); }
+.form-control-lg { font-size: 16px; padding: 12px 14px; }
+textarea.form-control { resize: vertical; min-height: 120px; }
+.input-group-text { background: #f9fafb; border-color: #d1d5db; color: #6b7280; font-size: 13px; }
+
+/* ===== 图片上传区域 ===== */
+.img-upload-area { border: 2px dashed #d1d5db; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #f9fafb; position: relative; }
+.img-upload-area:hover { border-color: #ff6b00; background: #fff7ed; }
+.upload-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; color: #9ca3af; gap: 6px; }
+.upload-placeholder i { font-size: 28px; }
+.upload-placeholder span { font-size: 13px; font-weight: 500; }
+.upload-placeholder small { font-size: 11px; }
+.upload-preview { position: relative; width: 100%; height: 200px; background: #f3f4f6; }
+.upload-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-preview .btn-remove-img { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+.upload-preview .btn-remove-img:hover { background: rgba(0,0,0,0.8); }
+.img-info { font-size: 12px; color: #6b7280; }
+
+/* 副图网格 */
+.extra-images-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.extra-img-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #f3f4f6; border: 1px solid #e5e7eb; }
+.extra-img-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.extra-img-item.add-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; border-style: dashed; transition: all 0.2s; }
+.extra-img-item.add-btn:hover { border-color: #ff6b00; color: #ff6b00; background: #fff7ed; }
+.extra-img-item.add-btn i { font-size: 20px; margin-bottom: 4px; }
+.extra-img-item.add-btn span { font-size: 11px; }
+.extra-img-item .btn-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; padding: 0; }
+.extra-img-item .btn-remove:hover { background: #dc2626; }
+
+/* 表单操作栏 */
+.form-actions-bar { display: flex; gap: 12px; padding: 20px 0 0; border-top: 1px solid #e5e7eb; margin-top: 8px; }
+.form-actions-bar .btn-lg { padding: 10px 28px; font-size: 15px; border-radius: 8px; }
+
 /* 商品卡片网格 */
 .product-grid {
     display: grid;
@@ -878,25 +1099,133 @@ require_once '../includes/header.php';
 </style>
 
 <script>
-// 图片预览功能
-document.getElementById('main_image').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('imagePreview');
-    const previewContainer = document.querySelector('.image-preview');
-    
-    if (file) {
+/* ========== 主图上传预览 ========== */
+const mainInput = document.getElementById('main_image');
+const mainArea = document.getElementById('mainImageArea');
+if (mainInput && mainArea) {
+    mainInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            previewContainer.classList.remove('d-none');
-        }
+        reader.onload = function(ev) {
+            mainArea.innerHTML = `
+                <div class="upload-preview active">
+                    <img src="${ev.target.result}" alt="主图预览">
+                    <button type="button" class="btn-remove-img" onclick="resetMainImage()">
+                        <i class="fas fa-trash"></i> 移除
+                    </button>
+                </div>
+            `;
+            document.getElementById('mainImageInfo').textContent = file.name + ' (' + formatSize(file.size) + ')';
+        };
         reader.readAsDataURL(file);
-        
-        // 更新文件输入标签
-        const fileName = document.querySelector('.custom-file-label');
-        fileName.textContent = file.name;
+    });
+}
+function resetMainImage() {
+    if (!mainInput) return;
+    mainInput.value = '';
+    mainArea.innerHTML = `
+        <div class="upload-placeholder" onclick="document.getElementById('main_image').click()">
+            <i class="fas fa-camera"></i>
+            <span>点击上传主图</span>
+            <small>支持 JPG/PNG/GIF/WebP</small>
+        </div>
+        <div class="upload-preview d-none">
+            <img id="mainPreview" src="#" alt="预览">
+            <button type="button" class="btn-remove-img" onclick="resetMainImage()">
+                <i class="fas fa-trash"></i> 移除
+            </button>
+        </div>
+    `;
+    document.getElementById('mainImageInfo').textContent = '';
+}
+
+/* ========== 副图多图上传预览 ========== */
+const extraGrid = document.getElementById('extraImagesGrid');
+let extraInputCounter = 0;
+
+function openExtraImages() {
+    // 创建一个新的隐藏 file input
+    extraInputCounter++;
+    const inputId = 'extra_images_' + extraInputCounter;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.id = inputId;
+    input.name = 'extra_images[]';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.className = 'd-none';
+    input.dataset.forPreview = '';
+    document.getElementById('productForm').appendChild(input);
+
+    input.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        const currentCount = extraGrid.querySelectorAll('.extra-img-item:not(.add-btn)').length;
+        const remaining = 8 - currentCount;
+        if (remaining <= 0) {
+            alert('最多只能上传8张副图');
+            input.remove();
+            return;
+        }
+        const toAdd = files.slice(0, remaining);
+        toAdd.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const div = document.createElement('div');
+                div.className = 'extra-img-item new';
+                div.dataset.inputId = inputId;
+                div.innerHTML = `
+                    <img src="${ev.target.result}" alt="新副图">
+                    <button type="button" class="btn-remove" onclick="removeNewImage(this)" title="删除">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                const addBtn = extraGrid.querySelector('.add-btn');
+                extraGrid.insertBefore(div, addBtn);
+                updateExtraImageCount();
+            };
+            reader.readAsDataURL(file);
+        });
+        if (files.length > remaining) {
+            alert('已超出8张限制，仅添加了前 ' + remaining + ' 张');
+        }
+    });
+
+    input.click();
+}
+
+function removeExistingImage(btn) {
+    const item = btn.closest('.extra-img-item');
+    if (item) {
+        item.remove();
+        updateExtraImageCount();
     }
-});
+}
+function removeNewImage(btn) {
+    const item = btn.closest('.extra-img-item');
+    if (!item) return;
+    const inputId = item.dataset.inputId;
+    // 如果该 input 对应的所有预览都被删除，则移除 input
+    item.remove();
+    const stillUsing = extraGrid.querySelector('.extra-img-item[data-input-id="' + inputId + '"]');
+    if (!stillUsing) {
+        const input = document.getElementById(inputId);
+        if (input) input.remove();
+    }
+    updateExtraImageCount();
+}
+function updateExtraImageCount() {
+    const count = extraGrid ? extraGrid.querySelectorAll('.extra-img-item:not(.add-btn)').length : 0;
+    const info = document.getElementById('extraImageInfo');
+    if (info) info.textContent = count > 0 ? '已选 ' + count + ' / 8 张' : '';
+    const addBtn = extraGrid ? extraGrid.querySelector('.add-btn') : null;
+    if (addBtn) addBtn.style.display = count >= 8 ? 'none' : 'flex';
+}
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
 
 // 表单验证
 document.getElementById('productForm').addEventListener('submit', function(e) {
