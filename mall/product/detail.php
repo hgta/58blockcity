@@ -448,13 +448,28 @@ if (isset($_SESSION['user_id'])) {
                      alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
                      class="main-image" id="main-image">
                 
-                <!-- 商品图集（如果有的话） -->
+                <!-- 商品图集（主图 + 副图） -->
                 <div class="image-thumbnails">
                     <img src="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" 
                          alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
                          class="thumbnail active" 
                          onclick="changeMainImage(this.src)">
-                    <!-- 这里可以添加更多缩略图 -->
+                    <?php
+                    $extraImages = [];
+                    if (!empty($productDetail['images'])) {
+                        $decoded = json_decode($productDetail['images'], true);
+                        if (is_array($decoded)) {
+                            $extraImages = $decoded;
+                        }
+                    }
+                    foreach ($extraImages as $img):
+                        $imgPath = '../' . htmlspecialchars($img);
+                    ?>
+                        <img src="<?php echo $imgPath; ?>" 
+                             alt="商品图片" 
+                             class="thumbnail" 
+                             onclick="changeMainImage(this.src)">
+                    <?php endforeach; ?>
                 </div>
             </div>
             
@@ -473,7 +488,7 @@ if (isset($_SESSION['user_id'])) {
                 
                 <!-- 修正价格显示 -->
                 <div class="product-price">
-                    <?php if ($productDetail['price_type'] == 'bct'): ?>
+                    <?php if ($productDetail['price_bct'] > 0): ?>
                         <!-- 人气值支付商品 -->
                         <div class="bct-price">
                             <span class="bct-symbol">Ⓟ</span><?php echo number_format($productDetail['price_bct'], 0); ?> 人气值

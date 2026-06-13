@@ -65,12 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
         try {
             // 处理主图上传
             $mainImage = '';
-            if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
-                if ($uploadResult['success']) {
-                    $mainImage = $uploadResult['file_path'];
-                } else {
-                    $error = $uploadResult['error'];
+            if (isset($_FILES['main_image'])) {
+                if ($_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
+                    $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
+                    if ($uploadResult['success']) {
+                        $mainImage = $uploadResult['file_path'];
+                    } else {
+                        $error = $uploadResult['error'];
+                    }
+                } elseif ($_FILES['main_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $error = '主图上传失败（错误码：' . $_FILES['main_image']['error'] . '），请检查文件大小或格式';
                 }
             }
 
@@ -84,6 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                 }
             }
 
+            // 主图未上传给出提示
+            if (!$error && empty($mainImage)) {
+                $error = '请上传商品主图';
+            }
+
             if (!$error) {
                 // 准备商品数据
                 $productData = [
@@ -91,9 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'category_id' => $categoryId,
                     'name' => $name,
                     'description' => $description,
-                    'main_image' => $mainImage ?: 'assets/images/default-product.jpg',
+                    'main_image' => $mainImage,
                     'images' => !empty($extraImages) ? json_encode($extraImages) : null,
-                    'price_type' => 'fixed',
+                    'price_type' => 'bct',
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
                     'stock' => $stock,
@@ -144,12 +153,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
         try {
             // 处理主图上传
             $mainImage = '';
-            if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
-                if ($uploadResult['success']) {
-                    $mainImage = $uploadResult['file_path'];
-                } else {
-                    $error = $uploadResult['error'];
+            if (isset($_FILES['main_image'])) {
+                if ($_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
+                    $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
+                    if ($uploadResult['success']) {
+                        $mainImage = $uploadResult['file_path'];
+                    } else {
+                        $error = $uploadResult['error'];
+                    }
+                } elseif ($_FILES['main_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $error = '主图上传失败（错误码：' . $_FILES['main_image']['error'] . '），请检查文件大小或格式';
                 }
             }
 
