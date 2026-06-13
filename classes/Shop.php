@@ -6,6 +6,206 @@ class Shop {
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
+
+    /**
+     * 获取店铺今日/昨日核心数据对比
+     */
+    public function getShopDailyStats($shopId) {
+        try {
+            // 今日数据
+            $todayStmt = $this->pdo->prepare("
+                SELECT 
+                    COUNT(*) as orders,
+                    COALESCE(SUM(total_amount), 0) as revenue,
+                    COUNT(DISTINCT user_id) as buyers
+                FROM orders 
+                WHERE shop_id = ? 
+                    AND DATE(created_at) = CURDATE()
+                    AND status != 'cancelled'
+            ");
+            $todayStmt->execute([$shopId]);
+            $today = $todayStmt->fetch(PDO::FETCH_ASSOC);
+
+            // 昨日数据
+            $yesterdayStmt = $this->pdo->prepare("
+                SELECT 
+                    COUNT(*) as orders,
+                    COALESCE(SUM(total_amount), 0) as revenue,
+                    COUNT(DISTINCT user_id) as buyers
+                FROM orders 
+                WHERE shop_id = ? 
+                    AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                    AND status != 'cancelled'
+            ");
+            $yesterdayStmt->execute([$shopId]);
+            $yesterday = $yesterdayStmt->fetch(PDO::FETCH_ASSOC);
+
+            // 本月累计
+            $monthStmt = $this->pdo->prepare("
+                SELECT 
+                    COUNT(*) as orders,
+                    COALESCE(SUM(total_amount), 0) as revenue
+                FROM orders 
+                WHERE shop_id = ? 
+                    AND YEAR(created_at) = YEAR(CURDATE())
+                    AND MONTH(created_at) = MONTH(CURDATE())
+                    AND status = 'completed'
+            ");
+            $monthStmt->execute([$shopId]);
+            $month = $monthStmt->fetch(PDO::FETCH_ASSOC);
+
+            return [
+                'today' => [
+                    'orders' => (int)$today['orders'],
+                    'revenue' => (float)$today['revenue'],
+                    'buyers' => (int)$today['buyers'],
+                ],
+                'yesterday' => [
+                    'orders' => (int)$yesterday['orders'],
+                    'revenue' => (float)$yesterday['revenue'],
+                    'buyers' => (int)$yesterday['buyers'],
+                ],
+                'month' => [
+                    'orders' => (int)$month['orders'],
+                    'revenue' => (float)$month['revenue'],
+                ],
+            ];
+        } catch (Exception $e) {
+            return [
+                'today' => ['orders' => 0, 'revenue' => 0, 'buyers' => 0],
+                'yesterday' => ['orders' => 0, 'revenue' => 0, 'buyers' => 0],
+                'month' => ['orders' => 0, 'revenue' => 0],
+            ];
+        }
+    }
+
+    /**
+     * 获取店铺订单状态分布
+     */
+    public function getShopOrderStatusDistribution($shopId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    status,
+                    COUNT(*) as count
+                FROM orders 
+                WHERE shop_id = ? 
+                    AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY status
+            ");
+            $stmt->execute([$shopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * 获取店铺热销商品 TOP N
+     */
+    public function getShopTopProducts($shopId, $limit = 5) {
+        try {
+            $limit = intval($limit);
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.main_image,
+                    p.price_bct,
+                    p.price_cny,
+                    p.stock,
+                    p.status,
+                    COALESCE(SUM(oi.quantity), 0) as sold_count,
+                    COALESCE(SUM(oi.total_price), 0) as total_revenue
+                FROM products p
+                LEFT JOIN order_items oi ON p.id = oi.product_id
+                LEFT JOIN orders o ON oi.order_id = o.id AND o.status = 'completed'
+                WHERE p.shop_id = ?
+                GROUP BY p.id
+                ORDER BY sold_count DESC
+                LIMIT $limit
+            ");
+            $stmt->execute([$shopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * 获取店铺最近订单（带买家信息）
+     */
+    public function getShopRecentOrders($shopId, $limit = 8) {
+        try {
+            $limit = intval($limit);
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    o.id,
+                    o.order_no,
+                    o.total_amount,
+                    o.status,
+                    o.created_at,
+                    u.username as buyer_name,
+                    u.avatar as buyer_avatar
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.shop_id = ?
+                ORDER BY o.created_at DESC
+                LIMIT $limit
+            ");
+            $stmt->execute([$shopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * 获取近7天每日销售数据（用于图表）
+     */
+    public function getShopDailySalesChart($shopId, $days = 7) {
+        try {
+            $days = intval($days);
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    DATE(created_at) as date,
+                    COUNT(*) as orders,
+                    COALESCE(SUM(total_amount), 0) as revenue
+                FROM orders 
+                WHERE shop_id = ? 
+                    AND status != 'cancelled'
+                    AND created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY date ASC
+            ");
+            $stmt->execute([$shopId, $days - 1]);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 补全缺失日期
+            $data = [];
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $date = date('Y-m-d', strtotime("-$i days"));
+                $found = false;
+                foreach ($results as $r) {
+                    if ($r['date'] === $date) {
+                        $data[] = [
+                            'date' => substr($date, 5),
+                            'orders' => (int)$r['orders'],
+                            'revenue' => (float)$r['revenue'],
+                        ];
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $data[] = ['date' => substr($date, 5), 'orders' => 0, 'revenue' => 0];
+                }
+            }
+            return $data;
+        } catch (Exception $e) {
+            return [];
+        }
+    }
     
     /**
      * 获取用户的所有店铺
