@@ -58,11 +58,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $avatarFilename = 'avatar_' . $userId . '_' . time() . '.' . $extension;
             $avatarPath = 'uploads/avatars/' . $avatarFilename;
             
-            // 移动上传文件
-            if (!move_uploaded_file($_FILES['avatar']['tmp_name'], $uploadDir . $avatarFilename)) {
+            // 移动上传文件到临时位置
+            $tmpFile = $uploadDir . 'tmp_' . $avatarFilename;
+            if (!move_uploaded_file($_FILES['avatar']['tmp_name'], $tmpFile)) {
                 throw new Exception("头像上传失败");
             }
-            
+
+            // 自动缩放头像到 200x200（保持比例，统一为 JPEG）
+            $maxSize = 200;
+            list($origWidth, $origHeight) = getimagesize($tmpFile);
+            $ratio = min($maxSize / $origWidth, $maxSize / $origHeight);
+            $newWidth  = (int)($origWidth * $ratio);
+            $newHeight = (int)($origHeight * $ratio);
+
+            $thumb = imagecreatetruecolor($newWidth, $newHeight);
+            imagefill($thumb, 0, 0, imagecolorallocate($thumb, 255, 255, 255));
+
+            switch ($fileType) {
+                case 'image/jpeg': $src = imagecreatefromjpeg($tmpFile); break;
+                case 'image/png':  $src = imagecreatefrompng($tmpFile);  break;
+                case 'image/gif':  $src = imagecreatefromgif($tmpFile);  break;
+                default: $src = false;
+            }
+
+            if ($src) {
+                imagecopyresampled($thumb, $src, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                $avatarFilename = 'avatar_' . $userId . '_' . time() . '.jpg';
+                $avatarPath = 'uploads/avatars/' . $avatarFilename;
+                imagejpeg($thumb, $uploadDir . $avatarFilename, 90);
+                imagedestroy($src);
+                imagedestroy($thumb);
+            }
+            unlink($tmpFile);
+
             // 删除旧头像文件 (如果不是默认头像)
             if ($userData['avatar'] !== 'default.jpg' && file_exists('../assets/images/' . $userData['avatar'])) {
                 unlink('../assets/images/' . $userData['avatar']);
