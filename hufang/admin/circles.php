@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     <td>
                                         <?php $creator = $user->getUserById($circle['user_id']); ?>
                                         <div class="d-flex align-items-center">
-                                            <img src="../assets/images/<?= htmlspecialchars($creator['avatar']) ?>" alt="<?= htmlspecialchars($creator['username']) ?>" class="rounded-circle avatar-sm mr-2">
+                                            <img src="../assets/images/<?= htmlspecialchars($creator['avatar']) ?>" alt="<?= htmlspecialchars($creator['username']) ?>" class="rounded-circle avatar-sm mr-2" style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
                                             <span><?= htmlspecialchars($creator['username']) ?></span>
                                         </div>
                                     </td>
