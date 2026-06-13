@@ -15,7 +15,9 @@ $perPage = 20;
 $offset = ($page - 1) * $perPage;
 
 $stmt = $pdo->prepare("SELECT * FROM cities ORDER BY $orderBy LIMIT ? OFFSET ?");
-$stmt->execute([$perPage, $offset]);
+$stmt->bindValue(1, (int)$perPage, PDO::PARAM_INT);
+$stmt->bindValue(2, (int)$offset, PDO::PARAM_INT);
+$stmt->execute();
 $cities = $stmt->fetchAll();
 
 $totalStmt = $pdo->query("SELECT COUNT(*) FROM cities");
