@@ -69,6 +69,9 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://58.tl/assets/js/main.js"></script>
     <?= $extra_head ?>
+    <!-- 51.LA 统计 -->
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
 </head>
 <body>
 
