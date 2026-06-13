@@ -101,71 +101,55 @@ foreach ($paymentSettings as $setting) {
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <!-- 店铺管理侧边栏 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">店铺管理</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="manage.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+            <aside class="shop-sidebar">
+                <nav class="sidebar-nav">
+                    <a href="manage.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-tachometer-alt"></i> 店铺概览
                     </a>
-                    <a href="products.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="products.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-box"></i> 商品管理
                     </a>
-                    <a href="orders.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="orders.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-shopping-cart"></i> 订单管理
                     </a>
-                    <a href="payment-settings.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action active">
+                    <a href="payment-settings.php?id=<?= $shopId ?>" class="nav-item active">
                         <i class="fas fa-cog"></i> 支付设置
                     </a>
-                    <a href="view.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action" target="_blank">
+                    <a href="view.php?id=<?= $shopId ?>" class="nav-item" target="_blank">
                         <i class="fas fa-external-link-alt"></i> 查看店铺
                     </a>
-                </div>
-            </div>
-            
-            <!-- 支付统计 -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">支付统计</h6>
-                </div>
-                <div class="card-body">
+                </nav>
+                
+                <div class="sidebar-card">
+                    <h4>支付统计</h4>
                     <?php
                     $activePayments = array_filter($paymentSettings, function($setting) {
                         return $setting['is_active'] == 1;
                     });
                     ?>
-                    <div class="small">
-                        <div class="d-flex justify-content-between">
-                            <span>支持城市:</span>
-                            <span class="text-primary"><?= count($paymentSettings) ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>启用支付:</span>
-                            <span class="text-success"><?= count($activePayments) ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>总城市数:</span>
-                            <span class="text-info"><?= count($supportedCities) ?></span>
-                        </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">支持城市</span>
+                        <span class="value text-primary"><?= count($paymentSettings) ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">启用支付</span>
+                        <span class="value text-success"><?= count($activePayments) ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">总城市数</span>
+                        <span class="value text-info"><?= count($supportedCities) ?></span>
                     </div>
                 </div>
-            </div>
-            
-            <!-- 帮助信息 -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">帮助说明</h6>
-                </div>
-                <div class="card-body">
+                
+                <div class="sidebar-card mt-3">
+                    <h4>帮助说明</h4>
                     <div class="small text-muted">
-                        <p><strong>区块ID:</strong> 您在各城市人气值平台的收款地址标识</p>
-                        <p><strong>最小金额:</strong> 该城市支持的最小支付金额</p>
-                        <p><strong>兑换率:</strong> BCT与人民币的兑换比例</p>
+                        <p class="mb-1"><strong>区块ID:</strong> 您在各城市人气值平台的收款地址标识</p>
+                        <p class="mb-1"><strong>最小金额:</strong> 该城市支持的最小支付金额</p>
+                        <p class="mb-0"><strong>兑换率:</strong> BCT与人民币的兑换比例</p>
                     </div>
                 </div>
-            </div>
+            </aside>
         </div>
         
         <div class="col-md-9">
@@ -391,6 +375,21 @@ foreach ($paymentSettings as $setting) {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* ===== 侧边栏（统一风格） ===== */
+.shop-sidebar { width: 100%; }
+.sidebar-nav { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: all .2s; position: relative; }
+.nav-item:hover { background: #f1f5f9; color: #1e293b; text-decoration: none; }
+.nav-item.active { background: #fff7ed; color: #ea580c; }
+.nav-badge { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.nav-item.active .nav-badge { background: #fed7aa; color: #c2410c; }
+.sidebar-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.sidebar-card h4 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 12px; }
+.sidebar-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.sidebar-stat-row:last-child { border-bottom: none; }
+.sidebar-stat-row .label { color: #64748b; }
+.sidebar-stat-row .value { font-weight: 600; }
 </style>
 
 <script>

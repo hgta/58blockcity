@@ -49,20 +49,17 @@ $recentProducts = $product->getRecentProducts(6);
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <div class="card">
-                <div class="card-header"><h5 class="card-title mb-0">用户中心</h5></div>
-                <div class="list-group list-group-flush">
-                    <a href="dashboard.php" class="list-group-item list-group-item-action active"><i class="fas fa-tachometer-alt"></i> 仪表板</a>
-                    <a href="orders.php" class="list-group-item list-group-item-action"><i class="fas fa-shopping-cart"></i> 我的订单</a>
-                    <a href="profile.php" class="list-group-item list-group-item-action"><i class="fas fa-user-edit"></i> 个人信息</a>
-                    <a href="shops.php" class="list-group-item list-group-item-action"><i class="fas fa-store"></i> 我的店铺</a>
-                    <a href="address.php" class="list-group-item list-group-item-action"><i class="fas fa-address-book"></i> 收货地址</a>
-                    <a href="security.php" class="list-group-item list-group-item-action"><i class="fas fa-shield-alt"></i> 安全设置</a>
-                </div>
-            </div>
+            <aside class="shop-sidebar">
+                <nav class="sidebar-nav">
+                    <a href="dashboard.php" class="nav-item active"><i class="fas fa-tachometer-alt"></i> 仪表板</a>
+                    <a href="orders.php" class="nav-item"><i class="fas fa-shopping-cart"></i> 我的订单</a>
+                    <a href="profile.php" class="nav-item"><i class="fas fa-user-edit"></i> 个人信息</a>
+                    <a href="shops.php" class="nav-item"><i class="fas fa-store"></i> 我的店铺</a>
+                    <a href="address.php" class="nav-item"><i class="fas fa-address-book"></i> 收货地址</a>
+                    <a href="security.php" class="nav-item"><i class="fas fa-shield-alt"></i> 安全设置</a>
+                </nav>
 
-            <div class="card mt-3">
-                <div class="card-body text-center">
+                <div class="sidebar-card user-sidebar-card text-center">
                     <div class="user-avatar mb-3">
                         <?php if (!empty($userInfo['avatar'])): ?>
                             <img src="<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
@@ -74,7 +71,7 @@ $recentProducts = $product->getRecentProducts(6);
                     <p class="text-muted small mb-2"><?= htmlspecialchars($userInfo['email']) ?></p>
                     <p class="text-muted small">注册于 <?= date('Y-m-d', strtotime($userInfo['created_at'])) ?></p>
                 </div>
-            </div>
+            </aside>
         </div>
 
         <div class="col-md-9">
@@ -430,6 +427,22 @@ $recentProducts = $product->getRecentProducts(6);
 .product-card-small .product-info { padding: 10px; }
 .product-card-small .product-name { font-size: 13px; margin-bottom: 6px; color: #1a1a2e; font-weight: 600; line-height: 1.4; }
 .product-card-small .product-price { font-size: 13px; color: #ff6b00; font-weight: 700; }
+
+/* ===== 侧边栏（统一风格） ===== */
+.shop-sidebar { width: 100%; }
+.sidebar-nav { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: all .2s; position: relative; }
+.nav-item:hover { background: #f1f5f9; color: #1e293b; text-decoration: none; }
+.nav-item.active { background: #fff7ed; color: #ea580c; }
+.nav-badge { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.nav-item.active .nav-badge { background: #fed7aa; color: #c2410c; }
+.sidebar-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.sidebar-card h4 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 12px; }
+.sidebar-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.sidebar-stat-row:last-child { border-bottom: none; }
+.sidebar-stat-row .label { color: #64748b; }
+.sidebar-stat-row .value { font-weight: 600; }
+.user-sidebar-card .avatar-placeholder-lg { margin: 0 auto; }
 
 @media (max-width: 768px) {
     .dashboard-stats-row { grid-template-columns: repeat(2, 1fr); }
