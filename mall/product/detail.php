@@ -441,12 +441,25 @@ if (isset($_SESSION['user_id'])) {
         <?php endif; ?>
         
         <div class="product-detail">
-            <!-- 商品图片区域 -->
+            <!-- 商品图片/视频区域 -->
             <div class="product-gallery">
                 <?php $mainImagePath = $productDetail['main_image'] ?: 'assets/images/default-product.jpg'; ?>
-                <img src="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" 
-                     alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
-                     class="main-image" id="main-image">
+
+                <?php if (!empty($productDetail['video_url'])): ?>
+                    <!-- 有视频时优先展示视频 -->
+                    <div class="product-video-wrapper" style="position:relative;margin-bottom:15px;">
+                        <span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;padding:3px 10px;border-radius:4px;font-size:12px;z-index:2;">🎬 视频介绍</span>
+                        <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-height:400px;border-radius:8px;background:#000;">
+                            <source src="<?php echo '../' . htmlspecialchars($productDetail['video_url']); ?>" type="video/mp4">
+                            您的浏览器不支持视频播放
+                        </video>
+                    </div>
+                <?php else: ?>
+                    <!-- 无视频时展示主图 -->
+                    <img src="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" 
+                         alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
+                         class="main-image" id="main-image">
+                <?php endif; ?>
                 
                 <!-- 商品图集（主图 + 副图） -->
                 <div class="image-thumbnails">

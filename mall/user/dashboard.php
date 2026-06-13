@@ -301,9 +301,14 @@ require_once '../includes/header.php';
                                 <div class="col-md-4 col-6 mb-3">
                                     <div class="product-card-small">
                                         <a href="../product/detail.php?id=<?= $p['id'] ?>">
-                                            <div class="product-image">
+                                            <div class="product-image" style="position:relative;">
                                                 <?php $dashImage = $p['main_image'] ?: 'assets/images/default-product.jpg'; ?>
                                                 <img src="../<?= htmlspecialchars($dashImage) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
+                                                <?php if (!empty($p['video_url'])): ?>
+                                                    <span style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.6);color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;">
+                                                        <i class="fas fa-video"></i>
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="product-info">
                                                 <h6 class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 16)) ?><?= mb_strlen($p['name']) > 16 ? '...' : '' ?></h6>

@@ -93,6 +93,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                 $error = '请上传商品主图';
             }
 
+            // 处理视频上传或链接
+            $videoUrl = '';
+            if (!$error && isset($_FILES['product_video'])) {
+                if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
+                    $videoResult = uploadVideo($_FILES['product_video']);
+                    if ($videoResult['success']) {
+                        $videoUrl = $videoResult['file_path'];
+                    } else {
+                        $error = $videoResult['error'];
+                    }
+                } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $error = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                }
+            }
+            if (!$error && empty($videoUrl) && !empty($_POST['video_link'])) {
+                $videoUrl = trim($_POST['video_link']);
+            }
+
             if (!$error) {
                 // 准备商品数据
                 $productData = [
@@ -102,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'description' => $description,
                     'main_image' => $mainImage,
                     'images' => !empty($extraImages) ? json_encode($extraImages) : null,
+                    'video_url' => $videoUrl ?: null,
                     'price_type' => 'bct',
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
@@ -176,6 +195,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 }
             }
 
+            // 处理视频上传或链接
+            $videoUrl = null;
+            if (!$error && isset($_FILES['product_video'])) {
+                if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
+                    $videoResult = uploadVideo($_FILES['product_video']);
+                    if ($videoResult['success']) {
+                        $videoUrl = $videoResult['file_path'];
+                    } else {
+                        $error = $videoResult['error'];
+                    }
+                } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
+                    $error = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                }
+            }
+            if (!$error && $videoUrl === null && !empty($_POST['video_link'])) {
+                $videoUrl = trim($_POST['video_link']);
+            }
+            // 用户点击了移除视频按钮
+            if (!$error && isset($_POST['remove_video']) && $_POST['remove_video'] === '1') {
+                $videoUrl = null;
+            }
+
             if (!$error) {
                 // 准备更新数据
                 $updateData = [
@@ -185,7 +226,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
                     'stock' => $stock,
-                    'status' => $status
+                    'status' => $status,
+                    'video_url' => $videoUrl
                 ];
 
                 if ($mainImage) {
@@ -388,6 +430,40 @@ function uploadMultipleImages($files, &$errorMsg) {
         }
     }
     return $images;
+}
+
+// 视频上传函数
+function uploadVideo($file) {
+    $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    $allowedExts  = ['mp4', 'webm', 'ogg'];
+    $maxSize = 50 * 1024 * 1024; // 50MB
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExts)) {
+        return ['success' => false, 'error' => '只允许上传 MP4、WebM、OGG 格式的视频'];
+    }
+    if (!in_array($file['type'], $allowedTypes)) {
+        return ['success' => false, 'error' => '视频格式不支持：' . htmlspecialchars($file['type'])];
+    }
+    if ($file['size'] > $maxSize) {
+        return ['success' => false, 'error' => '视频大小不能超过 50MB'];
+    }
+
+    $uploadDir = __DIR__ . '/../assets/uploads/videos/';
+    if (!is_dir($uploadDir)) {
+        if (!@mkdir($uploadDir, 0777, true)) {
+            return ['success' => false, 'error' => '无法创建视频上传目录，请联系管理员检查权限'];
+        }
+    }
+
+    $fileName = uniqid() . '_' . time() . '.' . $ext;
+    $filePath = $uploadDir . $fileName;
+    $relativePath = 'assets/uploads/videos/' . $fileName;
+
+    if (move_uploaded_file($file['tmp_name'], $filePath)) {
+        return ['success' => true, 'file_path' => $relativePath];
+    }
+    return ['success' => false, 'error' => '视频保存失败'];
 }
 
 // 显示成功消息
@@ -652,6 +728,48 @@ require_once '../includes/header.php';
                                                 </div>
                                             </div>
                                             <div id="extraImageInfo" class="img-info text-muted small mt-1"></div>
+                                        </div>
+
+                                        <!-- 商品视频 -->
+                                        <div class="form-group">
+                                            <h5 class="section-title"><i class="fas fa-video"></i> 商品视频</h5>
+                                            <div class="video-upload-tabs">
+                                                <div class="form-group">
+                                                    <label>上传视频 <small class="text-muted">(MP4/WebM/OGG, 最大50MB)</small></label>
+                                                    <div class="video-upload-area" id="videoUploadArea">
+                                                        <input type="file" id="product_video" name="product_video" accept="video/mp4,video/webm,video/ogg" class="d-none">
+                                                        <?php if (isset($editProduct) && !empty($editProduct['video_url']) && strpos($editProduct['video_url'], '://') === false): ?>
+                                                            <div class="video-preview active">
+                                                                <video src="../<?= htmlspecialchars($editProduct['video_url']) ?>" controls style="width:100%;max-height:180px;border-radius:8px;"></video>
+                                                                <button type="button" class="btn-remove-img" onclick="document.getElementById('product_video').click()">
+                                                                    <i class="fas fa-sync-alt"></i> 更换
+                                                                </button>
+                                                            </div>
+                                                            <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
+                                                        <?php else: ?>
+                                                            <div class="upload-placeholder" onclick="document.getElementById('product_video').click()">
+                                                                <i class="fas fa-video"></i>
+                                                                <span>点击上传视频</span>
+                                                                <small>支持 MP4/WebM/OGG</small>
+                                                            </div>
+                                                            <div class="video-preview d-none">
+                                                                <video id="videoPreviewPlayer" controls style="width:100%;max-height:180px;border-radius:8px;"></video>
+                                                                <button type="button" class="btn-remove-img" onclick="resetVideoUpload()">
+                                                                    <i class="fas fa-trash"></i> 移除
+                                                                </button>
+                                                            </div>
+                                                            <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div id="videoUploadInfo" class="img-info text-muted small mt-1"></div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>或填写视频链接 <small class="text-muted">(外部视频 URL)</small></label>
+                                                    <input type="url" class="form-control" id="video_link" name="video_link"
+                                                           value="<?= isset($editProduct) && !empty($editProduct['video_url']) && strpos($editProduct['video_url'], '://') !== false ? htmlspecialchars($editProduct['video_url']) : '' ?>"
+                                                           placeholder="https://example.com/video.mp4">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1241,6 +1359,46 @@ function formatSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/* ========== 视频上传预览 ========== */
+const videoInput = document.getElementById('product_video');
+const videoArea = document.getElementById('videoUploadArea');
+if (videoInput && videoArea) {
+    videoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        videoArea.innerHTML = `
+            <div class="video-preview active">
+                <video src="${url}" controls style="width:100%;max-height:180px;border-radius:8px;"></video>
+                <button type="button" class="btn-remove-img" onclick="resetVideoUpload()">
+                    <i class="fas fa-trash"></i> 移除
+                </button>
+            </div>
+            <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
+        `;
+        document.getElementById('videoUploadInfo').textContent = file.name + ' (' + formatSize(file.size) + ')';
+    });
+}
+function resetVideoUpload() {
+    if (!videoInput) return;
+    videoInput.value = '';
+    videoArea.innerHTML = `
+        <div class="upload-placeholder" onclick="document.getElementById('product_video').click()">
+            <i class="fas fa-video"></i>
+            <span>点击上传视频</span>
+            <small>支持 MP4/WebM/OGG</small>
+        </div>
+        <div class="video-preview d-none">
+            <video id="videoPreviewPlayer" controls style="width:100%;max-height:180px;border-radius:8px;"></video>
+            <button type="button" class="btn-remove-img" onclick="resetVideoUpload()">
+                <i class="fas fa-trash"></i> 移除
+            </button>
+        </div>
+        <input type="hidden" name="remove_video" id="removeVideoFlag" value="1">
+    `;
+    document.getElementById('videoUploadInfo').textContent = '';
 }
 
 // 表单验证

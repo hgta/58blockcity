@@ -468,6 +468,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `description` text COMMENT '商品描述',
   `main_image` varchar(255) NOT NULL COMMENT '主图',
   `images` json DEFAULT NULL COMMENT '商品图集',
+  `video_url` varchar(500) DEFAULT NULL COMMENT '商品介绍视频路径或外部链接',
   `price_type` enum('fixed','bct') DEFAULT 'bct' COMMENT '价格类型',
   `price_bct` decimal(10,2) DEFAULT NULL COMMENT '人气值价格',
   `price_cny` decimal(10,2) DEFAULT NULL COMMENT '人民币价格',

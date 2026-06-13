@@ -201,6 +201,11 @@ require_once '../includes/header.php';
                                     <img src="../<?= htmlspecialchars($itemImage) ?>" 
                                          alt="<?= htmlspecialchars($productItem['name']) ?>"
                                          class="img-fluid">
+                                    <?php if (!empty($productItem['video_url'])): ?>
+                                        <div class="product-video-badge" style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.6);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;z-index:2;">
+                                            <i class="fas fa-video"></i> 视频
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if ($productItem['status'] !== 'active'): ?>
                                         <div class="product-status-overlay">
                                             <span class="badge badge-secondary">
