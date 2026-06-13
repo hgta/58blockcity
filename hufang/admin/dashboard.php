@@ -176,18 +176,12 @@ require_once '../../shared/admin/admin-header.php';
                             <td><?= htmlspecialchars($v['circle_name']) ?></td>
                             <td>
                                 <?php
-                                $statusClass = match($v['status']) {
-                                    'pending'  => 'warning',
-                                    'approved' => 'success',
-                                    'rejected' => 'danger',
-                                    default    => 'default',
-                                };
-                                $statusText = match($v['status']) {
-                                    'pending'  => '待审核',
-                                    'approved' => '已通过',
-                                    'rejected' => '已拒绝',
-                                    default    => $v['status'],
-                                };
+                                switch ($v['status']) {
+                                    case 'pending':  $statusClass = 'warning'; $statusText = '待审核'; break;
+                                    case 'approved': $statusClass = 'success'; $statusText = '已通过'; break;
+                                    case 'rejected': $statusClass = 'danger';  $statusText = '已拒绝'; break;
+                                    default:         $statusClass = 'default'; $statusText = $v['status']; break;
+                                }
                                 ?>
                                 <span class="admin-badge <?= $statusClass ?>"><?= $statusText ?></span>
                             </td>

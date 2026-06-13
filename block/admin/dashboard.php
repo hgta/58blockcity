@@ -41,12 +41,13 @@ $cityStats = $pdo->query("
     LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// 最新交易
+// 最新交易（通过 blocks 表间接关联 cities）
 $recentTx = $pdo->query("
     SELECT t.*, u.username, c.name as city_name
     FROM transactions t
     JOIN users u ON t.buyer_id = u.id
-    JOIN cities c ON t.city_id = c.id
+    JOIN blocks b ON t.block_id = b.id
+    JOIN cities c ON b.city_id = c.id
     ORDER BY t.created_at DESC
     LIMIT 8
 ")->fetchAll(PDO::FETCH_ASSOC);
