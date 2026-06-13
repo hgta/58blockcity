@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Coupon.php';
 
@@ -108,6 +107,7 @@ foreach ($coupons as &$c) {
     }
 }
 unset($c);
+require_once '../includes/header.php';
 ?>
 
 <div class="container mt-4">

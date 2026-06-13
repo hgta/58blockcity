@@ -1,12 +1,11 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Order.php';
 
-// 检查用户是否已登录
+// 检查用户是否已登录（必须在输出 HTML 之前）
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit;
@@ -160,6 +159,9 @@ foreach ($statusDist as $s) {
 $pieLabelsJson = json_encode($pieLabels);
 $pieDataJson = json_encode($pieData);
 $pieColorsJson = json_encode($pieColors);
+
+// 引入共享头部（必须在所有 header() 调用之后）
+require_once '../includes/header.php';
 ?>
 
 <div class="shop-manage-wrapper">

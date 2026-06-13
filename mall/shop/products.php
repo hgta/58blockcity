@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Category.php';
@@ -270,6 +269,7 @@ if (isset($_GET['success'])) {
 if (isset($_GET['error'])) {
     $error = $_GET['error'];
 }
+require_once '../includes/header.php';
 ?>
 
 <div class="container mt-4">
