@@ -1307,11 +1307,45 @@ ALTER TABLE `remember_tokens`
 ALTER TABLE `user_addresses`
   ADD CONSTRAINT `fk_user_addresses_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `coupons`
+--
+
+CREATE TABLE IF NOT EXISTS `coupons` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shop_id` int(11) NOT NULL COMMENT '店铺ID',
+  `title` varchar(100) NOT NULL COMMENT '优惠券名称',
+  `code` varchar(50) DEFAULT NULL COMMENT '优惠码（为空则自动领取）',
+  `type` enum('fixed','percent') NOT NULL DEFAULT 'fixed' COMMENT '优惠类型：固定金额/百分比',
+  `value` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '优惠值',
+  `min_order_amount` decimal(10,2) DEFAULT '0.00' COMMENT '最低订单金额',
+  `max_discount` decimal(10,2) DEFAULT NULL COMMENT '最大优惠金额（百分比时有效）',
+  `total_quantity` int(11) NOT NULL DEFAULT '0' COMMENT '总发行量，0为不限量',
+  `used_quantity` int(11) NOT NULL DEFAULT '0' COMMENT '已使用量',
+  `start_date` date DEFAULT NULL COMMENT '生效日期',
+  `end_date` date DEFAULT NULL COMMENT '失效日期',
+  `status` enum('active','inactive','expired') NOT NULL DEFAULT 'active' COMMENT '状态',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `shop_id` (`shop_id`),
+  KEY `code` (`code`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='店铺优惠券';
+
 --
 -- 限制表 `visits`
 --
 ALTER TABLE `visits`
   ADD CONSTRAINT `fk_applicant_circle` FOREIGN KEY (`applicant_circle_id`) REFERENCES `circles` (`id`);
+
+--
+-- 限制表 `coupons`
+--
+ALTER TABLE `coupons`
+  ADD CONSTRAINT `fk_coupons_shop` FOREIGN KEY (`shop_id`) REFERENCES `shops` (`id`) ON DELETE CASCADE;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

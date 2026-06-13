@@ -213,6 +213,9 @@ $pieColorsJson = json_encode($pieColors);
                     <i class="fas fa-shopping-cart"></i> 订单管理
                     <span class="nav-badge"><?= $orderStats['total_orders'] ?? 0 ?></span>
                 </a>
+                <a href="coupons.php?id=<?= $shopId ?>" class="nav-item">
+                    <i class="fas fa-ticket-alt"></i> 优惠券
+                </a>
                 <a href="payment-settings.php?id=<?= $shopId ?>" class="nav-item">
                     <i class="fas fa-credit-card"></i> 支付设置
                     <span class="nav-badge"><?= count($paymentSettings) ?></span>

@@ -128,6 +128,9 @@ $statusIcons = [
                     <a href="orders.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action active">
                         <i class="fas fa-shopping-cart"></i> 订单管理
                     </a>
+                    <a href="coupons.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                        <i class="fas fa-ticket-alt"></i> 优惠券
+                    </a>
                     <a href="payment-settings.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
                         <i class="fas fa-cog"></i> 支付设置
                     </a>
