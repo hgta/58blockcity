@@ -279,9 +279,11 @@ function uploadImage($file, $maxWidth = 1200, $maxHeight = 1200, $quality = 85) 
 
     // 创建上传目录（按日期分目录，减少单目录文件数）
     $subDir = date('Ym') . '/';
-    $uploadDir = '../assets/uploads/products/' . $subDir;
+    $uploadDir = __DIR__ . '/../assets/uploads/products/' . $subDir;
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!@mkdir($uploadDir, 0777, true)) {
+            return ['success' => false, 'error' => '无法创建上传目录，请联系管理员检查目录权限：' . dirname($uploadDir)];
+        }
     }
 
     // 生成唯一文件名（统一用 jpg 以减小体积）

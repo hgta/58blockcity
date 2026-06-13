@@ -58,16 +58,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'update_avatar') {
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = __DIR__ . '/../../assets/uploads/avatars/';
+            $dirReady = true;
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+                if (!@mkdir($uploadDir, 0777, true)) {
+                    $error = '无法创建上传目录，请联系管理员检查目录权限';
+                    $dirReady = false;
+                }
             }
             
-            $fileExtension = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            
-            if (!in_array($fileExtension, $allowedExtensions)) {
-                $error = '仅支持 JPG、PNG、GIF、WEBP 格式的图片';
-            } else {
+            if ($dirReady) {
+                $fileExtension = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    $error = '仅支持 JPG、PNG、GIF、WEBP 格式的图片';
+                } else {
                 $fileName = 'avatar_' . $userId . '_' . time() . '.' . $fileExtension;
                 $filePath = $uploadDir . $fileName;
                 
@@ -82,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error = '文件上传失败';
                 }
+            }
             }
         } else {
             $error = '请选择要上传的头像';
