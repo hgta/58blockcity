@@ -68,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
 
     <div class="circle-view-header">
         <div class="circle-basic-info">
-            <img src="../assets/images/<?= htmlspecialchars($ownerInfo['avatar'] ?? 'default.jpg') ?>" 
-                 class="circle-owner-avatar" alt="<?= htmlspecialchars($ownerInfo['username']) ?>">
+            <img src="../assets/images/<?= htmlspecialchars($ownerInfo['avatar'] ?? 'default.jpg') ?>"
+                 class="circle-owner-avatar" alt="<?= htmlspecialchars($ownerInfo['username']) ?>" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
             
             <div class="circle-title">
                 <h1><?= htmlspecialchars($circleInfo['name']) ?></h1>
@@ -132,8 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
                             <?php foreach ($visits as $visit): ?>
                                 <div class="visit-item status-<?= $visit['status'] ?>">
                                     <div class="visit-user">
-                                        <img src="../assets/images/<?= htmlspecialchars($visit['avatar'] ?? 'default.jpg') ?>" 
-                                             class="avatar" alt="<?= htmlspecialchars($visit['username']) ?>">
+                                        <img src="../assets/images/<?= htmlspecialchars($visit['avatar'] ?? 'default.jpg') ?>"
+                                             class="avatar" alt="<?= htmlspecialchars($visit['username']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:50%;flex-shrink:0;">
                                         <div class="user-info">
                                             <span class="username"><?= htmlspecialchars($visit['applicant_circle_name']) ?></span>
                                             <span class="visit-date"><?= date('Y-m-d', strtotime($visit['created_at'])) ?></span>

@@ -291,8 +291,8 @@ $letters = range('A', 'Z');
 
         <?php if ($displayedCount >= $maxCities): ?>
         <div class="more-cities-bar" style="text-align:center;padding:24px 0 40px;">
-            <a href="top200city.php" class="btn-primary" style="display:inline-block;padding:12px 32px;border-radius:8px;font-size:15px;">
-                查看更多城市（共 <?= count($city->getAllCities()) ?> 个）→
+            <a href="all-cities.php" class="btn-primary" style="display:inline-block;padding:12px 32px;border-radius:8px;font-size:15px;">
+                查看全部 <?= count($allCities) ?> 个城市 →
             </a>
         </div>
         <?php endif; ?>
