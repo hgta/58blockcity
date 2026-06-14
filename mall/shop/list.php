@@ -521,7 +521,7 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                 <div class="featured-grid">
                     <?php foreach ($featuredShops as $featuredShop): ?>
                         <div class="featured-shop-card">
-                            <img src="<?php echo htmlspecialchars($featuredShop['shop_logo'] ?: '../assets/images/default-shop.jpg'); ?>" 
+                            <img src="<?php echo htmlspecialchars($featuredShop['shop_logo'] ? '../' . $featuredShop['shop_logo'] : '../assets/images/default-shop.jpg'); ?>" 
                                  alt="<?php echo htmlspecialchars($featuredShop['shop_name']); ?>" 
                                  class="featured-avatar">
                             <div class="featured-info">
@@ -645,7 +645,7 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                             <div class="shop-card">
                                 <div class="shop-cover"></div>
                                 <div class="shop-avatar">
-                                    <img src="<?php echo htmlspecialchars($shopItem['shop_logo'] ?: '../assets/images/default-shop.jpg'); ?>" 
+                                    <img src="<?php echo htmlspecialchars($shopItem['shop_logo'] ? '../' . $shopItem['shop_logo'] : '../assets/images/default-shop.jpg'); ?>" 
                                          alt="<?php echo htmlspecialchars($shopItem['shop_name']); ?>">
                                 </div>
                                 
@@ -654,6 +654,9 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                                     
                                     <div class="shop-category">
                                         <?php echo htmlspecialchars($shopItem['category_name'] ?: '未分类'); ?>
+                                    </div>
+                                    <div class="shop-owner" style="font-size:12px;color:#888;margin-bottom:8px;">
+                                        店主：<?php echo htmlspecialchars($shopItem['owner_name'] ?: '未知'); ?>
                                     </div>
                                     
                                     <p class="shop-description">

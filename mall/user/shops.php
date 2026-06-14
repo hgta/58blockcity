@@ -23,20 +23,9 @@ $userStmt = $pdo->prepare("SELECT username, email, created_at, avatar FROM users
 $userStmt->execute([$userId]);
 $userInfo = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-// 店铺信息
-$userShop = $shop->getShopByUserId($userId);
-$hasShop = !empty($userShop);
-$shopId = $hasShop ? $userShop['id'] : 0;
-
-// 店铺统计数据
-$shopProductStats = [];
-$shopCouponStats = [];
-$shopDailyStats = [];
-if ($hasShop) {
-    $shopProductStats = $product->getShopProductStats($shopId);
-    $shopCouponStats = $coupon->getShopCouponStats($shopId);
-    $shopDailyStats = $shop->getShopDailyStats($shopId);
-}
+// 店铺信息（支持多店铺）
+$userShops = $shop->getUserShops($userId);
+$hasShop = !empty($userShops);
 
 require_once '../includes/header.php';
 ?>
@@ -71,8 +60,15 @@ require_once '../includes/header.php';
 
         <div class="col-md-9">
             <?php if ($hasShop): ?>
+                <?php foreach ($userShops as $userShop): ?>
+                    <?php
+                    $shopId = $userShop['id'];
+                    $shopProductStats = $product->getShopProductStats($shopId);
+                    $shopCouponStats = $coupon->getShopCouponStats($shopId);
+                    $shopDailyStats = $shop->getShopDailyStats($shopId);
+                    ?>
                 <!-- 店铺概览卡片 -->
-                <div class="shop-overview-card">
+                <div class="shop-overview-card mb-4">
                     <div class="shop-overview-header">
                         <div class="shop-overview-logo">
                             <?php if (!empty($userShop['shop_logo'])): ?>
@@ -83,7 +79,7 @@ require_once '../includes/header.php';
                         </div>
                         <div class="shop-overview-info">
                             <h4><?= htmlspecialchars($userShop['shop_name']) ?></h4>
-                            <p class="text-muted mb-2"><?= htmlspecialchars($userShop['description'] ?? '暂无描述') ?></p>
+                            <p class="text-muted mb-2"><?= htmlspecialchars($userShop['shop_description'] ?? '暂无描述') ?></p>
                             <div class="shop-overview-badges">
                                 <span class="badge badge-<?= $userShop['status'] === 'active' ? 'success' : 'warning' ?>">
                                     <?= $userShop['status'] === 'active' ? '营业中' : '审核中' ?>
@@ -137,7 +133,7 @@ require_once '../includes/header.php';
                 </div>
 
                 <!-- 快捷入口 -->
-                <div class="card mt-4">
+                <div class="card mt-4 mb-4">
                     <div class="card-header"><h5 class="card-title mb-0">店铺管理</h5></div>
                     <div class="card-body">
                         <div class="quick-actions-grid">
@@ -159,6 +155,13 @@ require_once '../includes/header.php';
                             </a>
                         </div>
                     </div>
+                </div>
+                <?php endforeach; ?>
+
+                <div class="text-center mt-3 mb-5">
+                    <a href="../shop/create.php" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> 再开一个店
+                    </a>
                 </div>
             <?php else: ?>
                 <!-- 没有店铺的空状态 -->

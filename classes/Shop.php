@@ -809,9 +809,11 @@ class Shop {
             
             $sql = "SELECT s.*, 
                            c.name as category_name,
+                           u.username as owner_name,
                            (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status = 'active' ) as product_count
                     FROM shops s
                     LEFT JOIN product_categories c ON s.category_id = c.id
+                    LEFT JOIN users u ON s.user_id = u.id
                     WHERE {$whereClause}
                     ORDER BY {$orderBy}
                     {$limit}";
