@@ -286,7 +286,7 @@ require_once '../includes/header.php';
                                                 <small class="form-text text-muted block-hint" data-city="<?= $cityCode ?>">
                                                     <?php if (!$hasBlocks): ?>
                                                         <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span>
-                                                        <a href="../../block/city.php?id=<?= $cityId ?>" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>
+                                                        <a href="https://block.58.tl/block/city.php?id=<?= $cityId ?>" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>
                                                     <?php else: ?>
                                                         选择该城市的收款区块
                                                     <?php endif; ?>
@@ -557,7 +557,7 @@ function createCityRowHTML(cityCode, city) {
 
     let hint = hasBlocks
         ? '选择该城市的收款区块'
-        : '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span> <a href="../../block/city.php?id=' + cityId + '" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>';
+        : '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span> <a href="https://block.58.tl/block/city.php?id=' + cityId + '" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>';
 
     return '<tr class="payment-setting-row" data-city-id="' + cityId + '" data-city="' + cityCode + '">' +
         '<td><strong>' + cityName + '</strong><input type="hidden" name="payment_cities[]" value="' + cityCode + '"></td>' +
