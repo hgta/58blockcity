@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Payment.php';
+require_once '../../classes/Block.php';
 
 // 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
@@ -34,6 +35,14 @@ $paymentSettings = $shop->getPaymentSettings($shopId);
 
 // 获取支持的城市列表
 $supportedCities = $shop->getSupportedCities();
+
+// 获取当前用户在所有城市已认领的区块（按城市分组）
+$block = new Block($pdo);
+$userAllBlocks = $block->getUserBlocks($_SESSION['user_id']);
+$userBlocksByCity = [];
+foreach ($userAllBlocks as $b) {
+    $userBlocksByCity[$b['city_id']][] = $b;
+}
 
 $error = '';
 $success = '';
@@ -199,35 +208,57 @@ require_once '../includes/header.php';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($supportedCities as $cityCode => $cityName): ?>
+                                    <?php foreach ($supportedCities as $cityCode => $city): ?>
                                         <?php
+                                        $cityName = $city['name'];
+                                        $cityId = $city['id'];
                                         $setting = $paymentSettingsByCity[$cityCode] ?? [
                                             'city' => $cityCode,
                                             'block_id' => '',
                                             'is_active' => 0,
                                             'min_amount' => 0.01,
-                                            'exchange_rate' => 1.0000
+                                            'exchange_rate' => 1.0000,
+                                            'block_zone' => '',
+                                            'block_number' => ''
                                         ];
+                                        $hasBlocks = !empty($userBlocksByCity[$cityId]);
                                         ?>
-                                        <tr class="payment-setting-row">
+                                        <tr class="payment-setting-row" data-city-id="<?= $cityId ?>" data-city="<?= $cityCode ?>">
                                             <td>
                                                 <strong><?= htmlspecialchars($cityName) ?></strong>
                                                 <input type="hidden" name="payment_cities[]" value="<?= $cityCode ?>">
                                             </td>
                                             <td>
-                                                <input type="text" class="form-control form-control-sm block-id-input" 
-                                                       name="block_id[<?= $cityCode ?>]" 
-                                                       value="<?= htmlspecialchars($setting['block_id']) ?>" 
-                                                       placeholder="请输入区块ID" 
-                                                       data-city="<?= $cityCode ?>">
-                                                <small class="form-text text-muted">该城市的收款区块ID</small>
+                                                <select class="form-control form-control-sm block-id-select"
+                                                        name="block_id[<?= $cityCode ?>]"
+                                                        data-city="<?= $cityCode ?>"
+                                                        data-city-id="<?= $cityId ?>"
+                                                        <?= !$hasBlocks ? 'disabled' : '' ?>>
+                                                    <option value="">请选择区块</option>
+                                                    <?php if ($hasBlocks): ?>
+                                                        <?php foreach ($userBlocksByCity[$cityId] as $ub): ?>
+                                                            <option value="<?= $ub['id'] ?>"
+                                                                <?= ($setting['block_id'] == $ub['id']) ? 'selected' : '' ?>>
+                                                                <?= $ub['zone'] ?>区 #<?= $ub['block_number'] ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </select>
+                                                <small class="form-text text-muted block-hint" data-city="<?= $cityCode ?>">
+                                                    <?php if (!$hasBlocks): ?>
+                                                        <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span>
+                                                        <a href="../../block/city.php?id=<?= $cityId ?>" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>
+                                                    <?php else: ?>
+                                                        选择该城市的收款区块
+                                                    <?php endif; ?>
+                                                </small>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-switch">
-                                                    <input type="checkbox" class="custom-control-input payment-toggle" 
-                                                           id="is_active_<?= $cityCode ?>" 
-                                                           name="is_active[<?= $cityCode ?>]" 
-                                                           value="1" 
+                                                    <input type="checkbox" class="custom-control-input payment-toggle"
+                                                           id="is_active_<?= $cityCode ?>"
+                                                           name="is_active[<?= $cityCode ?>]"
+                                                           value="1"
                                                            <?= $setting['is_active'] ? 'checked' : '' ?>
                                                            data-city="<?= $cityCode ?>">
                                                     <label class="custom-control-label" for="is_active_<?= $cityCode ?>"></label>
@@ -245,15 +276,15 @@ require_once '../includes/header.php';
                                                 </div>
                                                 <div class="param-row mt-1">
                                                     <span class="param-label">兑换率:</span>
-                                                    <input type="number" class="form-control form-control-sm exchange-rate-input" 
-                                                           name="exchange_rate[<?= $cityCode ?>]" 
-                                                           value="<?= number_format($setting['exchange_rate'], 4) ?>" 
-                                                           step="0.0001" min="0.0001" 
+                                                    <input type="number" class="form-control form-control-sm exchange-rate-input"
+                                                           name="exchange_rate[<?= $cityCode ?>]"
+                                                           value="<?= number_format($setting['exchange_rate'], 4) ?>"
+                                                           step="0.0001" min="0.0001"
                                                            data-city="<?= $cityCode ?>">
                                                 </div>
                                             </td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn" 
+                                                <button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn"
                                                         data-city="<?= $cityCode ?>" data-city-name="<?= htmlspecialchars($cityName) ?>"
                                                         <?= empty($setting['block_id']) ? 'disabled' : '' ?>>
                                                     <i class="fas fa-vial"></i> 测试
@@ -415,8 +446,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    document.querySelectorAll('.block-id-input').forEach(function(input) {
-        input.addEventListener('input', function() {
+    document.querySelectorAll('.block-id-select').forEach(function(select) {
+        select.addEventListener('change', function() {
             const city = this.getAttribute('data-city');
             updateTestButtonState(city);
         });
@@ -432,29 +463,29 @@ function updateInputsState() {
 
 function updateCityInputsState(city) {
     const toggle = document.querySelector('#is_active_' + city);
-    const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
+    const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
     const testButton = document.querySelector('button[data-city="' + city + '"]');
-    
+
     const isActive = toggle.checked;
-    const hasBlockId = blockIdInput.value.trim() !== '';
-    
+    const hasBlockId = blockIdSelect && blockIdSelect.value.trim() !== '';
+
     if (isActive && !hasBlockId) {
-        blockIdInput.classList.add('is-invalid');
-    } else {
-        blockIdInput.classList.remove('is-invalid');
+        blockIdSelect.classList.add('is-invalid');
+    } else if (blockIdSelect) {
+        blockIdSelect.classList.remove('is-invalid');
     }
-    
+
     updateTestButtonState(city);
 }
 
 function updateTestButtonState(city) {
     const toggle = document.querySelector('#is_active_' + city);
-    const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
+    const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
     const testButton = document.querySelector('button[data-city="' + city + '"]');
-    
+
     const isActive = toggle.checked;
-    const hasBlockId = blockIdInput.value.trim() !== '';
-    
+    const hasBlockId = blockIdSelect && blockIdSelect.value.trim() !== '';
+
     testButton.disabled = !(isActive && hasBlockId);
 }
 
@@ -472,9 +503,9 @@ function applyBatchSettings() {
     });
     
     if (blockIdPrefix) {
-        document.querySelectorAll('.block-id-input').forEach(function(input) {
-            if (!input.value) {
-                input.value = blockIdPrefix + input.getAttribute('data-city');
+        document.querySelectorAll('.block-id-select').forEach(function(select) {
+            if (!select.value) {
+                // 下拉框不支持前缀批量设置，跳过
             }
         });
     }
@@ -498,15 +529,15 @@ document.getElementById('paymentSettingsForm').addEventListener('submit', functi
     
     document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
         const city = toggle.getAttribute('data-city');
-        const blockIdInput = document.querySelector('input[name="block_id[' + city + ']"]');
-        const cityName = blockIdInput.closest('tr').querySelector('td strong').textContent;
-        
-        if (toggle.checked && !blockIdInput.value.trim()) {
+        const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
+        const cityName = blockIdSelect.closest('tr').querySelector('td strong').textContent;
+
+        if (toggle.checked && blockIdSelect && !blockIdSelect.value.trim()) {
             hasError = true;
-            errorMessages.push('城市 "' + cityName + '" 已启用但未设置区块ID');
-            blockIdInput.classList.add('is-invalid');
-        } else {
-            blockIdInput.classList.remove('is-invalid');
+            errorMessages.push('城市 "' + cityName + '" 已启用但未选择区块');
+            blockIdSelect.classList.add('is-invalid');
+        } else if (blockIdSelect) {
+            blockIdSelect.classList.remove('is-invalid');
         }
     });
     

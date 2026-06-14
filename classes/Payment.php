@@ -211,23 +211,12 @@ class Payment {
             return false;
         }
         
-        // 获取商品在该城市的价格调整
-        $stmt = $this->pdo->prepare("
-            SELECT price_adjust 
-            FROM product_payment_cities 
-            WHERE product_id = ? AND city = ? AND is_active = 1
-        ");
-        $stmt->execute([$productId, $city]);
-        $priceAdjust = $stmt->fetchColumn();
-        
-        // 计算最终价格
+        // 计算最终价格（商品继承店铺设置，不再单独设置 price_adjust）
         $basePrice = $product['price_bct'];
-        $adjustedPrice = $basePrice * (1 + ($priceAdjust / 100));
-        $finalPrice = $adjustedPrice * $shopPayment['exchange_rate'];
-        
+        $finalPrice = $basePrice * $shopPayment['exchange_rate'];
+
         return [
             'base_price' => $basePrice,
-            'price_adjust' => $priceAdjust,
             'exchange_rate' => $shopPayment['exchange_rate'],
             'final_price' => $finalPrice,
             'shop_block_id' => $shopPayment['block_id']

@@ -484,17 +484,22 @@ class Shop {
     /**
      * 获取店铺的支付设置
      */
+    /**
+     * 获取店铺激活的支付设置（含区块详情）
+     */
     public function getShopPaymentSettings($shopId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT * FROM shop_payment_settings 
-                WHERE shop_id = ? AND is_active = 1 
-                ORDER BY created_at DESC
+                SELECT sps.*, b.zone as block_zone, b.block_number
+                FROM shop_payment_settings sps
+                LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
+                WHERE sps.shop_id = ? AND sps.is_active = 1
+                ORDER BY sps.created_at DESC
             ");
             $stmt->execute([$shopId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            // 如果表不存在，返回空数组
+            error_log("获取店铺支付设置失败: " . $e->getMessage());
             return [];
         }
     }
@@ -605,14 +610,16 @@ class Shop {
     public function getPaymentSettings($shopId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT * FROM shop_payment_settings 
-                WHERE shop_id = ? 
-                ORDER BY created_at DESC
+                SELECT sps.*, b.zone as block_zone, b.block_number
+                FROM shop_payment_settings sps
+                LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
+                WHERE sps.shop_id = ?
+                ORDER BY sps.created_at DESC
             ");
             $stmt->execute([$shopId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            // 如果表不存在，返回空数组
+            error_log("获取店铺支付设置失败: " . $e->getMessage());
             return [];
         }
     }
@@ -697,27 +704,44 @@ class Shop {
 	/**
  * 获取支持的城市列表
  */
-public function getSupportedCities() {
-    // 这里可以返回系统支持的所有城市
-    // 在实际项目中，这个数据可能来自配置或数据库
-    return [
-        'beijing' => '北京',
-        'shanghai' => '上海',
-        'guangzhou' => '广州',
-        'shenzhen' => '深圳',
-        'hangzhou' => '杭州',
-        'chengdu' => '成都',
-        'wuhan' => '武汉',
-        'xian' => '西安',
-        'nanjing' => '南京',
-        'chongqing' => '重庆',
-        'tianjin' => '天津',
-        'suzhou' => '苏州',
-        'dalian' => '大连',
-        'qingdao' => '青岛',
-        'xiamen' => '厦门'
-    ];
-}
+    /**
+     * 获取支持的城市列表（从 cities 表读取）
+     */
+    public function getSupportedCities() {
+        try {
+            $stmt = $this->pdo->query("
+                SELECT id, name, pinyin FROM cities
+                WHERE status = 'active'
+                ORDER BY rank ASC, name ASC
+            ");
+            $cities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = [];
+            foreach ($cities as $city) {
+                $key = $city['pinyin'] ?: strtolower($city['name']);
+                $result[$key] = ['id' => (int)$city['id'], 'name' => $city['name']];
+            }
+            return $result;
+        } catch (Exception $e) {
+            // fallback 硬编码
+            return [
+                'beijing' => ['id' => 1, 'name' => '北京'],
+                'shanghai' => ['id' => 2, 'name' => '上海'],
+                'guangzhou' => ['id' => 3, 'name' => '广州'],
+                'shenzhen' => ['id' => 4, 'name' => '深圳'],
+                'hangzhou' => ['id' => 5, 'name' => '杭州'],
+                'chengdu' => ['id' => 6, 'name' => '成都'],
+                'wuhan' => ['id' => 7, 'name' => '武汉'],
+                'xian' => ['id' => 8, 'name' => '西安'],
+                'nanjing' => ['id' => 9, 'name' => '南京'],
+                'chongqing' => ['id' => 10, 'name' => '重庆'],
+                'tianjin' => ['id' => 11, 'name' => '天津'],
+                'suzhou' => ['id' => 12, 'name' => '苏州'],
+                'dalian' => ['id' => 13, 'name' => '大连'],
+                'qingdao' => ['id' => 14, 'name' => '青岛'],
+                'xiamen' => ['id' => 15, 'name' => '厦门']
+            ];
+        }
+    }
 
 /**
      * 检查用户是否有店铺

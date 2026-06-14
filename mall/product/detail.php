@@ -40,8 +40,9 @@ $product->incrementViewCount($productId);
 // 获取店铺信息
 $shopInfo = $shop->getShopById($productDetail['shop_id']);
 
-// 获取商品支持的支付城市
-$paymentCities = $product->getProductPaymentCities($productId);
+// 获取店铺支持的支付城市及关联区块（商品继承店铺设置）
+$paymentCities = $shop->getShopPaymentSettings($productDetail['shop_id']);
+$supportedCitiesMap = $shop->getSupportedCities(); // pinyin => ['id','name']
 
 // 提前解析商品副图，供页面多处使用
 $extraImages = [];
@@ -694,11 +695,13 @@ if (isset($_SESSION['user_id'])) {
                     <div class="info-card-title"><i class="fas fa-map-marker-alt"></i> 支持城市支付</div>
                     <?php if (!empty($paymentCities)): ?>
                         <div>
-                            <?php foreach ($paymentCities as $pc): ?>
-                                <span class="city-tag">
-                                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($pc['city']); ?>
-                                    <?php if ($pc['price_adjust'] != 0): ?>
-                                        (<?php echo ($pc['price_adjust'] > 0 ? '+' : '') . $pc['price_adjust']; ?>%)
+                            <?php foreach ($paymentCities as $pc):
+                                $cityName = $supportedCitiesMap[$pc['city']]['name'] ?? $pc['city'];
+                            ?>
+                                <span class="city-tag" title="<?php echo htmlspecialchars($cityName); ?> · <?php echo htmlspecialchars($pc['block_zone'] ?: '?'); ?>区 #<?php echo htmlspecialchars($pc['block_number'] ?: '未设置'); ?>">
+                                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($cityName); ?>
+                                    <?php if (!empty($pc['block_zone']) && !empty($pc['block_number'])): ?>
+                                        <small style="opacity:0.8;">(<?php echo htmlspecialchars($pc['block_zone']); ?>#<?php echo htmlspecialchars($pc['block_number']); ?>)</small>
                                     <?php endif; ?>
                                 </span>
                             <?php endforeach; ?>

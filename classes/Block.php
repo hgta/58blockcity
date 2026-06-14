@@ -380,13 +380,32 @@ class Block {
     }*/
 
     /**
-     * 获取用户在某城市的区块
+     * 获取用户在某城市的已认领区块
      */
     public function getUserBlocksByCity($userId, $cityId) {
         $sql = "SELECT block_number FROM blocks WHERE owner_id = ? AND city_id = ? AND status = 'sold' AND is_large_block = 0";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$userId, $cityId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 获取用户在某城市已认领的区块（含 id/zone/number，用于支付设置联动）
+     */
+    public function getUserClaimedBlocksByCityId($userId, $cityId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id, zone, block_number
+                FROM blocks
+                WHERE owner_id = ? AND city_id = ? AND status = 'sold'
+                ORDER BY zone ASC, CAST(block_number AS UNSIGNED) ASC
+            ");
+            $stmt->execute([$userId, $cityId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("获取用户城市区块失败: " . $e->getMessage());
+            return [];
+        }
     }
 	
 	/**
