@@ -346,12 +346,12 @@ function uploadImage($file, $maxWidth = 1200, $maxHeight = 1200, $quality = 85) 
     }
 
     // 创建上传目录（按日期分目录，减少单目录文件数）
-    // 注意：products.php 位于 mall/shop/，assets/ 在项目根目录，因此需要 ../../
+    // products.php 位于 mall/shop/，Web 根目录是 mall/，assets/ 在 Web 根目录下，因此用 ../
     $subDir = date('Ym') . '/';
-    $uploadDir = __DIR__ . '/../../assets/uploads/products/' . $subDir;
+    $uploadDir = __DIR__ . '/../assets/uploads/products/' . $subDir;
     if (!is_dir($uploadDir)) {
         if (!@mkdir($uploadDir, 0777, true)) {
-            return ['success' => false, 'error' => '无法创建上传目录，请联系管理员检查目录权限：' . dirname($uploadDir) . '（请确保 assets/uploads/ 及其上级目录对 Web 服务器可写）'];
+            return ['success' => false, 'error' => '无法创建上传目录，请联系管理员检查目录权限：' . dirname($uploadDir) . '（请确保 mall/assets/uploads/ 及其上级目录对 Web 服务器可写）'];
         }
     }
 
@@ -463,7 +463,7 @@ function uploadVideo($file) {
         return ['success' => false, 'error' => '视频大小不能超过 50MB'];
     }
 
-    $uploadDir = __DIR__ . '/../../assets/uploads/videos/';
+    $uploadDir = __DIR__ . '/../assets/uploads/videos/';
     if (!is_dir($uploadDir)) {
         if (!@mkdir($uploadDir, 0777, true)) {
             return ['success' => false, 'error' => '无法创建视频上传目录，请联系管理员检查权限'];
@@ -693,8 +693,8 @@ require_once '../includes/header.php';
                                         <!-- 主图 -->
                                         <div class="form-group">
                                             <label>商品主图 <small class="text-muted">(首张展示图)</small></label>
+                                            <input type="file" id="main_image" name="main_image" accept="image/*" class="d-none">
                                             <div class="img-upload-area" id="mainImageArea">
-                                                <input type="file" id="main_image" name="main_image" accept="image/*" class="d-none">
                                                 <?php if (isset($editProduct) && !empty($editProduct['main_image'])): ?>
                                                     <div class="upload-preview active">
                                                         <img src="../<?= htmlspecialchars($editProduct['main_image']) ?>" alt="主图">
