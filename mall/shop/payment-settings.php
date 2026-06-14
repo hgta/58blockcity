@@ -56,8 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($_POST['payment_cities'] as $city) {
             $blockId = trim($_POST['block_id'][$city] ?? '');
             $isActive = isset($_POST['is_active'][$city]) ? 1 : 0;
-            $minAmount = floatval($_POST['min_amount'][$city] ?? 0.01);
+            $minAmount = floatval($_POST['min_amount'][$city] ?? 1);
             $exchangeRate = floatval($_POST['exchange_rate'][$city] ?? 0.1000);
+            if ($minAmount < 1) {
+                $minAmount = 1;
+            }
+            if ($exchangeRate < 0.0001) {
+                $exchangeRate = 0.1000;
+            }
 
             if ($isActive && empty($blockId)) {
                 $error = "城市 '{$city}' 已启用但未选择区块";
@@ -247,6 +253,13 @@ require_once '../includes/header.php';
                                             'block_zone' => '',
                                             'block_number' => ''
                                         ];
+                                        // 兜底：最小金额至少为1，兑换率至少为0.0001
+                                        if (($setting['min_amount'] ?? 0) < 1) {
+                                            $setting['min_amount'] = 1;
+                                        }
+                                        if (($setting['exchange_rate'] ?? 0) < 0.0001) {
+                                            $setting['exchange_rate'] = 0.1000;
+                                        }
                                         $hasBlocks = !empty($userBlocksByCity[$cityId]);
                                         ?>
                                         <tr class="payment-setting-row" data-city-id="<?= $cityId ?>" data-city="<?= $cityCode ?>">
@@ -297,7 +310,8 @@ require_once '../includes/header.php';
                                                            name="min_amount[<?= $cityCode ?>]"
                                                            value="<?= number_format($setting['min_amount'], 0) ?>"
                                                            step="1" min="1"
-                                                           data-city="<?= $cityCode ?>">
+                                                           data-city="<?= $cityCode ?>"
+                                                           <?= $setting['is_active'] ? '' : 'disabled' ?>>
                                                     <span class="param-unit">BCT</span>
                                                 </div>
                                                 <div class="param-row mt-1">
@@ -306,7 +320,8 @@ require_once '../includes/header.php';
                                                            name="exchange_rate[<?= $cityCode ?>]"
                                                            value="<?= number_format($setting['exchange_rate'], 4) ?>"
                                                            step="0.0001" min="0.0001"
-                                                           data-city="<?= $cityCode ?>">
+                                                           data-city="<?= $cityCode ?>"
+                                                           <?= $setting['is_active'] ? '' : 'disabled' ?>>
                                                 </div>
                                             </td>
                                             <td class="text-center">
@@ -495,16 +510,23 @@ function updateInputsState() {
 function updateCityInputsState(city) {
     const toggle = document.querySelector('#is_active_' + city);
     const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
-    const testButton = document.querySelector('button[data-city="' + city + '"]');
+    const minAmountInput = document.querySelector('input[name="min_amount[' + city + ']"]');
+    const exchangeRateInput = document.querySelector('input[name="exchange_rate[' + city + ']"]');
+    const testButton = document.querySelector('button[data-city="' + city + '"].test-payment-btn');
 
     const isActive = toggle.checked;
     const hasBlockId = blockIdSelect && blockIdSelect.value.trim() !== '';
 
+    // 启用时才要求选择区块
     if (isActive && !hasBlockId) {
         blockIdSelect.classList.add('is-invalid');
     } else if (blockIdSelect) {
         blockIdSelect.classList.remove('is-invalid');
     }
+
+    // 未启用时禁用参数输入框，避免 HTML5 验证拦截
+    if (minAmountInput) minAmountInput.disabled = !isActive;
+    if (exchangeRateInput) exchangeRateInput.disabled = !isActive;
 
     updateTestButtonState(city);
 }
