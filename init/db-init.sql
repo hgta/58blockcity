@@ -470,6 +470,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `name` varchar(200) NOT NULL COMMENT '商品名称',
   `description` text COMMENT '商品描述',
   `main_image` varchar(255) NOT NULL COMMENT '主图',
+  `thumb_image` varchar(255) DEFAULT NULL COMMENT '缩略图',
   `images` json DEFAULT NULL COMMENT '商品图集',
   `video_url` varchar(500) DEFAULT NULL COMMENT '商品介绍视频路径或外部链接',
   `price_type` enum('fixed','bct') DEFAULT 'bct' COMMENT '价格类型',
@@ -481,6 +482,8 @@ CREATE TABLE IF NOT EXISTS `products` (
   `is_recommended` tinyint(1) DEFAULT '0' COMMENT '是否推荐',
   `view_count` int(11) DEFAULT '0' COMMENT '浏览数',
   `sort_order` int(11) DEFAULT '0' COMMENT '排序',
+  `rating` decimal(3,2) DEFAULT '5.00' COMMENT '商品评分',
+  `review_count` int(11) DEFAULT '0' COMMENT '评价数',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -566,6 +569,7 @@ CREATE TABLE IF NOT EXISTS `shops` (
   `contact_info` varchar(255) DEFAULT NULL COMMENT '联系方式',
   `status` enum('pending','active','suspended','closed') DEFAULT 'pending' COMMENT '店铺状态',
   `rating` decimal(3,2) DEFAULT '5.00' COMMENT '店铺评分',
+  `review_count` int(11) DEFAULT '0' COMMENT '评价数',
   `total_sales` int(11) DEFAULT '0' COMMENT '总销量',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -1340,6 +1344,34 @@ CREATE TABLE IF NOT EXISTS `coupons` (
   KEY `code` (`code`),
   KEY `status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='店铺优惠券';
+
+--
+-- 表的结构 `reviews`
+--
+
+CREATE TABLE IF NOT EXISTS `reviews` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL COMMENT '关联订单',
+  `order_item_id` int(11) NOT NULL COMMENT '关联订单商品项',
+  `product_id` int(11) NOT NULL COMMENT '关联商品',
+  `user_id` int(11) NOT NULL COMMENT '评价用户',
+  `shop_id` int(11) NOT NULL COMMENT '关联店铺',
+  `rating` tinyint(4) NOT NULL DEFAULT '5' COMMENT '评分1-5',
+  `content` text COMMENT '评价内容',
+  `images` json DEFAULT NULL COMMENT '评价图片数组',
+  `is_anonymous` tinyint(1) DEFAULT '0' COMMENT '是否匿名',
+  `status` enum('pending','approved','rejected') DEFAULT 'approved' COMMENT '审核状态',
+  `reply_content` text COMMENT '商家回复',
+  `reply_at` datetime DEFAULT NULL COMMENT '商家回复时间',
+  `helpful_count` int(11) DEFAULT '0' COMMENT '有用数',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_product` (`product_id`,`status`),
+  KEY `idx_shop` (`shop_id`,`status`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_order_item` (`order_item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品评价';
 
 --
 -- 限制表 `visits`

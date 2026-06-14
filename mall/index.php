@@ -449,15 +449,19 @@ $categories = $category->getPopularCategories(8);
                     <?php foreach ($recommendedProducts as $product): ?>
                         <a href="product/detail.php?id=<?php echo $product['id']; ?>" class="product-card">
                             <div class="product-image">
-                                <img src="<?php echo '../'.htmlspecialchars($product['image_url'] ?: 'assets/images/default-product.jpg'); ?>" 
+                                <img src="<?php echo '../'.htmlspecialchars($product['thumb_image'] ?: $product['image_url'] ?: 'assets/images/default-product.jpg'); ?>" 
                                      alt="<?php echo htmlspecialchars($product['name']); ?>">
                             </div>
                             <div class="product-info">
                                 <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
                                 <div class="product-price">
-                                    <span class="current-price">¥<?php echo number_format($product['price'], 2); ?></span>
-                                    <?php if ($product['original_price'] && $product['original_price'] > $product['price']): ?>
-                                        <span class="original-price">¥<?php echo number_format($product['original_price'], 2); ?></span>
+                                    <?php if ($product['price_bct'] > 0): ?>
+                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                        <?php if ($product['price_cny'] > 0): ?>
+                                            <span class="original-price">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                        <?php endif; ?>
+                                    <?php elseif ($product['price_cny'] > 0): ?>
+                                        <span class="current-price">¥<?php echo number_format($product['price_cny'], 2); ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <div class="product-shop"><?php echo htmlspecialchars($product['shop_name'] ?: '平台自营'); ?></div>
@@ -485,14 +489,21 @@ $categories = $category->getPopularCategories(8);
                     <?php foreach ($newProducts as $product): ?>
                         <a href="product/detail.php?id=<?php echo $product['id']; ?>" class="product-card">
                             <div class="product-image">
-                                <img src="<?php echo '../' . htmlspecialchars($product['image_url'] ?: 'assets/images/default-product.jpg'); ?>" 
+                                <img src="<?php echo '../' . htmlspecialchars($product['thumb_image'] ?: $product['image_url'] ?: 'assets/images/default-product.jpg'); ?>" 
                                      alt="<?php echo htmlspecialchars($product['name']); ?>">
                                 <div style="position: absolute; top: 10px; left: 10px; background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">NEW</div>
                             </div>
                             <div class="product-info">
                                 <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
                                 <div class="product-price">
-                                    <span class="current-price">¥<?php echo number_format($product['price'], 2); ?></span>
+                                    <?php if ($product['price_bct'] > 0): ?>
+                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                        <?php if ($product['price_cny'] > 0): ?>
+                                            <span class="original-price">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                        <?php endif; ?>
+                                    <?php elseif ($product['price_cny'] > 0): ?>
+                                        <span class="current-price">¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="product-shop"><?php echo htmlspecialchars($product['shop_name'] ?: '平台自营'); ?></div>
                             </div>

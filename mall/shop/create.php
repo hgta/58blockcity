@@ -21,11 +21,8 @@ $shop = new Shop($pdo);
 $category = new Category($pdo);
 $userId = $_SESSION['user_id']; // 明确获取用户ID
 
-// 检查用户是否已有店铺
-if ($shop->userHasShop($userId)) {
-    header("Location: manage.php");
-    exit();
-}
+// 获取用户已有店铺列表
+$userShops = $shop->getUserShops($userId);
 
 // 获取分类列表
 $categories = $category->getAllCategories();
@@ -190,6 +187,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1 class="page-title">创建我的店铺</h1>
             <p class="page-description">开启您的电商之旅，展示优质商品</p>
         </div>
+        
+        <?php if (!empty($userShops)): ?>
+            <div style="background:white;padding:20px 25px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);margin-bottom:20px;">
+                <h3 style="font-size:16px;margin:0 0 12px;color:#333;"><i class="fas fa-store"></i> 您已有 <?php echo count($userShops); ?> 个店铺</h3>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <?php foreach ($userShops as $s): ?>
+                        <a href="manage.php?id=<?php echo $s['id']; ?>" style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f8f9fa;border-radius:6px;text-decoration:none;color:#333;font-size:13px;border:1px solid #eee;">
+                            <?php if (!empty($s['shop_logo'])): ?>
+                                <img src="../<?php echo htmlspecialchars($s['shop_logo']); ?>" style="width:24px;height:24px;border-radius:4px;object-fit:cover;">
+                            <?php else: ?>
+                                <div style="width:24px;height:24px;border-radius:4px;background:#3498db;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;"><?php echo mb_substr($s['shop_name'], 0, 1); ?></div>
+                            <?php endif; ?>
+                            <?php echo htmlspecialchars($s['shop_name']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
         
         <div class="create-form">
             <?php if (isset($error)): ?>

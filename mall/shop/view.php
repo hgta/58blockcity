@@ -197,7 +197,7 @@ require_once '../includes/header.php';
                         <div class="product-card">
                             <a href="../product/detail.php?id=<?= $productItem['id'] ?>" class="product-link">
                                 <div class="product-image">
-                                    <?php $itemImage = $productItem['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                                    <?php $itemImage = $productItem['thumb_image'] ?: $productItem['main_image'] ?: 'assets/images/default-product.jpg'; ?>
                                     <img src="../<?= htmlspecialchars($itemImage) ?>" 
                                          alt="<?= htmlspecialchars($productItem['name']) ?>"
                                          class="img-fluid">
@@ -217,7 +217,7 @@ require_once '../includes/header.php';
                                 <div class="product-info">
                                     <h5 class="product-name"><?= htmlspecialchars($productItem['name']) ?></h5>
                                     <div class="product-price">
-                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 0) ?> BCT</span>
+                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 0) ?> 人气</span>
                                         <?php if ($productItem['price_cny']): ?>
                                             <span class="cny-price">≈ ¥<?= number_format($productItem['price_cny'], 2) ?></span>
                                         <?php endif; ?>

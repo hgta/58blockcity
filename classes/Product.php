@@ -250,9 +250,9 @@ class Product {
             
             $stmt = $this->pdo->prepare("
                 INSERT INTO products
-                (shop_id, category_id, name, description, main_image, images, video_url,
+                (shop_id, category_id, name, description, main_image, thumb_image, images, video_url,
                  price_type, price_bct, price_cny, stock, status, is_recommended)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
@@ -261,6 +261,7 @@ class Product {
                 $data['name'],
                 $data['description'],
                 $data['main_image'],
+                $data['thumb_image'] ?? null,
                 $data['images'] ?? null,
                 $data['video_url'] ?? null,
                 $data['price_type'],
@@ -285,7 +286,7 @@ class Product {
      * 更新商品信息
      */
     public function updateProduct($productId, $data) {
-        $allowedFields = ['name', 'description', 'main_image', 'images', 'price_type', 
+        $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url', 'price_type', 
                          'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order'];
         $setParts = [];
         $params = [];
@@ -388,6 +389,7 @@ class Product {
             // 使用正确的字段名
             $sql = "SELECT p.*, 
                            p.main_image as image_url,  -- 映射字段名
+                           p.thumb_image,
                            p.sold_count as sales_count, -- 映射字段名
                            p.price_bct as price,        -- 使用人气值价格
                            c.name as category_name,
@@ -472,6 +474,7 @@ class Product {
         try {
             $sql = "SELECT p.*, 
                            p.main_image as image_url,
+                           p.thumb_image,
                            p.sold_count as sales_count,
                            p.price_bct as price,
                            s.shop_name, c.name as category_name
@@ -503,6 +506,7 @@ class Product {
         try {
             $sql = "SELECT p.*, 
                            p.main_image as image_url,
+                           p.thumb_image,
                            p.price_bct as price,
                            s.shop_name, c.name as category_name
                     FROM products p

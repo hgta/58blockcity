@@ -56,6 +56,13 @@ if (!empty($productDetail['images'])) {
 // 获取相关商品
 $relatedProducts = $product->getRelatedProducts($productDetail['category_id'], $productId, 4);
 
+// 获取商品评价
+require_once '../../classes/Review.php';
+$review = new Review($pdo);
+$reviewStats = $review->getProductReviewStats($productId);
+$reviews = $review->getProductReviews($productId, 1, 10);
+$reviewCount = $review->getProductReviewCount($productId);
+
 // 处理添加到购物车
 $success = '';
 $error = '';
@@ -780,6 +787,83 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </div>
         
+        <!-- 商品评价 -->
+        <div class="product-reviews" style="background:white;border-radius:12px;padding:25px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <h3 style="font-size:18px;margin:0 0 20px;color:#333;"><i class="fas fa-comment-dots"></i> 商品评价 <?php if ($reviewCount > 0): ?><span style="color:#999;font-size:14px;">(<?php echo $reviewCount; ?>)</span><?php endif; ?></h3>
+            
+            <?php if ($reviewCount > 0): ?>
+                <!-- 评分统计 -->
+                <div style="display:flex;align-items:center;gap:30px;margin-bottom:25px;padding-bottom:20px;border-bottom:1px solid #f0f0f0;">
+                    <div style="text-align:center;">
+                        <div style="font-size:36px;font-weight:bold;color:#e74c3c;"><?php echo number_format($reviewStats['avg_rating'], 1); ?></div>
+                        <div style="color:#f39c12;font-size:16px;margin-top:4px;">
+                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                <i class="fas fa-star<?php echo $i <= round($reviewStats['avg_rating']) ? '' : '-o'; ?>"></i>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <?php foreach ([5,4,3,2,1] as $star): 
+                            $count = $reviewStats["{$star}_star"] ?? 0;
+                            $percent = $reviewCount > 0 ? round($count / $reviewCount * 100) : 0;
+                        ?>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                                <span style="font-size:12px;color:#666;width:24px;"><?php echo $star; ?>星</span>
+                                <div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
+                                    <div style="width:<?php echo $percent; ?>%;height:100%;background:#f39c12;border-radius:4px;"></div>
+                                </div>
+                                <span style="font-size:12px;color:#999;width:32px;text-align:right;"><?php echo $count; ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
+                <!-- 评价列表 -->
+                <div style="display:flex;flex-direction:column;gap:20px;">
+                    <?php foreach ($reviews as $r): ?>
+                        <div style="padding:15px;background:#fafafa;border-radius:8px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;">
+                                    <?php echo $r['is_anonymous'] ? '匿' : mb_substr($r['nickname'] ?? '用', 0, 1); ?>
+                                </div>
+                                <div>
+                                    <div style="font-size:14px;color:#333;"><?php echo $r['is_anonymous'] ? '匿名用户' : htmlspecialchars($r['nickname'] ?? '用户'); ?></div>
+                                    <div style="color:#f39c12;font-size:12px;">
+                                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                                            <i class="fas fa-star<?php echo $i <= $r['rating'] ? '' : '-o'; ?>"></i>
+                                        <?php endfor; ?>
+                                    </div>
+                                </div>
+                                <div style="margin-left:auto;font-size:12px;color:#999;"><?php echo date('Y-m-d', strtotime($r['created_at'])); ?></div>
+                            </div>
+                            <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:8px;"><?php echo nl2br(htmlspecialchars($r['content'])); ?></div>
+                            <?php if (!empty($r['images'])): 
+                                $reviewImages = json_decode($r['images'], true);
+                                if (is_array($reviewImages) && !empty($reviewImages)): 
+                            ?>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    <?php foreach ($reviewImages as $img): ?>
+                                        <img src="<?php echo '../' . htmlspecialchars($img); ?>" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showImageModal(this.src)">
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; endif; ?>
+                            <?php if (!empty($r['reply_content'])): ?>
+                                <div style="margin-top:10px;padding:10px 12px;background:#e8f4f8;border-radius:6px;border-left:3px solid #3498db;">
+                                    <div style="font-size:12px;color:#3498db;margin-bottom:4px;"><i class="fas fa-store"></i> 商家回复</div>
+                                    <div style="font-size:13px;color:#555;"><?php echo htmlspecialchars($r['reply_content']); ?></div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div style="text-align:center;padding:40px;color:#999;">
+                    <i class="fas fa-comment-slash" style="font-size:32px;margin-bottom:10px;opacity:0.5;"></i>
+                    <div>暂无评价，购买后快来评价吧~</div>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- 相关商品 -->
         <?php if (!empty($relatedProducts)): ?>
             <div class="related-products">
@@ -787,7 +871,7 @@ if (isset($_SESSION['user_id'])) {
                 <div class="products-grid">
                     <?php foreach ($relatedProducts as $relatedProduct): ?>
                         <a href="view.php?id=<?php echo $relatedProduct['id']; ?>" class="product-card">
-                            <?php $relatedImage = $relatedProduct['main_image'] ?: 'assets/images/default-product.jpg'; ?>
+                            <?php $relatedImage = $relatedProduct['thumb_image'] ?: $relatedProduct['main_image'] ?: 'assets/images/default-product.jpg'; ?>
                             <img src="<?php echo '../' . htmlspecialchars($relatedImage); ?>" 
                                  alt="<?php echo htmlspecialchars($relatedProduct['name']); ?>" 
                                  class="product-card-image">

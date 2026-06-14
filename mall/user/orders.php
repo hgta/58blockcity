@@ -535,6 +535,10 @@ $statusClassMap = [
                                     <button class="btn btn-confirm" onclick="confirmReceipt(<?php echo $orderItem['id']; ?>)">
                                         <i class="fas fa-check"></i> 确认收货
                                     </button>
+                                <?php elseif ($orderItem['status'] == 'completed'): ?>
+                                    <a href="review.php?order_id=<?php echo $orderItem['id']; ?>" class="btn btn-confirm" style="background:#e74c3c;color:#fff;border-color:#e74c3c;">
+                                        <i class="fas fa-pen"></i> 去评价
+                                    </a>
                                 <?php endif; ?>
                             </div>
                         </div>

@@ -370,6 +370,8 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
                 <button class="btn btn-default" onclick="cancelOrder(<?php echo $orderInfo['id']; ?>)"><i class="fas fa-times"></i> 取消订单</button>
             <?php elseif ($orderInfo['status'] == 'shipped'): ?>
                 <button class="btn btn-primary" onclick="confirmReceipt(<?php echo $orderInfo['id']; ?>)"><i class="fas fa-check"></i> 确认收货</button>
+            <?php elseif ($orderInfo['status'] == 'completed'): ?>
+                <a href="review.php?order_id=<?php echo $orderInfo['id']; ?>" class="btn btn-primary"><i class="fas fa-pen"></i> 去评价</a>
             <?php endif; ?>
         </div>
     </div>

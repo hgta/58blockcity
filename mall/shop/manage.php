@@ -15,16 +15,20 @@ $shop = new Shop($pdo);
 $product = new Product($pdo);
 $order = new Order($pdo);
 
-// 获取用户店铺信息
-$userShop = $shop->getShopByUserId($_SESSION['user_id']);
-if (!$userShop) {
+// 获取用户所有店铺
+$userShops = $shop->getUserShops($_SESSION['user_id']);
+if (empty($userShops)) {
     header('Location: create.php');
     exit;
 }
 
-$shopId = isset($_GET['id']) ? intval($_GET['id']) : $userShop['id'];
-if ($userShop['id'] != $shopId) {
-    header('Location: manage.php?id=' . $userShop['id']);
+// 确定当前管理的店铺
+$shopId = isset($_GET['id']) ? intval($_GET['id']) : $userShops[0]['id'];
+
+// 验证店铺归属
+$shopIds = array_column($userShops, 'id');
+if (!in_array($shopId, $shopIds)) {
+    header('Location: manage.php?id=' . $userShops[0]['id']);
     exit;
 }
 
@@ -178,7 +182,17 @@ require_once '../includes/header.php';
                         <?php endif; ?>
                     </div>
                     <div class="shop-meta">
-                        <h1 class="shop-name"><?= htmlspecialchars($userShop['shop_name']) ?></h1>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <h1 class="shop-name"><?= htmlspecialchars($userShop['shop_name']) ?></h1>
+                            <?php if (count($userShops) > 1): ?>
+                                <select onchange="location.href='manage.php?id='+this.value" style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#666;cursor:pointer;">
+                                    <?php foreach ($userShops as $s): ?>
+                                        <option value="<?= $s['id'] ?>" <?= $s['id'] == $shopId ? 'selected' : '' ?>><?= htmlspecialchars($s['shop_name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
+                            <a href="create.php" style="font-size:13px;color:#3498db;text-decoration:none;white-space:nowrap;"><i class="fas fa-plus-circle"></i> 再开一个店</a>
+                        </div>
                         <div class="shop-tags">
                             <span class="tag tag-status tag-<?= $userShop['status'] ?>">
                                 <?= $userShop['status'] == 'active' ? '营业中' : ($userShop['status'] == 'pending' ? '审核中' : '已关闭') ?>

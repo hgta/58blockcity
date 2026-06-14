@@ -501,7 +501,7 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                     <div class="products-grid">
                         <?php foreach ($products as $product): ?>
                             <div class="product-card">
-                                <img src="<?php echo '../'.htmlspecialchars($product['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
+                                <img src="<?php echo '../'.htmlspecialchars($product['thumb_image'] ?: $product['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
                                      alt="<?php echo htmlspecialchars($product['name']); ?>" 
                                      class="product-image">
                                 
@@ -513,7 +513,16 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                                         </a>
                                     </h3>
                                     
-                                    <div class="product-price">¥<?php echo number_format($product['price'], 2); ?></div>
+                                    <div class="product-price">
+                                        <?php if ($product['price_bct'] > 0): ?>
+                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                            <?php if ($product['price_cny'] > 0): ?>
+                                                <span style="color: #999; font-size: 12px; margin-left: 5px;">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                            <?php endif; ?>
+                                        <?php elseif ($product['price_cny'] > 0): ?>
+                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;">¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                        <?php endif; ?>
+                                    </div>
                                     
                                     <div class="product-shop">
                                         <i class="fas fa-store"></i>

@@ -65,11 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
         try {
             // 处理主图上传
             $mainImage = '';
+            $thumbImage = '';
             if (isset($_FILES['main_image'])) {
                 if ($_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
                     $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
                     if ($uploadResult['success']) {
                         $mainImage = $uploadResult['file_path'];
+                        $thumbImage = $uploadResult['thumb_path'] ?? '';
                     } else {
                         $error = $uploadResult['error'];
                     }
@@ -119,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'name' => $name,
                     'description' => $description,
                     'main_image' => $mainImage,
+                    'thumb_image' => $thumbImage ?: null,
                     'images' => !empty($extraImages) ? json_encode($extraImages) : null,
                     'video_url' => $videoUrl ?: null,
                     'price_type' => 'bct',
@@ -173,11 +176,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
         try {
             // 处理主图上传
             $mainImage = '';
+            $thumbImage = '';
             if (isset($_FILES['main_image'])) {
                 if ($_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
                     $uploadResult = uploadImage($_FILES['main_image'], 1200, 1200, 85);
                     if ($uploadResult['success']) {
                         $mainImage = $uploadResult['file_path'];
+                        $thumbImage = $uploadResult['thumb_path'] ?? '';
                     } else {
                         $error = $uploadResult['error'];
                     }
@@ -234,6 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
 
                 if ($mainImage) {
                     $updateData['main_image'] = $mainImage;
+                    $updateData['thumb_image'] = $thumbImage ?: null;
                 }
 
                 // 合并保留的旧副图与新上传的副图
@@ -417,7 +423,34 @@ function uploadImage($file, $maxWidth = 1200, $maxHeight = 1200, $quality = 85) 
     imagedestroy($dst);
 
     if ($result) {
-        return ['success' => true, 'file_path' => $relativePath];
+        // 生成缩略图（400x400，质量80%）
+        $thumbFileName = 'thumb_' . $fileName;
+        $thumbFilePath = $uploadDir . $thumbFileName;
+        $thumbRelativePath = 'assets/uploads/products/' . $subDir . $thumbFileName;
+        
+        $thumbSize = 400;
+        $thumbRatio = min($thumbSize / $origW, $thumbSize / $origH, 1.0);
+        $thumbW = (int) round($origW * $thumbRatio);
+        $thumbH = (int) round($origH * $thumbRatio);
+        
+        $thumbDst = imagecreatetruecolor($thumbW, $thumbH);
+        if ($file['type'] === 'image/png' || $file['type'] === 'image/gif') {
+            imagealphablending($thumbDst, false);
+            imagesavealpha($thumbDst, true);
+            $transparent = imagecolorallocatealpha($thumbDst, 0, 0, 0, 127);
+            imagefill($thumbDst, 0, 0, $transparent);
+        }
+        
+        // 重新读取原图生成缩略图（因为原图资源已被释放，从保存的文件读取）
+        $src2 = imagecreatefromjpeg($filePath);
+        if ($src2) {
+            imagecopyresampled($thumbDst, $src2, 0, 0, 0, 0, $thumbW, $thumbH, $newW, $newH);
+            imagedestroy($src2);
+            imagejpeg($thumbDst, $thumbFilePath, 80);
+            imagedestroy($thumbDst);
+        }
+        
+        return ['success' => true, 'file_path' => $relativePath, 'thumb_path' => $thumbRelativePath];
     }
     return ['success' => false, 'error' => '图片保存失败'];
 }

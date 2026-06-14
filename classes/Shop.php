@@ -930,11 +930,6 @@ class Shop {
      */
     public function createShop($userId, $data) {
         try {
-            // 检查用户是否已有店铺
-            if ($this->userHasShop($userId)) {
-                throw new Exception("您已经拥有一个店铺了");
-            }
-            
             // 验证必要字段
             if (empty($data['shop_name'])) {
                 throw new Exception("店铺名称不能为空");
