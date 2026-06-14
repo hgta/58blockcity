@@ -57,7 +57,7 @@ if (isset($_POST['create_shop'])) {
         $error = "店铺名称不能为空";
     } else {
         try {
-            $stmt = $pdo->prepare("INSERT INTO shops (user_id, shop_name, description, avatar_url, status, created_at) VALUES (?, ?, ?, ?, 'active', NOW())");
+            $stmt = $pdo->prepare("INSERT INTO shops (user_id, shop_name, shop_description, shop_logo, status, created_at) VALUES (?, ?, ?, ?, 'active', NOW())");
             $stmt->execute([$_SESSION['user_id'], $shopName, $shopDesc, $shopLogo]);
             $message = "店铺 '" . htmlspecialchars($shopName) . "' 创建成功";
         } catch (Exception $e) {

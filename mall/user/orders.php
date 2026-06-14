@@ -503,7 +503,7 @@ $statusClassMap = [
                                             <?php echo htmlspecialchars($detail['specification'] ?: '默认规格'); ?>
                                         </div>
                                         <div class="product-price">
-                                            ¥<?php echo number_format($detail['price'], 2); ?>
+                                            ¥<?php echo number_format($detail['unit_price'], 2); ?>
                                         </div>
                                     </div>
                                     

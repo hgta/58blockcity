@@ -521,13 +521,13 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                 <div class="featured-grid">
                     <?php foreach ($featuredShops as $featuredShop): ?>
                         <div class="featured-shop-card">
-                            <img src="<?php echo htmlspecialchars($featuredShop['avatar_url'] ?: '../assets/images/default-shop.jpg'); ?>" 
+                            <img src="<?php echo htmlspecialchars($featuredShop['shop_logo'] ?: '../assets/images/default-shop.jpg'); ?>" 
                                  alt="<?php echo htmlspecialchars($featuredShop['shop_name']); ?>" 
                                  class="featured-avatar">
                             <div class="featured-info">
                                 <h3 class="featured-name"><?php echo htmlspecialchars($featuredShop['shop_name']); ?></h3>
                                 <p class="featured-description">
-                                    <?php echo htmlspecialchars($featuredShop['description'] ?: '这家店铺还没有描述...'); ?>
+                                    <?php echo htmlspecialchars($featuredShop['shop_description'] ?: '这家店铺还没有描述...'); ?>
                                 </p>
                                 <div class="featured-stats">
                                     <div class="stat-item">
@@ -645,7 +645,7 @@ $totalPages = ceil($totalShops / $itemsPerPage);
                             <div class="shop-card">
                                 <div class="shop-cover"></div>
                                 <div class="shop-avatar">
-                                    <img src="<?php echo htmlspecialchars($shopItem['avatar_url'] ?: '../assets/images/default-shop.jpg'); ?>" 
+                                    <img src="<?php echo htmlspecialchars($shopItem['shop_logo'] ?: '../assets/images/default-shop.jpg'); ?>" 
                                          alt="<?php echo htmlspecialchars($shopItem['shop_name']); ?>">
                                 </div>
                                 

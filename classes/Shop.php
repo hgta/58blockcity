@@ -869,17 +869,30 @@ class Shop {
      */
     public function getFeaturedShops($limit = 6) {
         try {
+            $limit = intval($limit);
+            $fields = $this->getTableFields('shops');
+            
+            // 动态构建排序：优先用total_sales，否则用created_at
+            if (in_array('total_sales', $fields)) {
+                $orderBy = 's.total_sales DESC';
+            } else {
+                $orderBy = 's.created_at DESC';
+            }
+            if (in_array('rating', $fields)) {
+                $orderBy .= ', s.rating DESC';
+            }
+            
             $sql = "SELECT s.*, 
                            c.name as category_name,
                            (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status = 'active') as product_count
                     FROM shops s
                     LEFT JOIN product_categories c ON s.category_id = c.id
                     WHERE s.status = 'active'
-                    ORDER BY s.total_sales DESC, s.rating DESC
-                    LIMIT ?";
+                    ORDER BY {$orderBy}
+                    LIMIT {$limit}";
             
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$limit]);
+            $stmt->execute();
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {

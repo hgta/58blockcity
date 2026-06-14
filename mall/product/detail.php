@@ -719,7 +719,7 @@ if (isset($_SESSION['user_id'])) {
                 <div class="info-card">
                     <div class="info-card-title"><i class="fas fa-store"></i> 所属店铺</div>
                     <div class="shop-info-header" style="margin-bottom:0;">
-                        <img src="<?php echo htmlspecialchars($shopInfo['avatar_url'] ?: '../assets/images/default-shop.jpg'); ?>"
+                        <img src="<?php echo htmlspecialchars($shopInfo['shop_logo'] ?: '../assets/images/default-shop.jpg'); ?>"
                              alt="<?php echo htmlspecialchars($shopInfo['shop_name']); ?>"
                              class="shop-logo" style="width:44px;height:44px;border-radius:8px;">
                         <div>

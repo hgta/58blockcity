@@ -519,7 +519,7 @@ $categories = $category->getPopularCategories(8);
                         <a href="shop/view.php?id=<?php echo $shop['id']; ?>" class="shop-card">
                             <div class="shop-header">
                                 <div class="shop-logo">
-                                    <img src="<?php echo htmlspecialchars($shop['avatar_url'] ?: 'assets/images/default-shop.jpg'); ?>" 
+                                    <img src="<?php echo htmlspecialchars($shop['shop_logo'] ?: 'assets/images/default-shop.jpg'); ?>" 
                                          alt="<?php echo htmlspecialchars($shop['shop_name']); ?>">
                                 </div>
                                 <div>
