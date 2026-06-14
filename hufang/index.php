@@ -48,7 +48,7 @@ if (isset($_SESSION['user_id'])) {
     
     <!-- 主样式 -->
 	<link rel="stylesheet" href="../assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="https://58.tl/assets/css/main.css">
     <!-- jQuery + Bootstrap JS -->
 	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
