@@ -149,7 +149,7 @@ $statusClassMap = [
                      onerror="this.src='../assets/images/default-product.jpg'">
                 <div>
                     <div class="product-name"><?php echo htmlspecialchars($item['product_name']); ?></div>
-                    <div class="product-price">¥<?php echo number_format($item['unit_price'] ?? 0, 2); ?></div>
+                    <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'] ?? 0, 0); ?> 人气值</div>
                 </div>
                 <div class="product-qty">x<?php echo $item['quantity']; ?></div>
             </div>
@@ -166,7 +166,7 @@ $statusClassMap = [
         </div>
         <div class="info-row">
             <span class="info-label">BCT金额</span>
-            <span class="info-value"><?php echo number_format($orderInfo['payment_amount'], 0); ?> BCT</span>
+            <span class="info-value"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['payment_amount'], 0); ?> 人气值</span>
         </div>
         <?php if ($orderInfo['payment_block_id']): ?>
         <div class="info-row">
@@ -176,8 +176,29 @@ $statusClassMap = [
         <?php endif; ?>
         <div class="info-row total-row">
             <span>应付总额</span>
-            <span>¥<?php echo number_format($orderInfo['total_amount'], 2); ?></span>
+            <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
         </div>
+    </div>
+    <?php endif; ?>
+    
+    <!-- 物流信息 -->
+    <?php if (!empty($orderInfo['shipping_company']) && !empty($orderInfo['tracking_no'])): ?>
+    <div class="card">
+        <div class="card-title"><i class="fas fa-shipping-fast"></i> 物流信息</div>
+        <div class="info-row">
+            <span class="info-label">物流公司</span>
+            <span class="info-value"><?php echo htmlspecialchars($orderInfo['shipping_company']); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">运单号</span>
+            <span class="info-value"><?php echo htmlspecialchars($orderInfo['tracking_no']); ?></span>
+        </div>
+        <?php if ($orderInfo['shipped_at']): ?>
+        <div class="info-row">
+            <span class="info-label">发货时间</span>
+            <span class="info-value"><?php echo date('Y-m-d H:i:s', strtotime($orderInfo['shipped_at'])); ?></span>
+        </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
     

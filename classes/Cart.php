@@ -355,12 +355,12 @@ class Cart {
         try {
             $sql = "SELECT ci.id, ci.product_id, ci.quantity, 
                            p.name, p.price_bct as price, p.main_image as image_url, p.stock, p.status,
-                           s.shop_name, s.user_id as shop_owner_id
+                           s.id as shop_id, s.shop_name, s.user_id as shop_owner_id
                     FROM cart_items ci
                     INNER JOIN products p ON ci.product_id = p.id
                     LEFT JOIN shops s ON p.shop_id = s.id
                     WHERE ci.user_id = ? AND ci.deleted_at IS NULL
-                    ORDER BY ci.created_at DESC";
+                    ORDER BY s.id, ci.created_at DESC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$userId]);
             

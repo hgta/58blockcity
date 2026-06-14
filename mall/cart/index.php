@@ -28,9 +28,23 @@ $product = new Product($pdo);
 
 $userId = $_SESSION['user_id'];
 $cartItems = $cart->getCartItems($userId);
-$totalAmount = 0;
 
-// 计算总金额
+// 按店铺分组
+$groupedItems = [];
+foreach ($cartItems as $item) {
+    $shopId = $item['shop_id'] ?: 0;
+    $shopName = $item['shop_name'] ?: '未知店铺';
+    if (!isset($groupedItems[$shopId])) {
+        $groupedItems[$shopId] = [
+            'shop_name' => $shopName,
+            'items' => []
+        ];
+    }
+    $groupedItems[$shopId]['items'][] = $item;
+}
+
+// 计算总金额（全部）
+$totalAmount = 0;
 foreach ($cartItems as $item) {
     $totalAmount += $item['price'] * $item['quantity'];
 }
@@ -72,6 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>购物车 - 58人气值商城</title>
     <style>
+        .bct-symbol {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -268,6 +288,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #666;
             margin-bottom: 20px;
         }
+        
+        .shop-group {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .shop-header {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .shop-header input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-checkbox {
+            margin-right: 15px;
+        }
+        
+        .item-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -298,16 +364,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
         <?php else: ?>
-            <div class="cart-items">
-                <?php foreach ($cartItems as $item): ?>
+            <form method="GET" action="checkout.php" id="checkout-form">
+                <?php foreach ($groupedItems as $shopId => $group): ?>
+                <div class="shop-group">
+                    <div class="shop-header">
+                        <input type="checkbox" class="shop-checkbox" data-shop="<?php echo $shopId; ?>" onchange="toggleShop(<?php echo $shopId; ?>)">
+                        <i class="fas fa-store"></i> <?php echo htmlspecialchars($group['shop_name']); ?>
+                    </div>
+                    <?php foreach ($group['items'] as $item): ?>
                     <div class="cart-item">
+                        <div class="item-checkbox">
+                            <input type="checkbox" name="selected_items[]" value="<?php echo $item['id']; ?>" class="item-cb shop-<?php echo $shopId; ?>" data-price="<?php echo $item['price']; ?>" data-qty="<?php echo $item['quantity']; ?>" onchange="updateSelectedTotal()">
+                        </div>
                         <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
                              alt="<?php echo htmlspecialchars($item['name']); ?>" 
                              class="item-image">
                         
                         <div class="item-details">
                             <div class="item-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                            <div class="item-price">¥<?php echo number_format($item['price'], 2); ?></div>
+                            <div class="item-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
                             
                             <form method="POST" class="quantity-controls">
                                 <input type="hidden" name="cart_item_id" value="<?php echo $item['id']; ?>">
@@ -320,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div class="item-total">
-                            ¥<?php echo number_format($item['price'] * $item['quantity'], 2); ?>
+                            <span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'] * $item['quantity'], 0); ?> 人气值
                         </div>
                         
                         <form method="POST">
@@ -330,26 +405,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </button>
                         </form>
                     </div>
+                    <?php endforeach; ?>
+                </div>
                 <?php endforeach; ?>
-            </div>
+            </form>
             
             <div class="cart-summary">
                 <div class="summary-row">
-                    <span>商品总数:</span>
-                    <span><?php echo array_sum(array_column($cartItems, 'quantity')); ?> 件</span>
+                    <span>已选商品:</span>
+                    <span id="selected-count">0 件</span>
                 </div>
                 <div class="summary-row summary-total">
-                    <span>总计:</span>
-                    <span>¥<?php echo number_format($totalAmount, 2); ?></span>
+                    <span>选中总计:</span>
+                    <span><span class="bct-symbol">Ⓟ</span><span id="selected-total">0</span> 人气值</span>
                 </div>
                 
                 <div class="cart-actions">
                     <a href="../product/list.php" class="btn btn-continue">
                         <i class="fas fa-arrow-left"></i> 继续购物
                     </a>
-                    <a href="checkout.php" class="btn btn-checkout">
+                    <button type="button" class="btn btn-checkout" onclick="goCheckout()">
                         <i class="fas fa-credit-card"></i> 去结算
-                    </a>
+                    </button>
                 </div>
             </div>
         <?php endif; ?>
@@ -367,6 +444,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 自动提交表单
             input.form.querySelector('button[type="submit"]').click();
         }
+        
+        // 全选/取消全选某店铺
+        function toggleShop(shopId) {
+            const shopCb = document.querySelector('.shop-checkbox[data-shop="' + shopId + '"]');
+            const items = document.querySelectorAll('.shop-' + shopId);
+            items.forEach(function(cb) {
+                cb.checked = shopCb.checked;
+            });
+            updateSelectedTotal();
+        }
+        
+        // 更新选中商品的总金额和数量
+        function updateSelectedTotal() {
+            let total = 0;
+            let count = 0;
+            document.querySelectorAll('input[name="selected_items[]"]:checked').forEach(function(cb) {
+                const price = parseFloat(cb.dataset.price);
+                const qty = parseInt(cb.dataset.qty);
+                total += price * qty;
+                count += qty;
+            });
+            document.getElementById('selected-total').textContent = total.toLocaleString();
+            document.getElementById('selected-count').textContent = count + ' 件';
+        }
+        
+        // 去结算
+        function goCheckout() {
+            const selected = document.querySelectorAll('input[name="selected_items[]"]:checked');
+            if (selected.length === 0) {
+                alert('请至少选择一件商品');
+                return;
+            }
+            document.getElementById('checkout-form').submit();
+        }
+        
+        // 页面加载时默认全选
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.shop-checkbox').forEach(function(cb) {
+                cb.checked = true;
+                toggleShop(cb.dataset.shop);
+            });
+        });
     </script>
     
     <?php include '../includes/footer.php'; ?>

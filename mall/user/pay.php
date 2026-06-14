@@ -142,6 +142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-input:focus { border-color: #3498db; }
         .form-hint { font-size: 12px; color: #999; margin-top: 4px; }
         
+        .countdown-banner {
+            background: #fff3cd; color: #856404; padding: 12px 20px; border-radius: 8px;
+            text-align: center; font-size: 16px; margin-bottom: 20px; border: 1px solid #ffeaa7;
+        }
+        .countdown-timer { font-weight: bold; color: #e74c3c; font-size: 20px; }
+        .countdown-expired { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        
         .btn { padding: 12px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-pay { background: #e74c3c; color: white; width: 100%; justify-content: center; font-size: 18px; padding: 15px; }
         .btn-pay:hover { background: #c0392b; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231,76,60,0.3); }
@@ -170,6 +177,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     
     <?php if (!$success && $orderInfo['status'] == 'pending'): ?>
+    <!-- 支付倒计时 -->
+    <?php if (!empty($orderInfo['expire_at'])): ?>
+    <div class="countdown-banner" id="countdown-banner">
+        <i class="fas fa-clock"></i> 请在 <span class="countdown-timer" id="countdown-timer">--:--</span> 内完成支付，超时订单将自动取消
+    </div>
+    <?php endif; ?>
+    
     <!-- 支付引导 -->
     <div class="pay-instruction">
         <div class="pay-step"><i class="fas fa-info-circle"></i> <strong>BCT支付说明</strong></div>
@@ -203,12 +217,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="product-item">
                 <span class="product-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
                 <span class="product-qty">x<?php echo $item['quantity']; ?></span>
-                <span class="product-price">¥<?php echo number_format($item['unit_price'] ?? 0, 2); ?></span>
+                <span class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'] ?? 0, 0); ?> 人气值</span>
             </div>
             <?php endforeach; ?>
             <div class="summary-row summary-total">
                 <span>应付总额</span>
-                <span>¥<?php echo number_format($orderInfo['total_amount'], 2); ?></span>
+                <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
             </div>
         </div>
     </div>
@@ -231,5 +245,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <?php include '../includes/footer.php'; ?>
+
+<?php if (!$success && $orderInfo['status'] == 'pending' && !empty($orderInfo['expire_at'])): ?>
+<script>
+(function() {
+    var expireAt = new Date('<?php echo date('c', strtotime($orderInfo['expire_at'])); ?>');
+    var timerEl = document.getElementById('countdown-timer');
+    var bannerEl = document.getElementById('countdown-banner');
+    
+    function updateCountdown() {
+        var now = new Date();
+        var diff = expireAt - now;
+        
+        if (diff <= 0) {
+            timerEl.textContent = '00:00';
+            bannerEl.classList.add('countdown-expired');
+            bannerEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> 订单已超时，即将自动取消...';
+            setTimeout(function() { location.reload(); }, 2000);
+            return;
+        }
+        
+        var minutes = Math.floor(diff / 60000);
+        var seconds = Math.floor((diff % 60000) / 1000);
+        timerEl.textContent = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+    }
+    
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+</script>
+<?php endif; ?>
+
 </body>
 </html>

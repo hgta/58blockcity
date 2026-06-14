@@ -254,11 +254,11 @@ require_once '../includes/header.php';
                                         </div>
                                         <div class="order-amount">
                                             <div class="amount-label">实付金额</div>
-                                            <div class="amount-value">¥<?= number_format($o['total_amount'], 2) ?></div>
+                                            <div class="amount-value"><span style="font-weight:bold;color:#e74c3c;">Ⓟ</span><?= number_format($o['total_amount'], 0) ?> 人气值</div>
                                         </div>
                                         <div class="order-actions-col">
                                             <?php if ($o['status'] === 'paid'): ?>
-                                                <a href="orders.php?action=ship&id=<?= $shopId ?>&order_id=<?= $o['id'] ?>" class="btn btn-sm btn-primary mb-1" onclick="return confirm('确认发货？')">
+                                                <a href="ship_order.php?id=<?= $shopId ?>&order_id=<?= $o['id'] ?>" class="btn btn-sm btn-primary mb-1">
                                                     <i class="fas fa-truck"></i> 发货
                                                 </a>
                                             <?php elseif ($o['status'] === 'shipped'): ?>

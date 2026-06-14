@@ -86,8 +86,8 @@ class Order {
             
             $stmt = $this->pdo->prepare("
                 INSERT INTO orders 
-                (order_no, user_id, shop_id, total_amount, payment_city, payment_amount, buyer_note, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (order_no, user_id, shop_id, total_amount, payment_city, payment_amount, buyer_note, status, expire_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
             ");
             
             $stmt->execute([
@@ -112,30 +112,9 @@ class Order {
     }
     
     /**
-     * 添加订单商品项
-     */
-    public function addOrderItem($orderId, $item) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO order_items 
-            (order_id, product_id, product_name, product_image, quantity, unit_price, total_price) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        return $stmt->execute([
-            $orderId,
-            $item['product_id'],
-            $item['product_name'],
-            $item['product_image'],
-            $item['quantity'],
-            $item['unit_price'],
-            $item['total_price']
-        ]);
-    }
-    
-    /**
      * 更新订单状态
      */
-    public function updateOrderStatus($orderId, $status, $notes = '') {
+    public function updateOrderStatus($orderId, $status, $notes = '', $shippingData = []) {
         $updates = ['status = ?'];
         $params = [$status];
         
@@ -155,6 +134,16 @@ class Order {
         if (!empty($notes)) {
             $updates[] = 'seller_note = ?';
             $params[] = $notes;
+        }
+        
+        // 物流信息
+        if (!empty($shippingData['shipping_company'])) {
+            $updates[] = 'shipping_company = ?';
+            $params[] = $shippingData['shipping_company'];
+        }
+        if (!empty($shippingData['tracking_no'])) {
+            $updates[] = 'tracking_no = ?';
+            $params[] = $shippingData['tracking_no'];
         }
         
         $params[] = $orderId;
@@ -385,7 +374,19 @@ class Order {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
             
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // 自动检测并取消过期订单
+            if ($order && $order['status'] == 'pending' && !empty($order['expire_at'])) {
+                if (strtotime($order['expire_at']) <= time()) {
+                    $this->autoCancelExpiredOrder($orderId);
+                    // 重新获取更新后的订单状态
+                    $stmt->execute($params);
+                    $order = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+            }
+            
+            return $order;
         } catch (Exception $e) {
             error_log("获取订单失败: " . $e->getMessage());
             return null;
@@ -403,6 +404,56 @@ class Order {
             return $stmt->execute([$orderId, $userId]);
         } catch (Exception $e) {
             error_log("取消订单失败: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * 自动取消过期订单并回滚库存
+     */
+    public function autoCancelExpiredOrder($orderId) {
+        try {
+            // 检查订单是否已过期且仍为待付款
+            $checkSql = "SELECT status, expire_at FROM orders WHERE id = ?";
+            $checkStmt = $this->pdo->prepare($checkSql);
+            $checkStmt->execute([$orderId]);
+            $order = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$order || $order['status'] != 'pending' || !$order['expire_at']) {
+                return false;
+            }
+            
+            if (strtotime($order['expire_at']) > time()) {
+                return false; // 尚未过期
+            }
+            
+            $this->pdo->beginTransaction();
+            
+            // 获取订单商品，回滚库存
+            $itemsSql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
+            $itemsStmt = $this->pdo->prepare($itemsSql);
+            $itemsStmt->execute([$orderId]);
+            $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            foreach ($items as $item) {
+                $rollbackSql = "UPDATE products 
+                                SET stock = stock + ?, sold_count = GREATEST(sold_count - ?, 0), updated_at = NOW() 
+                                WHERE id = ?";
+                $rollbackStmt = $this->pdo->prepare($rollbackSql);
+                $rollbackStmt->execute([$item['quantity'], $item['quantity'], $item['product_id']]);
+            }
+            
+            // 更新订单状态为已取消
+            $cancelSql = "UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = ?";
+            $cancelStmt = $this->pdo->prepare($cancelSql);
+            $cancelStmt->execute([$orderId]);
+            
+            $this->pdo->commit();
+            error_log("订单 {$orderId} 已自动取消（超时未支付）");
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("自动取消过期订单失败: " . $e->getMessage());
             return false;
         }
     }

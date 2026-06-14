@@ -432,6 +432,9 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
   `shipped_at` datetime DEFAULT NULL COMMENT '发货时间',
   `completed_at` datetime DEFAULT NULL COMMENT '完成时间',
+  `shipping_company` varchar(100) DEFAULT NULL COMMENT '物流公司',
+  `tracking_no` varchar(100) DEFAULT NULL COMMENT '运单号',
+  `expire_at` datetime DEFAULT NULL COMMENT '订单过期时间',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

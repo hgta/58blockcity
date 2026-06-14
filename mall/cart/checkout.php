@@ -30,23 +30,64 @@ $user = new User($pdo);
 $userId = $_SESSION['user_id'];
 $userInfo = $user->getUserById($userId);
 
+// 获取选中的购物车项
+$selectedItemIds = $_GET['selected_items'] ?? [];
+if (!is_array($selectedItemIds)) {
+    $selectedItemIds = [$selectedItemIds];
+}
+$selectedItemIds = array_map('intval', $selectedItemIds);
+
 // 获取购物车商品
-$cartItems = $cart->getCartItems($userId);
+$allCartItems = $cart->getCartItems($userId);
+
+// 过滤出选中的商品
+$cartItems = [];
+foreach ($allCartItems as $item) {
+    if (in_array($item['id'], $selectedItemIds)) {
+        $cartItems[] = $item;
+    }
+}
 
 // 验证购物车商品
-$validation = $cart->validateCartItems($userId);
-$validItems = $validation['valid_items'];
-$invalidItems = $validation['invalid_items'];
+$validItems = [];
+$invalidItems = [];
+foreach ($cartItems as $item) {
+    $productInfo = $product->getProductById($item['product_id']);
+    if (!$productInfo || $productInfo['status'] != 'active') {
+        $invalidItems[] = ['item' => $item, 'reason' => '商品已下架'];
+    } elseif ($productInfo['stock'] < $item['quantity']) {
+        $invalidItems[] = ['item' => $item, 'reason' => '库存不足，当前库存: ' . $productInfo['stock']];
+    } else {
+        $item['payment_city'] = $productInfo['payment_city'] ?? '';
+        $validItems[] = $item;
+    }
+}
 
-// 获取用户地址
-$userAddresses = $address->getUserAddresses($userId);
-$defaultAddress = $address->getDefaultAddress($userId);
+// 按店铺分组
+$shopGroups = [];
+foreach ($validItems as $item) {
+    $shopId = $item['shop_id'] ?: 0;
+    if (!isset($shopGroups[$shopId])) {
+        $shopGroups[$shopId] = [
+            'shop_id' => $shopId,
+            'shop_name' => $item['shop_name'] ?: '未知店铺',
+            'items' => [],
+            'total' => 0
+        ];
+    }
+    $shopGroups[$shopId]['items'][] = $item;
+    $shopGroups[$shopId]['total'] += $item['price'] * $item['quantity'];
+}
 
 // 计算总金额
 $totalAmount = 0;
 foreach ($validItems as $item) {
     $totalAmount += $item['price'] * $item['quantity'];
 }
+
+// 获取用户地址
+$userAddresses = $address->getUserAddresses($userId);
+$defaultAddress = $address->getDefaultAddress($userId);
 
 // 处理结账请求
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -61,65 +102,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "购物车中没有有效商品";
     } else {
         try {
-            // 开始事务
-            $pdo->beginTransaction();
+            $createdOrderIds = [];
             
             // 获取地址信息
             $selectedAddress = $address->getAddressById($selectedAddressId, $userId);
             $shippingAddress = $selectedAddress['province'] . $selectedAddress['city'] . $selectedAddress['district'] . $selectedAddress['detail'];
             
-            // 创建订单
-            $orderData = [
-                'user_id' => $userId,
-                'shop_id' => $validItems[0]['shop_id'] ?? 0,
-                'total_amount' => $totalAmount,
-                'payment_city' => ($paymentMethod == 'bct') ? ($validItems[0]['payment_city'] ?? '') : '',
-                'payment_amount' => ($paymentMethod == 'bct') ? $totalAmount : 0,
-                'payment_method' => $paymentMethod,
-                'shipping_address' => $shippingAddress,
-                'buyer_note' => $remark
-            ];
-            
-            $orderId = $order->createOrder($orderData);
-            
-            if (!$orderId) {
-                throw new Exception("创建订单失败");
-            }
-            
-            // 添加订单详情
-            foreach ($validItems as $item) {
-                $orderDetailData = [
-                    'product_id' => $item['product_id'],
-                    'product_name' => $item['name'],
-                    'price' => $item['price'],
-                    'quantity' => $item['quantity'],
-                    'image_url' => $item['image_url']
-                ];
+            // 按店铺分别创建订单
+            foreach ($shopGroups as $shopId => $group) {
+                $pdo->beginTransaction();
                 
-                if (!$order->addOrderDetail($orderId, $orderDetailData)) {
-                    throw new Exception("添加订单详情失败");
-                }
-                
-                // 更新商品库存
-                if (!$product->updateStock($item['product_id'], $item['quantity'])) {
-                    throw new Exception("商品库存更新失败");
+                try {
+                    // 创建订单
+                    $orderData = [
+                        'user_id' => $userId,
+                        'shop_id' => $shopId,
+                        'total_amount' => $group['total'],
+                        'payment_city' => ($paymentMethod == 'bct') ? ($group['items'][0]['payment_city'] ?? '') : '',
+                        'payment_amount' => ($paymentMethod == 'bct') ? $group['total'] : 0,
+                        'payment_method' => $paymentMethod,
+                        'shipping_address' => $shippingAddress,
+                        'buyer_note' => $remark
+                    ];
+                    
+                    $orderId = $order->createOrder($orderData);
+                    
+                    if (!$orderId) {
+                        throw new Exception("创建订单失败");
+                    }
+                    
+                    // 添加订单详情
+                    foreach ($group['items'] as $item) {
+                        $orderDetailData = [
+                            'product_id' => $item['product_id'],
+                            'product_name' => $item['name'],
+                            'price' => $item['price'],
+                            'quantity' => $item['quantity'],
+                            'image_url' => $item['image_url']
+                        ];
+                        
+                        if (!$order->addOrderDetail($orderId, $orderDetailData)) {
+                            throw new Exception("添加订单详情失败");
+                        }
+                        
+                        // 更新商品库存
+                        if (!$product->updateStock($item['product_id'], $item['quantity'])) {
+                            throw new Exception("商品库存更新失败");
+                        }
+                        
+                        // 从购物车移除该商品
+                        $cart->removeItem($item['id'], $userId);
+                    }
+                    
+                    $pdo->commit();
+                    $createdOrderIds[] = $orderId;
+                    
+                } catch (Exception $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    throw $e;
                 }
             }
             
-            // 清空购物车
-            if (!$cart->clearCart($userId)) {
-                throw new Exception("清空购物车失败");
+            // 跳转到订单列表或订单详情
+            if (count($createdOrderIds) === 1) {
+                header("Location: ../user/order_detail.php?id=" . $createdOrderIds[0]);
+            } else {
+                header("Location: ../user/orders.php?success=" . urlencode("成功创建 " . count($createdOrderIds) . " 个订单"));
             }
-            
-            // 提交事务
-            $pdo->commit();
-            
-            // 跳转到订单详情页
-            header("Location: ../user/order_detail.php?id=" . $orderId);
             exit();
             
         } catch (Exception $e) {
-            // 回滚事务（只有在事务活跃时）
             try {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -141,6 +195,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>订单结算 - 58人气值商城</title>
     <style>
+        .bct-symbol {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
         .checkout-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -568,7 +628,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                              class="product-image">
                                         <div class="product-info">
                                             <div class="product-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                                            <div class="product-price">¥<?php echo number_format($item['price'], 2); ?></div>
+                                            <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
                                         </div>
                                         <div class="product-quantity">x<?php echo $item['quantity']; ?></div>
                                     </div>
@@ -618,7 +678,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h3 class="section-title">订单摘要</h3>
                             <div class="summary-row">
                                 <span>商品总价</span>
-                                <span>¥<?php echo number_format($totalAmount, 2); ?></span>
+                                <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($totalAmount, 0); ?> 人气值</span>
                             </div>
                             <div class="summary-row">
                                 <span>运费</span>
@@ -630,7 +690,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="summary-row summary-total">
                                 <span>应付总额</span>
-                                <span>¥<?php echo number_format($totalAmount, 2); ?></span>
+                                <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($totalAmount, 0); ?> 人气值</span>
                             </div>
                             
                             <button type="submit" class="btn-submit" id="submit-btn">
