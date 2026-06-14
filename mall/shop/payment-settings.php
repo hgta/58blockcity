@@ -242,7 +242,7 @@ require_once '../includes/header.php';
                                             'city' => $cityCode,
                                             'block_id' => '',
                                             'is_active' => 0,
-                                            'min_amount' => 0.01,
+                                            'min_amount' => 1,
                                             'exchange_rate' => 0.1000,
                                             'block_zone' => '',
                                             'block_number' => ''
@@ -550,7 +550,7 @@ function createCityRowHTML(cityCode, city) {
             '</div>' +
         '</td>' +
         '<td>' +
-            '<div class="param-row"><span class="param-label">最小金额:</span><input type="number" class="form-control form-control-sm min-amount-input" name="min_amount[' + cityCode + ']" value="0" step="1" min="1" data-city="' + cityCode + '"><span class="param-unit">BCT</span></div>' +
+            '<div class="param-row"><span class="param-label">最小金额:</span><input type="number" class="form-control form-control-sm min-amount-input" name="min_amount[' + cityCode + ']" value="1" step="1" min="1" data-city="' + cityCode + '"><span class="param-unit">BCT</span></div>' +
             '<div class="param-row mt-1"><span class="param-label">兑换率:</span><input type="number" class="form-control form-control-sm exchange-rate-input" name="exchange_rate[' + cityCode + ']" value="0.1000" step="0.0001" min="0.0001" data-city="' + cityCode + '"></div>' +
         '</td>' +
         '<td class="text-center">' +
