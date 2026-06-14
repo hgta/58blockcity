@@ -57,25 +57,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $blockId = trim($_POST['block_id'][$city] ?? '');
             $isActive = isset($_POST['is_active'][$city]) ? 1 : 0;
             $minAmount = floatval($_POST['min_amount'][$city] ?? 0.01);
-            $exchangeRate = floatval($_POST['exchange_rate'][$city] ?? 1.0000);
-            
+            $exchangeRate = floatval($_POST['exchange_rate'][$city] ?? 0.1000);
+
             if ($isActive && empty($blockId)) {
-                $error = "城市 '{$city}' 已启用但未设置区块ID";
+                $error = "城市 '{$city}' 已启用但未选择区块";
                 break;
             }
-            
-            if (!empty($blockId)) {
+
+            // 只有启用的城市才保存
+            if ($isActive) {
                 $paymentSettings[] = [
                     'city' => $city,
                     'block_id' => $blockId,
-                    'is_active' => $isActive,
+                    'is_active' => 1,
                     'min_amount' => $minAmount,
                     'exchange_rate' => $exchangeRate
                 ];
-                
-                if ($isActive) {
-                    $hasActivePayment = true;
-                }
+                $hasActivePayment = true;
             }
         }
     }
@@ -102,6 +100,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $paymentSettingsByCity = [];
 foreach ($paymentSettings as $setting) {
     $paymentSettingsByCity[$setting['city']] = $setting;
+}
+
+// 城市列表分组：已配置/已启用的始终显示；未配置的只显示前50个
+$displayCities = [];
+$hiddenCities = [];
+$displayCount = 0;
+$maxDisplay = 50;
+
+foreach ($supportedCities as $cityCode => $city) {
+    $isConfigured = isset($paymentSettingsByCity[$cityCode]);
+    if ($isConfigured) {
+        $displayCities[$cityCode] = $city;
+    } elseif ($displayCount < $maxDisplay) {
+        $displayCities[$cityCode] = $city;
+        $displayCount++;
+    } else {
+        $hiddenCities[$cityCode] = $city;
+    }
 }
 
 require_once '../includes/header.php';
@@ -195,20 +211,30 @@ require_once '../includes/header.php';
                         </div>
                     </div>
                     
+                    <!-- 城市搜索添加 -->
+                    <div class="d-flex align-items-center gap-2 mb-3" id="citySearchBox">
+                        <input type="text" class="form-control form-control-sm" id="citySearchInput"
+                               placeholder="搜索城市（如：北京、上海）" style="max-width:260px;">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSearchedCity()">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                        <span class="text-muted small">已显示 <?= count($displayCities) ?> 个城市，还可搜索添加其他城市</span>
+                    </div>
+
                     <form method="POST" id="paymentSettingsForm">
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered" id="paymentSettingsTable">
                                 <thead class="thead-light">
                                     <tr>
                                         <th width="100">城市</th>
-                                        <th>区块ID *</th>
+                                        <th>接收区块</th>
                                         <th width="80">启用</th>
                                         <th width="160">支付参数</th>
                                         <th width="80">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($supportedCities as $cityCode => $city): ?>
+                                    <?php foreach ($displayCities as $cityCode => $city): ?>
                                         <?php
                                         $cityName = $city['name'];
                                         $cityId = $city['id'];
@@ -217,7 +243,7 @@ require_once '../includes/header.php';
                                             'block_id' => '',
                                             'is_active' => 0,
                                             'min_amount' => 0.01,
-                                            'exchange_rate' => 1.0000,
+                                            'exchange_rate' => 0.1000,
                                             'block_zone' => '',
                                             'block_number' => ''
                                         ];
@@ -326,7 +352,7 @@ require_once '../includes/header.php';
                 </div>
                 <div class="form-group">
                     <label for="batch_exchange_rate">统一兑换率</label>
-                    <input type="number" class="form-control" id="batch_exchange_rate" step="0.0001" min="0.0001" value="1.0000">
+                    <input type="number" class="form-control" id="batch_exchange_rate" step="0.0001" min="0.0001" value="0.1000">
                 </div>
                 <div class="form-group">
                     <label for="batch_block_id_prefix">区块ID前缀</label>
@@ -436,6 +462,11 @@ require_once '../includes/header.php';
 </style>
 
 <script>
+// 隐藏城市数据（供搜索添加）
+const hiddenCities = <?= json_encode($hiddenCities, JSON_UNESCAPED_UNICODE) ?>;
+const userBlocksByCity = <?= json_encode($userBlocksByCity, JSON_UNESCAPED_UNICODE) ?>;
+const allCities = <?= json_encode($supportedCities, JSON_UNESCAPED_UNICODE) ?>;
+
 document.addEventListener('DOMContentLoaded', function() {
     updateInputsState();
     
@@ -489,27 +520,122 @@ function updateTestButtonState(city) {
     testButton.disabled = !(isActive && hasBlockId);
 }
 
+function createCityRowHTML(cityCode, city) {
+    const cityName = city.name;
+    const cityId = city.id;
+    const blocks = userBlocksByCity[cityId] || [];
+    const hasBlocks = blocks.length > 0;
+
+    let options = '<option value="">请选择区块</option>';
+    if (hasBlocks) {
+        blocks.forEach(function(b) {
+            options += '<option value="' + b.id + '">' + b.zone + '区 #' + b.block_number + '</option>';
+        });
+    }
+
+    let hint = hasBlocks
+        ? '选择该城市的收款区块'
+        : '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span> <a href="../../block/city.php?id=' + cityId + '" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>';
+
+    return '<tr class="payment-setting-row" data-city-id="' + cityId + '" data-city="' + cityCode + '">' +
+        '<td><strong>' + cityName + '</strong><input type="hidden" name="payment_cities[]" value="' + cityCode + '"></td>' +
+        '<td>' +
+            '<select class="form-control form-control-sm block-id-select" name="block_id[' + cityCode + ']" data-city="' + cityCode + '" data-city-id="' + cityId + '"' + (hasBlocks ? '' : ' disabled') + '>' + options + '</select>' +
+            '<small class="form-text text-muted block-hint" data-city="' + cityCode + '">' + hint + '</small>' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<div class="custom-control custom-switch">' +
+                '<input type="checkbox" class="custom-control-input payment-toggle" id="is_active_' + cityCode + '" name="is_active[' + cityCode + ']" value="1" data-city="' + cityCode + '">' +
+                '<label class="custom-control-label" for="is_active_' + cityCode + '"></label>' +
+            '</div>' +
+        '</td>' +
+        '<td>' +
+            '<div class="param-row"><span class="param-label">最小金额:</span><input type="number" class="form-control form-control-sm min-amount-input" name="min_amount[' + cityCode + ']" value="0" step="1" min="1" data-city="' + cityCode + '"><span class="param-unit">BCT</span></div>' +
+            '<div class="param-row mt-1"><span class="param-label">兑换率:</span><input type="number" class="form-control form-control-sm exchange-rate-input" name="exchange_rate[' + cityCode + ']" value="0.1000" step="0.0001" min="0.0001" data-city="' + cityCode + '"></div>' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn" data-city="' + cityCode + '" data-city-name="' + cityName + '" disabled><i class="fas fa-vial"></i> 测试</button>' +
+            ' <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCityRow(this)" title="移除"><i class="fas fa-trash"></i></button>' +
+        '</td>' +
+    '</tr>';
+}
+
+function addSearchedCity() {
+    const input = document.getElementById('citySearchInput');
+    const keyword = input.value.trim();
+    if (!keyword) return;
+
+    // 在所有城市中匹配
+    let matchedCode = null;
+    let matchedCity = null;
+    const all = Object.assign({}, allCities, hiddenCities);
+
+    for (const code in all) {
+        const c = all[code];
+        if (c.name === keyword || code === keyword.toLowerCase()) {
+            matchedCode = code;
+            matchedCity = c;
+            break;
+        }
+    }
+
+    if (!matchedCity) {
+        alert('未找到城市：' + keyword + '，请检查城市名称');
+        return;
+    }
+
+    // 检查是否已在表格中
+    if (document.querySelector('tr[data-city="' + matchedCode + '"]')) {
+        alert('城市「' + matchedCity.name + '」已在列表中');
+        input.value = '';
+        return;
+    }
+
+    const tbody = document.querySelector('#paymentSettingsTable tbody');
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = '<table>' + createCityRowHTML(matchedCode, matchedCity) + '</table>';
+    const newRow = tempDiv.querySelector('tr');
+    tbody.appendChild(newRow);
+
+    // 绑定事件
+    const toggle = newRow.querySelector('.payment-toggle');
+    toggle.addEventListener('change', function() {
+        updateCityInputsState(matchedCode);
+    });
+    const select = newRow.querySelector('.block-id-select');
+    select.addEventListener('change', function() {
+        updateTestButtonState(matchedCode);
+    });
+
+    input.value = '';
+    updateInputsState();
+}
+
+function removeCityRow(btn) {
+    const row = btn.closest('tr');
+    if (row) row.remove();
+}
+
+// 搜索框回车支持
+document.getElementById('citySearchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addSearchedCity();
+    }
+});
+
 function applyBatchSettings() {
     const minAmount = document.getElementById('batch_min_amount').value;
     const exchangeRate = document.getElementById('batch_exchange_rate').value;
-    const blockIdPrefix = document.getElementById('batch_block_id_prefix').value;
-    
+
     document.querySelectorAll('.min-amount-input').forEach(function(input) {
         input.value = minAmount;
     });
-    
+
     document.querySelectorAll('.exchange-rate-input').forEach(function(input) {
         input.value = exchangeRate;
     });
-    
-    if (blockIdPrefix) {
-        document.querySelectorAll('.block-id-select').forEach(function(select) {
-            if (!select.value) {
-                // 下拉框不支持前缀批量设置，跳过
-            }
-        });
-    }
-    
+
     $('#batchSettingsModal').modal('hide');
     updateInputsState();
 }
