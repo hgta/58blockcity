@@ -249,12 +249,12 @@ class Product {
             $this->pdo->beginTransaction();
             
             $stmt = $this->pdo->prepare("
-                INSERT INTO products 
-                (shop_id, category_id, name, description, main_image, images, 
-                 price_type, price_bct, price_cny, stock, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products
+                (shop_id, category_id, name, description, main_image, images, video_url,
+                 price_type, price_bct, price_cny, stock, status, is_recommended)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            
+
             $stmt->execute([
                 $data['shop_id'],
                 $data['category_id'],
@@ -262,11 +262,13 @@ class Product {
                 $data['description'],
                 $data['main_image'],
                 $data['images'] ?? null,
+                $data['video_url'] ?? null,
                 $data['price_type'],
                 $data['price_bct'],
                 $data['price_cny'],
                 $data['stock'],
-                $data['status']
+                $data['status'],
+                $data['is_recommended'] ?? 0
             ]);
             
             $productId = $this->pdo->lastInsertId();
@@ -681,6 +683,25 @@ class Product {
     }
 
     /**
+     * 获取商品支持的支付城市
+     */
+    public function getProductPaymentCities($productId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT city, price_adjust 
+                FROM product_payment_cities 
+                WHERE product_id = ? AND is_active = 1 
+                ORDER BY city ASC
+            ");
+            $stmt->execute([$productId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("获取商品支付城市失败: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * 彻底删除商品（含文件清理）
      * 如果商品存在未完成订单，则拒绝删除
      */
@@ -699,9 +720,9 @@ class Product {
 
             // 检查是否有未完成订单（pending, paid, shipped）
             $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) FROM order_details od
-                JOIN orders o ON od.order_id = o.id
-                WHERE od.product_id = ? AND o.status IN ('pending', 'paid', 'shipped')
+                SELECT COUNT(*) FROM order_items oi
+                JOIN orders o ON oi.order_id = o.id
+                WHERE oi.product_id = ? AND o.status IN ('pending', 'paid', 'shipped')
             ");
             $stmt->execute([$productId]);
             $pendingCount = $stmt->fetchColumn();

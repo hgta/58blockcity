@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'update_avatar') {
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../../assets/uploads/avatars/';
+            $uploadDir = __DIR__ . '/../assets/uploads/avatars/';
             $dirReady = true;
             if (!is_dir($uploadDir)) {
                 if (!@mkdir($uploadDir, 0777, true)) {

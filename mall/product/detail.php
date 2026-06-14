@@ -40,6 +40,18 @@ $product->incrementViewCount($productId);
 // 获取店铺信息
 $shopInfo = $shop->getShopById($productDetail['shop_id']);
 
+// 获取商品支持的支付城市
+$paymentCities = $product->getProductPaymentCities($productId);
+
+// 提前解析商品副图，供页面多处使用
+$extraImages = [];
+if (!empty($productDetail['images'])) {
+    $decoded = json_decode($productDetail['images'], true);
+    if (is_array($decoded)) {
+        $extraImages = $decoded;
+    }
+}
+
 // 获取相关商品
 $relatedProducts = $product->getRelatedProducts($productDetail['category_id'], $productId, 4);
 
@@ -192,12 +204,129 @@ if (isset($_SESSION['user_id'])) {
         .purchase-options {
             margin-bottom: 25px;
         }
-        
+
         .quantity-selector {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
+        }
+
+        /* 店铺信息卡片 */
+        .shop-info {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #f0f0f0;
+        }
+        .shop-info-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+        .shop-info-header .shop-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #eee;
+        }
+        .shop-info-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .shop-info-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .shop-info-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-shop {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .2s;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .btn-shop:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .btn-shop.primary {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+        .btn-shop.primary:hover {
+            background: #1d4ed8;
+        }
+
+        /* 右侧信息卡片 */
+        .info-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #f1f5f9;
+        }
+        .info-card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .city-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            margin: 0 6px 6px 0;
+        }
+        .city-tag i { font-size: 10px; }
+
+        /* 商品详情图片画廊 */
+        .detail-image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .detail-image-gallery img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: zoom-in;
+            transition: transform .2s;
+        }
+        .detail-image-gallery img:hover {
+            transform: scale(1.02);
         }
         
         .quantity-label {
@@ -467,15 +596,7 @@ if (isset($_SESSION['user_id'])) {
                          alt="<?php echo htmlspecialchars($productDetail['name']); ?>" 
                          class="thumbnail active" 
                          onclick="changeMainImage(this.src)">
-                    <?php
-                    $extraImages = [];
-                    if (!empty($productDetail['images'])) {
-                        $decoded = json_decode($productDetail['images'], true);
-                        if (is_array($decoded)) {
-                            $extraImages = $decoded;
-                        }
-                    }
-                    foreach ($extraImages as $img):
+                    <?php foreach ($extraImages as $img):
                         $imgPath = '../' . htmlspecialchars($img);
                     ?>
                         <img src="<?php echo $imgPath; ?>" 
@@ -549,7 +670,7 @@ if (isset($_SESSION['user_id'])) {
                         <div class="quantity-label">数量</div>
                         <div class="quantity-controls">
                             <button type="button" class="quantity-btn" onclick="decreaseQuantity()">-</button>
-                            <input type="number" name="quantity" value="1" min="1" max="<?php echo $productDetail['stock']; ?>" 
+                            <input type="number" name="quantity" value="1" min="1" max="<?php echo $productDetail['stock']; ?>"
                                    class="quantity-input" id="quantity-input">
                             <button type="button" class="quantity-btn" onclick="increaseQuantity()">+</button>
                         </div>
@@ -557,7 +678,7 @@ if (isset($_SESSION['user_id'])) {
                             最多可购买 <?php echo number_format($productDetail['stock']); ?> 件
                         </div>
                     </div>
-                    
+
                     <div class="action-buttons">
                         <button type="submit" name="add_to_cart" class="btn btn-cart">
                             <i class="fas fa-shopping-cart"></i> 加入购物车
@@ -567,39 +688,55 @@ if (isset($_SESSION['user_id'])) {
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-        
-        <!-- 店铺信息 -->
-        <?php if ($shopInfo): ?>
-            <div class="shop-info">
-                <div class="shop-header">
-                    <img src="<?php echo htmlspecialchars($shopInfo['avatar_url'] ?: '../assets/images/default-shop.jpg'); ?>" 
-                         alt="<?php echo htmlspecialchars($shopInfo['shop_name']); ?>" 
-                         class="shop-logo">
-                    <div style="flex: 1;">
-                        <div class="shop-name"><?php echo htmlspecialchars($shopInfo['shop_name']); ?></div>
-                        <div class="shop-rating">
-                            <i class="fas fa-star"></i> --
+
+                <!-- 支持城市支付 -->
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fas fa-map-marker-alt"></i> 支持城市支付</div>
+                    <?php if (!empty($paymentCities)): ?>
+                        <div>
+                            <?php foreach ($paymentCities as $pc): ?>
+                                <span class="city-tag">
+                                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($pc['city']); ?>
+                                    <?php if ($pc['price_adjust'] != 0): ?>
+                                        (<?php echo ($pc['price_adjust'] > 0 ? '+' : '') . $pc['price_adjust']; ?>%)
+                                    <?php endif; ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">
+                            以上城市的人气值可用于购买此商品，不同城市汇率可能不同
+                        </div>
+                    <?php else: ?>
+                        <div style="font-size:13px;color:#64748b;">该商品暂不支持特定城市人气值支付</div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- 店铺信息（右侧精简版） -->
+                <?php if ($shopInfo): ?>
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fas fa-store"></i> 所属店铺</div>
+                    <div class="shop-info-header" style="margin-bottom:0;">
+                        <img src="<?php echo htmlspecialchars($shopInfo['avatar_url'] ?: '../assets/images/default-shop.jpg'); ?>"
+                             alt="<?php echo htmlspecialchars($shopInfo['shop_name']); ?>"
+                             class="shop-logo" style="width:44px;height:44px;border-radius:8px;">
+                        <div>
+                            <div class="shop-info-name" style="font-size:15px;"><?php echo htmlspecialchars($shopInfo['shop_name']); ?></div>
+                            <div class="shop-info-meta"><?php echo htmlspecialchars(mb_strimwidth($shopInfo['description'] ?? '', 0, 40, '...')); ?></div>
                         </div>
                     </div>
-                    <div class="shop-actions">
-                        <a href="../shop/view.php?id=<?php echo $shopInfo['id']; ?>" class="btn-shop">
-                            进入店铺
+                    <div class="shop-info-actions">
+                        <a href="../shop/view.php?id=<?php echo $shopInfo['id']; ?>" class="btn-shop primary">
+                            <i class="fas fa-store"></i> 进入店铺
                         </a>
                         <a href="../product/list.php?shop=<?php echo $shopInfo['id']; ?>" class="btn-shop">
-                            查看所有商品
+                            <i class="fas fa-th-large"></i> 全部商品
                         </a>
                     </div>
                 </div>
-                <?php if ($shopInfo['description']): ?>
-                    <div style="color: #666; line-height: 1.6;">
-                        <?php echo htmlspecialchars($shopInfo['description']); ?>
-                    </div>
                 <?php endif; ?>
             </div>
-        <?php endif; ?>
-        
+        </div>
+
         <!-- 商品详情 -->
         <div class="product-description">
             <h3 class="description-title">商品详情</h3>
@@ -610,6 +747,32 @@ if (isset($_SESSION['user_id'])) {
                     <p style="color: #999; text-align: center; padding: 40px;">
                         该商品暂无详细描述
                     </p>
+                <?php endif; ?>
+
+                <!-- 商品图片画廊（详情正文展示） -->
+                <?php if (!empty($extraImages) || !empty($productDetail['main_image'])): ?>
+                    <div style="margin-top: 30px;">
+                        <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-images"></i> 商品图集</h4>
+                        <div class="detail-image-gallery">
+                            <?php if (!empty($productDetail['main_image'])): ?>
+                                <img src="<?php echo '../' . htmlspecialchars($productDetail['main_image']); ?>" alt="商品主图" onclick="showImageModal(this.src)">
+                            <?php endif; ?>
+                            <?php foreach ($extraImages as $img): ?>
+                                <img src="<?php echo '../' . htmlspecialchars($img); ?>" alt="商品图片" onclick="showImageModal(this.src)">
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- 商品视频（详情正文展示） -->
+                <?php if (!empty($productDetail['video_url'])): ?>
+                    <div style="margin-top: 30px;">
+                        <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-video"></i> 视频介绍</h4>
+                        <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-width:640px;border-radius:8px;background:#000;">
+                            <source src="<?php echo '../' . htmlspecialchars($productDetail['video_url']); ?>" type="video/mp4">
+                            您的浏览器不支持视频播放
+                        </video>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -723,6 +886,15 @@ if (isset($_SESSION['user_id'])) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-bolt"></i> 立即购买';
             });
+        }
+
+        // 图片放大查看
+        function showImageModal(src) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            modal.innerHTML = '<img src="' + src + '" style="max-width:90%;max-height:90%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">';
+            modal.onclick = function() { modal.remove(); };
+            document.body.appendChild(modal);
         }
     </script>
     

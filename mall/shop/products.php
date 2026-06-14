@@ -125,7 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
                     'stock' => $stock,
-                    'status' => $status
+                    'status' => $status,
+                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0
                 ];
 
                 // 创建商品
@@ -227,7 +228,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'price_cny' => $priceCny,
                     'stock' => $stock,
                     'status' => $status,
-                    'video_url' => $videoUrl
+                    'video_url' => $videoUrl,
+                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0
                 ];
 
                 if ($mainImage) {
@@ -546,7 +548,10 @@ require_once '../includes/header.php';
                 <!-- 添加/编辑商品表单 -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0"><?= $action === 'add' ? '添加商品' : '编辑商品' ?></h4>
+                        <div>
+                            <h4 class="card-title mb-0"><?= $action === 'add' ? '添加商品' : '编辑商品' ?></h4>
+                            <small class="text-muted"><i class="fas fa-store"></i> 当前店铺：<?= htmlspecialchars($userShop['shop_name'] ?? '') ?></small>
+                        </div>
                         <a href="products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> 返回列表
                         </a>
@@ -555,11 +560,11 @@ require_once '../includes/header.php';
                         <?php if ($error): ?>
                             <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
-                        
+
                         <?php if ($success): ?>
                             <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                         <?php endif; ?>
-                        
+
                         <form method="POST" enctype="multipart/form-data" id="productForm">
                             <?php if ($action === 'edit' && isset($_GET['product_id'])): ?>
                                 <?php
@@ -1397,7 +1402,7 @@ if (videoInput && videoArea) {
             </div>
             <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
         `;
-        document.getElementById('videoUploadInfo').textContent = file.name + ' (' + formatSize(file.size) + ')';
+        document.getElementById('videoUploadInfo').innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> 视频已选择：' + file.name + ' (' + formatSize(file.size) + ')</span>';
     });
 }
 function resetVideoUpload() {
