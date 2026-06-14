@@ -679,5 +679,75 @@ class Product {
     public function batchDeleteProducts($productIds, $shopId) {
         return $this->batchUpdateStatus($productIds, $shopId, 'inactive');
     }
+
+    /**
+     * 彻底删除商品（含文件清理）
+     * 如果商品存在未完成订单，则拒绝删除
+     */
+    public function deleteProduct($productId, $shopId) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // 验证商品属于该店铺
+            $stmt = $this->pdo->prepare("SELECT * FROM products WHERE id = ? AND shop_id = ?");
+            $stmt->execute([$productId, $shopId]);
+            $product = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$product) {
+                $this->pdo->rollBack();
+                return ['success' => false, 'error' => '商品不存在或无权操作'];
+            }
+
+            // 检查是否有未完成订单（pending, paid, shipped）
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM order_details od
+                JOIN orders o ON od.order_id = o.id
+                WHERE od.product_id = ? AND o.status IN ('pending', 'paid', 'shipped')
+            ");
+            $stmt->execute([$productId]);
+            $pendingCount = $stmt->fetchColumn();
+            if ($pendingCount > 0) {
+                $this->pdo->rollBack();
+                return ['success' => false, 'error' => '该商品存在未完成订单，无法删除'];
+            }
+
+            // 收集需要删除的文件路径
+            $filesToDelete = [];
+            if (!empty($product['main_image'])) {
+                $filesToDelete[] = $product['main_image'];
+            }
+            if (!empty($product['images'])) {
+                $extraImages = json_decode($product['images'], true);
+                if (is_array($extraImages)) {
+                    foreach ($extraImages as $img) {
+                        if (!empty($img)) $filesToDelete[] = $img;
+                    }
+                }
+            }
+            if (!empty($product['video_url']) && strpos($product['video_url'], '://') === false) {
+                $filesToDelete[] = $product['video_url'];
+            }
+
+            // 删除商品记录
+            $stmt = $this->pdo->prepare("DELETE FROM products WHERE id = ? AND shop_id = ?");
+            $stmt->execute([$productId, $shopId]);
+
+            $this->pdo->commit();
+
+            // 删除物理文件（在事务外执行，避免文件系统错误影响数据库）
+            $baseDir = dirname(__DIR__); // 项目根目录
+            foreach ($filesToDelete as $filePath) {
+                $fullPath = $baseDir . '/' . ltrim($filePath, '/');
+                if (file_exists($fullPath) && is_file($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+
+            return ['success' => true];
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("删除商品失败: " . $e->getMessage());
+            return ['success' => false, 'error' => '删除失败：' . $e->getMessage()];
+        }
+    }
 }
 ?>

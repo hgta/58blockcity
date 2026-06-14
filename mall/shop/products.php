@@ -262,10 +262,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     }
 }
 
-// 处理删除商品
+// 处理下架商品（软删除）
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['product_id'])) {
     $productId = intval($_GET['product_id']);
-    
+
     // 验证商品属于当前店铺
     $productInfo = $product->getProductById($productId);
     if ($productInfo && $productInfo['shop_id'] == $shopId) {
@@ -277,7 +277,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['produ
     } else {
         $error = '商品不存在或无权操作';
     }
-    
+
+    header('Location: products.php?id=' . $shopId . '&' . ($error ? 'error=' . urlencode($error) : 'success=' . urlencode($success)));
+    exit;
+}
+
+// 处理彻底删除商品
+if (isset($_GET['action']) && $_GET['action'] === 'hard_delete' && isset($_GET['product_id'])) {
+    $productId = intval($_GET['product_id']);
+    $result = $product->deleteProduct($productId, $shopId);
+    if ($result['success']) {
+        $success = '商品已彻底删除';
+    } else {
+        $error = $result['error'];
+    }
     header('Location: products.php?id=' . $shopId . '&' . ($error ? 'error=' . urlencode($error) : 'success=' . urlencode($success)));
     exit;
 }
@@ -333,11 +346,12 @@ function uploadImage($file, $maxWidth = 1200, $maxHeight = 1200, $quality = 85) 
     }
 
     // 创建上传目录（按日期分目录，减少单目录文件数）
+    // 注意：products.php 位于 mall/shop/，assets/ 在项目根目录，因此需要 ../../
     $subDir = date('Ym') . '/';
-    $uploadDir = __DIR__ . '/../assets/uploads/products/' . $subDir;
+    $uploadDir = __DIR__ . '/../../assets/uploads/products/' . $subDir;
     if (!is_dir($uploadDir)) {
         if (!@mkdir($uploadDir, 0777, true)) {
-            return ['success' => false, 'error' => '无法创建上传目录，请联系管理员检查目录权限：' . dirname($uploadDir)];
+            return ['success' => false, 'error' => '无法创建上传目录，请联系管理员检查目录权限：' . dirname($uploadDir) . '（请确保 assets/uploads/ 及其上级目录对 Web 服务器可写）'];
         }
     }
 
@@ -449,7 +463,7 @@ function uploadVideo($file) {
         return ['success' => false, 'error' => '视频大小不能超过 50MB'];
     }
 
-    $uploadDir = __DIR__ . '/../assets/uploads/videos/';
+    $uploadDir = __DIR__ . '/../../assets/uploads/videos/';
     if (!is_dir($uploadDir)) {
         if (!@mkdir($uploadDir, 0777, true)) {
             return ['success' => false, 'error' => '无法创建视频上传目录，请联系管理员检查权限'];
@@ -895,6 +909,9 @@ require_once '../includes/header.php';
                                                                 <i class="fas fa-play"></i>
                                                             </a>
                                                         <?php endif; ?>
+                                                        <a href="products.php?action=hard_delete&id=<?= $shopId ?>&product_id=<?= $productItem['id'] ?>" class="qa-btn qa-danger" title="彻底删除" onclick="return confirm('⚠️ 彻底删除后不可恢复，确定删除？')">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1132,6 +1149,8 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .qa-warning:hover { background: #ffc107; color: #000; }
 .qa-success { background: #d4edda; color: #155724; }
 .qa-success:hover { background: #28a745; color: #fff; }
+.qa-danger { background: #f8d7da; color: #721c24; }
+.qa-danger:hover { background: #dc3545; color: #fff; }
 
 /* 工具栏 */
 .product-toolbar {

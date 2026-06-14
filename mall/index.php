@@ -398,13 +398,13 @@ $categories = $category->getPopularCategories(8);
     
     <div class="container">
         <!-- Banner + 搜索 -->
-        <div class="banner-section" style="margin:20px 0 30px;">
-            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:12px;padding:40px 30px;color:#fff;text-align:center;">
-                <h1 style="font-size:32px;font-weight:800;margin:0 0 10px;">58人气值购物商城</h1>
-                <p style="font-size:16px;opacity:.85;margin:0 0 20px;">基于区块城市BlockCity的BCT商城交易平台</p>
-                <form method="GET" action="product/list.php" style="max-width:500px;margin:0 auto;display:flex;gap:8px;">
-                    <input type="text" name="search" placeholder="搜索商品..." style="flex:1;padding:12px 16px;border:none;border-radius:8px;font-size:15px;outline:none;">
-                    <button type="submit" style="padding:12px 24px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+        <div class="banner-section" style="margin:15px 0 20px;">
+            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:12px;padding:20px 24px;color:#fff;text-align:center;">
+                <h1 style="font-size:24px;font-weight:700;margin:0 0 6px;">58人气值购物商城</h1>
+                <p style="font-size:14px;opacity:.85;margin:0 0 12px;">基于区块城市BlockCity的BCT商城交易平台</p>
+                <form method="GET" action="product/list.php" style="max-width:460px;margin:0 auto;display:flex;gap:8px;">
+                    <input type="text" name="search" placeholder="搜索商品..." style="flex:1;padding:10px 14px;border:none;border-radius:8px;font-size:14px;outline:none;">
+                    <button type="submit" style="padding:10px 20px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
                         <i class="fas fa-search"></i> 搜索
                     </button>
                 </form>
@@ -435,20 +435,6 @@ $categories = $category->getPopularCategories(8);
                         </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
-            </div>
-        </div>
-        
-        <!-- 特色区域 -->
-        <div class="featured-section">
-            <div class="promo-banner">
-                <div class="promo-title">新人专享福利</div>
-                <div class="promo-desc">首次购物立享9折优惠，更有BCT奖励等你拿</div>
-                <a href="product/list.php" class="promo-btn">立即购物</a>
-            </div>
-            <div class="promo-banner" style="background: linear-gradient(135deg, #3498db, #2980b9);">
-                <div class="promo-title">开店有礼</div>
-                <div class="promo-desc">免费开通店铺，享平台流量扶持</div>
-                <a href="shop/create.php" class="promo-btn">立即开店</a>
             </div>
         </div>
         
