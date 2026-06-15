@@ -941,8 +941,8 @@ class Shop {
                 throw new Exception("请选择店铺分类");
             }
             
-            $sql = "INSERT INTO shops (user_id, shop_name, shop_description, category_id, shop_logo, shop_banner, contact_info, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+            $sql = "INSERT INTO shops (user_id, shop_name, shop_description, category_id, shop_logo, shop_banner, contact_info, status, created_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
             $stmt = $this->pdo->prepare($sql);
             
             $result = $stmt->execute([
