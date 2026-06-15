@@ -27,7 +27,7 @@ if (!isset($site_config)) {
         'home_url'               => '../index.php',
         'db_path'                => '../config/database.php',
         'class_path'             => '../classes/',
-        'includes_path'          => '../includes/',
+        'includes_path'          => __DIR__ . '/../mall/includes/',
     ];
 }
 
