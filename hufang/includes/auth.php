@@ -240,9 +240,7 @@ function handleLogin($userId, $username, $email, $role, $remember = false) {
 function checkAdmin() {
     checkLogin();
     
-    // 示例：假设用户ID为1的是管理员
-    // 实际应用中应该有更完善的权限系统
-    if ($_SESSION['user_id'] != 1) {
+    if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
         header('Location: ../index.php');
         exit;
     }
