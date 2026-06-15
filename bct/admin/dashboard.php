@@ -11,9 +11,9 @@ $user = new User($pdo);
 
 // 统计
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-$totalCities = $pdo->query("SELECT COUNT(DISTINCT city) FROM user_bct_accounts")->fetchColumn();
-$totalAccounts = $pdo->query("SELECT COUNT(*) FROM user_bct_accounts")->fetchColumn();
-$totalBalance = $pdo->query("SELECT COALESCE(SUM(balance),0) FROM user_bct_accounts")->fetchColumn();
+$totalCities = $pdo->query("SELECT COUNT(DISTINCT city) FROM user_bct_account")->fetchColumn();
+$totalAccounts = $pdo->query("SELECT COUNT(*) FROM user_bct_account")->fetchColumn();
+$totalBalance = $pdo->query("SELECT COALESCE(SUM(balance),0) FROM user_bct_account")->fetchColumn();
 
 // 最近交易记录
 $recentTx = $pdo->query("
