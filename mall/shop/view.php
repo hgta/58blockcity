@@ -65,7 +65,7 @@ require_once '../includes/header.php';
                     <div class="col-md-3 text-center">
                         <div class="shop-logo mb-3">
                             <?php if (!empty($shopInfo['shop_logo'])): ?>
-                                <img src="<?= htmlspecialchars($shopInfo['shop_logo']) ?>" 
+                                <img src="../<?= htmlspecialchars($shopInfo['shop_logo']) ?>" 
                                      alt="<?= htmlspecialchars($shopInfo['shop_name']) ?>" 
                                      class="img-fluid rounded-circle" style="max-width: 150px; height: 150px; object-fit: cover;">
                             <?php else: ?>
@@ -168,7 +168,7 @@ require_once '../includes/header.php';
         <!-- 店铺横幅（如果有） -->
         <?php if (!empty($shopInfo['shop_banner'])): ?>
             <div class="shop-banner mb-4">
-                <img src="<?= htmlspecialchars($shopInfo['shop_banner']) ?>" 
+                <img src="../<?= htmlspecialchars($shopInfo['shop_banner']) ?>" 
                      alt="<?= htmlspecialchars($shopInfo['shop_name']) ?> 横幅" 
                      class="img-fluid rounded" style="width: 100%; max-height: 300px; object-fit: cover;">
             </div>
@@ -217,7 +217,7 @@ require_once '../includes/header.php';
                                 <div class="product-info">
                                     <h5 class="product-name"><?= htmlspecialchars($productItem['name']) ?></h5>
                                     <div class="product-price">
-                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 0) ?> 人气</span>
+                                        <span class="bct-price"><?= number_format($productItem['price_bct'], 0) ?> BCT</span>
                                         <?php if ($productItem['price_cny']): ?>
                                             <span class="cny-price">≈ ¥<?= number_format($productItem['price_cny'], 2) ?></span>
                                         <?php endif; ?>

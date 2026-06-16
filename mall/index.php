@@ -456,7 +456,7 @@ $categories = $category->getPopularCategories(8);
                                 <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
                                 <div class="product-price">
                                     <?php if ($product['price_bct'] > 0): ?>
-                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> BCT</span>
                                         <?php if ($product['price_cny'] > 0): ?>
                                             <span class="original-price">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
                                         <?php endif; ?>
@@ -497,7 +497,7 @@ $categories = $category->getPopularCategories(8);
                                 <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
                                 <div class="product-price">
                                     <?php if ($product['price_bct'] > 0): ?>
-                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                        <span class="current-price"><?php echo number_format($product['price_bct'], 0); ?> BCT</span>
                                         <?php if ($product['price_cny'] > 0): ?>
                                             <span class="original-price">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
                                         <?php endif; ?>

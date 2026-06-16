@@ -44,11 +44,31 @@ if (!$userShop || ($userShop['user_id'] != $_SESSION['user_id'] && ($_SESSION['r
 // 获取操作类型
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 
-// 获取商品分类
-$categories = $category->getAllCategories();
+// 获取商品分类（树形结构）
+function getCategoryTreeForSelect($pdo) {
+    $stmt = $pdo->prepare("SELECT * FROM product_categories ORDER BY parent_id, sort_order, name");
+    $stmt->execute();
+    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $tree = [];
+    foreach ($categories as $cat) {
+        if ($cat['parent_id'] == 0) {
+            $tree[$cat['id']] = $cat;
+            $tree[$cat['id']]['children'] = [];
+        }
+    }
+    foreach ($categories as $cat) {
+        if ($cat['parent_id'] != 0 && isset($tree[$cat['parent_id']])) {
+            $tree[$cat['parent_id']]['children'][] = $cat;
+        }
+    }
+    return $tree;
+}
+$categoryTree = getCategoryTreeForSelect($pdo);
 
 $error = '';
 $success = '';
+$videoError = '';
+$videoSuccess = '';
 
 // 处理添加商品
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
@@ -107,16 +127,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
 
             // 处理视频上传或链接
             $videoUrl = '';
-            if (!$error && isset($_FILES['product_video'])) {
+            if (isset($_FILES['product_video'])) {
                 if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
                     $videoResult = uploadVideo($_FILES['product_video']);
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
+                        $videoSuccess = '视频已上传成功';
                     } else {
-                        $error = $videoResult['error'];
+                        $videoError = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $error = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                    $videoError = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
                 }
             }
             if (!$error && empty($videoUrl) && !empty($_POST['video_link'])) {
@@ -213,16 +234,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
 
             // 处理视频上传或链接
             $videoUrl = null;
-            if (!$error && isset($_FILES['product_video'])) {
+            if (isset($_FILES['product_video'])) {
                 if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
                     $videoResult = uploadVideo($_FILES['product_video']);
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
+                        $videoSuccess = '视频已更新成功';
                     } else {
-                        $error = $videoResult['error'];
+                        $videoError = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $error = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                    $videoError = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
                 }
             }
             if (!$error && $videoUrl === null && !empty($_POST['video_link'])) {
@@ -683,11 +705,15 @@ require_once '../includes/header.php';
                                                     <label for="category_id">商品分类 *</label>
                                                     <select class="form-control" id="category_id" name="category_id" required>
                                                         <option value="">请选择分类</option>
-                                                        <?php foreach ($categories as $cat): ?>
-                                                            <option value="<?= $cat['id'] ?>"
-                                                                <?= (isset($editProduct) && $editProduct['category_id'] == $cat['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $cat['id']) ? 'selected' : '' ?>>
-                                                                <?= htmlspecialchars($cat['name']) ?>
-                                                            </option>
+                                                        <?php foreach ($categoryTree as $parent): ?>
+                                                            <optgroup label="📁 <?= htmlspecialchars($parent['name']) ?>">
+                                                                <?php foreach ($parent['children'] as $child): ?>
+                                                                    <option value="<?= $child['id'] ?>"
+                                                                        <?= (isset($editProduct) && $editProduct['category_id'] == $child['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $child['id']) ? 'selected' : '' ?>>
+                                                                        &nbsp;&nbsp;<?= htmlspecialchars($child['name']) ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </optgroup>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -795,6 +821,16 @@ require_once '../includes/header.php';
                                         <!-- 商品视频 -->
                                         <div class="form-group">
                                             <h5 class="section-title"><i class="fas fa-video"></i> 商品视频</h5>
+                                            <?php if ($videoError): ?>
+                                                <div style="background:#7f1d1d;color:#fca5a5;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:13px;">
+                                                    <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($videoError) ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if ($videoSuccess): ?>
+                                                <div style="background:#14532d;color:#86efac;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:13px;">
+                                                    <i class="fas fa-check-circle"></i> <?= htmlspecialchars($videoSuccess) ?>
+                                                </div>
+                                            <?php endif; ?>
                                             <div class="video-upload-tabs">
                                                 <div class="form-group">
                                                     <label>上传视频 <small class="text-muted">(MP4/WebM/OGG, 最大50MB)</small></label>

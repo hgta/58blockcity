@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // 处理 Banner 上传
             if (isset($_FILES['shop_banner']) && $_FILES['shop_banner']['error'] === UPLOAD_ERR_OK) {
-                $bannerResult = uploadShopImage($_FILES['shop_banner'], 'banners');
+                $bannerResult = uploadShopImage($_FILES['shop_banner'], 'banners', 1200);
                 if ($bannerResult['success']) {
                     $updateData['shop_banner'] = $bannerResult['file_path'];
                 }
@@ -93,15 +93,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-function uploadShopImage($file, $subdir) {
+function uploadShopImage($file, $subdir, $maxWidth = 400) {
     $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    $maxSize = 2 * 1024 * 1024; // 2MB
+    $maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!in_array($file['type'], $allowedTypes)) {
         return ['success' => false, 'error' => '只允许上传 JPG, PNG, WEBP 格式的图片'];
     }
     if ($file['size'] > $maxSize) {
-        return ['success' => false, 'error' => '图片大小不能超过 2MB'];
+        return ['success' => false, 'error' => '图片大小不能超过 10MB'];
     }
 
     $uploadDir = "../assets/uploads/shop/{$subdir}/";
@@ -109,14 +109,47 @@ function uploadShopImage($file, $subdir) {
         mkdir($uploadDir, 0755, true);
     }
 
-    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $fileName = uniqid() . '_' . time() . '.' . $fileExtension;
+    $fileName = uniqid() . '_' . time() . '.jpg';
     $filePath = $uploadDir . $fileName;
+    $relativePath = "assets/uploads/shop/{$subdir}/" . $fileName;
 
-    if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        return ['success' => true, 'file_path' => "assets/uploads/shop/{$subdir}/" . $fileName];
+    // GD 图像处理：等比缩放
+    $src = null;
+    switch ($file['type']) {
+        case 'image/jpeg': case 'image/jpg': $src = @imagecreatefromjpeg($file['tmp_name']); break;
+        case 'image/png':  $src = @imagecreatefrompng($file['tmp_name']); break;
+        case 'image/webp': $src = @imagecreatefromwebp($file['tmp_name']); break;
     }
-    return ['success' => false, 'error' => '图片上传失败'];
+
+    if (!$src) {
+        // GD 失败则原样保存
+        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+            return ['success' => true, 'file_path' => $relativePath];
+        }
+        return ['success' => false, 'error' => '图片处理失败'];
+    }
+
+    $origW = imagesx($src);
+    $origH = imagesy($src);
+    $ratio = min($maxWidth / $origW, 1.0);
+    $newW = (int) round($origW * $ratio);
+    $newH = (int) round($origH * $ratio);
+
+    $dst = imagecreatetruecolor($newW, $newH);
+    if ($file['type'] === 'image/png') {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+    }
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+    imagedestroy($src);
+
+    $result = imagejpeg($dst, $filePath, 85);
+    imagedestroy($dst);
+
+    if ($result) {
+        return ['success' => true, 'file_path' => $relativePath];
+    }
+    return ['success' => false, 'error' => '图片保存失败'];
 }
 
 // 计算环比变化

@@ -193,8 +193,8 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
         
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
             margin-bottom: 30px;
         }
         
@@ -515,7 +515,7 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                                     
                                     <div class="product-price">
                                         <?php if ($product['price_bct'] > 0): ?>
-                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;"><?php echo number_format($product['price_bct'], 0); ?> 人气</span>
+                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;"><?php echo number_format($product['price_bct'], 0); ?> BCT</span>
                                             <?php if ($product['price_cny'] > 0): ?>
                                                 <span style="color: #999; font-size: 12px; margin-left: 5px;">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
                                             <?php endif; ?>
