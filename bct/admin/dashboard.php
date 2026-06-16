@@ -19,7 +19,7 @@ $totalBalance = $pdo->query("SELECT COALESCE(SUM(balance),0) FROM user_bct_accou
 $recentTx = $pdo->query("
     SELECT t.*, u.username, u.city as user_city
     FROM bct_transactions t
-    LEFT JOIN users u ON t.user_id = u.id
+    LEFT JOIN users u ON t.from_user = u.id
     ORDER BY t.created_at DESC LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);
 
