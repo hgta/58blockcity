@@ -13,8 +13,8 @@ require_once '../../classes/City.php';
 
 checkLogin();
 
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
+// 检查管理员权限（兼容 admin 角色和 user_id=1 的超级管理员）
+if (($_SESSION['role'] ?? '') !== 'admin' && ($_SESSION['user_id'] ?? 0) != 1) {
     header('Location: ../user/dashboard.php');
     exit();
 }

@@ -3,13 +3,8 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/City.php';
 
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
+// 检查管理员权限
+checkAdmin();
 
 $city = new City($pdo);
 
@@ -36,7 +31,8 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
 }
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '城市管理'];
+require_once '../../shared/admin/admin-header.php';
 
 <style>
 /* 简洁清晰的分页样式 */
@@ -337,4 +333,4 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>

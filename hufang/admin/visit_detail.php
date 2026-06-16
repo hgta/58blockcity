@@ -5,16 +5,8 @@ require_once '../../classes/Visit.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/User.php';
 
-// 验证管理员权限
-//checkAdminLogin();
-// Check if user is logged in and is the super admin (user_id = 1)
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
+// 检查管理员权限
+checkAdmin();
 
 $visitId = $_GET['id'] ?? 0;
 $visit = new Visit($pdo);
@@ -71,7 +63,8 @@ $visitorInfo = $user->getUserById($visitInfo['visitor_id']);
 $ownerInfo = $user->getUserById($visitInfo['owner_id']);
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '访问详情'];
+require_once '../../shared/admin/admin-header.php';
 
 <div class="container admin-container">
     <div class="page-header">
@@ -266,7 +259,7 @@ $ownerInfo = $user->getUserById($visitInfo['owner_id']);
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>
 
 <style>
 .info-item {

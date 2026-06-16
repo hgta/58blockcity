@@ -5,14 +5,8 @@ require_once '../../classes/User.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/Visit.php';
 
-// 检查是否为超级管理员
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
+// 检查管理员权限
+checkAdmin();
 
 // 获取要查看的用户ID
 $targetUserId = intval($_GET['id'] ?? 0);
@@ -89,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '用户详情'];
+require_once '../../shared/admin/admin-header.php';
 
 <div class="container admin-container">
     <!-- 页面标题和面包屑导航 -->
@@ -313,4 +308,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>

@@ -3,14 +3,8 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/City.php';
 
-//checkAdminLogin();
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
+// 检查管理员权限
+checkAdmin();
 
 $city = new City($pdo);
 
@@ -36,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '添加城市'];
+require_once '../../shared/admin/admin-header.php';
 
 <div class="container-fluid">
     <div class="row">
@@ -116,4 +111,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>

@@ -10,13 +10,8 @@ require_once '../includes/auth.php';
     header('Location: ../auth/login.php');
     exit;
 } */
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
+// 检查管理员权限
+checkAdmin();
 
 $user = new User($pdo);
 //$admin = new Admin($pdo);
@@ -80,7 +75,8 @@ $statuses = ['active' => '活跃', 'suspended' => '已停用', 'banned' => '已�
 $cities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉', '南京', '其他'];
 ?>
 
-<?php include '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '编辑用户'];
+require_once '../../shared/admin/admin-header.php';
 
 <style>
 .admin-container {
@@ -461,4 +457,4 @@ $cities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆',
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>

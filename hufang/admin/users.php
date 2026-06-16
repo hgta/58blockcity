@@ -3,16 +3,8 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/User.php';
 
-// 检查是否为超级管理员
-checkLogin();
-
-$userId = $_SESSION['user_id'];
-if ($userId != 1) {
-    header('Location: ../user/dashboard.php');
-    exit();
-}
-
-// 初始化用户类
+// 检查管理员权限
+checkAdmin();
 $user = new User($pdo);
 
 // 处理搜索和分页
@@ -52,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+$admin_site_config = ['site' => 'hufang', 'page_title' => '用户管理'];
+require_once '../../shared/admin/admin-header.php';
 
 <div class="container admin-container">
     <!-- 页面标题和面包屑导航 -->
@@ -268,4 +261,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>
