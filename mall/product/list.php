@@ -22,8 +22,8 @@ $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $minPrice = isset($_GET['min_price']) ? floatval($_GET['min_price']) : 0;
 $maxPrice = isset($_GET['max_price']) ? floatval($_GET['max_price']) : 0;
 
-// 每页显示数量
-$itemsPerPage = 12;
+// 每页显示数量（6行 × 3列 = 18件）
+$itemsPerPage = 18;
 
 // 获取商品列表
 $products = $product->getProducts([
@@ -193,8 +193,8 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
         
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
             margin-bottom: 30px;
         }
         
