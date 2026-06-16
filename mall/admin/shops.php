@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
-require_once '../includes/header.php';
 
 // 检查管理员权限
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -14,6 +13,72 @@ require_once '../../classes/User.php';
 
 $shop = new Shop($pdo);
 $user = new User($pdo);
+
+// ===== POST 处理（必须在任何 HTML 输出之前） =====
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $shopId = intval($_POST['shop_id']);
+    
+    switch ($_POST['action']) {
+        case 'approve_shop':
+            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'active', updated_at = NOW() WHERE id = ?");
+            if ($updateStmt->execute([$shopId])) {
+                $_SESSION['success_message'] = '店铺已审核通过';
+            } else {
+                $_SESSION['error_message'] = '操作失败，请重试';
+            }
+            break;
+            
+        case 'suspend_shop':
+            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'suspended', updated_at = NOW() WHERE id = ?");
+            if ($updateStmt->execute([$shopId])) {
+                $_SESSION['success_message'] = '店铺已暂停';
+            } else {
+                $_SESSION['error_message'] = '操作失败，请重试';
+            }
+            break;
+            
+        case 'reject_shop':
+            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'closed', updated_at = NOW() WHERE id = ?");
+            if ($updateStmt->execute([$shopId])) {
+                $_SESSION['success_message'] = '店铺已拒绝';
+            } else {
+                $_SESSION['error_message'] = '操作失败，请重试';
+            }
+            break;
+            
+        case 'delete_shop':
+            $orderCheck = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE shop_id = ?");
+            $orderCheck->execute([$shopId]);
+            $orderCount = $orderCheck->fetchColumn();
+            
+            if ($orderCount > 0) {
+                $_SESSION['error_message'] = '该店铺有订单记录，无法删除';
+            } else {
+                $deleteStmt = $pdo->prepare("DELETE FROM shops WHERE id = ?");
+                if ($deleteStmt->execute([$shopId])) {
+                    $_SESSION['success_message'] = '店铺已删除';
+                } else {
+                    $_SESSION['error_message'] = '删除失败，请重试';
+                }
+            }
+            break;
+    }
+    
+    header("Location: shops.php?" . $_SERVER['QUERY_STRING']);
+    exit;
+}
+
+// 显示消息
+$successMessage = '';
+$errorMessage = '';
+if (isset($_SESSION['success_message'])) {
+    $successMessage = $_SESSION['success_message'];
+    unset($_SESSION['success_message']);
+}
+if (isset($_SESSION['error_message'])) {
+    $errorMessage = $_SESSION['error_message'];
+    unset($_SESSION['error_message']);
+}
 
 // 分页参数
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -47,34 +112,17 @@ $whereClause = $whereConditions ? "WHERE " . implode(" AND ", $whereConditions) 
 // 排序处理
 $orderBy = "s.created_at DESC";
 switch ($sort) {
-    case 'name_asc':
-        $orderBy = "s.shop_name ASC";
-        break;
-    case 'name_desc':
-        $orderBy = "s.shop_name DESC";
-        break;
-    case 'sales_asc':
-        $orderBy = "s.total_sales ASC";
-        break;
-    case 'sales_desc':
-        $orderBy = "s.total_sales DESC";
-        break;
-    case 'rating_asc':
-        $orderBy = "s.rating ASC";
-        break;
-    case 'rating_desc':
-        $orderBy = "s.rating DESC";
-        break;
-    case 'created_at_asc':
-        $orderBy = "s.created_at ASC";
-        break;
+    case 'name_asc':        $orderBy = "s.shop_name ASC"; break;
+    case 'name_desc':       $orderBy = "s.shop_name DESC"; break;
+    case 'sales_asc':       $orderBy = "s.total_sales ASC"; break;
+    case 'sales_desc':      $orderBy = "s.total_sales DESC"; break;
+    case 'rating_asc':      $orderBy = "s.rating ASC"; break;
+    case 'rating_desc':     $orderBy = "s.rating DESC"; break;
+    case 'created_at_asc':  $orderBy = "s.created_at ASC"; break;
     case 'created_at_desc':
-    default:
-        $orderBy = "s.created_at DESC";
-        break;
+    default:                $orderBy = "s.created_at DESC"; break;
 }
 
-// 获取店铺列表
 $stmt = $pdo->prepare("
     SELECT s.*, u.username, u.email 
     FROM shops s 
@@ -86,7 +134,6 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $shops = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 获取总数用于分页
 $countStmt = $pdo->prepare("
     SELECT COUNT(*) 
     FROM shops s 
@@ -97,73 +144,7 @@ $countStmt->execute($params);
 $totalShops = $countStmt->fetchColumn();
 $totalPages = ceil($totalShops / $perPage);
 
-// 处理店铺状态更新
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $shopId = intval($_POST['shop_id']);
-    
-    switch ($_POST['action']) {
-        case 'approve_shop':
-            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'active', updated_at = NOW() WHERE id = ?");
-            if ($updateStmt->execute([$shopId])) {
-                $_SESSION['success_message'] = '店铺已审核通过';
-            } else {
-                $_SESSION['error_message'] = '操作失败，请重试';
-            }
-            break;
-            
-        case 'suspend_shop':
-            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'suspended', updated_at = NOW() WHERE id = ?");
-            if ($updateStmt->execute([$shopId])) {
-                $_SESSION['success_message'] = '店铺已暂停';
-            } else {
-                $_SESSION['error_message'] = '操作失败，请重试';
-            }
-            break;
-            
-        case 'reject_shop':
-            $updateStmt = $pdo->prepare("UPDATE shops SET status = 'closed', updated_at = NOW() WHERE id = ?");
-            if ($updateStmt->execute([$shopId])) {
-                $_SESSION['success_message'] = '店铺已拒绝';
-            } else {
-                $_SESSION['error_message'] = '操作失败，请重试';
-            }
-            break;
-            
-        case 'delete_shop':
-            // 先检查店铺是否有订单
-            $orderCheck = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE shop_id = ?");
-            $orderCheck->execute([$shopId]);
-            $orderCount = $orderCheck->fetchColumn();
-            
-            if ($orderCount > 0) {
-                $_SESSION['error_message'] = '该店铺有订单记录，无法删除';
-            } else {
-                $deleteStmt = $pdo->prepare("DELETE FROM shops WHERE id = ?");
-                if ($deleteStmt->execute([$shopId])) {
-                    $_SESSION['success_message'] = '店铺已删除';
-                } else {
-                    $_SESSION['error_message'] = '删除失败，请重试';
-                }
-            }
-            break;
-    }
-    
-    // 重定向以避免重复提交
-    header("Location: shops.php?" . $_SERVER['QUERY_STRING']);
-    exit;
-}
-
-// 显示消息
-$successMessage = '';
-$errorMessage = '';
-if (isset($_SESSION['success_message'])) {
-    $successMessage = $_SESSION['success_message'];
-    unset($_SESSION['success_message']);
-}
-if (isset($_SESSION['error_message'])) {
-    $errorMessage = $_SESSION['error_message'];
-    unset($_SESSION['error_message']);
-}
+require_once '../includes/header.php';
 ?>
 
 <div class="container-fluid mt-4">
