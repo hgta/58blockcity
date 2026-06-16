@@ -144,373 +144,217 @@ $countStmt->execute($params);
 $totalShops = $countStmt->fetchColumn();
 $totalPages = ceil($totalShops / $perPage);
 
-require_once '../includes/header.php';
+// 店铺状态统计
+$statsStmt = $pdo->prepare("SELECT status, COUNT(*) as count FROM shops GROUP BY status");
+$statsStmt->execute();
+$statusStats = $statsStmt->fetchAll(PDO::FETCH_ASSOC);
+$totalActive = $totalPending = $totalSuspended = $totalClosed = 0;
+foreach ($statusStats as $stat) {
+    switch ($stat['status']) {
+        case 'active': $totalActive = $stat['count']; break;
+        case 'pending': $totalPending = $stat['count']; break;
+        case 'suspended': $totalSuspended = $stat['count']; break;
+        case 'closed': $totalClosed = $stat['count']; break;
+    }
+}
+
+// 统一后台框架
+$admin_site_config = ['site' => 'mall', 'page_title' => '店铺管理'];
+require_once '../../shared/admin/admin-header.php';
 ?>
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-2">
-            <!-- 管理侧边栏 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">管理后台</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="dashboard.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt"></i> 仪表板
-                    </a>
-                    <a href="shops.php" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-store"></i> 店铺管理
-                    </a>
-                    <a href="products.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-box"></i> 商品管理
-                    </a>
-                    <a href="orders.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-shopping-cart"></i> 订单管理
-                    </a>
-                    <a href="categories.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tags"></i> 分类管理
-                    </a>
-                    <a href="users.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users"></i> 用户管理
-                    </a>
-                </div>
-            </div>
-            
-            <!-- 统计信息 -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">店铺统计</h6>
-                </div>
-                <div class="card-body">
-                    <?php
-                    $statsStmt = $pdo->prepare("
-                        SELECT 
-                            status,
-                            COUNT(*) as count 
-                        FROM shops 
-                        GROUP BY status
-                    ");
-                    $statsStmt->execute();
-                    $statusStats = $statsStmt->fetchAll(PDO::FETCH_ASSOC);
-                    
-                    $totalActive = 0;
-                    $totalPending = 0;
-                    $totalSuspended = 0;
-                    $totalClosed = 0;
-                    
-                    foreach ($statusStats as $stat) {
-                        switch ($stat['status']) {
-                            case 'active':
-                                $totalActive = $stat['count'];
-                                break;
-                            case 'pending':
-                                $totalPending = $stat['count'];
-                                break;
-                            case 'suspended':
-                                $totalSuspended = $stat['count'];
-                                break;
-                            case 'closed':
-                                $totalClosed = $stat['count'];
-                                break;
-                        }
-                    }
-                    ?>
-                    <div class="small">
-                        <div class="d-flex justify-content-between">
-                            <span>营业中:</span>
-                            <span class="text-success"><?= $totalActive ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>待审核:</span>
-                            <span class="text-warning"><?= $totalPending ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>已暂停:</span>
-                            <span class="text-danger"><?= $totalSuspended ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>已关闭:</span>
-                            <span class="text-muted"><?= $totalClosed ?></span>
-                        </div>
-                        <hr class="my-2">
-                        <div class="d-flex justify-content-between font-weight-bold">
-                            <span>总计:</span>
-                            <span><?= $totalShops ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-10">
-            <!-- 页面标题和操作 -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>店铺管理</h2>
-                <div>
-                    <a href="shops-export.php" class="btn btn-outline-secondary">
-                        <i class="fas fa-download"></i> 导出数据
-                    </a>
-                </div>
-            </div>
-            
-            <!-- 消息提示 -->
-            <?php if ($successMessage): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($successMessage) ?>
-                    <button type="button" class="close" data-dismiss="alert">
-                        <span>&times;</span>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if ($errorMessage): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($errorMessage) ?>
-                    <button type="button" class="close" data-dismiss="alert">
-                        <span>&times;</span>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <!-- 搜索和筛选 -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="GET" class="row g-3">
-                        <div class="col-md-4">
-                            <input type="text" class="form-control" name="search" placeholder="搜索店铺名称、店主用户名或邮箱" 
-                                   value="<?= htmlspecialchars($search) ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <select class="form-control" name="status">
-                                <option value="all">所有状态</option>
-                                <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>待审核</option>
-                                <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>营业中</option>
-                                <option value="suspended" <?= $status === 'suspended' ? 'selected' : '' ?>>已暂停</option>
-                                <option value="closed" <?= $status === 'closed' ? 'selected' : '' ?>>已关闭</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select class="form-control" name="sort">
-                                <option value="created_at_desc" <?= $sort === 'created_at_desc' ? 'selected' : '' ?>>最新创建</option>
-                                <option value="created_at_asc" <?= $sort === 'created_at_asc' ? 'selected' : '' ?>>最早创建</option>
-                                <option value="name_asc" <?= $sort === 'name_asc' ? 'selected' : '' ?>>名称 A-Z</option>
-                                <option value="name_desc" <?= $sort === 'name_desc' ? 'selected' : '' ?>>名称 Z-A</option>
-                                <option value="sales_desc" <?= $sort === 'sales_desc' ? 'selected' : '' ?>>销量最高</option>
-                                <option value="sales_asc" <?= $sort === 'sales_asc' ? 'selected' : '' ?>>销量最低</option>
-                                <option value="rating_desc" <?= $sort === 'rating_desc' ? 'selected' : '' ?>>评分最高</option>
-                                <option value="rating_asc" <?= $sort === 'rating_asc' ? 'selected' : '' ?>>评分最低</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-search"></i> 搜索
-                            </button>
-                        </div>
-                        <div class="col-md-2">
-                            <a href="shops.php" class="btn btn-outline-secondary btn-block">
-                                <i class="fas fa-redo"></i> 重置
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- 店铺列表 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">店铺列表 (<?= $totalShops ?>)</h5>
-                </div>
-                <div class="card-body p-0">
-                    <?php if ($shops): ?>
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>店铺信息</th>
-                                        <th>店主信息</th>
-                                        <th>统计信息</th>
-                                        <th>状态</th>
-                                        <th>创建时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($shops as $shopItem): ?>
-                                        <tr>
-                                            <td><?= $shopItem['id'] ?></td>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="shop-logo mr-3">
-                                                        <?php if (!empty($shopItem['shop_logo'])): ?>
-                                                            <img src="<?= htmlspecialchars($shopItem['shop_logo']) ?>" 
-                                                                 alt="<?= htmlspecialchars($shopItem['shop_name']) ?>" 
-                                                                 class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
-                                                        <?php else: ?>
-                                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                                 style="width: 40px; height: 40px;">
-                                                                <i class="fas fa-store text-muted"></i>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div>
-                                                        <strong><?= htmlspecialchars($shopItem['shop_name']) ?></strong>
-                                                        <?php if ($shopItem['is_recommended']): ?>
-                                                            <span class="badge badge-success badge-sm ml-1">推荐</span>
-                                                        <?php endif; ?>
-                                                        <div class="text-muted small">
-                                                            <?= htmlspecialchars(mb_substr($shopItem['shop_description'] ?? '', 0, 30)) ?>...
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    <div><strong><?= htmlspecialchars($shopItem['username']) ?></strong></div>
-                                                    <div class="text-muted"><?= htmlspecialchars($shopItem['email']) ?></div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    <div>销量: <?= number_format($shopItem['total_sales']) ?></div>
-                                                    <div>评分: <?= number_format($shopItem['rating'], 1) ?></div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-<?= 
-                                                    $shopItem['status'] == 'active' ? 'success' : 
-                                                    ($shopItem['status'] == 'pending' ? 'warning' : 
-                                                    ($shopItem['status'] == 'suspended' ? 'danger' : 'secondary'))
-                                                ?>">
-                                                    <?= $shopItem['status'] == 'active' ? '营业中' : 
-                                                        ($shopItem['status'] == 'pending' ? '待审核' : 
-                                                        ($shopItem['status'] == 'suspended' ? '已暂停' : '已关闭'))
-                                                    ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    <?= date('Y-m-d', strtotime($shopItem['created_at'])) ?>
-                                                    <div class="text-muted">
-                                                        <?= date('H:i', strtotime($shopItem['created_at'])) ?>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="../shop/view.php?id=<?= $shopItem['id'] ?>" 
-                                                       class="btn btn-outline-primary" target="_blank" title="查看店铺">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    
-                                                    <?php if ($shopItem['status'] == 'pending'): ?>
-                                                        <form method="POST" class="d-inline">
-                                                            <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
-                                                            <input type="hidden" name="action" value="approve_shop">
-                                                            <button type="submit" class="btn btn-outline-success" title="审核通过">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
-                                                        <form method="POST" class="d-inline">
-                                                            <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
-                                                            <input type="hidden" name="action" value="reject_shop">
-                                                            <button type="submit" class="btn btn-outline-danger" title="拒绝申请">
-                                                                <i class="fas fa-times"></i>
-                                                            </button>
-                                                        </form>
-                                                    <?php elseif ($shopItem['status'] == 'active'): ?>
-                                                        <form method="POST" class="d-inline">
-                                                            <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
-                                                            <input type="hidden" name="action" value="suspend_shop">
-                                                            <button type="submit" class="btn btn-outline-warning" title="暂停店铺">
-                                                                <i class="fas fa-pause"></i>
-                                                            </button>
-                                                        </form>
-                                                    <?php elseif ($shopItem['status'] == 'suspended'): ?>
-                                                        <form method="POST" class="d-inline">
-                                                            <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
-                                                            <input type="hidden" name="action" value="approve_shop">
-                                                            <button type="submit" class="btn btn-outline-success" title="恢复营业">
-                                                                <i class="fas fa-play"></i>
-                                                            </button>
-                                                        </form>
-                                                    <?php endif; ?>
-                                                    
-                                                    <form method="POST" class="d-inline" onsubmit="return confirm('确定要删除这个店铺吗？此操作不可恢复！');">
-                                                        <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
-                                                        <input type="hidden" name="action" value="delete_shop">
-                                                        <button type="submit" class="btn btn-outline-danger" title="删除店铺">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <div class="text-center py-5">
-                            <i class="fas fa-store fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">暂无店铺数据</h5>
-                            <p class="text-muted">没有找到符合条件的店铺</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- 分页 -->
-                <?php if ($totalPages > 1): ?>
-                    <div class="card-footer">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center mb-0">
-                                <?php if ($page > 1): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">
-                                            <i class="fas fa-chevron-left"></i>
-                                        </a>
-                                    </li>
-                                <?php endif; ?>
-                                
-                                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                                    <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
-                                            <?= $i ?>
-                                        </a>
-                                    </li>
-                                <?php endfor; ?>
-                                
-                                <?php if ($page < $totalPages): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">
-                                            <i class="fas fa-chevron-right"></i>
-                                        </a>
-                                    </li>
-                                <?php endif; ?>
-                            </ul>
-                        </nav>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+<?php if ($successMessage): ?>
+<div class="admin-card" style="border-left:4px solid #22c55e; margin-bottom:16px;">
+    <div class="admin-card-body" style="color:#86efac;"><?= htmlspecialchars($successMessage) ?></div>
+</div>
+<?php endif; ?>
+
+<?php if ($errorMessage): ?>
+<div class="admin-card" style="border-left:4px solid #ef4444; margin-bottom:16px;">
+    <div class="admin-card-body" style="color:#fca5a5;"><?= htmlspecialchars($errorMessage) ?></div>
+</div>
+<?php endif; ?>
+
+<!-- 统计卡片 -->
+<div class="admin-stats-grid" style="margin-bottom:20px;">
+    <div class="admin-stat-card">
+        <div class="stat-icon info"><i class="fas fa-store"></i></div>
+        <div class="stat-value"><?= $totalShops ?></div>
+        <div class="stat-label">店铺总数</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-value"><?= $totalActive ?></div>
+        <div class="stat-label">营业中</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon warning"><i class="fas fa-clock"></i></div>
+        <div class="stat-value"><?= $totalPending ?></div>
+        <div class="stat-label">待审核</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon danger"><i class="fas fa-pause-circle"></i></div>
+        <div class="stat-value"><?= $totalSuspended + $totalClosed ?></div>
+        <div class="stat-label">已暂停/关闭</div>
     </div>
 </div>
 
-<style>
-.badge-sm {
-    font-size: 0.7em;
-    padding: 0.25em 0.4em;
-}
-.shop-logo img {
-    border: 1px solid #dee2e6;
-}
-.table td {
-    vertical-align: middle;
-}
-.btn-group-sm > .btn {
-    padding: 0.25rem 0.5rem;
-}
-</style>
+<!-- 搜索和筛选 -->
+<div class="admin-card" style="margin-bottom:20px;">
+    <div class="admin-card-body">
+        <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" name="search" placeholder="搜索店铺名称、店主用户名或邮箱" value="<?= htmlspecialchars($search) ?>"
+                   style="flex:1;min-width:200px;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:13px;">
+            <select name="status" style="padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:13px;">
+                <option value="all">所有状态</option>
+                <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>待审核</option>
+                <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>营业中</option>
+                <option value="suspended" <?= $status === 'suspended' ? 'selected' : '' ?>>已暂停</option>
+                <option value="closed" <?= $status === 'closed' ? 'selected' : '' ?>>已关闭</option>
+            </select>
+            <select name="sort" style="padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:13px;">
+                <option value="created_at_desc" <?= $sort === 'created_at_desc' ? 'selected' : '' ?>>最新创建</option>
+                <option value="created_at_asc" <?= $sort === 'created_at_asc' ? 'selected' : '' ?>>最早创建</option>
+                <option value="name_asc" <?= $sort === 'name_asc' ? 'selected' : '' ?>>名称 A-Z</option>
+                <option value="name_desc" <?= $sort === 'name_desc' ? 'selected' : '' ?>>名称 Z-A</option>
+                <option value="sales_desc" <?= $sort === 'sales_desc' ? 'selected' : '' ?>>销量最高</option>
+                <option value="sales_asc" <?= $sort === 'sales_asc' ? 'selected' : '' ?>>销量最低</option>
+            </select>
+            <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm"><i class="fas fa-search"></i> 搜索</button>
+            <a href="shops.php" class="admin-btn admin-btn-secondary admin-btn-sm"><i class="fas fa-redo"></i> 重置</a>
+        </form>
+    </div>
+</div>
 
-<?php require_once '../includes/footer.php'; ?>
+<!-- 店铺列表 -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <span class="admin-card-title">店铺列表 (<?= $totalShops ?>)</span>
+    </div>
+    <div class="admin-card-body" style="padding:0;">
+        <?php if ($shops): ?>
+            <table class="admin-data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>店铺信息</th>
+                        <th>店主</th>
+                        <th>销量/评分</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($shops as $shopItem): ?>
+                    <tr>
+                        <td><?= $shopItem['id'] ?></td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <?php if (!empty($shopItem['shop_logo'])): ?>
+                                    <img src="<?= htmlspecialchars($shopItem['shop_logo']) ?>" style="width:36px;height:36px;border-radius:6px;object-fit:cover;">
+                                <?php else: ?>
+                                    <div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div>
+                                    <strong style="color:#f1f5f9;"><?= htmlspecialchars($shopItem['shop_name']) ?></strong>
+                                    <?php if ($shopItem['is_recommended']): ?>
+                                        <span class="admin-badge success">推荐</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="color:#e2e8f0;"><?= htmlspecialchars($shopItem['username']) ?></div>
+                            <div style="font-size:12px;color:#64748b;"><?= htmlspecialchars($shopItem['email']) ?></div>
+                        </td>
+                        <td>
+                            <div>销量: <?= number_format($shopItem['total_sales']) ?></div>
+                            <div style="font-size:12px;color:#64748b;">评分: <?= number_format($shopItem['rating'], 1) ?></div>
+                        </td>
+                        <td>
+                            <span class="admin-badge <?= 
+                                $shopItem['status'] == 'active' ? 'success' : 
+                                ($shopItem['status'] == 'pending' ? 'warning' : 
+                                ($shopItem['status'] == 'suspended' ? 'danger' : 'default'))
+                            ?>">
+                                <?= $shopItem['status'] == 'active' ? '营业中' : 
+                                    ($shopItem['status'] == 'pending' ? '待审核' : 
+                                    ($shopItem['status'] == 'suspended' ? '已暂停' : '已关闭'))
+                                ?>
+                            </span>
+                        </td>
+                        <td style="color:#94a3b8;"><?= date('Y-m-d H:i', strtotime($shopItem['created_at'])) ?></td>
+                        <td>
+                            <div style="display:flex;gap:4px;">
+                                <a href="../shop/view.php?id=<?= $shopItem['id'] ?>" target="_blank" class="admin-btn admin-btn-sm admin-btn-secondary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <?php if ($shopItem['status'] == 'pending'): ?>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
+                                        <input type="hidden" name="action" value="approve_shop">
+                                        <button type="submit" class="admin-btn admin-btn-sm" style="background:#14532d;color:#86efac;border:none;">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
+                                        <input type="hidden" name="action" value="reject_shop">
+                                        <button type="submit" class="admin-btn admin-btn-sm" style="background:#7f1d1d;color:#fca5a5;border:none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                <?php elseif ($shopItem['status'] == 'active'): ?>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
+                                        <input type="hidden" name="action" value="suspend_shop">
+                                        <button type="submit" class="admin-btn admin-btn-sm admin-btn-secondary">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                    </form>
+                                <?php elseif ($shopItem['status'] == 'suspended'): ?>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
+                                        <input type="hidden" name="action" value="approve_shop">
+                                        <button type="submit" class="admin-btn admin-btn-sm" style="background:#14532d;color:#86efac;border:none;">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('确定要删除吗？此操作不可恢复！');">
+                                    <input type="hidden" name="shop_id" value="<?= $shopItem['id'] ?>">
+                                    <input type="hidden" name="action" value="delete_shop">
+                                    <button type="submit" class="admin-btn admin-btn-sm" style="background:#7f1d1d;color:#fca5a5;border:none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div class="admin-empty-state">
+                <i class="fas fa-store"></i>
+                <h4>暂无店铺数据</h4>
+                <p>没有找到符合条件的店铺</p>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($totalPages > 1): ?>
+    <div style="padding:16px 20px;display:flex;justify-content:center;gap:6px;border-top:1px solid #1e293b;">
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+               class="admin-btn admin-btn-sm <?= $i == $page ? 'admin-btn-primary' : 'admin-btn-secondary' ?>" 
+               style="min-width:36px;justify-content:center;"><?= $i ?></a>
+        <?php endfor; ?>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php require_once '../../shared/admin/admin-footer.php'; ?>
