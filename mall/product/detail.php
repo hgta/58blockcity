@@ -99,6 +99,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
     }
 }
 
+// 处理评价提交
+$reviewError = '';
+$reviewSuccess = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: ../auth/login.php?redirect=" . urlencode($_SERVER['REQUEST_URI']));
+        exit();
+    }
+    $rating = intval($_POST['rating'] ?? 0);
+    $content = trim($_POST['content'] ?? '');
+    $isAnonymous = isset($_POST['is_anonymous']) ? 1 : 0;
+    $reviewImages = [];
+
+    // 处理图片上传
+    if (isset($_FILES['review_images']) && !empty($_FILES['review_images']['name'][0])) {
+        foreach ($_FILES['review_images']['tmp_name'] as $i => $tmp) {
+            if ($_FILES['review_images']['error'][$i] !== UPLOAD_ERR_OK) continue;
+            $ext = pathinfo($_FILES['review_images']['name'][$i], PATHINFO_EXTENSION);
+            $name = uniqid() . '_' . time() . '.' . $ext;
+            $dir = __DIR__ . '/../../assets/uploads/reviews/';
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $path = $dir . $name;
+            if (move_uploaded_file($tmp, $path)) {
+                $reviewImages[] = 'assets/uploads/reviews/' . $name;
+            }
+        }
+    }
+
+    if ($rating < 1 || $rating > 5) {
+        $reviewError = '请选择评分';
+    } elseif (empty($content)) {
+        $reviewError = '请输入评价内容';
+    } else {
+        try {
+            $review->createProductReview([
+                'user_id' => $_SESSION['user_id'],
+                'product_id' => $productId,
+                'shop_id' => $productDetail['shop_id'],
+                'rating' => $rating,
+                'content' => $content,
+                'images' => $reviewImages,
+                'is_anonymous' => $isAnonymous,
+            ]);
+            $reviewSuccess = '评价发布成功！';
+            // 刷新评价数据
+            $reviews = $review->getProductReviews($productId, 1, 10);
+            $reviewCount = $review->getProductReviewCount($productId);
+            $reviewStats = $review->getProductReviewStats($productId);
+        } catch (Exception $e) {
+            $reviewError = $e->getMessage();
+        }
+    }
+}
+
 // 获取购物车数量（用于显示）
 $cartCount = 0;
 if (isset($_SESSION['user_id'])) {
@@ -857,10 +911,64 @@ if (isset($_SESSION['user_id'])) {
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div style="text-align:center;padding:40px;color:#999;">
+                <div style="text-align:center;padding:30px;color:#999;">
                     <i class="fas fa-comment-slash" style="font-size:32px;margin-bottom:10px;opacity:0.5;"></i>
-                    <div>暂无评价，购买后快来评价吧~</div>
+                    <div>暂无评价，快来发表第一条评价吧~</div>
                 </div>
+            <?php endif; ?>
+
+            <!-- 评价表单 -->
+            <?php if (!empty($reviewError)): ?>
+                <div style="background:#fef2f2;color:#dc2626;padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;">
+                    <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($reviewError) ?>
+                </div>
+            <?php endif; ?>
+            <?php if (!empty($reviewSuccess)): ?>
+                <div style="background:#f0fdf4;color:#16a34a;padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;">
+                    <i class="fas fa-check-circle"></i> <?= htmlspecialchars($reviewSuccess) ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['user_id'])): ?>
+            <div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:10px;">
+                <h4 style="font-size:15px;margin-bottom:12px;color:#333;">发表评价</h4>
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="submit_review" value="1">
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:13px;color:#666;">评分</label>
+                        <div id="star-rating" style="display:flex;gap:4px;font-size:24px;cursor:pointer;">
+                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                <span data-star="<?= $i ?>" style="color:#ddd;" onclick="setRating(<?= $i ?>)">★</span>
+                            <?php endfor; ?>
+                        </div>
+                        <input type="hidden" name="rating" id="rating-input" value="0">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <textarea name="content" rows="3" placeholder="分享您的使用体验..." required
+                                  style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                        <label style="font-size:13px;cursor:pointer;color:#3498db;">
+                            <i class="fas fa-image"></i> 上传图片
+                            <input type="file" name="review_images[]" accept="image/*" multiple style="display:none;" onchange="previewReviewImages(this)">
+                        </label>
+                        <label style="font-size:13px;cursor:pointer;color:#666;">
+                            <input type="checkbox" name="is_anonymous" value="1" style="margin-right:4px;">匿名评价
+                        </label>
+                    </div>
+                    <div id="review-image-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+                    <button type="submit" style="padding:8px 24px;background:#ff6b00;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;">
+                        <i class="fas fa-paper-plane"></i> 提交评价
+                    </button>
+                </form>
+            </div>
+            <?php else: ?>
+            <div style="margin-top:20px;padding:20px;background:#f8fafc;border-radius:10px;text-align:center;">
+                <p style="color:#666;margin-bottom:10px;">登录后即可评价</p>
+                <a href="../auth/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" style="display:inline-block;padding:8px 24px;background:#ff6b00;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;">登录</a>
+                <span style="color:#999;margin:0 8px;">或</span>
+                <a href="../auth/register.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" style="display:inline-block;padding:8px 24px;background:#3498db;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;">注册</a>
+            </div>
             <?php endif; ?>
         </div>
 
@@ -985,6 +1093,31 @@ if (isset($_SESSION['user_id'])) {
         }
     </script>
     
+    <script>
+    // 星级评分
+    function setRating(star) {
+        document.getElementById('rating-input').value = star;
+        document.querySelectorAll('#star-rating span').forEach(function(s, i) {
+            s.style.color = i < star ? '#f59e0b' : '#ddd';
+        });
+    }
+    // 评价图片预览
+    function previewReviewImages(input) {
+        var container = document.getElementById('review-image-preview');
+        container.innerHTML = '';
+        Array.from(input.files).forEach(function(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;';
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    </script>
+
     <?php include '../includes/footer.php'; ?>
 </body>
 </html> 

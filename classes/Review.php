@@ -158,6 +158,77 @@ class Review {
     }
     
     /**
+     * 检查用户是否购买过该商品
+     */
+    public function hasPurchased($userId, $productId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM order_items oi
+                INNER JOIN orders o ON oi.order_id = o.id
+                WHERE oi.product_id = ? AND o.user_id = ? AND o.status = 'completed'
+            ");
+            $stmt->execute([$productId, $userId]);
+            return $stmt->fetchColumn() > 0;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * 统计用户对某商品的非购买评价数（order_id IS NULL 的评价）
+     */
+    public function countUserProductReviews($userId, $productId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM reviews 
+                WHERE user_id = ? AND product_id = ? AND order_id IS NULL
+            ");
+            $stmt->execute([$userId, $productId]);
+            return (int)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 创建非购买评价（商品详情页直接评价）
+     * 未购买用户最多3条，已购买用户无限制
+     */
+    public function createProductReview($data) {
+        $userId = $data['user_id'];
+        $productId = $data['product_id'];
+
+        // 未购买的用户最多3条非购买评价
+        if (!$this->hasPurchased($userId, $productId)) {
+            $count = $this->countUserProductReviews($userId, $productId);
+            if ($count >= 3) {
+                throw new Exception("您对该商品的评价已达上限（3条），购买后可无限评价");
+            }
+        }
+
+        $sql = "INSERT INTO reviews 
+                (order_id, order_item_id, product_id, user_id, shop_id, rating, content, images, is_anonymous, created_at)
+                VALUES (NULL, NULL, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            $productId,
+            $userId,
+            $data['shop_id'],
+            $data['rating'],
+            $data['content'] ?? '',
+            !empty($data['images']) ? json_encode($data['images']) : null,
+            $data['is_anonymous'] ?? 0
+        ]);
+
+        $reviewId = $this->pdo->lastInsertId();
+        $this->updateProductRating($productId);
+        $this->updateShopRating($data['shop_id']);
+
+        return $reviewId;
+    }
+
+    /**
      * 检查用户是否已评价某订单项
      */
     public function hasReviewed($orderItemId, $userId) {

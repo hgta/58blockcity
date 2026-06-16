@@ -1,0 +1,3 @@
+- [x] Review::hasPurchased() + countUserProductReviews()
+- [x] Review::createProductReview()
+- [x] detail.php 评价表单 + POST 处理 + 登录引导
