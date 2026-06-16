@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
     exit;
 }
 
-require_once '../classes/Category.php';
+require_once '../../classes/Category.php';
 
 $category = new Category($pdo);
 
