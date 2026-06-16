@@ -15,19 +15,29 @@ $shop = new Shop($pdo);
 $product = new Product($pdo);
 $category = new Category($pdo);
 
-// 获取用户店铺信息
-$userShop = $shop->getShopByUserId($_SESSION['user_id']);
-if (!$userShop) {
-    header('Location: create.php');
-    exit;
+// 获取店铺ID
+$shopId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// 如果没有传ID，取用户最新店铺
+if (!$shopId) {
+    $userShop = $shop->getShopByUserId($_SESSION['user_id']);
+    if (!$userShop) {
+        header('Location: create.php');
+        exit;
+    }
+    $shopId = $userShop['id'];
 }
 
-// 获取店铺ID
-$shopId = isset($_GET['id']) ? intval($_GET['id']) : $userShop['id'];
-
-// 验证用户是否有权限管理该店铺
-if ($userShop['id'] != $shopId) {
-    header('Location: products.php?id=' . $userShop['id']);
+// 加载目标店铺并验证权限
+$userShop = $shop->getShopById($shopId);
+if (!$userShop || ($userShop['user_id'] != $_SESSION['user_id'] && ($_SESSION['role'] ?? '') !== 'admin')) {
+    // 用户无权访问该店铺，跳转到自己的店铺
+    $myShop = $shop->getShopByUserId($_SESSION['user_id']);
+    if ($myShop) {
+        header('Location: products.php?id=' . $myShop['id']);
+    } else {
+        header('Location: create.php');
+    }
     exit;
 }
 

@@ -13,17 +13,19 @@ if (!isset($_SESSION['user_id'])) {
 $shop = new Shop($pdo);
 $order = new Order($pdo);
 
-// 获取用户店铺信息
-$userShop = $shop->getShopByUserId($_SESSION['user_id']);
-if (!$userShop) {
-    header('Location: create.php');
-    exit;
+// 获取店铺ID
+$shopId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if (!$shopId) {
+    $userShop = $shop->getShopByUserId($_SESSION['user_id']);
+    if (!$userShop) { header('Location: create.php'); exit; }
+    $shopId = $userShop['id'];
 }
 
-$shopId = isset($_GET['id']) ? intval($_GET['id']) : $userShop['id'];
-if ($userShop['id'] != $shopId) {
-    header('Location: orders.php?id=' . $userShop['id']);
-    exit;
+$userShop = $shop->getShopById($shopId);
+if (!$userShop || ($userShop['user_id'] != $_SESSION['user_id'] && ($_SESSION['role'] ?? '') !== 'admin')) {
+    $myShop = $shop->getShopByUserId($_SESSION['user_id']);
+    if ($myShop) { header('Location: orders.php?id=' . $myShop['id']); exit; }
+    header('Location: create.php'); exit;
 }
 
 $error = '';
