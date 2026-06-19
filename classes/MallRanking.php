@@ -52,8 +52,8 @@ class MallRanking {
         ];
         $orderBy = $orderMap[$type] ?? $orderMap['sales'];
 
-        $sql = "SELECT s.id, s.shop_name, s.shop_logo, s.description,
-                       s.rating, s.review_count, s.total_sales, s.product_count,
+        $sql = "SELECT s.id, s.shop_name, s.shop_logo, s.shop_description,
+                       s.rating, s.review_count, s.total_sales,
                        s.created_at,
                        (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status = 'active') as active_products
                 FROM shops s

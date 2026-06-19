@@ -165,7 +165,7 @@ a{text-decoration:none;color:inherit}
                         <img class="shop-logo" src="../<?= htmlspecialchars($s['shop_logo']?:'assets/images/default-shop.jpg') ?>" alt="" onerror="this.src='../assets/images/default-shop.jpg'">
                         <div class="shop-info">
                             <div class="rank-name"><a href="../shop/view.php?id=<?= $s['id'] ?>"><?= htmlspecialchars($s['shop_name']) ?></a></div>
-                            <div class="shop-desc"><?= htmlspecialchars(mb_substr($s['description']?:'这家店铺还没有描述...',0,40)) ?></div>
+                            <div class="shop-desc"><?= htmlspecialchars(mb_substr($s['shop_description']?:'这家店铺还没有描述...',0,40)) ?></div>
                             <div class="rank-meta">
                                 <span><i class="fas fa-box"></i> <?= $s['active_products']??0 ?> 件商品</span>
                                 <span><i class="fas fa-calendar"></i> <?= date('Y-m-d',strtotime($s['created_at'])) ?> 开店</span>
