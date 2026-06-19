@@ -1688,21 +1688,6 @@ function captureVideoFrame() {
         thumbPreview.innerHTML = '<span style="color:#fca5a5;">截取失败，请手动上传主图</span>';
     }
 }
-            mainArea.innerHTML = `
-                <div class="upload-preview active">
-                    <img src="${dataUrl}" alt="视频封面" style="width:100%;height:200px;object-fit:cover;">
-                    <button type="button" class="btn-remove-img" onclick="document.getElementById('main_image').click()">
-                        <i class="fas fa-sync-alt"></i> 更换
-                    </button>
-                </div>
-            `;
-        }
-
-        thumbPreview.innerHTML = '<img src="' + dataUrl + '" style="max-width:100%;max-height:120px;border-radius:6px;" alt="封面预览"><br><span style="color:#86efac;font-size:12px;"><i class="fas fa-check-circle"></i> 封面已截取</span>';
-    } catch (e) {
-        thumbPreview.innerHTML = '<span style="color:#fca5a5;">截取失败，请手动上传主图</span>';
-    }
-}
 
 function resetVideoUpload() {
     if (!videoInput) return;
