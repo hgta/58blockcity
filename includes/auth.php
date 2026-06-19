@@ -5,11 +5,16 @@
 
 // 启动会话并进行合理配置
 if (session_status() === PHP_SESSION_NONE) {
+    // 提取主域名，让 cookie 跨子站共享（如 .58.tl）
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $parts = explode('.', $host);
+    $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
+
     // 设置会话参数
     session_set_cookie_params([
         'lifetime' => 86400 * 30, // 30天
         'path' => '/',
-        'domain' => $_SERVER['HTTP_HOST'],
+        'domain' => $cookieDomain,
         'secure' => isset($_SERVER['HTTPS']), // 仅在HTTPS下传输
         'httponly' => true, // 防止JavaScript访问
         'samesite' => 'Lax' // CSRF防护
@@ -20,8 +25,8 @@ if (session_status() === PHP_SESSION_NONE) {
     // 防止会话固定攻击
     if (empty($_SESSION['created'])) {
         $_SESSION['created'] = time();
-    } else if (time() - $_SESSION['created'] > 1800) {
-        // 每30分钟重新生成会话ID
+    } else if (time() - $_SESSION['created'] > 86400) {
+        // 每24小时重新生成会话ID（原30分钟太频繁）
         session_regenerate_id(true);
         $_SESSION['created'] = time();
     }
@@ -82,8 +87,11 @@ function attemptAutoLogin($token) {
             ");
             $stmt->execute([':token' => $token]);
             
-            // 更新cookie
-            setcookie('remember_me', $token, time() + 86400 * 30, '/', '', isset($_SERVER['HTTPS']), true);
+            // 更新cookie（domain 设为主域名，跨子站共享）
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $parts = explode('.', $host);
+            $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
+            setcookie('remember_me', $token, time() + 86400 * 30, '/', $cookieDomain, isset($_SERVER['HTTPS']), true);
             
             return true;
         }
@@ -98,10 +106,13 @@ function attemptAutoLogin($token) {
 
 /**
  * 检查会话是否过期
+ * 注意：即使 session 过期，如果用户有 remember_me cookie，
+ * isLoggedIn() 会自动登录，不会真正丢失登录状态。
+ * 这里只做 session 的空闲超时（7天），不再调用 logout() 清除 remember_me
  * @return bool 是否过期
  */
 function isSessionExpired() {
-    $maxIdleTime = 3600; // 1小时无操作过期
+    $maxIdleTime = 86400 * 7; // 7天无操作 session 过期（有 remember_me 会自动恢复）
     
     if (isset($_SESSION['last_activity']) && 
         (time() - $_SESSION['last_activity']) > $maxIdleTime) {
@@ -115,13 +126,12 @@ function isSessionExpired() {
  * 检查用户是否已登录，如果未登录则重定向
  */
 function checkLogin() {
-    // 检查会话是否过期
+    // 如果 session 过期，清除 session 数据但不清除 remember_me cookie
     if (isSessionExpired()) {
-        logout();
-        $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
-        setFlashMessage('warning', '会话已过期，请重新登录');
-        header('Location: ../auth/login.php');
-        exit;
+        $_SESSION = [];
+        session_destroy();
+        session_start();
+        // 不调用 logout()，保留 remember_me cookie 让 isLoggedIn() 自动登录
     }
     
     if (!isLoggedIn()) {
@@ -162,8 +172,11 @@ function createRememberMeToken($userId) {
             ':expires_at' => $expires
         ]);
         
-        // 设置cookie
-        setcookie('remember_me', $token, time() + 86400 * 30, '/', '', isset($_SERVER['HTTPS']), true);
+        // 设置cookie（domain 设为主域名，跨子站共享）
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $parts = explode('.', $host);
+        $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
+        setcookie('remember_me', $token, time() + 86400 * 30, '/', $cookieDomain, isset($_SERVER['HTTPS']), true);
         
     } catch (PDOException $e) {
         error_log("创建记住我令牌错误: " . $e->getMessage());
