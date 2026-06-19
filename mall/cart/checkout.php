@@ -40,11 +40,15 @@ $selectedItemIds = array_map('intval', $selectedItemIds);
 // 获取购物车商品
 $allCartItems = $cart->getCartItems($userId);
 
-// 过滤出选中的商品
+// 过滤出选中的商品（无选中时默认全部，适用于立即购买场景）
 $cartItems = [];
-foreach ($allCartItems as $item) {
-    if (in_array($item['id'], $selectedItemIds)) {
-        $cartItems[] = $item;
+if (empty($selectedItemIds)) {
+    $cartItems = $allCartItems;
+} else {
+    foreach ($allCartItems as $item) {
+        if (in_array($item['id'], $selectedItemIds)) {
+            $cartItems[] = $item;
+        }
     }
 }
 

@@ -46,6 +46,12 @@ if ($productInfo['stock'] < $quantity) {
 }
 
 try {
+    // 立即购买模式：先清空购物车再加入当前商品
+    $clearFirst = isset($_POST['clear_first']) && $_POST['clear_first'] == '1';
+    if ($clearFirst) {
+        $cart->clearCart($userId);
+    }
+
     $result = $cart->addItem($userId, $productId, $quantity);
     if ($result) {
         $cartStats = $cart->getCartStats($userId);

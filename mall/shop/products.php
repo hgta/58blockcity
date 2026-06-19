@@ -149,8 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                 $videoUrl = trim($_POST['video_link']);
             }
 
-            // 如果没有主图但有视频，使用 AJAX 上传的截帧路径或 base64 解码
-            if (!$error && empty($mainImage) && !empty($videoUrl)) {
+            // 如果没有主图，使用 AJAX 上传的截帧路径或 base64 解码（与视频URL独立）
+            if (!$error && empty($mainImage)) {
                 // 优先使用 AJAX 上传的路径
                 if (!empty($_POST['video_thumb_path'])) {
                     $mainImage = $_POST['video_thumb_path'];
@@ -286,8 +286,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 $videoUrl = null;
             }
 
-            // 如果有新视频但没新主图，使用 AJAX 上传的截帧路径或 base64 解码
-            if (!$error && empty($mainImage) && !empty($videoUrl)) {
+            // 如果没新主图，使用 AJAX 上传的截帧路径或 base64 解码（与视频URL独立）
+            if (!$error && empty($mainImage)) {
                 if (!empty($_POST['video_thumb_path'])) {
                     $mainImage = $_POST['video_thumb_path'];
                     $thumbImage = $_POST['video_thumb_thumb'] ?? '';

@@ -63,13 +63,14 @@ class Cart {
             
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // 检查商品状态，自动移除无效商品
+            // 检查商品状态，标记缺货但不自动移除
             $validItems = [];
             foreach ($items as $item) {
-                if ($item['status'] == 'active' && $item['stock'] > 0) {
+                if ($item['status'] == 'active') {
+                    $item['out_of_stock'] = ($item['stock'] <= 0);
                     $validItems[] = $item;
                 } else {
-                    // 自动移除无效商品
+                    // 仅移除已下架的商品
                     $this->removeItem($item['id'], $userId);
                 }
             }
@@ -366,13 +367,14 @@ class Cart {
             
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // 检查商品状态，自动移除无效商品
+            // 检查商品状态，标记缺货但不自动移除
             $validItems = [];
             foreach ($items as $item) {
-                if ($item['status'] == 'active' && $item['stock'] > 0) {
+                if ($item['status'] == 'active') {
+                    $item['out_of_stock'] = ($item['stock'] <= 0);
                     $validItems[] = $item;
                 } else {
-                    // 自动移除无效商品
+                    // 仅移除已下架的商品
                     $this->removeItem($item['id'], $userId);
                 }
             }
