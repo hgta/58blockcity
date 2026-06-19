@@ -179,6 +179,30 @@ if (isset($_SESSION['user_id'])) {
             margin: 0 auto;
             padding: 20px;
         }
+
+        /* 商品标题 */
+        .product-title {
+            font-size: 20px !important;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 销量浏览横排 */
+        .product-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #999;
+        }
+        .product-meta > div { display: flex; align-items: center; gap: 4px; }
+        .product-meta i { font-size: 12px; }
         
         .breadcrumb {
             margin-bottom: 20px;
@@ -204,31 +228,34 @@ if (isset($_SESSION['user_id'])) {
         
         /* 价格区域样式 */
         .product-price {
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            margin-bottom: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #fff8f0, #fff);
+            border-radius: 10px;
+            border: 1px solid #ffe8d0;
         }
-        
+
         .bct-price {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: #e74c3c;
-            margin-bottom: 10px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
         }
-        
+
         .reference-price {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 10px;
+            font-size: 13px;
+            color: #999;
+            font-weight: normal;
         }
-        
+
         .price-info {
             font-size: 14px;
             color: #666;
             line-height: 1.5;
         }
-        
+
         .payment-notice {
             background: #fff3cd;
             padding: 8px 12px;
@@ -400,34 +427,44 @@ if (isset($_SESSION['user_id'])) {
             display: flex;
             align-items: center;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
         }
-        
+
         .quantity-btn {
-            width: 40px;
-            height: 40px;
-            border: none;
+            width: 36px;
+            height: 36px;
+            border: none !important;
             background: #f8f9fa;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            flex: none !important;
         }
-        
+
         .quantity-btn:hover {
             background: #e9ecef;
         }
-        
+
         .quantity-input {
-            width: 60px;
-            height: 40px;
+            width: 50px;
+            height: 36px;
             border: none;
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
             border-left: 1px solid #ddd;
             border-right: 1px solid #ddd;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
         
         .action-buttons {
@@ -672,60 +709,54 @@ if (isset($_SESSION['user_id'])) {
             <!-- 商品信息区域 -->
             <div class="product-info">
                 <h1 class="product-title"><?php echo htmlspecialchars($productDetail['name']); ?></h1>
-                
+
                 <div class="product-meta">
-                    <div class="product-sales">
-                        <i class="fas fa-chart-line"></i> 销量: <?php echo number_format($productDetail['sold_count']); ?>
-                    </div>
-                    <div class="product-views">
-                        <i class="fas fa-eye"></i> 浏览: <?php echo number_format($productDetail['view_count']); ?>
-                    </div>
+                    <div><i class="fas fa-chart-line"></i> 销量: <?php echo number_format($productDetail['sold_count']); ?></div>
+                    <div><i class="fas fa-eye"></i> 浏览: <?php echo number_format($productDetail['view_count']); ?></div>
                 </div>
-                
-                <!-- 修正价格显示 -->
+
+                <!-- 价格 + 支付信息合并卡片 -->
                 <div class="product-price">
                     <?php if ($productDetail['price_bct'] > 0): ?>
-                        <!-- 人气值支付商品 -->
                         <div class="bct-price">
                             <span class="bct-symbol">Ⓟ</span><?php echo number_format($productDetail['price_bct'], 0); ?> 人气值
+                            <?php if ($productDetail['price_cny']): ?>
+                                <span class="reference-price">参考 ¥<?php echo number_format($productDetail['price_cny'], 2); ?></span>
+                            <?php endif; ?>
                         </div>
-                        
-                        <?php if ($productDetail['price_cny']): ?>
-                            <div class="reference-price">
-                                参考人民币价格: ¥<?php echo number_format($productDetail['price_cny'], 2); ?>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <div class="price-info">
-                            <strong>支付方式: 人气值支付</strong>
+                        <div style="margin-top:10px;font-size:13px;color:#666;">
+                            <i class="fas fa-coins" style="color:#ff6b00;"></i> 人气值支付
+                            <?php if (!empty($paymentCities)): ?>
+                                · 支持城市:
+                                <?php foreach ($paymentCities as $pc):
+                                    $cityName = $supportedCitiesMap[$pc['city']]['name'] ?? $pc['city'];
+                                ?>
+                                    <span class="city-tag" title="<?php echo htmlspecialchars($cityName); ?> · <?php echo htmlspecialchars($pc['block_zone'] ?: '?'); ?>区 #<?php echo htmlspecialchars($pc['block_number'] ?: '未设置'); ?>">
+                                        <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($cityName); ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
-                        
-                        <div class="payment-notice">
-                            <i class="fas fa-info-circle"></i>
-                            此商品使用人气值支付，不同城市的人气值汇率可能不同
-                        </div>
-                        
                     <?php else: ?>
-                        <!-- 人民币支付商品 -->
                         <div class="bct-price" style="color: #27ae60;">
                             ¥<?php echo number_format($productDetail['price_cny'], 2); ?>
                         </div>
-                        <div class="price-info">
-                            <strong>支付方式: 人民币支付</strong>
+                        <div style="margin-top:8px;font-size:13px;color:#666;">
+                            <i class="fas fa-yen-sign" style="color:#27ae60;"></i> 人民币支付
                         </div>
                     <?php endif; ?>
                 </div>
-                
-                <div class="product-stock">
-                    <div class="stock-label">库存</div>
-                    <div class="stock-count"><?php echo number_format($productDetail['stock']); ?> 件</div>
-                    <?php if ($productDetail['stock'] < 10 && $productDetail['stock'] > 0): ?>
-                        <div class="stock-warning">库存紧张，欲购从速</div>
+
+                <!-- 库存（紧凑一行） -->
+                <div style="margin-bottom:16px;font-size:14px;color:#666;">
+                    库存: <strong style="color:<?php echo $productDetail['stock'] > 0 ? '#27ae60' : '#e74c3c'; ?>;"><?php echo number_format($productDetail['stock']); ?> 件</strong>
+                    <?php if ($productDetail['stock'] > 0 && $productDetail['stock'] < 10): ?>
+                        <span style="color:#e74c3c;font-size:12px;margin-left:8px;">⚠ 库存紧张</span>
                     <?php elseif ($productDetail['stock'] == 0): ?>
-                        <div class="stock-warning">暂时缺货</div>
+                        <span style="color:#e74c3c;font-size:12px;margin-left:8px;">暂时缺货</span>
                     <?php endif; ?>
                 </div>
-                
+
                 <!-- 购买选项 -->
                 <form method="POST" action="" class="purchase-options">
                     <div class="quantity-selector">
@@ -736,8 +767,8 @@ if (isset($_SESSION['user_id'])) {
                                    class="quantity-input" id="quantity-input">
                             <button type="button" class="quantity-btn" onclick="increaseQuantity()">+</button>
                         </div>
-                        <div style="color: #666; font-size: 14px;">
-                            最多可购买 <?php echo number_format($productDetail['stock']); ?> 件
+                        <div style="color: #999; font-size: 13px;">
+                            最多 <?php echo number_format($productDetail['stock']); ?> 件
                         </div>
                     </div>
 
@@ -750,30 +781,6 @@ if (isset($_SESSION['user_id'])) {
                         </button>
                     </div>
                 </form>
-
-                <!-- 支持城市支付 -->
-                <div class="info-card">
-                    <div class="info-card-title"><i class="fas fa-map-marker-alt"></i> 支持城市支付</div>
-                    <?php if (!empty($paymentCities)): ?>
-                        <div>
-                            <?php foreach ($paymentCities as $pc):
-                                $cityName = $supportedCitiesMap[$pc['city']]['name'] ?? $pc['city'];
-                            ?>
-                                <span class="city-tag" title="<?php echo htmlspecialchars($cityName); ?> · <?php echo htmlspecialchars($pc['block_zone'] ?: '?'); ?>区 #<?php echo htmlspecialchars($pc['block_number'] ?: '未设置'); ?>">
-                                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($cityName); ?>
-                                    <?php if (!empty($pc['block_zone']) && !empty($pc['block_number'])): ?>
-                                        <small style="opacity:0.8;">(<?php echo htmlspecialchars($pc['block_zone']); ?>#<?php echo htmlspecialchars($pc['block_number']); ?>)</small>
-                                    <?php endif; ?>
-                                </span>
-                            <?php endforeach; ?>
-                        </div>
-                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">
-                            以上城市的人气值可用于购买此商品，不同城市汇率可能不同
-                        </div>
-                    <?php else: ?>
-                        <div style="font-size:13px;color:#64748b;">该商品暂不支持特定城市人气值支付</div>
-                    <?php endif; ?>
-                </div>
 
                 <!-- 店铺信息（右侧精简版） -->
                 <?php if ($shopInfo): ?>
