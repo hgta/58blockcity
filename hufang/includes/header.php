@@ -13,4 +13,6 @@ $site_config['nav_links']   = [
     ['url'=>'../circles/create.php','icon'=>'plus-circle','text'=>'创建互访圈'],
     ['url'=>'../rankings/index.php','icon'=>'trophy','text'=>'排行榜'],
 ];
+// 加载 hufang 专用样式（覆盖根 main.css 中的冲突定义）
+$site_config['extra_head'] = '<link rel="stylesheet" href="/assets/css/main.css">';
 require_once __DIR__ . '/../../shared/header.php';

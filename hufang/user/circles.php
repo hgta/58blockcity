@@ -158,29 +158,27 @@ $(document).ready(function() {
     }
 
     // 海报生成功能
-    document.getElementById('generatePoster').addEventListener('click', function() {
-        // 显示加载状态
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
-        
-        // 获取用户ID
-        const userId = <?php echo $_SESSION['user_id']; ?>;
-        
-        // 调用API生成海报
-        fetch(`share_poster.php?user_id=${userId}`)
-            .then(response => response.blob())
-            .then(blob => {
-                const posterUrl = URL.createObjectURL(blob);
-                document.getElementById('generatedPoster').src = posterUrl;
-                document.getElementById('downloadPoster').href = posterUrl;
-                document.getElementById('posterPreview').style.display = 'block';
-                this.innerHTML = '<i class="fas fa-share-alt"></i> 生成分享海报';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('海报生成失败，请重试');
-                this.innerHTML = '<i class="fas fa-share-alt"></i> 生成分享海报';
-            });
-    });
+    var posterBtn = document.getElementById('generatePoster');
+    if (posterBtn) {
+        posterBtn.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+            const userId = <?php echo $_SESSION['user_id']; ?>;
+            fetch(`share_poster.php?user_id=${userId}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const posterUrl = URL.createObjectURL(blob);
+                    document.getElementById('generatedPoster').src = posterUrl;
+                    document.getElementById('downloadPoster').href = posterUrl;
+                    document.getElementById('posterPreview').style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-share-alt"></i> 生成分享海报';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('海报生成失败，请重试');
+                    this.innerHTML = '<i class="fas fa-share-alt"></i> 生成分享海报';
+                });
+        });
+    }
 });
 </script>
 
