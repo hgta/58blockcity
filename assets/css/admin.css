@@ -800,6 +800,72 @@ a:hover {
     color: var(--admin-danger);
 }
 
+/* ========== 补充：表单行 / 辅助类 / 默认按钮 ========== */
+.admin-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    padding: 16px 20px;
+}
+
+.admin-form-row .admin-form-group {
+    flex: 1;
+    min-width: 180px;
+    margin-bottom: 0;
+}
+
+.admin-text-muted {
+    color: var(--admin-text-muted);
+}
+
+.admin-table-responsive {
+    overflow-x: auto;
+}
+
+.admin-btn-default {
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    border: 1px solid var(--admin-border);
+}
+
+.admin-btn-default:hover {
+    background: var(--admin-card-hover);
+    border-color: var(--admin-border-light);
+    color: var(--admin-text);
+}
+
+.admin-btn-default.disabled,
+.admin-btn-default[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.admin-btn-primary.disabled,
+.admin-btn-primary[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* 操作按钮组（表格内多个小按钮横向排列） */
+.admin-btn-group {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* 分页信息与按钮容器 */
+.admin-page-info {
+    color: var(--admin-text-muted);
+    font-size: 13px;
+}
+
+.admin-page-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
 /* ========== 响应式设计 ========== */
 @media (max-width: 1024px) {
     .admin-stats-grid {

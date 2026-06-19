@@ -52,216 +52,153 @@ $admin_site_config = ['site' => 'hufang', 'page_title' => '互访记录'];
 require_once '../../shared/admin/admin-header.php';
 ?>
 
-<div class="container admin-container">
-    <!-- 页面标题和面包屑导航 -->
-    <div class="admin-header">
-        <h1><i class="fas fa-exchange-alt"></i> 互访记录管理</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="dashboard.php"><i class="fas fa-home"></i> 仪表盘</a></li>
-                <li class="breadcrumb-item active" aria-current="page">互访记录</li>
-            </ol>
-        </nav>
+<?php if (isset($_SESSION['message'])): ?>
+    <div class="admin-alert success">
+        <i class="fas fa-check-circle"></i> <?= $_SESSION['message'] ?>
     </div>
+    <?php unset($_SESSION['message']); ?>
+<?php endif; ?>
 
-    <!-- 消息提示 -->
-    <?php if (isset($_SESSION['message'])): ?>
-        <div class="alert alert-success alert-dismissible fade show">
-            <?= $_SESSION['message'] ?>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <?php unset($_SESSION['message']); ?>
-    <?php endif; ?>
-
-    <!-- 搜索和筛选 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="search-form">
-                <div class="row">
-                    <div class="col-md-8 mb-3 mb-md-0">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="搜索访问者、互访圈名称或城市..." value="<?= htmlspecialchars($search) ?>">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="submit">
-                                    <i class="fas fa-search"></i> 搜索
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <select name="status" class="form-control">
-                                <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>所有状态</option>
-                                <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>待确认</option>
-                                <option value="confirmed" <?= $status === 'confirmed' ? 'selected' : '' ?>>已确认</option>
-                                <option value="completed" <?= $status === 'completed' ? 'selected' : '' ?>>已完成</option>
-                                <option value="cancelled" <?= $status === 'cancelled' ? 'selected' : '' ?>>已取消</option>
-                            </select>
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" onclick="window.location.href='visits.php'">
-                                    <i class="fas fa-sync-alt"></i> 重置
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
+<!-- 筛选栏 -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <span class="admin-card-title"><i class="fas fa-filter"></i> 搜索互访记录</span>
     </div>
-
-    <!-- 互访记录列表 -->
-    <div class="card">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">互访记录列表</h5>
-            <div class="text-muted small">共 <?= $totalVisits ?> 条记录</div>
+    <form method="get" class="admin-form-row">
+        <div class="admin-form-group" style="flex:2;">
+            <input type="text" name="search" class="admin-form-input" placeholder="搜索访问者、互访圈名称或城市..." value="<?= htmlspecialchars($search) ?>">
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="thead-light">
+        <div class="admin-form-group">
+            <select name="status" class="admin-form-select">
+                <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>所有状态</option>
+                <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>待确认</option>
+                <option value="confirmed" <?= $status === 'confirmed' ? 'selected' : '' ?>>已确认</option>
+                <option value="completed" <?= $status === 'completed' ? 'selected' : '' ?>>已完成</option>
+                <option value="cancelled" <?= $status === 'cancelled' ? 'selected' : '' ?>>已取消</option>
+            </select>
+        </div>
+        <div class="admin-form-group">
+            <button type="submit" class="admin-btn admin-btn-primary"><i class="fas fa-search"></i> 搜索</button>
+            <a href="visits.php" class="admin-btn admin-btn-default"><i class="fas fa-undo"></i> 重置</a>
+        </div>
+    </form>
+</div>
+
+<!-- 互访记录列表 -->
+<div class="admin-card">
+    <div class="admin-card-header" style="justify-content:space-between;">
+        <span class="admin-card-title"><i class="fas fa-exchange-alt"></i> 互访记录列表</span>
+        <span class="admin-text-muted">共 <?= number_format($totalVisits) ?> 条记录</span>
+    </div>
+    <div class="admin-table-responsive">
+        <table class="admin-data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>访问者</th>
+                    <th>互访圈</th>
+                    <th>城市</th>
+                    <th>访问日期</th>
+                    <th>回访日期</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($visits)): ?>
+                    <tr>
+                        <td colspan="8" class="admin-empty-state">
+                            <i class="fas fa-exchange-alt"></i>
+                            <p>没有找到互访记录</p>
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($visits as $v): ?>
+                        <?php 
+                            $visitor = $user->getUserById($v['visitor_id']);
+                            $circleInfo = $circle->getCircleById($v['circle_id']);
+                            $owner = $user->getUserById($circleInfo['user_id']);
+                        ?>
                         <tr>
-                            <th width="5%">ID</th>
-                            <th width="15%">访问者</th>
-                            <th width="15%">互访圈</th>
-                            <th width="10%">城市</th>
-                            <th width="10%">访问日期</th>
-                            <th width="10%">回访日期</th>
-                            <th width="10%">状态</th>
-                            <th width="15%">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($visits)): ?>
-                            <tr>
-                                <td colspan="8" class="text-center py-5">
-                                    <div class="empty-state">
-                                        <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
-                                        <h4 class="text-muted">没有找到互访记录</h4>
-                                        <p class="text-muted">尝试修改搜索条件</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($visits as $visit): ?>
-                                <?php 
-                                    $visitor = $user->getUserById($visit['visitor_id']);
-                                    $circleInfo = $circle->getCircleById($visit['circle_id']);
-                                    $owner = $user->getUserById($circleInfo['user_id']);
+                            <td><?= $v['id'] ?></td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <img src="../assets/images/<?= htmlspecialchars($visitor['avatar'] ?? 'default.jpg') ?>" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                                    <span><?= htmlspecialchars($visitor['username']) ?></span>
+                                </div>
+                            </td>
+                            <td>
+                                <span><?= htmlspecialchars($circleInfo['name']) ?></span>
+                                <small class="admin-text-muted" style="display:block;">创建者: <?= htmlspecialchars($owner['username']) ?></small>
+                            </td>
+                            <td><?= htmlspecialchars($circleInfo['city']) ?></td>
+                            <td><?= $v['visit_date'] ? date('Y-m-d', strtotime($v['visit_date'])) : '-' ?></td>
+                            <td><?= $v['return_date'] ? date('Y-m-d', strtotime($v['return_date'])) : '-' ?></td>
+                            <td>
+                                <?php
+                                $statusMap = [
+                                    'completed' => ['已完成', 'success'],
+                                    'confirmed' => ['已确认', 'info'],
+                                    'pending'   => ['待确认', 'warning'],
+                                    'cancelled' => ['已取消', 'default'],
+                                ];
+                                $s = $statusMap[$v['status']] ?? [$v['status'], 'default'];
                                 ?>
-                                <tr>
-                                    <td><?= $visit['id'] ?></td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="../assets/images/<?= htmlspecialchars($visitor['avatar']) ?>" alt="<?= htmlspecialchars($visitor['username']) ?>" class="rounded-circle avatar-sm mr-2" style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
-                                            <span><?= htmlspecialchars($visitor['username']) ?></span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="circle-logo mr-2">
-                                                <i class="fas fa-circle text-<?= $circleInfo['status'] === 'active' ? 'success' : 'secondary' ?>"></i>
-                                            </div>
-                                            <span><?= htmlspecialchars($circleInfo['name']) ?></span>
-                                        </div>
-                                        <small class="text-muted d-block mt-1">创建者: <?= htmlspecialchars($owner['username']) ?></small>
-                                    </td>
-                                    <td><?= htmlspecialchars($circleInfo['city']) ?></td>
-                                    <td><?= $visit['visit_date'] ? date('Y-m-d', strtotime($visit['visit_date'])) : '-' ?></td>
-                                    <td><?= $visit['return_date'] ? date('Y-m-d', strtotime($visit['return_date'])) : '-' ?></td>
-                                    <td>
-                                        <span class="badge badge-<?= 
-                                            $visit['status'] === 'completed' ? 'success' : 
-                                            ($visit['status'] === 'confirmed' ? 'primary' : 
-                                            ($visit['status'] === 'pending' ? 'warning' : 'secondary')) ?>">
-                                            <?= $visit['status'] === 'completed' ? '已完成' : 
-                                              ($visit['status'] === 'confirmed' ? '已确认' : 
-                                              ($visit['status'] === 'pending' ? '待确认' : '已取消')) ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="visit_detail.php?id=<?= $visit['id'] ?>" class="btn btn-outline-primary" title="详情">
-                                                <i class="fas fa-info-circle"></i>
-                                            </a>
-                                            
-                                            <?php if ($visit['status'] === 'pending'): ?>
-                                                <form method="post" class="d-inline">
-                                                    <input type="hidden" name="visit_id" value="<?= $visit['id'] ?>">
-                                                    <input type="hidden" name="action" value="confirm">
-                                                    <button type="submit" class="btn btn-outline-success" title="确认" onclick="return confirm('确定要确认此互访吗？')">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            <?php elseif ($visit['status'] === 'confirmed'): ?>
-                                                <form method="post" class="d-inline">
-                                                    <input type="hidden" name="visit_id" value="<?= $visit['id'] ?>">
-                                                    <input type="hidden" name="action" value="complete">
-                                                    <button type="submit" class="btn btn-outline-info" title="完成" onclick="return confirm('确定要标记此互访为已完成吗？')">
-                                                        <i class="fas fa-flag-checkered"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($visit['status'] !== 'completed' && $visit['status'] !== 'cancelled'): ?>
-                                                <form method="post" class="d-inline">
-                                                    <input type="hidden" name="visit_id" value="<?= $visit['id'] ?>">
-                                                    <input type="hidden" name="action" value="cancel">
-                                                    <button type="submit" class="btn btn-outline-warning" title="取消" onclick="return confirm('确定要取消此互访吗？')">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            
-                                            <form method="post" class="d-inline">
-                                                <input type="hidden" name="visit_id" value="<?= $visit['id'] ?>">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn btn-outline-danger" title="删除" onclick="return confirm('确定要删除此互访记录吗？此操作不可恢复！')">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                                <span class="admin-badge <?= $s[1] ?>"><?= $s[0] ?></span>
+                            </td>
+                            <td>
+                                <div class="admin-btn-group">
+                                    <a href="visit_detail.php?id=<?= $v['id'] ?>" class="admin-btn admin-btn-sm admin-btn-default" title="详情"><i class="fas fa-info-circle"></i></a>
+                                    <?php if ($v['status'] === 'pending'): ?>
+                                        <form method="post" style="display:inline;">
+                                            <input type="hidden" name="visit_id" value="<?= $v['id'] ?>">
+                                            <input type="hidden" name="action" value="confirm">
+                                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-default" title="确认" onclick="return confirm('确定要确认此互访吗？')"><i class="fas fa-check"></i></button>
+                                        </form>
+                                    <?php elseif ($v['status'] === 'confirmed'): ?>
+                                        <form method="post" style="display:inline;">
+                                            <input type="hidden" name="visit_id" value="<?= $v['id'] ?>">
+                                            <input type="hidden" name="action" value="complete">
+                                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-default" title="完成" onclick="return confirm('确定要标记此互访为已完成吗？')"><i class="fas fa-flag-checkered"></i></button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <?php if ($v['status'] !== 'completed' && $v['status'] !== 'cancelled'): ?>
+                                        <form method="post" style="display:inline;">
+                                            <input type="hidden" name="visit_id" value="<?= $v['id'] ?>">
+                                            <input type="hidden" name="action" value="cancel">
+                                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-default" title="取消" onclick="return confirm('确定要取消此互访吗？')"><i class="fas fa-times"></i></button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <form method="post" style="display:inline;">
+                                        <input type="hidden" name="visit_id" value="<?= $v['id'] ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger" title="删除" onclick="return confirm('确定要删除此互访记录吗？此操作不可恢复！')"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <?php if ($totalPages > 1): ?>
+        <?php $prefix = '?search=' . urlencode($search) . '&status=' . $status . '&'; ?>
+        <div class="admin-pagination">
+            <div class="admin-page-info">第 <?= $page ?> 页 / 共 <?= $totalPages ?> 页</div>
+            <div class="admin-page-buttons">
+                <a href="visits.php<?= $prefix ?>page=1" class="admin-btn admin-btn-sm admin-btn-default <?= $page <= 1 ? 'disabled' : '' ?>">首页</a>
+                <a href="visits.php<?= $prefix ?>page=<?= $page - 1 ?>" class="admin-btn admin-btn-sm admin-btn-default <?= $page <= 1 ? 'disabled' : '' ?>">上一页</a>
+                <?php $start = max(1, $page - 2); $end = min($totalPages, $page + 2); ?>
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <a href="visits.php<?= $prefix ?>page=<?= $i ?>" class="admin-btn admin-btn-sm <?= $i === $page ? 'admin-btn-primary' : 'admin-btn-default' ?>"><?= $i ?></a>
+                <?php endfor; ?>
+                <a href="visits.php<?= $prefix ?>page=<?= $page + 1 ?>" class="admin-btn admin-btn-sm admin-btn-default <?= $page >= $totalPages ? 'disabled' : '' ?>">下一页</a>
+                <a href="visits.php<?= $prefix ?>page=<?= $totalPages ?>" class="admin-btn admin-btn-sm admin-btn-default <?= $page >= $totalPages ? 'disabled' : '' ?>">末页</a>
             </div>
         </div>
-        
-        <!-- 分页 -->
-        <?php if ($totalPages > 1): ?>
-            <div class="card-footer bg-white">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center mb-0">
-                        <?php if ($page > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?page=<?= $page-1 ?>&search=<?= urlencode($search) ?>&status=<?= $status ?>" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                        
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&status=<?= $status ?>"><?= $i ?></a>
-                            </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($page < $totalPages): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?page=<?= $page+1 ?>&search=<?= urlencode($search) ?>&status=<?= $status ?>" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
-            </div>
-        <?php endif; ?>
-    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once '../../shared/admin/admin-footer.php'; ?>

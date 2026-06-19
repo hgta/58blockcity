@@ -33,81 +33,63 @@ $admin_site_config = ['site' => 'hufang', 'page_title' => '添加城市'];
 require_once '../../shared/admin/admin-header.php';
 ?>
 
-<div class="container-fluid">
-    <div class="row">
-        <?php //require_once '../includes/sidebar.php'; ?>
-        
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">添加城市</h1>
-                <a href="cities.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> 返回列表
-                </a>
-            </div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <a href="cities.php" class="admin-btn admin-btn-default"><i class="fas fa-arrow-left"></i> 返回列表</a>
+</div>
 
-            <?php if (isset($error)): ?>
-                <div class="alert alert-danger"><?= $error ?></div>
-            <?php endif; ?>
+<?php if (isset($error)): ?>
+    <div class="admin-alert danger"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div>
+<?php endif; ?>
 
-            <div class="card">
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">城市名称 *</label>
-                                    <input type="text" name="name" class="form-control" required>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">拼音名称 *</label>
-                                    <input type="text" name="pinyin" class="form-control" required>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">区域代码</label>
-                                    <input type="text" name="area_code" class="form-control">
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">当前排名</label>
-                                    <input type="number" name="rank" class="form-control" value="0" min="0">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">居民数量</label>
-                                    <input type="number" name="resident_count" class="form-control" value="0" min="0">
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">开启区块数</label>
-                                    <input type="number" name="activated_blocks" class="form-control" value="0" min="0">
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">人气值</label>
-                                    <input type="number" name="popularity" class="form-control" value="0" min="0">
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" name="is_hot" class="form-check-input" id="is_hot">
-                                    <label class="form-check-label" for="is_hot">设为热门城市</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> 保存城市
-                            </button>
-                            <a href="cities.php" class="btn btn-secondary">取消</a>
-                        </div>
-                    </form>
+<div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title"><i class="fas fa-plus-circle"></i> 添加城市</span></div>
+    <div class="admin-card-body">
+        <form method="POST">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+                <div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">城市名称 *</label>
+                        <input type="text" name="name" class="admin-form-input" required>
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">拼音名称 *</label>
+                        <input type="text" name="pinyin" class="admin-form-input" required>
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">区域代码</label>
+                        <input type="text" name="area_code" class="admin-form-input">
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">当前排名</label>
+                        <input type="number" name="rank" class="admin-form-input" value="0" min="0">
+                    </div>
+                </div>
+                <div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">居民数量</label>
+                        <input type="number" name="resident_count" class="admin-form-input" value="0" min="0">
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">开启区块数</label>
+                        <input type="number" name="activated_blocks" class="admin-form-input" value="0" min="0">
+                    </div>
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">人气值</label>
+                        <input type="number" name="popularity" class="admin-form-input" value="0" min="0">
+                    </div>
+                    <div class="admin-form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" name="is_hot" id="is_hot">
+                            <span>设为热门城市</span>
+                        </label>
+                    </div>
                 </div>
             </div>
-        </main>
+            <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;">
+                <button type="submit" class="admin-btn admin-btn-primary"><i class="fas fa-save"></i> 保存城市</button>
+                <a href="cities.php" class="admin-btn admin-btn-default">取消</a>
+            </div>
+        </form>
     </div>
 </div>
 
