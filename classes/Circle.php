@@ -427,9 +427,13 @@ class Circle {
 	 * 获取热门城市（圈子数最多的前N个）
 	 */
 	public function getHotCities($limit = 20) {
-		$sql = "SELECT city, COUNT(*) as cnt 
-				FROM circles WHERE status = 'active' 
-				GROUP BY city ORDER BY cnt DESC LIMIT $limit";
+		$sql = "SELECT c.city, COUNT(*) as cnt 
+				FROM circles c
+				LEFT JOIN cities ci ON c.city = ci.name
+				WHERE c.status = 'active' 
+				GROUP BY c.city 
+				ORDER BY COALESCE(ci.rank, 999999) ASC, cnt DESC 
+				LIMIT $limit";
 		$stmt = $this->pdo->query($sql);
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
