@@ -13,6 +13,27 @@ if (!isset($_SESSION['user_id'])) {
 
 $shop = new Shop($pdo);
 $product = new Product($pdo);
+
+// AJAX 上传视频截帧图片（返回 JSON 路径，避免 base64 超过 post_max_size）
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_upload_thumbnail'])) {
+    header('Content-Type: application/json');
+    if (!isset($_FILES['thumbnail']) || $_FILES['thumbnail']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'error' => '文件上传失败']);
+        exit;
+    }
+    $result = uploadImage($_FILES['thumbnail'], 800, 800, 85);
+    if ($result['success']) {
+        echo json_encode([
+            'success' => true,
+            'file_path' => $result['file_path'],
+            'thumb_path' => $result['thumb_path'] ?? '',
+            'url' => '../' . $result['file_path'],
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $result['error']]);
+    }
+    exit;
+}
 $category = new Category($pdo);
 
 // 获取店铺ID
@@ -128,18 +149,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                 $videoUrl = trim($_POST['video_link']);
             }
 
-            // 如果没有主图但有视频，尝试从视频截帧作为封面
-            if (!$error && empty($mainImage) && !empty($videoUrl) && !empty($_POST['video_thumbnail'])) {
-                $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
-                if ($thumbResult['success']) {
-                    $mainImage = $thumbResult['file_path'];
-                    $thumbImage = $thumbResult['thumb_path'] ?? '';
-                } else {
-                    $error = '封面图片生成失败，请手动上传主图';
+            // 如果没有主图但有视频，使用 AJAX 上传的截帧路径或 base64 解码
+            if (!$error && empty($mainImage) && !empty($videoUrl)) {
+                // 优先使用 AJAX 上传的路径
+                if (!empty($_POST['video_thumb_path'])) {
+                    $mainImage = $_POST['video_thumb_path'];
+                    $thumbImage = $_POST['video_thumb_thumb'] ?? '';
+                } elseif (!empty($_POST['video_thumbnail'])) {
+                    // 兼容旧 base64 方式
+                    $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
+                    if ($thumbResult['success']) {
+                        $mainImage = $thumbResult['file_path'];
+                        $thumbImage = $thumbResult['thumb_path'] ?? '';
+                    } else {
+                        $error = '封面图片生成失败，请手动上传主图';
+                    }
                 }
             }
 
-            // 主图检查（视频截图也算有主图了）
+            // 主图检查
             if (!$error && empty($mainImage)) {
                 if (!empty($videoUrl)) {
                     $error = '请上传主图或从视频中截取封面';
@@ -258,14 +286,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 $videoUrl = null;
             }
 
-            // 如果有新视频但没新主图，尝试从视频截帧作为封面
-            if (!$error && empty($mainImage) && !empty($videoUrl) && !empty($_POST['video_thumbnail'])) {
-                $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
-                if ($thumbResult['success']) {
-                    $mainImage = $thumbResult['file_path'];
-                    $thumbImage = $thumbResult['thumb_path'] ?? '';
-                } else {
-                    $error = '封面图片生成失败，请手动上传主图';
+            // 如果有新视频但没新主图，使用 AJAX 上传的截帧路径或 base64 解码
+            if (!$error && empty($mainImage) && !empty($videoUrl)) {
+                if (!empty($_POST['video_thumb_path'])) {
+                    $mainImage = $_POST['video_thumb_path'];
+                    $thumbImage = $_POST['video_thumb_thumb'] ?? '';
+                } elseif (!empty($_POST['video_thumbnail'])) {
+                    $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
+                    if ($thumbResult['success']) {
+                        $mainImage = $thumbResult['file_path'];
+                        $thumbImage = $thumbResult['thumb_path'] ?? '';
+                    } else {
+                        $error = '封面图片生成失败，请手动上传主图';
+                    }
                 }
             }
 
@@ -960,6 +993,8 @@ require_once '../includes/header.php';
                                                     </div>
                                                 </div>
                                                 <input type="hidden" name="video_thumbnail" id="video_thumbnail" value="">
+                                                <input type="hidden" name="video_thumb_path" id="video_thumb_path" value="">
+                                                <input type="hidden" name="video_thumb_thumb" id="video_thumb_thumb" value="">
                                                 <video id="videoCaptureEl" style="display:none;" playsinline></video>
                                                 </div>
                                             </div>
@@ -1594,23 +1629,65 @@ if (videoInput && videoArea) {
     });
 }
 
-// Canvas 截取视频当前帧作为封面
+// Canvas 截取视频当前帧作为封面（AJAX 上传，避免 base64 超过 post_max_size）
 function captureVideoFrame() {
     if (!captureEl.src || captureEl.readyState < 2) {
         thumbPreview.innerHTML = '<span style="color:#fca5a5;">视频未就绪，请稍后再试</span>';
         return;
     }
     try {
-        videoCanvas.width = captureEl.videoWidth || 640;
-        videoCanvas.height = captureEl.videoHeight || 480;
-        const ctx = videoCanvas.getContext('2d');
+        var maxW = 800;
+        var vw = captureEl.videoWidth || 640;
+        var vh = captureEl.videoHeight || 480;
+        var ratio = Math.min(maxW / vw, 1.0);
+        videoCanvas.width = Math.round(vw * ratio);
+        videoCanvas.height = Math.round(vh * ratio);
+        var ctx = videoCanvas.getContext('2d');
         ctx.drawImage(captureEl, 0, 0, videoCanvas.width, videoCanvas.height);
-        const dataUrl = videoCanvas.toDataURL('image/jpeg', 0.9);
-        document.getElementById('video_thumbnail').value = dataUrl;
 
-        // 同时更新主图预览
-        const mainArea = document.getElementById('mainImageArea');
-        if (mainArea && !document.getElementById('main_image').files.length) {
+        // Canvas → Blob → AJAX 上传
+        videoCanvas.toBlob(function(blob) {
+            if (!blob) {
+                thumbPreview.innerHTML = '<span style="color:#fca5a5;">截取失败，请手动上传主图</span>';
+                return;
+            }
+            var formData = new FormData();
+            formData.append('ajax_upload_thumbnail', '1');
+            formData.append('thumbnail', blob, 'video_frame.jpg');
+
+            thumbPreview.innerHTML = '<span style="color:#94a3b8;">正在上传封面...</span>';
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // 存路径而非 base64
+                    document.getElementById('video_thumbnail').value = data.file_path;
+                    document.getElementById('video_thumb_path').value = data.file_path;
+                    if (data.thumb_path) {
+                        document.getElementById('video_thumb_thumb').value = data.thumb_path;
+                    }
+                    // 更新主图预览
+                    var mainArea = document.getElementById('mainImageArea');
+                    if (mainArea && !document.getElementById('main_image').files.length) {
+                        mainArea.innerHTML = '<div class="upload-preview active"><img src="' + data.url + '" alt="视频封面" style="width:100%;height:200px;object-fit:cover;"><button type="button" class="btn-remove-img" onclick="document.getElementById(\'main_image\').click()"><i class="fas fa-sync-alt"></i> 更换</button></div>';
+                    }
+                    thumbPreview.innerHTML = '<img src="' + data.url + '" style="max-width:100%;max-height:120px;border-radius:6px;" alt="封面预览"><br><span style="color:#86efac;font-size:12px;"><i class="fas fa-check-circle"></i> 封面已截取并上传</span>';
+                } else {
+                    thumbPreview.innerHTML = '<span style="color:#fca5a5;">' + (data.error || '上传失败') + '</span>';
+                }
+            })
+            .catch(function() {
+                thumbPreview.innerHTML = '<span style="color:#fca5a5;">上传失败，请手动上传主图</span>';
+            });
+        }, 'image/jpeg', 0.85);
+    } catch (e) {
+        thumbPreview.innerHTML = '<span style="color:#fca5a5;">截取失败，请手动上传主图</span>';
+    }
+}
             mainArea.innerHTML = `
                 <div class="upload-preview active">
                     <img src="${dataUrl}" alt="视频封面" style="width:100%;height:200px;object-fit:cover;">
