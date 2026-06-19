@@ -114,7 +114,7 @@ require_once '../includes/header.php';
                 <div class="sidebar-card user-sidebar-card text-center">
                     <div class="user-avatar mb-3">
                         <?php if (!empty($userInfo['avatar']) && $userInfo['avatar'] !== 'default.jpg'): ?>
-                            <img src="<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                            <img src="../<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
                         <?php else: ?>
                             <div class="avatar-placeholder-lg"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
                         <?php endif; ?>
@@ -145,7 +145,7 @@ require_once '../includes/header.php';
                         <div class="card-body text-center">
                             <div class="profile-avatar mb-3">
                                 <?php if (!empty($userInfo['avatar']) && $userInfo['avatar'] !== 'default.jpg'): ?>
-                                    <img src="<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" id="avatarPreview">
+                                    <img src="../<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" id="avatarPreview">
                                 <?php else: ?>
                                     <div class="avatar-placeholder-xl" id="avatarPreviewPlaceholder"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
                                 <?php endif; ?>
