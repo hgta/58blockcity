@@ -429,7 +429,7 @@ class Circle {
 	public function getHotCities($limit = 20) {
 		$sql = "SELECT c.city, COUNT(*) as cnt 
 				FROM circles c
-				LEFT JOIN cities ci ON c.city = ci.name
+				LEFT JOIN cities ci ON c.city COLLATE utf8mb4_general_ci = ci.name COLLATE utf8mb4_general_ci
 				WHERE c.status = 'active' 
 				GROUP BY c.city 
 				ORDER BY COALESCE(ci.rank, 999999) ASC, cnt DESC 
