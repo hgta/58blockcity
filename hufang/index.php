@@ -534,7 +534,7 @@ header {
                         $statusBadge = '';
                         if ($visitStatus === 'completed') $statusBadge = '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;">已互访</span>';
                         elseif (in_array($visitStatus, ['visited','returned'])) $statusBadge = '<span style="background:#d1ecf1;color:#0c5460;padding:2px 8px;border-radius:10px;font-size:11px;">已访</span>';
-                        elseif (in_array($visitStatus, ['pending','confirmed'])) $statusBadge = '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;">访问中</span>';
+                        elseif (in_array($visitStatus, ['pending','confirmed'])) $statusBadge = '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;">已访问</span>';
                     ?>
                     <tr style="border-bottom:1px solid #f0f0f0;font-size:14px;">
                         <td style="padding:10px 16px;"><strong><?= htmlspecialchars($c['name']) ?></strong></td>
@@ -560,7 +560,7 @@ header {
 					} elseif (in_array($visitStatus, ['visited','returned'])) {
 						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#3b82f6;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">已访</div>';
 					} elseif (in_array($visitStatus, ['pending','confirmed'])) {
-						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">访问中</div>';
+						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">已访问</div>';
 					}
 				?>
 					<div class="circle-card" style="position:relative;">

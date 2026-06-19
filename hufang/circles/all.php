@@ -90,7 +90,7 @@ tr:hover { background:#fafbfc; }
                 $badge = '';
                 if ($vs === 'completed') $badge = '<span class="badge badge-completed">已互访</span>';
                 elseif (in_array($vs, ['visited','returned'])) $badge = '<span class="badge badge-visited">已访</span>';
-                elseif (in_array($vs, ['pending','confirmed'])) $badge = '<span class="badge badge-pending">访问中</span>';
+                elseif (in_array($vs, ['pending','confirmed'])) $badge = '<span class="badge badge-pending">已访问</span>';
             ?>
             <tr>
                 <td><strong><?= htmlspecialchars($c['name']) ?></strong></td>
