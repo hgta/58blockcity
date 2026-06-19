@@ -1,6 +1,5 @@
 <?php
 require_once '../../config/database.php';
-require_once '../includes/auth.php';
 require_once '../../classes/MallRanking.php';
 
 $ranking = new MallRanking($pdo);
