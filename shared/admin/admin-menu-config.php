@@ -43,20 +43,17 @@ $ADMIN_MENUS = [
     'main' => [
         ['icon' => 'fa-home',        'text' => '总控看板', 'url' => 'dashboard.php'],
         ['icon' => 'fa-users',       'text' => '用户管理', 'url' => 'users.php'],
-        ['icon' => 'fa-chart-line',  'text' => '数据报表', 'url' => 'reports.php'],
-        ['icon' => 'fa-shield-alt',  'text' => '操作日志', 'url' => 'logs.php'],
+        ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],
     ],
     'block' => [
         ['icon' => 'fa-home',        'text' => '管理看板', 'url' => 'dashboard.php'],
-        ['icon' => 'fa-city',        'text' => '城市管理', 'url' => 'cities.php'],
         ['icon' => 'fa-th',          'text' => '区块管理', 'url' => 'blocks.php'],
-        ['icon' => 'fa-exchange-alt','text' => '交易审核', 'url' => 'transactions.php'],
-        ['icon' => 'fa-user',        'text' => '用户查询', 'url' => 'users.php'],
     ],
     'mall' => [
         ['icon' => 'fa-home',        'text' => '商城看板', 'url' => 'dashboard.php'],
         ['icon' => 'fa-box',         'text' => '商品管理', 'url' => 'categories.php'],
         ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],
+        ['icon' => 'fa-users',       'text' => '用户管理', 'url' => 'users.php'],
         ['icon' => 'fa-seedling',    'text' => '数据种子', 'url' => 'seed.php'],
     ],
     'nft' => [
