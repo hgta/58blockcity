@@ -13,10 +13,12 @@ require_once '../config/database.php';
 require_once '../classes/Product.php';
 require_once '../classes/Shop.php';
 require_once '../classes/Category.php';
+require_once '../classes/MallRanking.php';
 
 $product = new Product($pdo);
 $shop = new Shop($pdo);
 $category = new Category($pdo);
+$mallRanking = new MallRanking($pdo);
 
 // 获取各类数据
 $recommendedProducts = $product->getRecommendedProducts(8);
@@ -24,6 +26,10 @@ $newProducts = $product->getNewProducts(8);
 $popularProducts = $product->getPopularProducts(8);
 $featuredShops = $shop->getFeaturedShops(6);
 $categories = $category->getPopularCategories(8);
+
+// 排行榜预览数据
+$topViewedProducts = $mallRanking->getProductRanking('popular', 5);
+$topSoldProducts = $mallRanking->getProductRanking('sales', 5);
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -515,6 +521,54 @@ $categories = $category->getPopularCategories(8);
                         <div>暂无新品上架</div>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- 排行榜预览 -->
+        <div class="section">
+            <div class="section-header">
+                <h2>🏆 排行榜</h2>
+                <a href="rankings/" class="more-link">完整榜单 &gt;</a>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <!-- 人气榜 -->
+                <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                        <h3 style="font-size:16px;color:#333;"><i class="fas fa-fire" style="color:#ff6b00;"></i> 人气榜 TOP 5</h3>
+                        <a href="rankings/?tab=product&type=popular" style="font-size:13px;color:#ff6b00;">更多 &gt;</a>
+                    </div>
+                    <?php if (!empty($topViewedProducts)): ?>
+                        <?php foreach ($topViewedProducts as $i => $p): ?>
+                            <a href="product/detail.php?id=<?= $p['id'] ?>" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5;">
+                                <span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;<?= $i<3?'background:linear-gradient(135deg,#ff6b00,#ff9500);color:#fff;':'background:#f0f0f0;color:#999;' ?>"><?= $i+1 ?></span>
+                                <img src="../<?= htmlspecialchars($p['thumb_image']?:$p['main_image']?:'assets/images/default-product.jpg') ?>" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;" alt="">
+                                <span style="flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($p['name']) ?></span>
+                                <span style="font-size:12px;color:#999;flex-shrink:0;"><i class="fas fa-eye"></i> <?= number_format($p['view_count']) ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="text-align:center;padding:30px;color:#999;font-size:14px;">暂无数据</div>
+                    <?php endif; ?>
+                </div>
+                <!-- 销量榜 -->
+                <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                        <h3 style="font-size:16px;color:#333;"><i class="fas fa-shopping-cart" style="color:#27ae60;"></i> 销量榜 TOP 5</h3>
+                        <a href="rankings/?tab=product&type=sales" style="font-size:13px;color:#ff6b00;">更多 &gt;</a>
+                    </div>
+                    <?php if (!empty($topSoldProducts)): ?>
+                        <?php foreach ($topSoldProducts as $i => $p): ?>
+                            <a href="product/detail.php?id=<?= $p['id'] ?>" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5;">
+                                <span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;<?= $i<3?'background:linear-gradient(135deg,#27ae60,#219a52);color:#fff;':'background:#f0f0f0;color:#999;' ?>"><?= $i+1 ?></span>
+                                <img src="../<?= htmlspecialchars($p['thumb_image']?:$p['main_image']?:'assets/images/default-product.jpg') ?>" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;" alt="">
+                                <span style="flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($p['name']) ?></span>
+                                <span style="font-size:12px;color:#999;flex-shrink:0;">已售 <?= number_format($p['sold_count']) ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="text-align:center;padding:30px;color:#999;font-size:14px;">暂无数据</div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         
