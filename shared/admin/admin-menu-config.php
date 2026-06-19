@@ -8,32 +8,32 @@
 $ADMIN_SITES = [
     'main' => [
         'name' => '总控后台',
-        'url'  => '/admin/dashboard.php',
+        'url'  => 'https://58.tl/admin/dashboard.php',
         'icon' => 'fa-home',
     ],
     'block' => [
         'name' => '区块交易',
-        'url'  => '/block/admin/dashboard.php',
+        'url'  => 'https://block.58.tl/admin/dashboard.php',
         'icon' => 'fa-cubes',
     ],
     'bct' => [
         'name' => 'BCT市场',
-        'url'  => '/bct/admin/dashboard.php',
+        'url'  => 'https://bct.58.tl/admin/dashboard.php',
         'icon' => 'fa-coins',
     ],
     'hufang' => [
         'name' => '互访圈',
-        'url'  => '/hufang/admin/dashboard.php',
+        'url'  => 'https://v.58.tl/admin/dashboard.php',
         'icon' => 'fa-users',
     ],
     'mall' => [
         'name' => '人气商城',
-        'url'  => '/mall/admin/dashboard.php',
+        'url'  => 'https://mall.58.tl/admin/dashboard.php',
         'icon' => 'fa-shopping-bag',
     ],
     'nft' => [
         'name' => 'NFT头像',
-        'url'  => '/nft/admin/dashboard.php',
+        'url'  => 'https://nft.58.tl/admin/dashboard.php',
         'icon' => 'fa-image',
     ],
 ];

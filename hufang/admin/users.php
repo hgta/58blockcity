@@ -42,10 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $_SESSION['error'] = '不能修改超级管理员状态';
     }
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '用户管理'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container admin-container">
     <!-- 页面标题和面包屑导航 -->
@@ -200,7 +200,7 @@ require_once '../../shared/admin/admin-header.php';
                 <?php if ($totalPages > 1): ?>
                     <!-- 分页信息 -->
                     <div class="pagination-info-clean">
-                        <div class="total-count">共 <?= $totalCities ?> 条记录</div>
+                        <div class="total-count">共 <?= $totalUsers ?> 条记录</div>
                         <div class="page-indicator">第 <?= $page ?> 页 / 共 <?= $totalPages ?> 页</div>
                     </div>
 
