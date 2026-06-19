@@ -47,10 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Location: visits.php');
     exit();
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '互访记录'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container admin-container">
     <!-- 页面标题和面包屑导航 -->

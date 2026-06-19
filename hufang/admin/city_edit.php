@@ -38,10 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '城市更新失败！';
     }
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '编辑城市'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container-fluid">
     <div class="row">

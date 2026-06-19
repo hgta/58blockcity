@@ -87,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '系统设置'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container admin-container">
     <!-- 页面标题和面包屑导航 -->

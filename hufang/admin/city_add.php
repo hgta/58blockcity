@@ -28,10 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '城市添加失败！';
     }
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '添加城市'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container-fluid">
     <div class="row">

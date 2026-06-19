@@ -29,10 +29,10 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
     header('Location: cities.php');
     exit;
 }
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '城市管理'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <style>
 /* 简洁清晰的分页样式 */

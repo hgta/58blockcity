@@ -73,10 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $roles = ['user' => '普通用户', 'moderator' => '版主', 'admin' => '管理员'];
 $statuses = ['active' => '活跃', 'suspended' => '已停用', 'banned' => '已封禁'];
 $cities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉', '南京', '其他'];
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '编辑用户'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <style>
 .admin-container {

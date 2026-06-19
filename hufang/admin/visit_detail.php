@@ -61,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // 获取相关用户信息
 $visitorInfo = $user->getUserById($visitInfo['visitor_id']);
 $ownerInfo = $user->getUserById($visitInfo['owner_id']);
-?>
 
 $admin_site_config = ['site' => 'hufang', 'page_title' => '访问详情'];
 require_once '../../shared/admin/admin-header.php';
+?>
 
 <div class="container admin-container">
     <div class="page-header">
