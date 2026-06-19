@@ -311,5 +311,28 @@ public function adminCancelVisit($visitId, $adminNotes) {
                                 WHERE id = ?");
     return $stmt->execute([$adminNotes, $visitId]);
 }
+
+	/**
+	 * 批量获取用户访问过的圈子ID及最新状态
+	 * 返回 [circle_id => status] 映射
+	 */
+	public function getUserVisitedCircleIds($userId) {
+		$stmt = $this->pdo->prepare("
+			SELECT circle_id, status 
+			FROM visits 
+			WHERE visitor_id = ? 
+			ORDER BY updated_at DESC
+		");
+		$stmt->execute([$userId]);
+		$result = [];
+		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			// 只保留最新状态（ORDER BY updated_at DESC 已排序）
+			if (!isset($result[$row['circle_id']])) {
+				$result[$row['circle_id']] = $row['status'];
+			}
+		}
+		return $result;
+	}
 }
+
 ?>

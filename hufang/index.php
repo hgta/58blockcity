@@ -18,18 +18,28 @@ $city = new City($pdo);
 $cities = $city->getAllCities();
 
 $selectedCity = $_GET['city'] ?? '北京';
-$circles = $circle->getCirclesByCity($selectedCity, 60);
+$search = trim($_GET['search'] ?? '');
+$viewMode = $_GET['view'] ?? 'card'; // card or list
 
+// 首页最多显示100个圈子
+$circles = $circle->getCirclesByCity($selectedCity, 100, $search);
+$totalCount = $circle->getCircleCountByCity($selectedCity, $search);
 
-// 获取未读消息数量
-$unread_count = 0;
+// 热门城市（圈子数最多的前20个）
+$hotCities = $circle->getHotCities(20);
+$hotCityNames = array_column($hotCities, 'city');
+
+// 获取当前用户的访问状态映射
+$visitedMap = [];
 if (isset($_SESSION['user_id'])) {
 	$userId = $_SESSION['user_id'];
 	$visit = new Visit($pdo);
 	$pendingVisits = $visit->getCircleVisits($userId, 'pending');
 	$unread_count = count($pendingVisits); 	
-	
-} 
+	$visitedMap = $visit->getUserVisitedCircleIds($userId);
+} else {
+	$unread_count = 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -426,13 +436,63 @@ header {
     <!-- 城市筛选 -->
     <div class="city-filter">
         <h3><i class="fas fa-map-marker-alt"></i> 选择城市：</h3>
-        <div class="city-tags">
-            <?php foreach ($cities as $city): ?>
-                <a href="?city=<?= urlencode($city['name']) ?>" class="city-tag <?= 
-                    $city['name'] === $selectedCity ? 'active' : '' ?>">
-                    <?= htmlspecialchars($city['name']) ?>
+        <div class="city-tags" id="cityTags">
+            <?php 
+            // 显示热门城市（有圈子的）
+            $displayedCities = [];
+            foreach ($hotCities as $hc): 
+                $displayedCities[] = $hc['city'];
+            ?>
+                <a href="?city=<?= urlencode($hc['city']) ?>" class="city-tag <?= $hc['city'] === $selectedCity ? 'active' : '' ?>">
+                    <?= htmlspecialchars($hc['city']) ?>
+                    <small style="opacity:0.6;font-size:10px;"><?= $hc['cnt'] ?></small>
                 </a>
             <?php endforeach; ?>
+            
+            <?php 
+            // 确保当前选中的城市显示
+            if (!in_array($selectedCity, $displayedCities)): ?>
+                <a href="?city=<?= urlencode($selectedCity) ?>" class="city-tag active"><?= htmlspecialchars($selectedCity) ?></a>
+            <?php endif; ?>
+            
+            <!-- 展开全部城市 -->
+            <a href="javascript:void(0)" class="city-tag" style="background:#6366f1;color:#fff;" onclick="toggleAllCities()">
+                <i class="fas fa-chevron-down" id="expandIcon"></i> 展开全部
+            </a>
+        </div>
+        <div class="city-tags" id="allCities" style="display:none;margin-top:8px;">
+            <?php foreach ($cities as $c): ?>
+                <?php if (!in_array($c['name'], $displayedCities)): ?>
+                <a href="?city=<?= urlencode($c['name']) ?>" class="city-tag <?= $c['name'] === $selectedCity ? 'active' : '' ?>">
+                    <?= htmlspecialchars($c['name']) ?>
+                </a>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <!-- 搜索 + 模式切换 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <form method="GET" style="display:flex;gap:8px;flex:1;min-width:200px;">
+            <input type="hidden" name="city" value="<?= htmlspecialchars($selectedCity) ?>">
+            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="搜索圈子名称或描述..." 
+                   style="flex:1;padding:8px 14px;border:1px solid #e0e0e0;border-radius:20px;font-size:14px;outline:none;">
+            <button type="submit" class="btn btn-primary" style="border-radius:20px;padding:8px 16px;">
+                <i class="fas fa-search"></i>
+            </button>
+            <?php if ($search): ?>
+                <a href="?city=<?= urlencode($selectedCity) ?>" class="btn btn-outline" style="border-radius:20px;padding:8px 16px;">清除</a>
+            <?php endif; ?>
+        </form>
+        <div style="display:flex;gap:6px;">
+            <a href="?city=<?= urlencode($selectedCity) ?><?php echo $search ? '&search=' . urlencode($search) : '' ?>&view=card" 
+               class="btn <?= $viewMode === 'card' ? 'btn-primary' : 'btn-outline' ?>" style="padding:6px 14px;font-size:13px;">
+                <i class="fas fa-th-large"></i> 卡片
+            </a>
+            <a href="?city=<?= urlencode($selectedCity) ?><?php echo $search ? '&search=' . urlencode($search) : '' ?>&view=list" 
+               class="btn <?= $viewMode === 'list' ? 'btn-primary' : 'btn-outline' ?>" style="padding:6px 14px;font-size:13px;">
+                <i class="fas fa-list"></i> 列表
+            </a>
         </div>
     </div>
 
@@ -455,41 +515,85 @@ header {
                     </a>
                 <?php endif; ?>
             </div>
+        <?php elseif ($viewMode === 'list'): ?>
+            <!-- 列表模式 -->
+            <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <thead>
+                    <tr style="background:#f8f9fa;text-align:left;font-size:13px;color:#666;">
+                        <th style="padding:12px 16px;">互访圈</th>
+                        <th style="padding:12px 16px;">城市</th>
+                        <th style="padding:12px 16px;">区块数</th>
+                        <th style="padding:12px 16px;">圈主</th>
+                        <th style="padding:12px 16px;">状态</th>
+                        <th style="padding:12px 16px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($circles as $c): 
+                        $visitStatus = $visitedMap[$c['id']] ?? null;
+                        $statusBadge = '';
+                        if ($visitStatus === 'completed') $statusBadge = '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;">已互访</span>';
+                        elseif (in_array($visitStatus, ['visited','returned'])) $statusBadge = '<span style="background:#d1ecf1;color:#0c5460;padding:2px 8px;border-radius:10px;font-size:11px;">已访</span>';
+                        elseif (in_array($visitStatus, ['pending','confirmed'])) $statusBadge = '<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;">访问中</span>';
+                    ?>
+                    <tr style="border-bottom:1px solid #f0f0f0;font-size:14px;">
+                        <td style="padding:10px 16px;"><strong><?= htmlspecialchars($c['name']) ?></strong></td>
+                        <td style="padding:10px 16px;"><?= htmlspecialchars($c['city']) ?></td>
+                        <td style="padding:10px 16px;"><?= $c['block_count'] ?></td>
+                        <td style="padding:10px 16px;"><?= htmlspecialchars($c['username']) ?></td>
+                        <td style="padding:10px 16px;"><?= $statusBadge ?: '<span style="color:#ccc;">-</span>' ?></td>
+                        <td style="padding:10px 16px;">
+                            <a href="circles/view.php?id=<?= $c['id'] ?>" class="btn btn-primary" style="padding:4px 12px;font-size:12px;">详情</a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         <?php else: ?>
+            <!-- 卡片模式 -->
             <div class="circle-grid">
-				<?php foreach ($circles as $circle): ?>
-					<div class="circle-card">
+				<?php foreach ($circles as $c): 
+					$visitStatus = $visitedMap[$c['id']] ?? null;
+					$badgeHtml = '';
+					if ($visitStatus === 'completed') {
+						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#22c55e;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">已互访</div>';
+					} elseif (in_array($visitStatus, ['visited','returned'])) {
+						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#3b82f6;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">已访</div>';
+					} elseif (in_array($visitStatus, ['pending','confirmed'])) {
+						$badgeHtml = '<div style="position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;z-index:2;">访问中</div>';
+					}
+				?>
+					<div class="circle-card" style="position:relative;">
+						<?= $badgeHtml ?>
 						<div class="circle-header">
-							<img src="../assets/images/<?= htmlspecialchars($circle['avatar'] ?? 'default.jpg') ?>" 
-								 class="circle-avatar" alt="<?= htmlspecialchars($circle['username']) ?>">
+							<img src="../assets/images/<?= htmlspecialchars($c['avatar'] ?? 'default.jpg') ?>" 
+								 class="circle-avatar" alt="<?= htmlspecialchars($c['username']) ?>">
 							<div class="circle-title">
-								<h3><?= htmlspecialchars($circle['name']) ?></h3>
+								<h3><?= htmlspecialchars($c['name']) ?></h3>
 								<span class="circle-owner">
-									<i class="fas fa-user"></i> <?= htmlspecialchars($circle['username']) ?>
+									<i class="fas fa-user"></i> <?= htmlspecialchars($c['username']) ?>
 								</span>
 							</div>
 						</div>
 						
 						<div class="circle-body">
 							<div class="circle-location">
-								<i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($circle['city']) ?>
-								<?php //if ($circle['category']): ?>
-									<span class="circle-category"><?= $circle['block_count']//htmlspecialchars($circle['category']) ?>区块</span>
-								<?php //endif; ?>
+								<i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($c['city']) ?>
+								<span class="circle-category"><?= $c['block_count'] ?>区块</span>
 							</div>
 							
 							<div class="circle-description">
-								<?= nl2br(htmlspecialchars(mb_substr($circle['description'] ?? '暂无描述', 0, 60, 'UTF-8') . (mb_strlen($circle['description'] ?? '') > 60 ? '...' : ''))) ?>
+								<?= nl2br(htmlspecialchars(mb_substr($c['description'] ?? '暂无描述', 0, 60, 'UTF-8') . (mb_strlen($c['description'] ?? '') > 60 ? '...' : ''))) ?>
 							</div>
 							
 						</div>
 						
 						<div class="circle-actions">
-							<a href="circles/view.php?id=<?= $circle['id'] ?>" class="btn btn-primary">
+							<a href="circles/view.php?id=<?= $c['id'] ?>" class="btn btn-primary">
 								<i class="fas fa-eye"></i> 详情
 							</a>
-							<?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $circle['user_id']): ?>
-								<a href="circles/view.php?id=<?= $circle['id'] ?>" class="btn btn-outline-primary">
+							<?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $c['user_id']): ?>
+								<a href="circles/view.php?id=<?= $c['id'] ?>" class="btn btn-outline-primary">
 									<i class="fas fa-handshake"></i> 互访
 								</a>
 							<?php endif; ?>
@@ -498,7 +602,34 @@ header {
 				<?php endforeach; ?>
 			</div>
         <?php endif; ?>
+        
+        <?php if ($totalCount > 100): ?>
+        <div style="text-align:center;padding:20px;">
+            <p style="color:#666;margin-bottom:10px;">显示了前 100 个圈子，共 <?= $totalCount ?> 个</p>
+            <a href="circles/all.php?city=<?= urlencode($selectedCity) ?><?php echo $search ? '&search=' . urlencode($search) : '' ?>" 
+               class="btn btn-primary" style="padding:10px 28px;">
+                <i class="fas fa-list"></i> 查看全部 <?= $totalCount ?> 个圈子
+            </a>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
+<script>
+function toggleAllCities() {
+    var allCities = document.getElementById('allCities');
+    var icon = document.getElementById('expandIcon');
+    if (allCities.style.display === 'none') {
+        allCities.style.display = 'flex';
+        allCities.style.flexWrap = 'wrap';
+        allCities.style.gap = '6px';
+        icon.className = 'fas fa-chevron-up';
+        icon.parentElement.lastChild.textContent = ' 收起';
+    } else {
+        allCities.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+        icon.parentElement.lastChild.textContent = ' 展开全部';
+    }
+}
+</script>

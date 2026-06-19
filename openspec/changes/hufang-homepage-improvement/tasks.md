@@ -1,0 +1,7 @@
+- [ ] Circle::getCirclesByCityPaginated() + getCircleCountByCity()
+- [ ] Visit::getUserVisitedCircleIds()
+- [ ] hufang/index.php 城市标签折叠 + 热门城市
+- [ ] hufang/index.php 卡片/列表模式切换
+- [ ] hufang/index.php 已访/已互访水印
+- [ ] hufang/index.php 搜索框 + 最多100个
+- [ ] hufang/circles/all.php 分页页

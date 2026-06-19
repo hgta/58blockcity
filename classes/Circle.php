@@ -385,5 +385,53 @@ class Circle {
 		$stmt->execute([$circleId]);
 		return $stmt->fetch();
 	}
+
+	/**
+	 * 分页获取城市圈子
+	 */
+	public function getCirclesByCityPaginated($city, $page = 1, $perPage = 20, $search = '') {
+		$offset = ($page - 1) * $perPage;
+		$sql = "SELECT c.*, u.username, u.avatar 
+				FROM circles c 
+				JOIN users u ON c.user_id = u.id 
+				WHERE c.city = ? AND c.status = 'active'";
+		$params = [$city];
+		if (!empty($search)) {
+			$sql .= " AND (c.name LIKE ? OR c.description LIKE ?)";
+			$params[] = "%$search%";
+			$params[] = "%$search%";
+		}
+		$sql .= " ORDER BY c.created_at DESC LIMIT $perPage OFFSET $offset";
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return $stmt->fetchAll(PDO::FETCH_ASSOC);
+	}
+
+	/**
+	 * 获取城市圈子总数
+	 */
+	public function getCircleCountByCity($city, $search = '') {
+		$sql = "SELECT COUNT(*) FROM circles WHERE city = ? AND status = 'active'";
+		$params = [$city];
+		if (!empty($search)) {
+			$sql .= " AND (name LIKE ? OR description LIKE ?)";
+			$params[] = "%$search%";
+			$params[] = "%$search%";
+		}
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return (int)$stmt->fetchColumn();
+	}
+
+	/**
+	 * 获取热门城市（圈子数最多的前N个）
+	 */
+	public function getHotCities($limit = 20) {
+		$sql = "SELECT city, COUNT(*) as cnt 
+				FROM circles WHERE status = 'active' 
+				GROUP BY city ORDER BY cnt DESC LIMIT $limit";
+		$stmt = $this->pdo->query($sql);
+		return $stmt->fetchAll(PDO::FETCH_ASSOC);
+	}
 }
 ?>
