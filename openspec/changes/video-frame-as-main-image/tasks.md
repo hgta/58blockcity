@@ -1,0 +1,5 @@
+- [ ] products.php: 调换 add action 中视频和主图检查的顺序
+- [ ] products.php: 新增 decodeBase64ToImage() 函数
+- [ ] products.php: add/edit action 加入 video_thumbnail 处理逻辑
+- [ ] products.php: 视频区域加入 Canvas 截图 UI + JS
+- [ ] products.php: 隐藏 input video_thumbnail 传 base64 数据

@@ -110,29 +110,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                 }
             }
 
-            // 处理多图上传
-            $extraImages = [];
-            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
-                $imgError = '';
-                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
-                if ($imgError) {
-                    $error = '副图上传失败：' . $imgError;
-                }
-            }
-
-            // 主图未上传给出提示
-            if (!$error && empty($mainImage)) {
-                $error = '请上传商品主图';
-            }
-
-            // 处理视频上传或链接
+            // 处理视频上传或链接（移到主图检查之前）
             $videoUrl = '';
             if (isset($_FILES['product_video'])) {
                 if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
                     $videoResult = uploadVideo($_FILES['product_video']);
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
-                        $videoSuccess = '视频已上传成功';
                     } else {
                         $videoError = $videoResult['error'];
                     }
@@ -142,6 +126,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
             }
             if (!$error && empty($videoUrl) && !empty($_POST['video_link'])) {
                 $videoUrl = trim($_POST['video_link']);
+            }
+
+            // 如果没有主图但有视频，尝试从视频截帧作为封面
+            if (!$error && empty($mainImage) && !empty($videoUrl) && !empty($_POST['video_thumbnail'])) {
+                $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
+                if ($thumbResult['success']) {
+                    $mainImage = $thumbResult['file_path'];
+                    $thumbImage = $thumbResult['thumb_path'] ?? '';
+                } else {
+                    $error = '封面图片生成失败，请手动上传主图';
+                }
+            }
+
+            // 主图检查（视频截图也算有主图了）
+            if (!$error && empty($mainImage)) {
+                if (!empty($videoUrl)) {
+                    $error = '请上传主图或从视频中截取封面';
+                } else {
+                    $error = '请上传商品主图';
+                }
+            }
+
+            // 处理多图上传
+            $extraImages = [];
+            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
+                $imgError = '';
+                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
+                if ($imgError) {
+                    $error = '副图上传失败：' . $imgError;
+                }
             }
 
             if (!$error) {
@@ -205,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
         $error = '库存不能为负数';
     } else {
         try {
-            // 处理主图上传
+            // 处理主图上传（编辑时主图可选）
             $mainImage = '';
             $thumbImage = '';
             if (isset($_FILES['main_image'])) {
@@ -222,24 +236,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 }
             }
 
-            // 处理多图上传
-            $extraImages = [];
-            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
-                $imgError = '';
-                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
-                if ($imgError) {
-                    $error = '副图上传失败：' . $imgError;
-                }
-            }
-
-            // 处理视频上传或链接
+            // 处理视频上传或链接（移到前面）
             $videoUrl = null;
             if (isset($_FILES['product_video'])) {
                 if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
                     $videoResult = uploadVideo($_FILES['product_video']);
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
-                        $videoSuccess = '视频已更新成功';
                     } else {
                         $videoError = $videoResult['error'];
                     }
@@ -253,6 +256,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
             // 用户点击了移除视频按钮
             if (!$error && isset($_POST['remove_video']) && $_POST['remove_video'] === '1') {
                 $videoUrl = null;
+            }
+
+            // 如果有新视频但没新主图，尝试从视频截帧作为封面
+            if (!$error && empty($mainImage) && !empty($videoUrl) && !empty($_POST['video_thumbnail'])) {
+                $thumbResult = decodeBase64ToImage($_POST['video_thumbnail'], 800);
+                if ($thumbResult['success']) {
+                    $mainImage = $thumbResult['file_path'];
+                    $thumbImage = $thumbResult['thumb_path'] ?? '';
+                } else {
+                    $error = '封面图片生成失败，请手动上传主图';
+                }
+            }
+
+            // 处理多图上传
+            $extraImages = [];
+            if (!$error && isset($_FILES['extra_images']) && !empty($_FILES['extra_images']['name'][0])) {
+                $imgError = '';
+                $extraImages = uploadMultipleImages($_FILES['extra_images'], $imgError);
+                if ($imgError) {
+                    $error = '副图上传失败：' . $imgError;
+                }
             }
 
             if (!$error) {
@@ -545,6 +569,62 @@ function uploadVideo($file) {
         return ['success' => true, 'file_path' => $relativePath];
     }
     return ['success' => false, 'error' => '视频保存失败'];
+}
+
+// Base64 解码为图片（视频截帧用）
+function decodeBase64ToImage($base64, $maxWidth = 800) {
+    // 去掉 data:image/jpeg;base64, 前缀
+    if (strpos($base64, 'data:') === 0) {
+        $base64 = substr($base64, strpos($base64, ',') + 1);
+    }
+    $imgData = base64_decode($base64);
+    if (!$imgData) return ['success' => false];
+
+    $src = @imagecreatefromstring($imgData);
+    if (!$src) return ['success' => false];
+
+    $origW = imagesx($src);
+    $origH = imagesy($src);
+    $ratio = min($maxWidth / $origW, 1.0);
+    $newW = (int) round($origW * $ratio);
+    $newH = (int) round($origH * $ratio);
+
+    $dst = imagecreatetruecolor($newW, $newH);
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+    imagedestroy($src);
+
+    $subDir = date('Ym') . '/';
+    $uploadDir = __DIR__ . '/../assets/uploads/products/' . $subDir;
+    if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
+
+    $fileName = 'vid_' . uniqid() . '_' . time() . '.jpg';
+    $filePath = $uploadDir . $fileName;
+    $relativePath = 'assets/uploads/products/' . $subDir . $fileName;
+
+    if (!imagejpeg($dst, $filePath, 85)) {
+        imagedestroy($dst);
+        return ['success' => false];
+    }
+    imagedestroy($dst);
+
+    // 生成缩略图
+    $thumbFileName = 'thumb_vid_' . uniqid() . '.jpg';
+    $thumbPath = $uploadDir . $thumbFileName;
+    $thumbRelative = 'assets/uploads/products/' . $subDir . $thumbFileName;
+    $thumbSize = 400;
+    $thumbR = min($thumbSize / $origW, $thumbSize / $origH, 1.0);
+    $tw = (int) round($origW * $thumbR);
+    $th = (int) round($origH * $thumbR);
+    $tdst = imagecreatetruecolor($tw, $th);
+    $src2 = @imagecreatefromjpeg($filePath);
+    if ($src2) {
+        imagecopyresampled($tdst, $src2, 0, 0, 0, 0, $tw, $th, $newW, $newH);
+        imagejpeg($tdst, $thumbPath, 80);
+        imagedestroy($src2);
+    }
+    imagedestroy($tdst);
+
+    return ['success' => true, 'file_path' => $relativePath, 'thumb_path' => $thumbRelative];
 }
 
 // 显示成功消息
@@ -866,6 +946,21 @@ require_once '../includes/header.php';
                                                     <input type="url" class="form-control" id="video_link" name="video_link"
                                                            value="<?= isset($editProduct) && !empty($editProduct['video_url']) && strpos($editProduct['video_url'], '://') !== false ? htmlspecialchars($editProduct['video_url']) : '' ?>"
                                                            placeholder="https://example.com/video.mp4">
+                                                </div>
+                                                <div id="videoThumbnailSection" style="display:none;margin-top:10px;padding:10px;background:#0f172a;border-radius:8px;">
+                                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                                        <span style="font-size:13px;color:#94a3b8;">视频封面截取</span>
+                                                        <button type="button" class="admin-btn admin-btn-sm admin-btn-primary" onclick="captureVideoFrame()">
+                                                            <i class="fas fa-camera"></i> 截取当前帧为封面
+                                                        </button>
+                                                    </div>
+                                                    <canvas id="videoCanvas" style="display:none;"></canvas>
+                                                    <div id="videoThumbPreview" style="text-align:center;color:#64748b;font-size:12px;">
+                                                        拖动视频到想要的画面，点击上方按钮截取
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="video_thumbnail" id="video_thumbnail" value="">
+                                                <video id="videoCaptureEl" style="display:none;" playsinline></video>
                                                 </div>
                                             </div>
                                         </div>
@@ -1464,14 +1559,21 @@ function formatSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-/* ========== 视频上传预览 ========== */
+/* ========== 视频上传预览 + 封面截取 ========== */
 const videoInput = document.getElementById('product_video');
 const videoArea = document.getElementById('videoUploadArea');
+const captureEl = document.getElementById('videoCaptureEl');
+const thumbSection = document.getElementById('videoThumbnailSection');
+const thumbPreview = document.getElementById('videoThumbPreview');
+const videoCanvas = document.getElementById('videoCanvas');
+let currentVideoUrl = null;
+
 if (videoInput && videoArea) {
     videoInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
+        currentVideoUrl = url;
         videoArea.innerHTML = `
             <div class="video-preview active">
                 <video src="${url}" controls style="width:100%;max-height:180px;border-radius:8px;"></video>
@@ -1482,11 +1584,54 @@ if (videoInput && videoArea) {
             <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
         `;
         document.getElementById('videoUploadInfo').innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> 视频已选择：' + file.name + ' (' + formatSize(file.size) + ')</span>';
+
+        // 加载到隐藏 video 元素用于 Canvas 截帧
+        captureEl.src = url;
+        captureEl.load();
+        thumbSection.style.display = 'block';
+        document.getElementById('video_thumbnail').value = '';
+        thumbPreview.innerHTML = '<span style="color:#64748b;">拖动视频到想要的画面，点击上方按钮截取</span>';
     });
 }
+
+// Canvas 截取视频当前帧作为封面
+function captureVideoFrame() {
+    if (!captureEl.src || captureEl.readyState < 2) {
+        thumbPreview.innerHTML = '<span style="color:#fca5a5;">视频未就绪，请稍后再试</span>';
+        return;
+    }
+    try {
+        videoCanvas.width = captureEl.videoWidth || 640;
+        videoCanvas.height = captureEl.videoHeight || 480;
+        const ctx = videoCanvas.getContext('2d');
+        ctx.drawImage(captureEl, 0, 0, videoCanvas.width, videoCanvas.height);
+        const dataUrl = videoCanvas.toDataURL('image/jpeg', 0.9);
+        document.getElementById('video_thumbnail').value = dataUrl;
+
+        // 同时更新主图预览
+        const mainArea = document.getElementById('mainImageArea');
+        if (mainArea && !document.getElementById('main_image').files.length) {
+            mainArea.innerHTML = `
+                <div class="upload-preview active">
+                    <img src="${dataUrl}" alt="视频封面" style="width:100%;height:200px;object-fit:cover;">
+                    <button type="button" class="btn-remove-img" onclick="document.getElementById('main_image').click()">
+                        <i class="fas fa-sync-alt"></i> 更换
+                    </button>
+                </div>
+            `;
+        }
+
+        thumbPreview.innerHTML = '<img src="' + dataUrl + '" style="max-width:100%;max-height:120px;border-radius:6px;" alt="封面预览"><br><span style="color:#86efac;font-size:12px;"><i class="fas fa-check-circle"></i> 封面已截取</span>';
+    } catch (e) {
+        thumbPreview.innerHTML = '<span style="color:#fca5a5;">截取失败，请手动上传主图</span>';
+    }
+}
+
 function resetVideoUpload() {
     if (!videoInput) return;
     videoInput.value = '';
+    currentVideoUrl = null;
+    captureEl.src = '';
     videoArea.innerHTML = `
         <div class="upload-placeholder" onclick="document.getElementById('product_video').click()">
             <i class="fas fa-video"></i>
@@ -1502,6 +1647,9 @@ function resetVideoUpload() {
         <input type="hidden" name="remove_video" id="removeVideoFlag" value="1">
     `;
     document.getElementById('videoUploadInfo').textContent = '';
+    document.getElementById('video_thumbnail').value = '';
+    thumbSection.style.display = 'none';
+    thumbPreview.innerHTML = '<span style="color:#64748b;">拖动视频到想要的画面，点击上方按钮截取</span>';
 }
 
 // 表单验证
