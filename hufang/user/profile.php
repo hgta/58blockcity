@@ -136,20 +136,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // 显示消息
-if (isset($_SESSION['message'])) {
-    echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
-    unset($_SESSION['message']);
-}
-
-if (isset($_SESSION['error'])) {
-    echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>';
-    unset($_SESSION['error']);
-}
+$flashMessage = $_SESSION['message'] ?? null;
+$flashError = $_SESSION['error'] ?? null;
+unset($_SESSION['message'], $_SESSION['error']);
 
 $city = new City($pdo);
 $cities = $city->getAllCities();
 ?>
 <?php include '../includes/header.php'; ?>
+
+<?php if ($flashMessage): ?>
+    <div class="alert alert-success" style="max-width:1200px;margin:15px auto;"><?php echo htmlspecialchars($flashMessage); ?></div>
+<?php endif; ?>
+<?php if ($flashError): ?>
+    <div class="alert alert-danger" style="max-width:1200px;margin:15px auto;"><?php echo htmlspecialchars($flashError); ?></div>
+<?php endif; ?>
 
 <div class="container profile-container">
     <div class="row">
@@ -229,7 +230,7 @@ $cities = $city->getAllCities();
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="password">新密码 (留空则不修改)</label>
-                            <input type="password" id="password" name="password" class="form-control">
+                            <input type="password" id="password" name="new_password" class="form-control">
                             <?php if (isset($errors['password'])): ?>
                                 <small class="text-danger"><?php echo htmlspecialchars($errors['password']); ?></small>
                             <?php endif; ?>
@@ -237,7 +238,7 @@ $cities = $city->getAllCities();
                         
                         <div class="form-group col-md-6">
                             <label for="password_confirm">确认新密码</label>
-                            <input type="password" id="password_confirm" name="password_confirm" class="form-control">
+                            <input type="password" id="password_confirm" name="confirm_password" class="form-control">
                             <?php if (isset($errors['password_confirm'])): ?>
                                 <small class="text-danger"><?php echo htmlspecialchars($errors['password_confirm']); ?></small>
                             <?php endif; ?>

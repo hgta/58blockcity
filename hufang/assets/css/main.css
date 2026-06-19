@@ -3689,3 +3689,120 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* ========== 前台用户页面设计优化 (2024) ========== */
+
+/* dashboard 渐变欢迎区 */
+.dashboard-header {
+    background: linear-gradient(135deg, #ff6b00, #ff9500);
+    color: white !important;
+    border-radius: 12px;
+    padding: 28px 32px !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 4px 20px rgba(255, 107, 0, 0.2);
+}
+.dashboard-header h1 { color: white !important; }
+.dashboard-header p { color: rgba(255,255,255,0.9) !important; }
+.dashboard-header .btn-primary {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+}
+.dashboard-header .btn-primary:hover { background: rgba(255,255,255,0.3); }
+.dashboard-header .btn-default {
+    background: transparent;
+    border-color: rgba(255,255,255,0.5);
+    color: white;
+}
+.dashboard-header .btn-default:hover { background: rgba(255,255,255,0.15); }
+
+/* 统计卡片 hover 增强 */
+.stat-card {
+    border-radius: 12px !important;
+    transition: transform 0.3s, box-shadow 0.3s !important;
+    cursor: pointer;
+}
+.stat-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+}
+
+/* dashboard / circle 卡片统一 */
+.dashboard-card, .circle-card {
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+.dashboard-card .card-header, .circle-card .circle-header {
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* 圈子卡片 hover */
+.circle-card {
+    transition: transform 0.3s, box-shadow 0.3s !important;
+}
+.circle-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* 圈子描述截断 */
+.circle-body p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.6;
+    color: #666;
+    font-size: 14px;
+}
+
+/* visits Tab 选中态 */
+.visit-tabs .tab-item {
+    cursor: pointer;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+.visit-tabs .tab-item:hover { color: #ff6b00; }
+.visit-tabs .tab-item.active {
+    color: #ff6b00;
+    border-bottom-color: #ff6b00;
+}
+.visit-tabs .tab-pane { display: none; }
+.visit-tabs .tab-pane.active { display: block; }
+
+/* visit-item 卡片化 */
+.visit-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s;
+}
+.visit-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
+
+/* user-header 优化 */
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 20px 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+.user-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.user-header h2 i { color: #ff6b00; }

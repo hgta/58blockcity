@@ -23,18 +23,18 @@ $myVisits = $visit->getUserVisits($userId);
 
 <div class="container dashboard-container">
     <div class="dashboard-header">
-		<div class="row">
-			<div class="col-md-8">
+		<div class="row" style="align-items:center;margin:0;">
+			<div class="col-md-8" style="padding:0;">
 				<h1><i class="fas fa-tachometer-alt"></i> 我的互访圈仪表盘</h1>
 				<p>欢迎回来，<?= htmlspecialchars($_SESSION['username']) ?>！这里是您管理互访圈和访问记录的中心</p>
 			</div>
 			
-			<div class="col-md-4 text-right">
+			<div class="col-md-4 text-right" style="padding:0;">
 					<a href="../circles/create.php" class="btn btn-primary">
-						<i class="glyphicon glyphicon-plus"></i> 创建互访圈
+						<i class="fas fa-plus"></i> 创建互访圈
 					</a>
 					<a href="profile.php" class="btn btn-default">
-						<i class="glyphicon glyphicon-cog"></i> 账户设置
+						<i class="fas fa-cog"></i> 账户设置
 					</a>
 			</div>
 		</div>
