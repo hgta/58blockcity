@@ -1061,7 +1061,7 @@ require_once '../includes/header.php';
                         $listFilter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
                         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
                         $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-                        $perPage = 20;
+                        $perPage = 18;
 
                         // 获取店铺商品列表（支持筛选、搜索和分页）
                         $products = $product->getProductsByShopWithFilter($shopId, $listFilter, $search, $page, $perPage);
