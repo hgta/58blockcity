@@ -95,6 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $debugInfo['saved_count'] = count($paymentSettingsData);
                     $debugInfo['db_count'] = count($verifySettings);
                     $debugInfo['verify'] = $verifySettings;
+                    // 获取 Shop 类内部的验证信息
+                    $debugInfo['tx_count'] = $shop->lastPaymentDebug['tx_count'] ?? -1;
+                    $debugInfo['post_commit_count'] = $shop->lastPaymentDebug['post_commit_count'] ?? -1;
+                    $debugInfo['inserted'] = $shop->lastPaymentDebug['inserted'] ?? -1;
+                    $debugInfo['deleted'] = $shop->lastPaymentDebug['deleted'] ?? -1;
                     // PRG 重定向，避免刷新重复提交
                     // 把调试信息存到 session 中，重定向后再显示
                     $_SESSION['payment_debug'] = $debugInfo;
@@ -217,10 +222,49 @@ require_once '../includes/header.php';
                             <?= htmlspecialchars($success) ?>
                             <?php if (!empty($debugInfo)): ?>
                             <span class="text-muted small ml-2">
-                                （保存 <?= $debugInfo['saved_count'] ?? '?' ?> 条，数据库实际 <?= $debugInfo['db_count'] ?? '?' ?> 条记录）
+                                （提交 <?= $debugInfo['saved_count'] ?? '?' ?> 条，
+                                 事务内验证 <?= $debugInfo['tx_count'] ?? '?' ?> 条，
+                                 commit后 <?= $debugInfo['post_commit_count'] ?? '?' ?> 条，
+                                 DB读取 <?= $debugInfo['db_count'] ?? '?' ?> 条）
                             </span>
                             <?php endif; ?>
                         </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($debugInfo)): ?>
+                    <details class="mb-3" style="font-size:12px;border:1px solid #ffc107;background:#fffbe5;padding:8px;border-radius:6px;">
+                        <summary class="font-weight-bold" style="cursor:pointer;color:#856404;">🔍 保存诊断信息（点击展开）</summary>
+                        <div class="mt-2 small">
+                            <table class="table table-sm table-bordered">
+                                <tr><td width="180">提交保存条目数</td><td><strong><?= $debugInfo['saved_count'] ?? '?' ?></strong></td></tr>
+                                <tr><td>删除旧记录数</td><td><?= $debugInfo['deleted'] ?? '?' ?></td></tr>
+                                <tr><td>INSERT 执行次数</td><td><?= $debugInfo['inserted'] ?? '?' ?></td></tr>
+                                <tr style="background:#<?= ($debugInfo['tx_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
+                                    <td><strong>事务内 SELECT COUNT</strong></td>
+                                    <td><strong><?= $debugInfo['tx_count'] ?? '?' ?></strong> <?= ($debugInfo['tx_count'] ?? -1) > 0 ? '✅ 写入正常' : '❌ 写入失败！' ?></td>
+                                </tr>
+                                <tr style="background:#<?= ($debugInfo['post_commit_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
+                                    <td><strong>COMMIT 后 SELECT COUNT</strong></td>
+                                    <td><strong><?= $debugInfo['post_commit_count'] ?? '?' ?></strong> <?= ($debugInfo['post_commit_count'] ?? -1) > 0 ? '✅ 提交正常' : '❌ 提交后数据丢失！' ?></td>
+                                </tr>
+                                <tr style="background:#<?= ($debugInfo['db_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
+                                    <td><strong>getPaymentSettings 读取</strong></td>
+                                    <td><strong><?= $debugInfo['db_count'] ?? '?' ?></strong> <?= ($debugInfo['db_count'] ?? -1) > 0 ? '✅ 读取正常' : '❌ 读取为空！' ?></td>
+                                </tr>
+                            </table>
+                            <?php if (($debugInfo['tx_count'] ?? 0) > 0 && ($debugInfo['db_count'] ?? 0) == 0): ?>
+                            <div class="alert alert-danger small mb-0">
+                                <strong>诊断结论：</strong>事务内写入成功，但 commit 后或读取时数据丢失。<br>
+                                可能原因：① MySQL 表引擎不是 InnoDB ② 有 AFTER INSERT 触发器清空数据 ③ 读写分离架构读取了从库
+                            </div>
+                            <?php elseif (($debugInfo['tx_count'] ?? 0) == 0 && ($debugInfo['saved_count'] ?? 0) > 0): ?>
+                            <div class="alert alert-danger small mb-0">
+                                <strong>诊断结论：</strong>INSERT 执行了但事务内查询为 0 行。<br>
+                                可能原因：表引擎不支持事务（如 MyISAM/MEMORY）或有触发器拦截了 INSERT
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </details>
                     <?php endif; ?>
                     
                     <?php if (!empty($debugInfo) && !empty($debugInfo['verify'])): ?>

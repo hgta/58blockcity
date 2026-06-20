@@ -2,6 +2,7 @@
 // classes/Shop.php
 class Shop {
     private $pdo;
+    public $lastPaymentDebug = [];
     
     public function __construct($pdo) {
         $this->pdo = $pdo;
@@ -680,13 +681,39 @@ class Shop {
                 $insertedRows += $insertStmt->rowCount();
             }
 
+            // 事务内验证：立即查询，确认 INSERT 是否生效
+            $verifyCountStmt = $this->pdo->prepare("SELECT COUNT(*) as cnt FROM shop_payment_settings WHERE shop_id = ?");
+            $verifyCountStmt->execute([$shopId]);
+            $txCount = $verifyCountStmt->fetchColumn();
+            error_log("updatePaymentSettings 事务内验证: shop_id={$shopId}, 期望={$insertedRows}, 实际={$txCount}");
+            $this->lastPaymentDebug['tx_count'] = (int)$txCount;
+            $this->lastPaymentDebug['inserted'] = $insertedRows;
+            $this->lastPaymentDebug['deleted'] = $deletedRows;
+
+            if ($txCount == 0 && $insertedRows > 0) {
+                // INSERT 没有写入数据！可能是表引擎问题或触发器清空了数据
+                throw new Exception("事务内数据异常：INSERT 了 {$insertedRows} 行但表查询为 0 行，表可能有写入问题");
+            }
+
             $commitResult = $this->pdo->commit();
             if ($commitResult === false) {
                 $errorInfo = $this->pdo->errorInfo();
                 error_log("updatePaymentSettings commit 失败: shop_id={$shopId}, deleted={$deletedRows}, inserted={$insertedRows}, error=" . json_encode($errorInfo));
                 throw new Exception("提交事务失败: " . ($errorInfo[2] ?? 'unknown'));
             }
-            error_log("updatePaymentSettings commit 成功: shop_id={$shopId}, deleted={$deletedRows}, inserted={$insertedRows}");
+
+            // COMMIT 后再验证一次
+            $verifyCountStmt2 = $this->pdo->prepare("SELECT COUNT(*) as cnt FROM shop_payment_settings WHERE shop_id = ?");
+            $verifyCountStmt2->execute([$shopId]);
+            $postCommitCount = $verifyCountStmt2->fetchColumn();
+            error_log("updatePaymentSettings commit 后验证: shop_id={$shopId}, 期望={$insertedRows}, 实际={$postCommitCount}");
+            $this->lastPaymentDebug['post_commit_count'] = (int)$postCommitCount;
+
+            if ($postCommitCount == 0 && $insertedRows > 0) {
+                error_log("updatePaymentSettings 严重问题：commit 成功后数据仍为 0 行！shop_id={$shopId}");
+            }
+
+            error_log("updatePaymentSettings commit 成功: shop_id={$shopId}, deleted={$deletedRows}, inserted={$insertedRows}, post_commit_count={$postCommitCount}");
             return true;
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) {
