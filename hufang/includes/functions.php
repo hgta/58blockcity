@@ -344,21 +344,6 @@ function handleFileUpload($fieldName, $targetDir, $allowedTypes = [], $maxSize =
         return ['success' => false, 'message' => '文件移动失败'];
     }
 }
-
-/**
- * 生成 CSRF token 并存入 session
- * @return string CSRF token
- */
-function generateCsrfToken() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
 /**
  * 输出 CSRF 隐藏字段 HTML
  * @return string
@@ -368,24 +353,9 @@ function csrfField() {
 }
 
 /**
- * 验证 CSRF token
- * @param string $token 提交的 token
- * @return bool 是否有效
- */
-function validateCsrfToken($token) {
-    if (empty($token) || empty($_SESSION['csrf_token'])) {
-        return false;
-    }
-    return hash_equals($_SESSION['csrf_token'], $token);
-}
-
-/**
  * 校验 POST 请求的 CSRF token，失败则终止
+ * 复用 auth.php 的 validateCsrfToken()（无参版，自动从 $_POST 读取）
  */
 function requireCsrf() {
-    $token = $_POST['csrf_token'] ?? '';
-    if (!validateCsrfToken($token)) {
-        http_response_code(403);
-        die('安全校验失败，请返回重试');
-    }
+    validateCsrfToken();
 }
