@@ -39,6 +39,14 @@ $orderItems = $order->getOrderDetails($orderId);
 // 获取店铺信息
 $shopInfo = $shop->getShopById($orderInfo['shop_id'] ?? 0);
 
+// 获取支付区块信息
+$paymentBlockInfo = null;
+if (!empty($orderInfo['payment_block_id'])) {
+    $blockStmt = $pdo->prepare("SELECT b.zone, b.block_number, c.name as city_name FROM blocks b LEFT JOIN cities c ON b.city_id = c.id WHERE b.id = ?");
+    $blockStmt->execute([$orderInfo['payment_block_id']]);
+    $paymentBlockInfo = $blockStmt->fetch(PDO::FETCH_ASSOC);
+}
+
 // 状态映射
 $statusMap = [
     'pending' => ['label' => '待付款', 'color' => '#f39c12', 'bg' => '#fff8e1'],
@@ -57,6 +65,12 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>订单详情 - <?php echo htmlspecialchars($orderInfo['order_no']); ?> - 58人气值商城</title>
     <style>
+        .bct-symbol {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-right: 2px;
+        }
         .order-detail-container {
             max-width: 900px;
             margin: 0 auto;
@@ -303,14 +317,14 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
                         <div class="spec">默认规格</div>
                     </div>
                     <div class="product-price-qty">
-                        <div class="price">¥<?php echo number_format($item['unit_price'], 2); ?></div>
+                        <div class="price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'], 0); ?> 人气值</div>
                         <div class="qty">x<?php echo $item['quantity']; ?></div>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
             <div class="total-section">
-                实付总额: <span class="total">¥<?php echo number_format($orderInfo['total_amount'], 2); ?></span>
+                实付总额: <span class="total"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
             </div>
         </div>
         
@@ -348,13 +362,30 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
         <div class="card">
             <div class="card-title"><i class="fas fa-credit-card"></i> 支付信息</div>
             <div class="info-row">
-                <span class="info-label">支付城市</span>
-                <span class="info-value"><?php echo htmlspecialchars($orderInfo['payment_city'] ?? '-'); ?></span>
+                <span class="info-label">支付金额</span>
+                <span class="info-value"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['payment_amount'] ?? $orderInfo['total_amount'], 0); ?> 人气值</span>
+            </div>
+            <?php if ($paymentBlockInfo): ?>
+            <div class="info-row">
+                <span class="info-label">收款城市</span>
+                <span class="info-value"><?php echo htmlspecialchars($paymentBlockInfo['city_name'] ?? $orderInfo['payment_city']); ?></span>
             </div>
             <div class="info-row">
-                <span class="info-label">支付金额</span>
-                <span class="info-value">¥<?php echo number_format($orderInfo['payment_amount'] ?? $orderInfo['total_amount'], 2); ?></span>
+                <span class="info-label">收款区块</span>
+                <span class="info-value">
+                    <?php 
+                        $zone = $paymentBlockInfo['zone'] ?? '';
+                        $number = $paymentBlockInfo['block_number'] ?? '';
+                        echo htmlspecialchars($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '');
+                    ?>
+                </span>
             </div>
+            <?php elseif (!empty($orderInfo['payment_city'])): ?>
+            <div class="info-row">
+                <span class="info-label">支付城市</span>
+                <span class="info-value"><?php echo htmlspecialchars($orderInfo['payment_city']); ?></span>
+            </div>
+            <?php endif; ?>
             <div class="info-row">
                 <span class="info-label">支付时间</span>
                 <span class="info-value"><?php echo !empty($orderInfo['paid_at']) ? date('Y-m-d H:i:s', strtotime($orderInfo['paid_at'])) : '-'; ?></span>
