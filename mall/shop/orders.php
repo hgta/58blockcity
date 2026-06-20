@@ -112,32 +112,48 @@ require_once '../includes/header.php';
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
-            <!-- 店铺管理侧边栏 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">店铺管理</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="manage.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt"></i> 店铺概览
+            <aside class="shop-sidebar">
+                <nav class="sidebar-nav">
+                    <a href="manage.php?id=<?= $shopId ?>" class="nav-item">
+                        <i class="fas fa-tachometer-alt"></i> 数据看板
                     </a>
-                    <a href="products.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="products.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-box"></i> 商品管理
                     </a>
-                    <a href="products.php?action=add&id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="products.php?action=add&id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-plus"></i> 添加商品
                     </a>
-                    <a href="orders.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action active">
+                    <a href="orders.php?id=<?= $shopId ?>" class="nav-item active">
                         <i class="fas fa-shopping-cart"></i> 订单管理
                     </a>
-                    <a href="coupons.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="coupons.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-ticket-alt"></i> 优惠券
                     </a>
-                    <a href="payment-settings.php?id=<?= $shopId ?>" class="list-group-item list-group-item-action">
+                    <a href="payment-settings.php?id=<?= $shopId ?>" class="nav-item">
                         <i class="fas fa-cog"></i> 支付设置
                     </a>
+                </nav>
+
+                <div class="sidebar-card">
+                    <h4>订单统计</h4>
+                    <div class="sidebar-stat-row">
+                        <span class="label">全部订单</span>
+                        <span class="value text-primary"><?= $statusStats['total'] ?? 0 ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">待付款</span>
+                        <span class="value text-warning"><?= $statusStats['pending'] ?? 0 ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">待发货</span>
+                        <span class="value text-info"><?= $statusStats['paid'] ?? 0 ?></span>
+                    </div>
+                    <div class="sidebar-stat-row">
+                        <span class="label">已完成</span>
+                        <span class="value text-success"><?= $statusStats['completed'] ?? 0 ?></span>
+                    </div>
                 </div>
-            </div>
+            </aside>
         </div>
 
         <div class="col-md-9">
@@ -313,6 +329,21 @@ require_once '../includes/header.php';
 </div>
 
 <style>
+/* ===== 侧边栏（统一风格） ===== */
+.shop-sidebar { width: 100%; }
+.sidebar-nav { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: all .2s; position: relative; }
+.nav-item:hover { background: #f1f5f9; color: #1e293b; text-decoration: none; }
+.nav-item.active { background: #fff7ed; color: #ea580c; }
+.nav-badge { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.nav-item.active .nav-badge { background: #fed7aa; color: #c2410c; }
+.sidebar-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.sidebar-card h4 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 12px; }
+.sidebar-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.sidebar-stat-row:last-child { border-bottom: none; }
+.sidebar-stat-row .label { color: #64748b; }
+.sidebar-stat-row .value { font-weight: 600; }
+
 /* 订单统计卡片 */
 .order-stats-row {
     display: grid;
