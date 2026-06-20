@@ -92,6 +92,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // 立即查询数据库验证是否已持久化
                     $verifySettings = $shop->getPaymentSettings($shopId);
                     error_log("payment-settings 保存后验证: shop_id={$shopId}, saved_count=" . count($paymentSettingsData) . ", db_count=" . count($verifySettings));
+                    
+                    // 额外验证：直接查询 shop_payment_settings 表，绕过 JOIN
+                    try {
+                        $rawStmt = $pdo->prepare("SELECT city, block_id, is_active FROM shop_payment_settings WHERE shop_id = ?");
+                        $rawStmt->execute([$shopId]);
+                        $rawRows = $rawStmt->fetchAll(PDO::FETCH_ASSOC);
+                        $debugInfo['raw_count'] = count($rawRows);
+                        $debugInfo['raw_sample'] = array_slice($rawRows, 0, 3);
+                    } catch (Exception $e) {
+                        $debugInfo['raw_error'] = $e->getMessage();
+                    }
+                    
+                    // 验证 JOIN 查询每一步是否正常
+                    try {
+                        $joinStmt1 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name) WHERE sps.shop_id = ?");
+                        $joinStmt1->execute([$shopId]);
+                        $debugInfo['join_cities_count'] = (int)$joinStmt1->fetchColumn();
+                        
+                        $joinStmt2 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id WHERE sps.shop_id = ?");
+                        $joinStmt2->execute([$shopId]);
+                        $debugInfo['join_blocks_count'] = (int)$joinStmt2->fetchColumn();
+                        
+                        $joinStmt3 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name) WHERE sps.shop_id = ?");
+                        $joinStmt3->execute([$shopId]);
+                        $debugInfo['join_both_count'] = (int)$joinStmt3->fetchColumn();
+                    } catch (Exception $e) {
+                        $debugInfo['join_error'] = $e->getMessage();
+                    }
+                    
                     $debugInfo['saved_count'] = count($paymentSettingsData);
                     $debugInfo['db_count'] = count($verifySettings);
                     $debugInfo['verify'] = $verifySettings;
@@ -223,9 +252,10 @@ require_once '../includes/header.php';
                             <?php if (!empty($debugInfo)): ?>
                             <span class="text-muted small ml-2">
                                 （提交 <?= $debugInfo['saved_count'] ?? '?' ?> 条，
-                                 事务内验证 <?= $debugInfo['tx_count'] ?? '?' ?> 条，
-                                 commit后 <?= $debugInfo['post_commit_count'] ?? '?' ?> 条，
-                                 DB读取 <?= $debugInfo['db_count'] ?? '?' ?> 条）
+                                 事务内 <?= $debugInfo['tx_count'] ?? '?' ?>，
+                                 commit后 <?= $debugInfo['post_commit_count'] ?? '?' ?>，
+                                 JOIN读取 <?= $debugInfo['db_count'] ?? '?' ?>，
+                                 直接查表 <?= $debugInfo['raw_count'] ?? '?' ?>）
                             </span>
                             <?php endif; ?>
                         </div>
@@ -251,11 +281,31 @@ require_once '../includes/header.php';
                                     <td><strong>getPaymentSettings 读取</strong></td>
                                     <td><strong><?= $debugInfo['db_count'] ?? '?' ?></strong> <?= ($debugInfo['db_count'] ?? -1) > 0 ? '✅ 读取正常' : '❌ 读取为空！' ?></td>
                                 </tr>
+                                <tr>
+                                    <td>直接查表（无JOIN）</td>
+                                    <td><?= $debugInfo['raw_count'] ?? '?' ?> 条 <?= isset($debugInfo['raw_error']) ? '❌ ' . htmlspecialchars($debugInfo['raw_error']) : '' ?></td>
+                                </tr>
+                                <tr>
+                                    <td>LEFT JOIN cities</td>
+                                    <td><?= $debugInfo['join_cities_count'] ?? '?' ?> 条 <?= isset($debugInfo['join_error']) ? '❌ ' . htmlspecialchars($debugInfo['join_error']) : '' ?></td>
+                                </tr>
+                                <tr>
+                                    <td>LEFT JOIN blocks</td>
+                                    <td><?= $debugInfo['join_blocks_count'] ?? '?' ?> 条</td>
+                                </tr>
+                                <tr>
+                                    <td>LEFT JOIN cities + blocks</td>
+                                    <td><?= $debugInfo['join_both_count'] ?? '?' ?> 条</td>
+                                </tr>
                             </table>
                             <?php if (($debugInfo['tx_count'] ?? 0) > 0 && ($debugInfo['db_count'] ?? 0) == 0): ?>
                             <div class="alert alert-danger small mb-0">
-                                <strong>诊断结论：</strong>事务内写入成功，但 commit 后或读取时数据丢失。<br>
-                                可能原因：① MySQL 表引擎不是 InnoDB ② 有 AFTER INSERT 触发器清空数据 ③ 读写分离架构读取了从库
+                                <strong>诊断结论：</strong>事务内写入成功，但 getPaymentSettings（含 JOIN）返回 0 条。<br>
+                                <?php if (($debugInfo['raw_count'] ?? 0) > 0 && ($debugInfo['join_both_count'] ?? 0) == 0): ?>
+                                ✅ 直接查表有数据，但 JOIN 后为 0 → <strong>JOIN 查询本身有问题</strong>，检查 cities/blocks 表是否存在或有字段冲突
+                                <?php elseif (($debugInfo['raw_count'] ?? 0) == 0): ?>
+                                ❌ 连直接查表都是 0 → 数据确实没存进去
+                                <?php endif; ?>
                             </div>
                             <?php elseif (($debugInfo['tx_count'] ?? 0) == 0 && ($debugInfo['saved_count'] ?? 0) > 0): ?>
                             <div class="alert alert-danger small mb-0">

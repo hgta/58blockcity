@@ -491,18 +491,68 @@ class Shop {
     public function getShopPaymentSettings($shopId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT sps.*, b.zone as block_zone, b.block_number, c.name as city_name
-                FROM shop_payment_settings sps
-                LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
-                LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name)
-                WHERE sps.shop_id = ? AND sps.is_active = 1
-                ORDER BY sps.created_at DESC
+                SELECT id, shop_id, city, block_id, is_active, min_amount, exchange_rate, created_at, updated_at
+                FROM shop_payment_settings
+                WHERE shop_id = ? AND is_active = 1
+                ORDER BY created_at DESC
             ");
             $stmt->execute([$shopId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($settings)) {
+                return [];
+            }
+            
+            // 批量获取区块信息
+            $blockIds = array_filter(array_column($settings, 'block_id'));
+            $blocksById = [];
+            if (!empty($blockIds)) {
+                $placeholders = implode(',', array_fill(0, count($blockIds), '?'));
+                $blockStmt = $this->pdo->prepare("SELECT id, zone, block_number FROM blocks WHERE id IN ($placeholders)");
+                $blockStmt->execute(array_values($blockIds));
+                foreach ($blockStmt->fetchAll(PDO::FETCH_ASSOC) as $b) {
+                    $blocksById[$b['id']] = $b;
+                }
+            }
+            
+            // 批量获取城市信息
+            $cityNames = array_unique(array_column($settings, 'city'));
+            $citiesByPinyin = [];
+            $citiesByName = [];
+            if (!empty($cityNames)) {
+                $cityPlaceholders = implode(',', array_fill(0, count($cityNames), '?'));
+                $cityStmt = $this->pdo->prepare("SELECT id, name, pinyin FROM cities WHERE pinyin IN ($cityPlaceholders) OR name IN ($cityPlaceholders)");
+                $cityStmt->execute(array_merge($cityNames, $cityNames));
+                foreach ($cityStmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                    if (!empty($c['pinyin'])) {
+                        $citiesByPinyin[$c['pinyin']] = $c;
+                    }
+                    $citiesByName[$c['name']] = $c;
+                }
+            }
+            
+            // 合并数据
+            foreach ($settings as &$setting) {
+                $bid = $setting['block_id'];
+                $setting['block_zone'] = $blocksById[$bid]['zone'] ?? null;
+                $setting['block_number'] = $blocksById[$bid]['block_number'] ?? null;
+                $cityKey = $setting['city'];
+                $cityInfo = $citiesByPinyin[$cityKey] ?? $citiesByName[$cityKey] ?? null;
+                $setting['city_name'] = $cityInfo['name'] ?? $cityKey;
+            }
+            unset($setting);
+            
+            return $settings;
         } catch (Exception $e) {
-            error_log("获取店铺支付设置失败: " . $e->getMessage());
-            return [];
+            error_log("getShopPaymentSettings 异常: shop_id={$shopId}, error=" . $e->getMessage());
+            try {
+                $fallbackStmt = $this->pdo->prepare("SELECT * FROM shop_payment_settings WHERE shop_id = ? AND is_active = 1 ORDER BY created_at DESC");
+                $fallbackStmt->execute([$shopId]);
+                return $fallbackStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e2) {
+                error_log("getShopPaymentSettings 回退失败: " . $e2->getMessage());
+                return [];
+            }
         }
     }
     
@@ -611,19 +661,72 @@ class Shop {
      */
     public function getPaymentSettings($shopId) {
         try {
+            // 第一步：基础查询，不依赖 JOIN
             $stmt = $this->pdo->prepare("
-                SELECT sps.*, b.zone as block_zone, b.block_number, c.name as city_name
-                FROM shop_payment_settings sps
-                LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
-                LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name)
-                WHERE sps.shop_id = ?
-                ORDER BY sps.created_at DESC
+                SELECT id, shop_id, city, block_id, is_active, min_amount, exchange_rate, created_at, updated_at
+                FROM shop_payment_settings
+                WHERE shop_id = ?
+                ORDER BY created_at DESC
             ");
             $stmt->execute([$shopId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($settings)) {
+                return [];
+            }
+            
+            // 第二步：收集所有 block_id，批量获取区块信息
+            $blockIds = array_filter(array_column($settings, 'block_id'));
+            $blocksById = [];
+            if (!empty($blockIds)) {
+                $placeholders = implode(',', array_fill(0, count($blockIds), '?'));
+                $blockStmt = $this->pdo->prepare("SELECT id, zone, block_number FROM blocks WHERE id IN ($placeholders)");
+                $blockStmt->execute(array_values($blockIds));
+                foreach ($blockStmt->fetchAll(PDO::FETCH_ASSOC) as $b) {
+                    $blocksById[$b['id']] = $b;
+                }
+            }
+            
+            // 第三步：收集城市信息
+            $cityNames = array_unique(array_column($settings, 'city'));
+            $citiesByPinyin = [];
+            $citiesByName = [];
+            if (!empty($cityNames)) {
+                $cityPlaceholders = implode(',', array_fill(0, count($cityNames), '?'));
+                $cityStmt = $this->pdo->prepare("SELECT id, name, pinyin FROM cities WHERE pinyin IN ($cityPlaceholders) OR name IN ($cityPlaceholders)");
+                $cityStmt->execute(array_merge($cityNames, $cityNames));
+                foreach ($cityStmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                    if (!empty($c['pinyin'])) {
+                        $citiesByPinyin[$c['pinyin']] = $c;
+                    }
+                    $citiesByName[$c['name']] = $c;
+                }
+            }
+            
+            // 第四步：合并数据
+            foreach ($settings as &$setting) {
+                $bid = $setting['block_id'];
+                $setting['block_zone'] = $blocksById[$bid]['zone'] ?? null;
+                $setting['block_number'] = $blocksById[$bid]['block_number'] ?? null;
+                
+                $cityKey = $setting['city'];
+                $cityInfo = $citiesByPinyin[$cityKey] ?? $citiesByName[$cityKey] ?? null;
+                $setting['city_name'] = $cityInfo['name'] ?? $cityKey;
+            }
+            unset($setting);
+            
+            return $settings;
         } catch (Exception $e) {
-            error_log("获取店铺支付设置失败: " . $e->getMessage());
-            return [];
+            error_log("getPaymentSettings 异常: shop_id={$shopId}, error=" . $e->getMessage() . "\n" . $e->getTraceAsString());
+            // 回退：至少返回基础数据
+            try {
+                $fallbackStmt = $this->pdo->prepare("SELECT * FROM shop_payment_settings WHERE shop_id = ? ORDER BY created_at DESC");
+                $fallbackStmt->execute([$shopId]);
+                return $fallbackStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e2) {
+                error_log("getPaymentSettings 回退也失败: " . $e2->getMessage());
+                return [];
+            }
         }
     }
 
