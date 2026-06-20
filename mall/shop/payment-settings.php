@@ -47,7 +47,6 @@ $error = '';
 $success = '';
 
 // 处理支付设置更新
-$debugInfo = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("payment-settings POST: shop_id={$shopId}, raw_post=" . json_encode($_POST));
 
@@ -88,50 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 if ($shop->updatePaymentSettings($shopId, $paymentSettingsData)) {
-                    error_log("payment-settings 保存成功: shop_id={$shopId}, settings=" . json_encode($paymentSettingsData));
-                    // 立即查询数据库验证是否已持久化
-                    $verifySettings = $shop->getPaymentSettings($shopId);
-                    error_log("payment-settings 保存后验证: shop_id={$shopId}, saved_count=" . count($paymentSettingsData) . ", db_count=" . count($verifySettings));
-                    
-                    // 额外验证：直接查询 shop_payment_settings 表，绕过 JOIN
-                    try {
-                        $rawStmt = $pdo->prepare("SELECT city, block_id, is_active FROM shop_payment_settings WHERE shop_id = ?");
-                        $rawStmt->execute([$shopId]);
-                        $rawRows = $rawStmt->fetchAll(PDO::FETCH_ASSOC);
-                        $debugInfo['raw_count'] = count($rawRows);
-                        $debugInfo['raw_sample'] = array_slice($rawRows, 0, 3);
-                    } catch (Exception $e) {
-                        $debugInfo['raw_error'] = $e->getMessage();
-                    }
-                    
-                    // 验证 JOIN 查询每一步是否正常
-                    try {
-                        $joinStmt1 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name) WHERE sps.shop_id = ?");
-                        $joinStmt1->execute([$shopId]);
-                        $debugInfo['join_cities_count'] = (int)$joinStmt1->fetchColumn();
-                        
-                        $joinStmt2 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id WHERE sps.shop_id = ?");
-                        $joinStmt2->execute([$shopId]);
-                        $debugInfo['join_blocks_count'] = (int)$joinStmt2->fetchColumn();
-                        
-                        $joinStmt3 = $pdo->prepare("SELECT COUNT(*) FROM shop_payment_settings sps LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name) WHERE sps.shop_id = ?");
-                        $joinStmt3->execute([$shopId]);
-                        $debugInfo['join_both_count'] = (int)$joinStmt3->fetchColumn();
-                    } catch (Exception $e) {
-                        $debugInfo['join_error'] = $e->getMessage();
-                    }
-                    
-                    $debugInfo['saved_count'] = count($paymentSettingsData);
-                    $debugInfo['db_count'] = count($verifySettings);
-                    $debugInfo['verify'] = $verifySettings;
-                    // 获取 Shop 类内部的验证信息
-                    $debugInfo['tx_count'] = $shop->lastPaymentDebug['tx_count'] ?? -1;
-                    $debugInfo['post_commit_count'] = $shop->lastPaymentDebug['post_commit_count'] ?? -1;
-                    $debugInfo['inserted'] = $shop->lastPaymentDebug['inserted'] ?? -1;
-                    $debugInfo['deleted'] = $shop->lastPaymentDebug['deleted'] ?? -1;
+                    error_log("payment-settings 保存成功: shop_id={$shopId}, count=" . count($paymentSettingsData));
                     // PRG 重定向，避免刷新重复提交
-                    // 把调试信息存到 session 中，重定向后再显示
-                    $_SESSION['payment_debug'] = $debugInfo;
                     $redirectUrl = 'payment-settings.php?id=' . $shopId . '&saved=1';
                     header('Location: ' . $redirectUrl);
                     exit;
@@ -149,11 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // 从 URL 参数读取保存成功提示
 if (isset($_GET['saved']) && $_GET['saved'] == '1') {
     $success = '支付设置更新成功';
-    // 从 session 恢复调试信息
-    if (isset($_SESSION['payment_debug'])) {
-        $debugInfo = $_SESSION['payment_debug'];
-        unset($_SESSION['payment_debug']);
-    }
 }
 
 // 将支付设置转换为以城市为键的数组，便于模板使用
@@ -166,7 +118,7 @@ foreach ($paymentSettings as $setting) {
 $displayCities = [];
 $hiddenCities = [];
 $displayCount = 0;
-$maxDisplay = 50;
+$maxDisplay = 20;
 
 foreach ($supportedCities as $cityCode => $city) {
     $isConfigured = isset($paymentSettingsByCity[$cityCode]);
@@ -247,113 +199,8 @@ require_once '../includes/header.php';
                     <?php endif; ?>
                     
                     <?php if ($success): ?>
-                        <div class="alert alert-success">
-                            <?= htmlspecialchars($success) ?>
-                            <?php if (!empty($debugInfo)): ?>
-                            <span class="text-muted small ml-2">
-                                （提交 <?= $debugInfo['saved_count'] ?? '?' ?> 条，
-                                 事务内 <?= $debugInfo['tx_count'] ?? '?' ?>，
-                                 commit后 <?= $debugInfo['post_commit_count'] ?? '?' ?>，
-                                 JOIN读取 <?= $debugInfo['db_count'] ?? '?' ?>，
-                                 直接查表 <?= $debugInfo['raw_count'] ?? '?' ?>）
-                            </span>
-                            <?php endif; ?>
-                        </div>
+                        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                     <?php endif; ?>
-                    
-                    <?php if (!empty($debugInfo)): ?>
-                    <details class="mb-3" style="font-size:12px;border:1px solid #ffc107;background:#fffbe5;padding:8px;border-radius:6px;">
-                        <summary class="font-weight-bold" style="cursor:pointer;color:#856404;">🔍 保存诊断信息（点击展开）</summary>
-                        <div class="mt-2 small">
-                            <table class="table table-sm table-bordered">
-                                <tr><td width="180">提交保存条目数</td><td><strong><?= $debugInfo['saved_count'] ?? '?' ?></strong></td></tr>
-                                <tr><td>删除旧记录数</td><td><?= $debugInfo['deleted'] ?? '?' ?></td></tr>
-                                <tr><td>INSERT 执行次数</td><td><?= $debugInfo['inserted'] ?? '?' ?></td></tr>
-                                <tr style="background:#<?= ($debugInfo['tx_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
-                                    <td><strong>事务内 SELECT COUNT</strong></td>
-                                    <td><strong><?= $debugInfo['tx_count'] ?? '?' ?></strong> <?= ($debugInfo['tx_count'] ?? -1) > 0 ? '✅ 写入正常' : '❌ 写入失败！' ?></td>
-                                </tr>
-                                <tr style="background:#<?= ($debugInfo['post_commit_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
-                                    <td><strong>COMMIT 后 SELECT COUNT</strong></td>
-                                    <td><strong><?= $debugInfo['post_commit_count'] ?? '?' ?></strong> <?= ($debugInfo['post_commit_count'] ?? -1) > 0 ? '✅ 提交正常' : '❌ 提交后数据丢失！' ?></td>
-                                </tr>
-                                <tr style="background:#<?= ($debugInfo['db_count'] ?? -1) > 0 ? 'd4edda' : 'f8d7da' ?>">
-                                    <td><strong>getPaymentSettings 读取</strong></td>
-                                    <td><strong><?= $debugInfo['db_count'] ?? '?' ?></strong> <?= ($debugInfo['db_count'] ?? -1) > 0 ? '✅ 读取正常' : '❌ 读取为空！' ?></td>
-                                </tr>
-                                <tr>
-                                    <td>直接查表（无JOIN）</td>
-                                    <td><?= $debugInfo['raw_count'] ?? '?' ?> 条 <?= isset($debugInfo['raw_error']) ? '❌ ' . htmlspecialchars($debugInfo['raw_error']) : '' ?></td>
-                                </tr>
-                                <tr>
-                                    <td>LEFT JOIN cities</td>
-                                    <td><?= $debugInfo['join_cities_count'] ?? '?' ?> 条 <?= isset($debugInfo['join_error']) ? '❌ ' . htmlspecialchars($debugInfo['join_error']) : '' ?></td>
-                                </tr>
-                                <tr>
-                                    <td>LEFT JOIN blocks</td>
-                                    <td><?= $debugInfo['join_blocks_count'] ?? '?' ?> 条</td>
-                                </tr>
-                                <tr>
-                                    <td>LEFT JOIN cities + blocks</td>
-                                    <td><?= $debugInfo['join_both_count'] ?? '?' ?> 条</td>
-                                </tr>
-                            </table>
-                            <?php if (($debugInfo['tx_count'] ?? 0) > 0 && ($debugInfo['db_count'] ?? 0) == 0): ?>
-                            <div class="alert alert-danger small mb-0">
-                                <strong>诊断结论：</strong>事务内写入成功，但 getPaymentSettings（含 JOIN）返回 0 条。<br>
-                                <?php if (($debugInfo['raw_count'] ?? 0) > 0 && ($debugInfo['join_both_count'] ?? 0) == 0): ?>
-                                ✅ 直接查表有数据，但 JOIN 后为 0 → <strong>JOIN 查询本身有问题</strong>，检查 cities/blocks 表是否存在或有字段冲突
-                                <?php elseif (($debugInfo['raw_count'] ?? 0) == 0): ?>
-                                ❌ 连直接查表都是 0 → 数据确实没存进去
-                                <?php endif; ?>
-                            </div>
-                            <?php elseif (($debugInfo['tx_count'] ?? 0) == 0 && ($debugInfo['saved_count'] ?? 0) > 0): ?>
-                            <div class="alert alert-danger small mb-0">
-                                <strong>诊断结论：</strong>INSERT 执行了但事务内查询为 0 行。<br>
-                                可能原因：表引擎不支持事务（如 MyISAM/MEMORY）或有触发器拦截了 INSERT
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </details>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($debugInfo) && !empty($debugInfo['verify'])): ?>
-                    <details class="mb-3" style="font-size:12px;">
-                        <summary class="text-muted" style="cursor:pointer;">数据库记录详情（调试用）</summary>
-                        <table class="table table-sm table-bordered mt-2">
-                            <thead><tr><th>城市</th><th>区块ID</th><th>启用</th></tr></thead>
-                            <tbody>
-                            <?php foreach ($debugInfo['verify'] as $row): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($row['city']) ?></td>
-                                    <td><?= htmlspecialchars($row['block_id']) ?></td>
-                                    <td><?= $row['is_active'] ? '✅ 是' : '❌ 否' ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </details>
-                    <?php endif; ?>
-                    
-                    <details class="mb-3" style="font-size:12px;">
-                        <summary class="text-muted" style="cursor:pointer;">当前加载的设置（调试用，共 <?= count($paymentSettings) ?> 条）</summary>
-                        <table class="table table-sm table-bordered mt-2">
-                            <thead><tr><th>城市</th><th>区块ID</th><th>启用</th></tr></thead>
-                            <tbody>
-                            <?php if (!empty($paymentSettings)): ?>
-                                <?php foreach ($paymentSettings as $row): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($row['city']) ?></td>
-                                    <td><?= htmlspecialchars($row['block_id']) ?></td>
-                                    <td><?= $row['is_active'] ? '✅ 是' : '❌ 否' ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr><td colspan="3" class="text-muted text-center">数据库无记录</td></tr>
-                            <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </details>
                     
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="text-muted small">
