@@ -52,7 +52,14 @@ if ($orderInfo['status'] != 'pending') {
     exit();
 }
 
-// 获取店铺支付设置
+// 获取订单对应的收款区块信息（来自订单创建时选定的 block_id）
+$paymentBlockInfo = null;
+if (!empty($orderInfo['payment_block_id'])) {
+    $blockStmt = $pdo->prepare("SELECT b.id, b.zone, b.block_number, c.name as city_name FROM blocks b LEFT JOIN cities c ON b.city_id = c.id WHERE b.id = ?");
+    $blockStmt->execute([$orderInfo['payment_block_id']]);
+    $paymentBlockInfo = $blockStmt->fetch(PDO::FETCH_ASSOC);
+}
+// 获取店铺支付设置（作为兜底）
 $paymentSettings = $shop->getShopPaymentSettings($orderInfo['shop_id'] ?? 0);
 $defaultPayment = $paymentSettings[0] ?? null;
 
@@ -62,8 +69,8 @@ $errorMsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $txHash = trim($_POST['tx_hash'] ?? '');
     try {
-        // 更新订单为已支付
-        $blockId = $defaultPayment['block_id'] ?? '';
+        // 更新订单为已支付，使用订单实际选定的 block_id
+        $blockId = $orderInfo['payment_block_id'] ?? ($defaultPayment['block_id'] ?? '');
         $result = $order->updatePaymentInfo($orderId, $blockId);
         if ($result) {
             $successMsg = '支付确认成功，订单状态已更新为已付款';
@@ -91,6 +98,12 @@ $orderItems = $order->getOrderDetails($orderId);
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+        }
+        .bct-symbol {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-right: 2px;
         }
         .page-header {
             margin-bottom: 20px;
@@ -319,8 +332,21 @@ $orderItems = $order->getOrderDetails($orderId);
             <p>请在 <strong>blockcity.vip</strong> 完成 BCT 人气值转账后，回到本页面点击下方"我已支付"按钮确认。</p>
             <div class="block-info">
                 <div>
-                    <div class="label">收款区块ID</div>
-                    <div class="value"><?php echo htmlspecialchars($defaultPayment['block_id'] ?? '暂未设置'); ?></div>
+                    <div class="label">收款区块</div>
+                    <div class="value">
+                        <?php if ($paymentBlockInfo): ?>
+                            <?php 
+                                $zone = $paymentBlockInfo['zone'] ?? '';
+                                $number = $paymentBlockInfo['block_number'] ?? '';
+                                echo htmlspecialchars($orderInfo['payment_city'] ?? '') . ' ' . htmlspecialchars($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '');
+                            ?>
+                            <div style="font-size:12px;opacity:0.7;margin-top:2px;">区块ID: <?php echo htmlspecialchars($orderInfo['payment_block_id']); ?></div>
+                        <?php elseif ($defaultPayment): ?>
+                            <?php echo htmlspecialchars($defaultPayment['city'] ?? ''); ?> #<?php echo htmlspecialchars($defaultPayment['block_id'] ?? '未设置'); ?>
+                        <?php else: ?>
+                            暂未设置
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div style="text-align:right;">
                     <div class="label">应付金额</div>
@@ -358,13 +384,13 @@ $orderItems = $order->getOrderDetails($orderId);
                     <div class="product-meta">
                         <div class="name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                     </div>
-                    <div class="product-price">¥<?php echo number_format($item['unit_price'], 2); ?> x<?php echo $item['quantity']; ?></div>
+                    <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'], 0); ?> 人气值 x<?php echo $item['quantity']; ?></div>
                 </div>
                 <?php endforeach; ?>
             </div>
             <div class="total-row">
                 <span>应付总额</span>
-                <span class="amount">¥<?php echo number_format($orderInfo['total_amount'], 2); ?></span>
+                <span class="amount"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
             </div>
         </div>
         
