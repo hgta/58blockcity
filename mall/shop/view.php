@@ -9,13 +9,13 @@ require_once '../includes/functions.php';
 if (!function_exists('normalizeImageUrl')) {
     function normalizeImageUrl($imageUrl) {
         if (empty($imageUrl)) {
-            return '../assets/images/default-product.jpg';
+            return '/assets/images/default-product.jpg';
         }
         $imageUrl = trim($imageUrl);
         if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
             return $imageUrl;
         }
-        return '../' . $imageUrl;
+        return '/' . ltrim($imageUrl, '/');
     }
 }
 
@@ -82,7 +82,8 @@ require_once '../includes/header.php';
                     <?php if (!empty($shopInfo['shop_logo'])): ?>
                         <img src="<?= htmlspecialchars(normalizeImageUrl($shopInfo['shop_logo'])) ?>" 
                              alt="<?= htmlspecialchars($shopInfo['shop_name']) ?>" 
-                             class="shop-logo-img">
+                             class="shop-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="shop-logo-placeholder" style="display:none;"><i class="fas fa-store"></i></div>
                     <?php else: ?>
                         <div class="shop-logo-placeholder">
                             <i class="fas fa-store"></i>
@@ -176,10 +177,10 @@ require_once '../includes/header.php';
                         <div class="product-card <?= $productItem['status'] !== 'active' ? 'product-disabled' : '' ?>">
                             <a href="../product/detail.php?id=<?= $productItem['id'] ?>" class="product-link">
                                 <div class="product-image">
-                                    <?php $itemImage = $productItem['thumb_image'] ?: $productItem['main_image'] ?: '../assets/images/default-product.jpg'; ?>
+                                    <?php $itemImage = $productItem['thumb_image'] ?: $productItem['main_image'] ?: '/assets/images/default-product.jpg'; ?>
                                     <img src="<?= htmlspecialchars(normalizeImageUrl($itemImage)) ?>" 
                                          alt="<?= htmlspecialchars($productItem['name']) ?>"
-                                         class="img-fluid">
+                                         class="img-fluid" onerror="this.src='/assets/images/default-product.jpg'">
                                     <?php if (!empty($productItem['video_url'])): ?>
                                         <div class="product-video-badge">
                                             <i class="fas fa-video"></i> 视频
@@ -212,31 +213,32 @@ require_once '../includes/header.php';
 
             <!-- 分页 -->
             <?php if ($totalPages > 1): ?>
-                <nav aria-label="商品分页">
-                    <ul class="pagination justify-content-center">
+                <div class="pagination-wrap">
+                    <span class="pagination-info">共 <?= $totalProducts ?> 件，<?= $page ?>/<?= $totalPages ?> 页</span>
+                    <div class="pagination-links">
+                        <?php $baseUrl = "view.php?id=$shopId&sort=" . urlencode($currentSort); ?>
                         <?php if ($page > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page - 1 ?>&sort=<?= htmlspecialchars($currentSort) ?>">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            </li>
+                            <a href="<?= $baseUrl ?>&page=<?= $page - 1 ?>" class="page-btn">&laquo;</a>
                         <?php endif; ?>
-
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $i ?>&sort=<?= htmlspecialchars($currentSort) ?>"><?= $i ?></a>
-                            </li>
+                        <?php
+                        $start = max(1, $page - 2);
+                        $end = min($totalPages, $page + 2);
+                        if ($start > 1): ?>
+                            <a href="<?= $baseUrl ?>&page=1" class="page-btn">1</a>
+                            <?php if ($start > 2): ?><span class="page-dots">...</span><?php endif; ?>
+                        <?php endif; ?>
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                            <a href="<?= $baseUrl ?>&page=<?= $i ?>" class="page-btn <?= $i == $page ? 'active' : '' ?>"><?= $i ?></a>
                         <?php endfor; ?>
-
-                        <?php if ($page < $totalPages): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?id=<?= $shopId ?>&page=<?= $page + 1 ?>&sort=<?= htmlspecialchars($currentSort) ?>">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </li>
+                        <?php if ($end < $totalPages): ?>
+                            <?php if ($end < $totalPages - 1): ?><span class="page-dots">...</span><?php endif; ?>
+                            <a href="<?= $baseUrl ?>&page=<?= $totalPages ?>" class="page-btn"><?= $totalPages ?></a>
                         <?php endif; ?>
-                    </ul>
-                </nav>
+                        <?php if ($page < $totalPages): ?>
+                            <a href="<?= $baseUrl ?>&page=<?= $page + 1 ?>" class="page-btn">&raquo;</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
             <?php endif; ?>
         <?php else: ?>
             <div class="text-center py-5">
@@ -257,145 +259,72 @@ require_once '../includes/header.php';
 <style>
 .shop-header-card {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     margin-bottom: 20px;
     overflow: hidden;
 }
 .shop-header-body {
     display: flex;
     gap: 24px;
-    padding: 20px;
+    padding: 24px;
     align-items: flex-start;
 }
-.shop-logo-wrap {
-    flex-shrink: 0;
-}
+.shop-logo-wrap { flex-shrink: 0; }
 .shop-logo-img,
 .shop-logo-placeholder {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
+    width: 100px; height: 100px;
+    border-radius: 16px;
     object-fit: cover;
-    background: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
 }
-.shop-logo-placeholder {
-    font-size: 42px;
-    color: #adb5bd;
-}
-.shop-info-wrap {
-    flex: 1;
-    min-width: 0;
-}
+.shop-logo-placeholder { font-size: 36px; color: #94a3b8; }
+.shop-info-wrap { flex: 1; min-width: 0; }
 .shop-name {
-    font-size: 1.6rem;
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 8px;
+    font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
 }
-.shop-rating {
-    font-size: 1rem;
-    margin-bottom: 10px;
-}
-.shop-rating .rating-text {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-left: 6px;
-}
+.shop-rating { font-size: 14px; margin-bottom: 8px; color: #64748b; }
+.shop-rating .rating-text { font-size: 13px; color: #94a3b8; margin-left: 6px; }
 .shop-description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 10px;
+    color: #64748b; font-size: 14px; line-height: 1.6; margin-bottom: 10px;
 }
-.shop-features {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-.feature-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.shop-side-wrap {
-    flex-shrink: 0;
-    width: 200px;
-}
-.shop-stats {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-.stat-box {
-    flex: 1;
-    text-align: center;
-}
-.stat-box .stat-number {
-    font-size: 1.4rem;
-    font-weight: bold;
-    line-height: 1;
-}
-.stat-box .stat-label {
-    font-size: 0.75rem;
-    color: #6c757d;
-    margin-top: 4px;
-}
-.shop-banner {
-    margin-bottom: 20px;
-}
-.shop-banner img {
-    width: 100%;
-    max-height: 220px;
-    object-fit: cover;
-    border-radius: 12px;
-}
+.shop-features { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #64748b; }
+.feature-item { display: flex; align-items: center; gap: 4px; }
+.shop-side-wrap { flex-shrink: 0; width: 180px; }
+.shop-stats { display: flex; gap: 8px; margin-bottom: 12px; }
+.stat-box { flex: 1; text-align: center; background: #f8fafc; border-radius: 10px; padding: 10px 6px; }
+.stat-box .stat-number { font-size: 20px; font-weight: 700; line-height: 1; }
+.stat-box .stat-label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.shop-banner { margin-bottom: 20px; }
+.shop-banner img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; }
 .products-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px 0;
-    border-bottom: 2px solid #f0f0f0;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 16px; padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
 }
-.toolbar-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin: 0;
-}
-.toolbar-title .text-muted {
-    font-weight: normal;
-    font-size: 0.85rem;
-}
-.shop-sort-bar {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
+.toolbar-title { font-size: 17px; font-weight: 700; margin: 0; color: #1e293b; }
+.toolbar-title .text-muted { font-weight: 400; font-size: 14px; color: #94a3b8; }
+.shop-sort-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+.shop-sort-bar .btn-sm { font-size: 12px; padding: 6px 14px; border-radius: 20px; }
 .product-grid-row {
     margin-bottom: 10px;
 }
 .product-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
+    border: none;
+    border-radius: 12px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    border-color: #007bff;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
 }
 .product-card.product-disabled {
-    opacity: 0.75;
+    opacity: 0.6;
 }
 .product-link {
     text-decoration: none;
@@ -406,55 +335,54 @@ require_once '../includes/header.php';
     height: 180px;
     overflow: hidden;
     position: relative;
+    background: #f8f9fa;
 }
 .product-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
 }
 .product-card:hover .product-image img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 .product-video-badge {
     position: absolute;
-    top: 6px;
-    left: 6px;
-    background: rgba(0,0,0,0.6);
+    top: 8px;
+    left: 8px;
+    background: rgba(255,107,0,0.85);
     color: #fff;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
     font-size: 11px;
+    font-weight: 600;
     z-index: 2;
 }
 .product-status-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255,255,255,0.65);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 3;
 }
 .product-status-overlay span {
-    background: #6c757d;
+    background: #64748b;
     color: #fff;
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 13px;
     font-weight: 600;
 }
 .product-info {
-    padding: 12px;
+    padding: 14px;
 }
 .product-name {
-    font-size: 0.95rem;
+    font-size: 14px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #2c3e50;
+    color: #1e293b;
     line-height: 1.4;
     height: 2.7em;
     overflow: hidden;
@@ -463,65 +391,68 @@ require_once '../includes/header.php';
     -webkit-box-orient: vertical;
 }
 .product-price {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 .bct-price {
-    font-size: 1.05rem;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 700;
     color: #e74c3c;
 }
 .cny-price {
-    font-size: 0.85rem;
-    color: #7f8c8d;
+    font-size: 12px;
+    color: #94a3b8;
     margin-left: 6px;
 }
 .product-meta {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: #95a5a6;
+    font-size: 12px;
+    color: #94a3b8;
 }
+/* 分页 */
+.pagination-wrap {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px; padding: 14px 0; border-top: 1px solid #e9ecef;
+    flex-wrap: wrap; gap: 10px;
+}
+.pagination-info { font-size: 13px; color: #64748b; }
+.pagination-links { display: flex; gap: 4px; align-items: center; }
+.page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; padding: 0 8px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    text-decoration: none; color: #475569; background: #f1f5f9;
+    transition: all 0.15s;
+}
+.page-btn:hover { background: #e2e8f0; color: #1e293b; text-decoration: none; }
+.page-btn.active { background: #ff6b00; color: #fff; }
+.page-dots { padding: 0 4px; color: #94a3b8; font-size: 13px; }
+
 .shop-notice-card {
     background: white;
     border-radius: 12px;
-    padding: 16px;
+    padding: 18px;
     margin-top: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .shop-notice-card h5 {
-    font-size: 1rem;
+    font-size: 15px;
+    font-weight: 600;
     margin-bottom: 10px;
-}
-.pagination .page-link {
-    color: #007bff;
-}
-.pagination .page-item.active .page-link {
-    background-color: #007bff;
-    border-color: #007bff;
+    color: #1e293b;
 }
 
 @media (max-width: 768px) {
-    .shop-header-body {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    .shop-info-wrap {
-        width: 100%;
-    }
-    .shop-features {
-        justify-content: center;
-    }
-    .shop-side-wrap {
-        width: 100%;
-    }
-    .shop-stats {
-        justify-content: center;
-    }
-    .products-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+    .shop-header-body { flex-direction: column; align-items: center; text-align: center; }
+    .shop-info-wrap { width: 100%; }
+    .shop-features { justify-content: center; }
+    .shop-side-wrap { width: 100%; }
+    .shop-stats { justify-content: center; }
+    .products-toolbar { flex-direction: column; align-items: flex-start; }
+    .product-grid-row .col-lg-3 { width: 50%; }
+}
+@media (max-width: 480px) {
+    .product-grid-row .col-lg-3 { width: 100%; }
 }
 </style>
 
