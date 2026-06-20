@@ -87,13 +87,25 @@ function formatPaymentSetting($settings) {
     }
     $parts = [];
     foreach ($settings as $s) {
-        $city = htmlspecialchars($s['city'] ?? '-');
+        $city = htmlspecialchars($s['city_name'] ?? ($s['city'] ?? '-'));
         $zone = htmlspecialchars($s['block_zone'] ?? '');
         $number = htmlspecialchars($s['block_number'] ?? '');
         $blockText = $zone || $number ? ($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '') : '未绑定区块';
         $parts[] = '<span class="payment-badge">' . $city . ' ' . $blockText . '</span>';
     }
     return implode('', $parts);
+}
+
+// 统一处理商品图片路径：相对路径补 ../，绝对路径保持原样
+function normalizeImageUrl($imageUrl) {
+    if (empty($imageUrl)) {
+        return '../assets/images/default-product.jpg';
+    }
+    $imageUrl = trim($imageUrl);
+    if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
+        return $imageUrl;
+    }
+    return '../' . $imageUrl;
 }
 ?>
 
@@ -611,7 +623,7 @@ function formatPaymentSetting($settings) {
                                 <div class="item-checkbox">
                                     <input type="checkbox" name="selected_items[]" value="<?php echo $item['id']; ?>" class="item-cb shop-<?php echo $shopId; ?>" data-price="<?php echo $item['price']; ?>" data-qty="<?php echo $item['quantity']; ?>" onchange="updateSelectedTotal()">
                                 </div>
-                                <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
+                                <img src="<?php echo htmlspecialchars(normalizeImageUrl($item['image_url'])); ?>" 
                                      alt="<?php echo htmlspecialchars($item['name']); ?>" 
                                      class="item-image">
                                 

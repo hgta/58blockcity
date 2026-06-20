@@ -78,8 +78,11 @@ class Order {
      * 创建订单
      */
     public function createOrder($data) {
+        $inTransaction = $this->pdo->inTransaction();
         try {
-            $this->pdo->beginTransaction();
+            if (!$inTransaction) {
+                $this->pdo->beginTransaction();
+            }
             
             // 生成订单号
             $orderNo = 'O' . date('YmdHis') . mt_rand(1000, 9999);
@@ -103,11 +106,16 @@ class Order {
             ]);
             
             $orderId = $this->pdo->lastInsertId();
-            $this->pdo->commit();
+            
+            if (!$inTransaction) {
+                $this->pdo->commit();
+            }
             
             return $orderId;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if (!$inTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
     }

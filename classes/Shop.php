@@ -490,9 +490,10 @@ class Shop {
     public function getShopPaymentSettings($shopId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT sps.*, b.zone as block_zone, b.block_number
+                SELECT sps.*, b.zone as block_zone, b.block_number, c.name as city_name
                 FROM shop_payment_settings sps
                 LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
+                LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name)
                 WHERE sps.shop_id = ? AND sps.is_active = 1
                 ORDER BY sps.created_at DESC
             ");
@@ -610,9 +611,10 @@ class Shop {
     public function getPaymentSettings($shopId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT sps.*, b.zone as block_zone, b.block_number
+                SELECT sps.*, b.zone as block_zone, b.block_number, c.name as city_name
                 FROM shop_payment_settings sps
                 LEFT JOIN blocks b ON CAST(sps.block_id AS UNSIGNED) = b.id
+                LEFT JOIN cities c ON (sps.city = c.pinyin OR sps.city = c.name)
                 WHERE sps.shop_id = ?
                 ORDER BY sps.created_at DESC
             ");
