@@ -308,7 +308,7 @@ require_once '../includes/header.php';
                     </div>
                     <div class="stat-info">
                         <div class="stat-label">今日营收</div>
-                        <div class="stat-value">¥<?= number_format($dailyStats['today']['revenue'], 2) ?></div>
+                        <div class="stat-value"><span class="bct-symbol">Ⓟ</span><?= number_format($dailyStats['today']['revenue'], 0) ?></div>
                         <div class="stat-change <?= $revenueChange >= 0 ? 'up' : 'down' ?>">
                             <i class="fas fa-arrow-<?= $revenueChange >= 0 ? 'up' : 'down' ?>"></i>
                             <?= abs($revenueChange) ?>% 较昨日
@@ -344,7 +344,7 @@ require_once '../includes/header.php';
                     </div>
                     <div class="stat-info">
                         <div class="stat-label">本月累计</div>
-                        <div class="stat-value">¥<?= number_format($dailyStats['month']['revenue'], 0) ?></div>
+                        <div class="stat-value"><span class="bct-symbol">Ⓟ</span><?= number_format($dailyStats['month']['revenue'], 0) ?></div>
                         <div class="stat-sub"><?= $dailyStats['month']['orders'] ?> 笔订单</div>
                     </div>
                 </div>
@@ -390,7 +390,7 @@ require_once '../includes/header.php';
                                         <div class="product-name"><?= htmlspecialchars(mb_substr($p['name'], 0, 20)) ?></div>
                                         <div class="product-meta">
                                             <span class="sold">已售 <?= (int)$p['sold_count'] ?></span>
-                                            <span class="revenue">¥<?= number_format($p['total_revenue'], 0) ?></span>
+                                            <span class="revenue"><span class="bct-symbol">Ⓟ</span><?= number_format($p['total_revenue'], 0) ?></span>
                                         </div>
                                     </div>
                                 </div>
@@ -420,7 +420,7 @@ require_once '../includes/header.php';
                                     <div class="order-info">
                                         <div class="order-top">
                                             <span class="buyer-name"><?= htmlspecialchars($o['buyer_name'] ?? '匿名用户') ?></span>
-                                            <span class="order-amount">¥<?= number_format($o['total_amount'], 2) ?></span>
+                                            <span class="order-amount"><span class="bct-symbol">Ⓟ</span><?= number_format($o['total_amount'], 0) ?></span>
                                         </div>
                                         <div class="order-bottom">
                                             <span class="order-no"><?= htmlspecialchars($o['order_no']) ?></span>
@@ -528,7 +528,7 @@ new Chart(salesCtx, {
             pointBackgroundColor: '#3b82f6',
             yAxisID: 'y'
         }, {
-            label: '营收 (¥)',
+            label: '营收 (人气值)',
             data: <?= $chartRevenue ?>,
             borderColor: '#f97316',
             backgroundColor: 'rgba(249, 115, 22, 0.1)',
@@ -561,7 +561,7 @@ new Chart(salesCtx, {
                 display: true,
                 position: 'right',
                 grid: { display: false },
-                ticks: { callback: function(v) { return '¥' + v; } }
+                ticks: { callback: function(v) { return 'Ⓟ' + v; } }
             }
         }
     }
@@ -610,6 +610,7 @@ function previewImage(input, previewId, placeholderId) {
 </script>
 
 <style>
+.bct-symbol { font-family: Arial, sans-serif; font-weight: bold; color: #e74c3c; margin-right: 2px; }
 /* 整体布局 */
 .shop-manage-wrapper { background: #f8fafc; min-height: 100vh; }
 .shop-header-bar { background: linear-gradient(135deg, #1e293b, #334155); color: #fff; padding: 24px 0; }
