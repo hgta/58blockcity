@@ -733,6 +733,20 @@ require_once '../includes/header.php';
         
         <div class="col-md-9">
             <?php if ($action === 'add' || $action === 'edit'): ?>
+                <!-- 加载编辑商品数据（需提前，卡片头部可能引用） -->
+                <?php if ($action === 'edit' && isset($_GET['product_id'])): ?>
+                <?php 
+                    $editProductId = intval($_GET['product_id']);
+                    $editProduct = $product->getProductById($editProductId, true);
+                    if ($editProduct) {
+                        $existingImages = [];
+                        if (!empty($editProduct['images'])) {
+                            $decoded = json_decode($editProduct['images'], true);
+                            if (is_array($decoded)) $existingImages = $decoded;
+                        }
+                    }
+                ?>
+                <?php endif; ?>
                 <!-- 添加/编辑商品表单 -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -769,21 +783,11 @@ require_once '../includes/header.php';
                         <?php endif; ?>
 
                         <form method="POST" enctype="multipart/form-data" id="productForm">
-                            <?php if ($action === 'edit' && isset($_GET['product_id'])): ?>
-                                <?php
-                                $editProductId = intval($_GET['product_id']);
-                                $editProduct = $product->getProductById($editProductId, true);
-                                if (!$editProduct || $editProduct['shop_id'] != $shopId) {
-                                    echo '<div class="alert alert-danger">商品不存在或无权编辑</div>';
-                                    require_once '../includes/footer.php';
-                                    exit;
-                                }
-                                $existingImages = [];
-                                if (!empty($editProduct['images'])) {
-                                    $decoded = json_decode($editProduct['images'], true);
-                                    if (is_array($decoded)) $existingImages = $decoded;
-                                }
-                                ?>
+                            <?php if ($action === 'edit'): ?>
+                                <?php if (!$editProduct || $editProduct['shop_id'] != $shopId): ?>
+                                    <div class="alert alert-danger">商品不存在或无权编辑</div>
+                                    <?php require_once '../includes/footer.php'; exit; ?>
+                                <?php endif; ?>
                                 <input type="hidden" name="product_id" value="<?= $editProductId ?>">
                                 <input type="hidden" name="action" value="edit">
                             <?php else: ?>
