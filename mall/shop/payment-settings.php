@@ -48,15 +48,22 @@ $success = '';
 
 // 处理支付设置更新
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("payment-settings POST: shop_id={$shopId}, raw_post=" . json_encode($_POST));
+
     $paymentSettings = [];
     $hasActivePayment = false;
     
-    if (isset($_POST['payment_cities']) && is_array($_POST['payment_cities'])) {
+    if (isset($_POST['payment_cities']) && is_array($_POST['payment_cities']) && isset($_POST['block_id']) && is_array($_POST['block_id'])) {
+        $blockList = $_POST['block_id'];
+        $isActiveList = (isset($_POST['is_active']) && is_array($_POST['is_active'])) ? $_POST['is_active'] : [];
+        $minAmountList = (isset($_POST['min_amount']) && is_array($_POST['min_amount'])) ? $_POST['min_amount'] : [];
+        $exchangeRateList = (isset($_POST['exchange_rate']) && is_array($_POST['exchange_rate'])) ? $_POST['exchange_rate'] : [];
+
         foreach ($_POST['payment_cities'] as $city) {
-            $blockId = trim($_POST['block_id'][$city] ?? '');
-            $isActive = isset($_POST['is_active'][$city]) ? 1 : 0;
-            $minAmount = floatval($_POST['min_amount'][$city] ?? 1);
-            $exchangeRate = floatval($_POST['exchange_rate'][$city] ?? 0.1000);
+            $blockId = trim($blockList[$city] ?? '');
+            $isActive = isset($isActiveList[$city]) ? 1 : 0;
+            $minAmount = floatval($minAmountList[$city] ?? 1);
+            $exchangeRate = floatval($exchangeRateList[$city] ?? 0.1000);
             if ($minAmount < 1) {
                 $minAmount = 1;
             }
@@ -89,16 +96,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 if ($shop->updatePaymentSettings($shopId, $paymentSettings)) {
-                    $success = '支付设置更新成功';
-                    $paymentSettings = $shop->getPaymentSettings($shopId);
+                    error_log("payment-settings 保存成功: shop_id={$shopId}, settings=" . json_encode($paymentSettings));
+                    // PRG 重定向，避免刷新重复提交
+                    $redirectUrl = 'payment-settings.php?id=' . $shopId . '&saved=1';
+                    header('Location: ' . $redirectUrl);
+                    exit;
                 } else {
                     $error = '支付设置更新失败';
                 }
             } catch (Exception $e) {
+                error_log("payment-settings 保存异常: shop_id={$shopId}, error=" . $e->getMessage());
                 $error = '系统错误：' . $e->getMessage();
             }
         }
     }
+}
+
+// 从 URL 参数读取保存成功提示
+if (isset($_GET['saved']) && $_GET['saved'] == '1') {
+    $success = '支付设置更新成功';
 }
 
 // 将支付设置转换为以城市为键的数组，便于模板使用
