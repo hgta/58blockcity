@@ -60,9 +60,7 @@ class Visit {
 
         if ($page !== null) {
             $offset = ($page - 1) * $perPage;
-            $sql .= " LIMIT ? OFFSET ?";
-            $params[] = (int)$perPage;
-            $params[] = (int)$offset;
+            $sql .= " LIMIT " . intval($perPage) . " OFFSET " . intval($offset);
         }
 
         $stmt = $this->pdo->prepare($sql);
@@ -251,8 +249,7 @@ class Visit {
 			$sql .= " WHERE " . implode(" AND ", $where);
 		}
 		
-		$sql .= " ORDER BY v.created_at DESC LIMIT ? OFFSET ?";
-		$params = array_merge($params, [$perPage, $offset]);
+		$sql .= " ORDER BY v.created_at DESC LIMIT " . intval($perPage) . " OFFSET " . intval($offset);
 		
 		$stmt = $this->pdo->prepare($sql);
 		

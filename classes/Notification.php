@@ -17,8 +17,8 @@ class Notification {
         $stmt = $this->pdo->prepare("SELECT * FROM notifications
                                     WHERE user_id = ?
                                     ORDER BY created_at DESC
-                                    LIMIT ?");
-        $stmt->execute([$userId, $limit]);
+                                    LIMIT " . intval($limit));
+        $stmt->execute([$userId]);
         return $stmt->fetchAll();
     }
 
