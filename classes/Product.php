@@ -253,7 +253,7 @@ class Product {
 	/**
      * 根据ID获取商品详情 - 适配实际表结构
      */
-    public function getProductById($productId) {
+    public function getProductById($productId, $includeInactive = false) {
         try {
             $sql = "SELECT p.*, 
                            p.main_image as image_url,
@@ -264,12 +264,14 @@ class Product {
                     FROM products p
                     LEFT JOIN product_categories c ON p.category_id = c.id
                     LEFT JOIN shops s ON p.shop_id = s.id
-                    WHERE p.id = ? AND p.status = 'active'";
+                    WHERE p.id = ?";
+            if (!$includeInactive) {
+                $sql .= " AND p.status = 'active'";
+            }
             
             $stmt = $this->pdo->prepare($sql);
-            //$stmt->execute([$productId]);
-			$stmt->bindValue(1, $productId, PDO::PARAM_INT);
-			$stmt->execute();
+            $stmt->bindValue(1, $productId, PDO::PARAM_INT);
+            $stmt->execute();
             
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
@@ -324,7 +326,7 @@ class Product {
      */
     public function updateProduct($productId, $data) {
         $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url', 'price_type', 
-                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order'];
+                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id'];
         $setParts = [];
         $params = [];
         
@@ -653,9 +655,9 @@ class Product {
     }
 
     /**
-     * 获取店铺商品（支持状态筛选和搜索）
+     * 获取店铺商品（支持状态筛选、搜索和分页）
      */
-    public function getProductsByShopWithFilter($shopId, $filter = 'all', $search = '', $limit = 50) {
+    public function getProductsByShopWithFilter($shopId, $filter = 'all', $search = '', $page = 1, $perPage = 20) {
         try {
             $where = "shop_id = ?";
             $params = [$shopId];
@@ -675,18 +677,49 @@ class Product {
                 $params[] = "%$search%";
             }
 
-            $limit = intval($limit);
+            $perPage = max(1, intval($perPage));
+            $page = max(1, intval($page));
+            $offset = ($page - 1) * $perPage;
+
             $stmt = $this->pdo->prepare("
                 SELECT * FROM products 
                 WHERE $where 
                 ORDER BY created_at DESC 
-                LIMIT $limit
+                LIMIT $offset, $perPage
             ");
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("获取店铺商品失败: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * 获取店铺商品总数（支持状态筛选和搜索）
+     */
+    public function getProductsCountByShopWithFilter($shopId, $filter = 'all', $search = '') {
+        try {
+            $where = "shop_id = ?";
+            $params = [$shopId];
+            $this->buildWhereFilter($where, $params, $filter, $search);
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM products WHERE $where");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log("获取店铺商品总数失败: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    private function buildWhereFilter(&$where, &$params, $filter, $search) {
+        $filterMap = ['active' => 'active', 'inactive' => 'inactive', 'draft' => 'draft', 'sold_out' => 'sold_out'];
+        if (isset($filterMap[$filter])) {
+            $where .= " AND status = '{$filterMap[$filter]}'";
+        }
+        if (!empty($search)) {
+            $where .= " AND name LIKE ?";
+            $params[] = "%$search%";
         }
     }
 

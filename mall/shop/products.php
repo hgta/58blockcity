@@ -326,6 +326,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0
                 ];
 
+                // 支持移动到其他店铺（仅限该用户拥有的店铺）
+                if (!empty($_POST['shop_id'])) {
+                    $targetShopId = intval($_POST['shop_id']);
+                    $userShops = $shop->getUserShops($_SESSION['user_id']);
+                    $userShopIds = array_column($userShops, 'id');
+                    if (in_array($targetShopId, $userShopIds)) {
+                        $updateData['shop_id'] = $targetShopId;
+                    }
+                }
+
                 if ($mainImage) {
                     $updateData['main_image'] = $mainImage;
                     $updateData['thumb_image'] = $thumbImage ?: null;
@@ -364,7 +374,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['produ
     $productId = intval($_GET['product_id']);
 
     // 验证商品属于当前店铺
-    $productInfo = $product->getProductById($productId);
+    $productInfo = $product->getProductById($productId, true);
     if ($productInfo && $productInfo['shop_id'] == $shopId) {
         if ($product->updateProduct($productId, ['status' => 'inactive'])) {
             $success = '商品已下架';
@@ -395,7 +405,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'hard_delete' && isset($_GET['
 // 处理上架商品
 if (isset($_GET['action']) && $_GET['action'] === 'activate' && isset($_GET['product_id'])) {
     $productId = intval($_GET['product_id']);
-    $productInfo = $product->getProductById($productId);
+    $productInfo = $product->getProductById($productId, true);
     if ($productInfo && $productInfo['shop_id'] == $shopId) {
         if ($product->updateProduct($productId, ['status' => 'active'])) {
             $success = '商品已上架';
@@ -729,6 +739,21 @@ require_once '../includes/header.php';
                         <div>
                             <h4 class="card-title mb-0"><?= $action === 'add' ? '添加商品' : '编辑商品' ?></h4>
                             <small class="text-muted"><i class="fas fa-store"></i> 当前店铺：<?= htmlspecialchars($userShop['shop_name'] ?? '') ?></small>
+                            <?php if ($action === 'edit' && isset($editProduct)): ?>
+                            <?php $userShops = $shop->getUserShops($_SESSION['user_id']); ?>
+                            <?php if (count($userShops) > 1): ?>
+                            <div class="mt-2">
+                                <label class="text-muted small">移动到其他店铺：</label>
+                                <select name="shop_id" class="form-control form-control-sm" style="max-width:260px;">
+                                    <?php foreach ($userShops as $us): ?>
+                                        <option value="<?= $us['id'] ?>" <?= $us['id'] == $shopId ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($us['shop_name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                         <a href="products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> 返回列表
@@ -747,7 +772,7 @@ require_once '../includes/header.php';
                             <?php if ($action === 'edit' && isset($_GET['product_id'])): ?>
                                 <?php
                                 $editProductId = intval($_GET['product_id']);
-                                $editProduct = $product->getProductById($editProductId);
+                                $editProduct = $product->getProductById($editProductId, true);
                                 if (!$editProduct || $editProduct['shop_id'] != $shopId) {
                                     echo '<div class="alert alert-danger">商品不存在或无权编辑</div>';
                                     require_once '../includes/footer.php';
@@ -1032,12 +1057,16 @@ require_once '../includes/header.php';
                         <?php endif; ?>
                         
                         <?php
-                        // 筛选与搜索参数
+                        // 筛选、搜索与分页参数
                         $listFilter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
                         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+                        $perPage = 20;
 
-                        // 获取店铺商品列表（支持筛选和搜索）
-                        $products = $product->getProductsByShopWithFilter($shopId, $listFilter, $search, 100);
+                        // 获取店铺商品列表（支持筛选、搜索和分页）
+                        $products = $product->getProductsByShopWithFilter($shopId, $listFilter, $search, $page, $perPage);
+                        $totalProducts = $product->getProductsCountByShopWithFilter($shopId, $listFilter, $search);
+                        $totalPages = ceil($totalProducts / $perPage);
                         ?>
                         
                         <?php if ($products): ?>
@@ -1133,6 +1162,24 @@ require_once '../includes/header.php';
                                     <?php endforeach; ?>
                                 </div>
                             </form>
+                            <?php if ($totalPages > 1): ?>
+                            <div class="pagination-wrap">
+                                <span class="pagination-info">共 <?= $totalProducts ?> 件商品，<?= $totalPages ?> 页</span>
+                                <div class="pagination-links">
+                                    <?php 
+                                    $baseUrl = "products.php?id=$shopId&filter=$listFilter" . ($search ? "&search=" . urlencode($search) : "");
+                                    if ($page > 1): ?>
+                                        <a href="<?= $baseUrl ?>&page=<?= $page - 1 ?>" class="page-link">&laquo; 上一页</a>
+                                    <?php endif; ?>
+                                    <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
+                                        <a href="<?= $baseUrl ?>&page=<?= $i ?>" class="page-link <?= $i == $page ? 'active' : '' ?>"><?= $i ?></a>
+                                    <?php endfor; ?>
+                                    <?php if ($page < $totalPages): ?>
+                                        <a href="<?= $baseUrl ?>&page=<?= $page + 1 ?>" class="page-link">下一页 &raquo;</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <div class="text-center py-5">
                                 <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
@@ -1200,6 +1247,23 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .extra-img-item.add-btn span { font-size: 11px; }
 .extra-img-item .btn-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; padding: 0; }
 .extra-img-item .btn-remove:hover { background: #dc2626; }
+
+/* 卡片统一样式 */
+.card { border: none; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); background: #fff; }
+.card-header { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 18px 20px; border-radius: 12px 12px 0 0 !important; }
+.card-body { padding: 20px; }
+.card-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+
+/* 按钮统一样式 */
+.btn-primary { background: #ff6b00; border-color: #ff6b00; }
+.btn-primary:hover { background: #e05d00; border-color: #e05d00; }
+.btn-outline-secondary { color: #64748b; border-color: #d1d5db; }
+.btn-outline-secondary:hover { background: #f1f5f9; color: #1e293b; }
+
+/* Alert */
+.alert { border-radius: 8px; font-size: 14px; padding: 12px 16px; }
+.alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 
 /* 表单操作栏 */
 .form-actions-bar { display: flex; gap: 12px; padding: 20px 0 0; border-top: 1px solid #e5e7eb; margin-top: 8px; }
@@ -1365,6 +1429,23 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .qa-success:hover { background: #28a745; color: #fff; }
 .qa-danger { background: #f8d7da; color: #721c24; }
 .qa-danger:hover { background: #dc3545; color: #fff; }
+
+/* 分页 */
+.pagination-wrap {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px; padding: 12px 0; border-top: 1px solid #e9ecef;
+}
+.pagination-info { font-size: 13px; color: #6c757d; }
+.pagination-links { display: flex; gap: 4px; }
+.page-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; padding: 0 10px;
+    border-radius: 6px; font-size: 13px; font-weight: 500;
+    text-decoration: none; color: #495057; background: #f8f9fa;
+    transition: all 0.15s;
+}
+.page-link:hover { background: #e9ecef; color: #1e293b; text-decoration: none; }
+.page-link.active { background: #ff6b00; color: #fff; }
 
 /* 工具栏 */
 .product-toolbar {
