@@ -56,34 +56,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['payment_cities']) && is_array($_POST['payment_cities']) && isset($_POST['block_id']) && is_array($_POST['block_id'])) {
         $blockList = $_POST['block_id'];
         $isActiveList = (isset($_POST['is_active']) && is_array($_POST['is_active'])) ? $_POST['is_active'] : [];
-        $minAmountList = (isset($_POST['min_amount']) && is_array($_POST['min_amount'])) ? $_POST['min_amount'] : [];
-        $exchangeRateList = (isset($_POST['exchange_rate']) && is_array($_POST['exchange_rate'])) ? $_POST['exchange_rate'] : [];
 
         foreach ($_POST['payment_cities'] as $city) {
             $blockId = trim($blockList[$city] ?? '');
             $isActive = isset($isActiveList[$city]) ? 1 : 0;
-            $minAmount = floatval($minAmountList[$city] ?? 1);
-            $exchangeRate = floatval($exchangeRateList[$city] ?? 0.1000);
-            if ($minAmount < 1) {
-                $minAmount = 1;
-            }
-            if ($exchangeRate < 0.0001) {
-                $exchangeRate = 0.1000;
-            }
 
             if ($isActive && empty($blockId)) {
                 $error = "城市 '{$city}' 已启用但未选择区块";
                 break;
             }
 
-            // 只有启用的城市才保存
+            // 只有启用的城市才保存，使用固定默认支付参数
             if ($isActive) {
                 $paymentSettings[] = [
                     'city' => $city,
                     'block_id' => $blockId,
                     'is_active' => 1,
-                    'min_amount' => $minAmount,
-                    'exchange_rate' => $exchangeRate
+                    'min_amount' => 1,
+                    'exchange_rate' => 0.1000
                 ];
                 $hasActivePayment = true;
             }
@@ -190,9 +180,7 @@ require_once '../includes/header.php';
                 <div class="sidebar-card mt-3">
                     <h4>帮助说明</h4>
                     <div class="small text-muted">
-                        <p class="mb-1"><strong>区块ID:</strong> 您在各城市人气值平台的收款地址标识</p>
-                        <p class="mb-1"><strong>最小金额:</strong> 该城市支持的最小支付金额</p>
-                        <p class="mb-0"><strong>兑换率:</strong> BCT与人民币的兑换比例</p>
+                        <p class="mb-0">选择城市并启用开关，即可接收对应城市的人气值支付。</p>
                     </div>
                 </div>
             </aside>
@@ -213,25 +201,12 @@ require_once '../includes/header.php';
                         <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                     <?php endif; ?>
                     
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-info-circle"></i> 支付设置说明</h6>
-                        <p class="mb-0">
-                            请设置您店铺支持的各城市人气值支付方式。每个城市需要填写对应的区块ID（Block ID），
-                            这是您在各城市人气值平台的收款地址标识。启用后，买家可以使用相应城市的人气值购买您的商品。
-                        </p>
-                    </div>
-                    
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <button type="button" class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#batchSettingsModal">
-                                <i class="fas fa-copy"></i> 批量设置
-                            </button>
-                        </div>
                         <div class="text-muted small">
                             已配置 <?= count($paymentSettings) ?> 个城市，其中 <?= count($activePayments) ?> 个已启用
                         </div>
                     </div>
-                    
+
                     <!-- 城市搜索添加 -->
                     <div class="d-flex align-items-center gap-2 mb-3" id="citySearchBox">
                         <input type="text" class="form-control form-control-sm" id="citySearchInput"
@@ -249,9 +224,7 @@ require_once '../includes/header.php';
                                     <tr>
                                         <th width="100">城市</th>
                                         <th>接收区块</th>
-                                        <th width="80">启用</th>
-                                        <th width="160">支付参数</th>
-                                        <th width="80">操作</th>
+                                        <th width="80" class="text-center">启用</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -263,18 +236,9 @@ require_once '../includes/header.php';
                                             'city' => $cityCode,
                                             'block_id' => '',
                                             'is_active' => 0,
-                                            'min_amount' => 1,
-                                            'exchange_rate' => 0.1000,
                                             'block_zone' => '',
                                             'block_number' => ''
                                         ];
-                                        // 兜底：最小金额至少为1，兑换率至少为0.0001
-                                        if (($setting['min_amount'] ?? 0) < 1) {
-                                            $setting['min_amount'] = 1;
-                                        }
-                                        if (($setting['exchange_rate'] ?? 0) < 0.0001) {
-                                            $setting['exchange_rate'] = 0.1000;
-                                        }
                                         $hasBlocks = !empty($userBlocksByCity[$cityId]);
                                         ?>
                                         <tr class="payment-setting-row" data-city-id="<?= $cityId ?>" data-city="<?= $cityCode ?>">
@@ -318,34 +282,6 @@ require_once '../includes/header.php';
                                                     <label class="custom-control-label" for="is_active_<?= $cityCode ?>"></label>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <div class="param-row">
-                                                    <span class="param-label">最小金额:</span>
-                                                    <input type="number" class="form-control form-control-sm min-amount-input"
-                                                           name="min_amount[<?= $cityCode ?>]"
-                                                           value="<?= number_format($setting['min_amount'], 0) ?>"
-                                                           step="1" min="1"
-                                                           data-city="<?= $cityCode ?>"
-                                                           <?= $setting['is_active'] ? '' : 'disabled' ?>>
-                                                    <span class="param-unit">BCT</span>
-                                                </div>
-                                                <div class="param-row mt-1">
-                                                    <span class="param-label">兑换率:</span>
-                                                    <input type="number" class="form-control form-control-sm exchange-rate-input"
-                                                           name="exchange_rate[<?= $cityCode ?>]"
-                                                           value="<?= number_format($setting['exchange_rate'], 4) ?>"
-                                                           step="0.0001" min="0.0001"
-                                                           data-city="<?= $cityCode ?>"
-                                                           <?= $setting['is_active'] ? '' : 'disabled' ?>>
-                                                </div>
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn"
-                                                        data-city="<?= $cityCode ?>" data-city-name="<?= htmlspecialchars($cityName) ?>"
-                                                        <?= empty($setting['block_id']) ? 'disabled' : '' ?>>
-                                                    <i class="fas fa-vial"></i> 测试
-                                                </button>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -365,37 +301,7 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<!-- 批量设置模态框 -->
-<div class="modal fade" id="batchSettingsModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">批量设置</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="关闭">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="batch_min_amount">统一最小金额 (BCT)</label>
-                    <input type="number" class="form-control" id="batch_min_amount" step="1" min="1" value="1">
-                </div>
-                <div class="form-group">
-                    <label for="batch_exchange_rate">统一兑换率</label>
-                    <input type="number" class="form-control" id="batch_exchange_rate" step="0.0001" min="0.0001" value="0.1000">
-                </div>
-                <div class="form-group">
-                    <label for="batch_block_id_prefix">区块ID前缀</label>
-                    <input type="text" class="form-control" id="batch_block_id_prefix" placeholder="例如: pay_">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="applyBatchSettings()">应用设置</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <style>
 /* ===== 侧边栏（统一风格） ===== */
@@ -454,36 +360,14 @@ require_once '../includes/header.php';
 .table-bordered th, .table-bordered td { border: 1px solid #dee2e6; }
 .table-bordered thead th { border-bottom-width: 2px; }
 
-/* Modal */
-.modal { position: fixed; top: 0; left: 0; z-index: 1050; display: none; width: 100%; height: 100%; overflow: hidden; outline: 0; }
-.modal.show { display: block; }
-.modal.fade .modal-dialog { transition: transform .3s ease-out, opacity .3s ease-out; transform: translateY(-50px); opacity: 0; }
-.modal.show .modal-dialog { transform: translateY(0); opacity: 1; }
-.modal-dialog { position: relative; width: auto; max-width: 500px; margin: 48px auto; pointer-events: none; }
-.modal-content { position: relative; display: flex; flex-direction: column; width: 100%; pointer-events: auto; background-color: #fff; background-clip: padding-box; border: 1px solid rgba(0,0,0,0.2); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); outline: 0; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e9ecef; border-radius: 12px 12px 0 0; }
-.modal-header .close { padding: 0; margin: 0; background: transparent; border: none; font-size: 24px; line-height: 1; color: #6c757d; cursor: pointer; }
-.modal-header .close:hover { color: #1a1a2e; }
-.modal-title { margin: 0; font-size: 16px; font-weight: 600; }
-.modal-body { position: relative; flex: 1 1 auto; padding: 20px; }
-.modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid #e9ecef; border-radius: 0 0 12px 12px; }
-.modal-backdrop { position: fixed; top: 0; left: 0; z-index: 1040; width: 100vw; height: 100vh; background-color: #000; opacity: 0; transition: opacity .15s linear; }
-.modal-backdrop.show { opacity: 0.5; }
-
 /* 页面专用样式 */
 .payment-setting-row:hover { background-color: #f8f9fa; }
-.param-row { display: flex; align-items: center; gap: 6px; }
-.param-label { font-size: 12px; color: #6c757d; white-space: nowrap; }
-.param-unit { font-size: 12px; color: #6c757d; }
-.min-amount-input, .exchange-rate-input { text-align: right; max-width: 90px; }
-.test-payment-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .d-flex { display: flex !important; }
 .justify-content-between { justify-content: space-between !important; }
 .align-items-center { align-items: center !important; }
 .flex-wrap { flex-wrap: wrap !important; }
 .gap-2 { gap: 8px !important; }
 .mb-3 { margin-bottom: 16px !important; }
-.mt-1 { margin-top: 4px !important; }
 .mt-3 { margin-top: 16px !important; }
 .mt-4 { margin-top: 24px !important; }
 .mb-0 { margin-bottom: 0 !important; }
@@ -498,63 +382,34 @@ const userBlocksByCity = <?= json_encode($userBlocksByCity, JSON_UNESCAPED_UNICO
 const allCities = <?= json_encode($supportedCities, JSON_UNESCAPED_UNICODE) ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
-    updateInputsState();
-    
     document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
         toggle.addEventListener('change', function() {
             const city = this.getAttribute('data-city');
-            updateCityInputsState(city);
+            validateCityBlock(city);
         });
     });
-    
+
     document.querySelectorAll('.block-id-select').forEach(function(select) {
         select.addEventListener('change', function() {
             const city = this.getAttribute('data-city');
-            updateTestButtonState(city);
+            validateCityBlock(city);
         });
     });
 });
 
-function updateInputsState() {
-    document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
-        const city = toggle.getAttribute('data-city');
-        updateCityInputsState(city);
-    });
-}
-
-function updateCityInputsState(city) {
+function validateCityBlock(city) {
     const toggle = document.querySelector('#is_active_' + city);
     const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
-    const minAmountInput = document.querySelector('input[name="min_amount[' + city + ']"]');
-    const exchangeRateInput = document.querySelector('input[name="exchange_rate[' + city + ']"]');
-    const testButton = document.querySelector('button[data-city="' + city + '"].test-payment-btn');
+    if (!toggle || !blockIdSelect) return;
 
     const isActive = toggle.checked;
-    const hasBlockId = blockIdSelect && blockIdSelect.value.trim() !== '';
+    const hasBlockId = blockIdSelect.value.trim() !== '';
 
-    // 启用时才要求选择区块
     if (isActive && !hasBlockId) {
         blockIdSelect.classList.add('is-invalid');
-    } else if (blockIdSelect) {
+    } else {
         blockIdSelect.classList.remove('is-invalid');
     }
-
-    // 未启用时禁用参数输入框，避免 HTML5 验证拦截
-    if (minAmountInput) minAmountInput.disabled = !isActive;
-    if (exchangeRateInput) exchangeRateInput.disabled = !isActive;
-
-    updateTestButtonState(city);
-}
-
-function updateTestButtonState(city) {
-    const toggle = document.querySelector('#is_active_' + city);
-    const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
-    const testButton = document.querySelector('button[data-city="' + city + '"]');
-
-    const isActive = toggle.checked;
-    const hasBlockId = blockIdSelect && blockIdSelect.value.trim() !== '';
-
-    testButton.disabled = !(isActive && hasBlockId);
 }
 
 function createCityRowHTML(cityCode, city) {
@@ -586,14 +441,6 @@ function createCityRowHTML(cityCode, city) {
                 '<label class="custom-control-label" for="is_active_' + cityCode + '"></label>' +
             '</div>' +
         '</td>' +
-        '<td>' +
-            '<div class="param-row"><span class="param-label">最小金额:</span><input type="number" class="form-control form-control-sm min-amount-input" name="min_amount[' + cityCode + ']" value="1" step="1" min="1" data-city="' + cityCode + '"><span class="param-unit">BCT</span></div>' +
-            '<div class="param-row mt-1"><span class="param-label">兑换率:</span><input type="number" class="form-control form-control-sm exchange-rate-input" name="exchange_rate[' + cityCode + ']" value="0.1000" step="0.0001" min="0.0001" data-city="' + cityCode + '"></div>' +
-        '</td>' +
-        '<td class="text-center">' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary test-payment-btn" data-city="' + cityCode + '" data-city-name="' + cityName + '" disabled><i class="fas fa-vial"></i> 测试</button>' +
-            ' <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCityRow(this)" title="移除"><i class="fas fa-trash"></i></button>' +
-        '</td>' +
     '</tr>';
 }
 
@@ -602,7 +449,6 @@ function addSearchedCity() {
     const keyword = input.value.trim();
     if (!keyword) return;
 
-    // 在所有城市中匹配
     let matchedCode = null;
     let matchedCity = null;
     const all = Object.assign({}, allCities, hiddenCities);
@@ -621,7 +467,6 @@ function addSearchedCity() {
         return;
     }
 
-    // 检查是否已在表格中
     if (document.querySelector('tr[data-city="' + matchedCode + '"]')) {
         alert('城市「' + matchedCity.name + '」已在列表中');
         input.value = '';
@@ -634,23 +479,16 @@ function addSearchedCity() {
     const newRow = tempDiv.querySelector('tr');
     tbody.appendChild(newRow);
 
-    // 绑定事件
     const toggle = newRow.querySelector('.payment-toggle');
     toggle.addEventListener('change', function() {
-        updateCityInputsState(matchedCode);
+        validateCityBlock(matchedCode);
     });
     const select = newRow.querySelector('.block-id-select');
     select.addEventListener('change', function() {
-        updateTestButtonState(matchedCode);
+        validateCityBlock(matchedCode);
     });
 
     input.value = '';
-    updateInputsState();
-}
-
-function removeCityRow(btn) {
-    const row = btn.closest('tr');
-    if (row) row.remove();
 }
 
 // 搜索框回车支持
@@ -661,49 +499,26 @@ document.getElementById('citySearchInput').addEventListener('keydown', function(
     }
 });
 
-function applyBatchSettings() {
-    const minAmount = document.getElementById('batch_min_amount').value;
-    const exchangeRate = document.getElementById('batch_exchange_rate').value;
-
-    document.querySelectorAll('.min-amount-input').forEach(function(input) {
-        input.value = minAmount;
-    });
-
-    document.querySelectorAll('.exchange-rate-input').forEach(function(input) {
-        input.value = exchangeRate;
-    });
-
-    $('#batchSettingsModal').modal('hide');
-    updateInputsState();
-}
-
-// 测试按钮改为简单提示
-document.querySelectorAll('.test-payment-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        const cityName = this.getAttribute('data-city-name');
-        alert('「' + cityName + '」支付测试功能开发中，敬请期待');
-    });
-});
-
 // 表单提交验证
 document.getElementById('paymentSettingsForm').addEventListener('submit', function(e) {
     let hasError = false;
     const errorMessages = [];
-    
+
     document.querySelectorAll('.payment-toggle').forEach(function(toggle) {
         const city = toggle.getAttribute('data-city');
         const blockIdSelect = document.querySelector('select[name="block_id[' + city + ']"]');
+        if (!blockIdSelect) return;
         const cityName = blockIdSelect.closest('tr').querySelector('td strong').textContent;
 
-        if (toggle.checked && blockIdSelect && !blockIdSelect.value.trim()) {
+        if (toggle.checked && !blockIdSelect.value.trim()) {
             hasError = true;
             errorMessages.push('城市 "' + cityName + '" 已启用但未选择区块');
             blockIdSelect.classList.add('is-invalid');
-        } else if (blockIdSelect) {
+        } else {
             blockIdSelect.classList.remove('is-invalid');
         }
     });
-    
+
     if (hasError) {
         e.preventDefault();
         alert('请修正以下错误：\n\n' + errorMessages.join('\n'));
