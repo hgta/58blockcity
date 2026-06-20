@@ -12,19 +12,14 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once '../../config/database.php';
 
-/*try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("数据库连接失败: " . $e->getMessage());
-}*/
-
 // 加载购物车类
 require_once '../../classes/Cart.php';
 require_once '../../classes/Product.php';
+require_once '../../classes/Shop.php';
 
 $cart = new Cart($pdo);
 $product = new Product($pdo);
+$shop = new Shop($pdo);
 
 $userId = $_SESSION['user_id'];
 $cartItems = $cart->getCartItems($userId);
@@ -37,11 +32,18 @@ foreach ($cartItems as $item) {
     if (!isset($groupedItems[$shopId])) {
         $groupedItems[$shopId] = [
             'shop_name' => $shopName,
-            'items' => []
+            'items' => [],
+            'payment_settings' => []
         ];
     }
     $groupedItems[$shopId]['items'][] = $item;
 }
+
+// 加载每个店铺支持的支付城市/区块
+foreach ($groupedItems as $shopId => &$group) {
+    $group['payment_settings'] = $shop->getShopPaymentSettings($shopId);
+}
+unset($group);
 
 // 计算总金额（全部）
 $totalAmount = 0;
@@ -77,6 +79,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+// 格式化支付城市/区块显示
+function formatPaymentSetting($settings) {
+    if (empty($settings)) {
+        return '<span class="payment-empty">暂未设置人气值收款</span>';
+    }
+    $parts = [];
+    foreach ($settings as $s) {
+        $city = htmlspecialchars($s['city'] ?? '-');
+        $zone = htmlspecialchars($s['block_zone'] ?? '');
+        $number = htmlspecialchars($s['block_number'] ?? '');
+        $blockText = $zone || $number ? ($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '') : '未绑定区块';
+        $parts[] = '<span class="payment-badge">' . $city . ' ' . $blockText . '</span>';
+    }
+    return implode('', $parts);
+}
 ?>
 
 <!DOCTYPE html>
@@ -86,253 +104,453 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>购物车 - 58人气值商城</title>
     <style>
+        :root {
+            --primary: #e74c3c;
+            --primary-dark: #c0392b;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #333333;
+            --text-muted: #666666;
+            --border: #e8e8e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
         .bct-symbol {
             font-family: Arial, sans-serif;
             font-weight: bold;
-            color: #e74c3c;
+            color: var(--primary);
+            margin-right: 2px;
         }
-        
+
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         .cart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
         }
-        
+
         .cart-title {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
-            color: #333;
+            color: var(--text);
+            margin: 0;
         }
-        
-        .cart-items {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
+
+        .cart-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
         }
-        
-        .cart-item {
+
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .cart-main {
             display: flex;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
+            flex-direction: column;
+            gap: 20px;
         }
-        
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-        
-        .item-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-right: 20px;
-        }
-        
-        .item-details {
-            flex: 1;
-        }
-        
-        .item-name {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        
-        .item-price {
-            font-size: 16px;
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-        }
-        
-        .quantity-btn {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .quantity-input {
-            width: 50px;
-            height: 30px;
-            border: 1px solid #ddd;
-            text-align: center;
-            margin: 0 5px;
-        }
-        
-        .item-total {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-left: 20px;
-        }
-        
-        .remove-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 20px;
-        }
-        
-        .remove-btn:hover {
-            background: #c0392b;
-        }
-        
-        .cart-summary {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        
-        .summary-total {
-            font-size: 20px;
-            font-weight: bold;
-            color: #e74c3c;
-            border-top: 2px solid #f0f0f0;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-        
-        .cart-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-continue {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-continue:hover {
-            background: #5a6268;
-        }
-        
-        .btn-checkout {
-            background: #28a745;
-            color: white;
-        }
-        
-        .btn-checkout:hover {
-            background: #218838;
-        }
-        
-        .btn-clear {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .btn-clear:hover {
-            background: #c82333;
-        }
-        
-        .empty-cart {
-            text-align: center;
-            padding: 60px 20px;
-        }
-        
-        .empty-cart-icon {
-            font-size: 64px;
-            color: #ddd;
-            margin-bottom: 20px;
-        }
-        
-        .empty-cart-message {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
+
         .shop-group {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             overflow: hidden;
-            margin-bottom: 20px;
         }
-        
+
         .shop-header {
             background: #f8f9fa;
-            padding: 12px 20px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .shop-info {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: bold;
-            color: #333;
+            flex: 1;
+            min-width: 200px;
         }
-        
+
         .shop-header input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
+            flex-shrink: 0;
         }
-        
+
+        .shop-name {
+            font-weight: bold;
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .shop-payment {
+            flex: 2;
+            min-width: 280px;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shop-payment-label {
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .payment-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #fff7ed;
+            color: #c2410c;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid #fed7aa;
+            white-space: nowrap;
+        }
+
+        .payment-empty {
+            color: #999;
+            font-style: italic;
+        }
+
         .cart-item {
             display: flex;
             align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
         }
-        
+
         .cart-item:last-child {
             border-bottom: none;
         }
-        
+
         .item-checkbox {
-            margin-right: 15px;
+            flex-shrink: 0;
         }
-        
+
         .item-checkbox input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
+        }
+
+        .item-image {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 10px;
+            flex-shrink: 0;
+            background: #f0f0f0;
+        }
+
+        .item-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .item-price {
+            font-size: 15px;
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background: #e9ecef;
+        }
+
+        .quantity-btn:first-child {
+            border-radius: 6px 0 0 6px;
+        }
+
+        .quantity-btn:last-of-type {
+            border-radius: 0 6px 6px 0;
+        }
+
+        .quantity-input {
+            width: 54px;
+            height: 32px;
+            border: 1px solid #ddd;
+            border-left: none;
+            border-right: none;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .item-total {
+            font-size: 17px;
+            font-weight: bold;
+            color: var(--text);
+            text-align: right;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+
+        .remove-btn {
+            background: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .remove-btn:hover {
+            background: #fee;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .cart-summary {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            padding: 24px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .summary-row.summary-total {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            border-top: 2px solid var(--border);
+            padding-top: 16px;
+            margin-top: 16px;
+            margin-bottom: 20px;
+        }
+
+        .cart-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn i { margin-right: 8px; }
+
+        .btn-checkout {
+            background: var(--success);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-checkout:hover {
+            background: #219150;
+        }
+
+        .btn-continue {
+            background: #f0f0f0;
+            color: var(--text);
+            width: 100%;
+        }
+
+        .btn-continue:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-clear {
+            background: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .btn-clear:hover {
+            background: #fee;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .empty-cart-icon {
+            font-size: 72px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-cart-message {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .cart-note {
+            background: #fff8e1;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #856404;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+            .cart-summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .cart-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .cart-title {
+                font-size: 22px;
+            }
+            .shop-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .shop-info {
+                width: 100%;
+            }
+            .shop-payment {
+                width: 100%;
+                padding-left: 28px;
+            }
+            .cart-item {
+                flex-wrap: wrap;
+                gap: 12px;
+                padding: 16px;
+            }
+            .item-checkbox {
+                order: 0;
+            }
+            .item-image {
+                width: 70px;
+                height: 70px;
+                order: 1;
+            }
+            .item-details {
+                order: 2;
+                width: calc(100% - 110px);
+                min-width: 0;
+            }
+            .item-total {
+                order: 3;
+                margin-left: auto;
+                text-align: right;
+                min-width: auto;
+            }
+            .remove-btn {
+                order: 4;
+                margin-left: 12px;
+            }
         }
     </style>
 </head>
@@ -341,7 +559,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <div class="cart-container">
         <div class="cart-header">
-            <h1 class="cart-title">我的购物车</h1>
+            <div>
+                <h1 class="cart-title">我的购物车</h1>
+                <div class="cart-subtitle">共 <?php echo count($cartItems); ?> 件商品</div>
+            </div>
             <?php if (!empty($cartItems)): ?>
                 <form method="POST" style="display: inline;">
                     <button type="submit" name="clear_cart" class="btn btn-clear" onclick="return confirm('确定要清空购物车吗？')">
@@ -364,69 +585,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
         <?php else: ?>
-            <form method="GET" action="checkout.php" id="checkout-form">
-                <?php foreach ($groupedItems as $shopId => $group): ?>
-                <div class="shop-group">
-                    <div class="shop-header">
-                        <input type="checkbox" class="shop-checkbox" data-shop="<?php echo $shopId; ?>" onchange="toggleShop(<?php echo $shopId; ?>)">
-                        <i class="fas fa-store"></i> <?php echo htmlspecialchars($group['shop_name']); ?>
+            <div class="cart-note">
+                <i class="fas fa-info-circle"></i>
+                <span>人气值结算需转至店主设定的对应城市区块，各店铺支持的收款城市/区块如下所示。</span>
+            </div>
+
+            <div class="cart-layout">
+                <div class="cart-main">
+                    <form method="GET" action="checkout.php" id="checkout-form">
+                        <?php foreach ($groupedItems as $shopId => $group): ?>
+                        <div class="shop-group">
+                            <div class="shop-header">
+                                <div class="shop-info">
+                                    <input type="checkbox" class="shop-checkbox" data-shop="<?php echo $shopId; ?>" onchange="toggleShop(<?php echo $shopId; ?>)">
+                                    <i class="fas fa-store"></i>
+                                    <span class="shop-name"><?php echo htmlspecialchars($group['shop_name']); ?></span>
+                                </div>
+                                <div class="shop-payment">
+                                    <span class="shop-payment-label"><i class="fas fa-coins"></i> 支持人气值结算：</span>
+                                    <?php echo formatPaymentSetting($group['payment_settings']); ?>
+                                </div>
+                            </div>
+                            <?php foreach ($group['items'] as $item): ?>
+                            <div class="cart-item">
+                                <div class="item-checkbox">
+                                    <input type="checkbox" name="selected_items[]" value="<?php echo $item['id']; ?>" class="item-cb shop-<?php echo $shopId; ?>" data-price="<?php echo $item['price']; ?>" data-qty="<?php echo $item['quantity']; ?>" onchange="updateSelectedTotal()">
+                                </div>
+                                <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
+                                     alt="<?php echo htmlspecialchars($item['name']); ?>" 
+                                     class="item-image">
+                                
+                                <div class="item-details">
+                                    <div class="item-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                                    <div class="item-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
+                                    
+                                    <form method="POST" class="quantity-controls">
+                                        <input type="hidden" name="cart_item_id" value="<?php echo $item['id']; ?>">
+                                        <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, -1)">-</button>
+                                        <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" 
+                                               min="1" class="quantity-input" id="quantity-<?php echo $item['id']; ?>">
+                                        <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, 1)">+</button>
+                                        <button type="submit" name="update_quantity" style="display: none;"></button>
+                                    </form>
+                                </div>
+                                
+                                <div class="item-total">
+                                    <span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'] * $item['quantity'], 0); ?> 人气值
+                                </div>
+                                
+                                <form method="POST">
+                                    <input type="hidden" name="cart_item_id" value="<?php echo $item['id']; ?>">
+                                    <button type="submit" name="remove_item" class="remove-btn" onclick="return confirm('确定要移除这个商品吗？')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </form>
+                </div>
+
+                <div class="cart-summary">
+                    <div class="summary-title">结算明细</div>
+                    <div class="summary-row">
+                        <span>已选商品</span>
+                        <span id="selected-count">0 件</span>
                     </div>
-                    <?php foreach ($group['items'] as $item): ?>
-                    <div class="cart-item">
-                        <div class="item-checkbox">
-                            <input type="checkbox" name="selected_items[]" value="<?php echo $item['id']; ?>" class="item-cb shop-<?php echo $shopId; ?>" data-price="<?php echo $item['price']; ?>" data-qty="<?php echo $item['quantity']; ?>" onchange="updateSelectedTotal()">
-                        </div>
-                        <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
-                             alt="<?php echo htmlspecialchars($item['name']); ?>" 
-                             class="item-image">
-                        
-                        <div class="item-details">
-                            <div class="item-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                            <div class="item-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
-                            
-                            <form method="POST" class="quantity-controls">
-                                <input type="hidden" name="cart_item_id" value="<?php echo $item['id']; ?>">
-                                <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, -1)">-</button>
-                                <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" 
-                                       min="1" class="quantity-input" id="quantity-<?php echo $item['id']; ?>">
-                                <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, 1)">+</button>
-                                <button type="submit" name="update_quantity" style="display: none;"></button>
-                            </form>
-                        </div>
-                        
-                        <div class="item-total">
-                            <span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'] * $item['quantity'], 0); ?> 人气值
-                        </div>
-                        
-                        <form method="POST">
-                            <input type="hidden" name="cart_item_id" value="<?php echo $item['id']; ?>">
-                            <button type="submit" name="remove_item" class="remove-btn" onclick="return confirm('确定要移除这个商品吗？')">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </form>
+                    <div class="summary-row">
+                        <span>选中总计</span>
+                        <span><span class="bct-symbol">Ⓟ</span><span id="selected-total">0</span> 人气值</span>
                     </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endforeach; ?>
-            </form>
-            
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>已选商品:</span>
-                    <span id="selected-count">0 件</span>
-                </div>
-                <div class="summary-row summary-total">
-                    <span>选中总计:</span>
-                    <span><span class="bct-symbol">Ⓟ</span><span id="selected-total">0</span> 人气值</span>
-                </div>
-                
-                <div class="cart-actions">
-                    <a href="../product/list.php" class="btn btn-continue">
-                        <i class="fas fa-arrow-left"></i> 继续购物
-                    </a>
-                    <button type="button" class="btn btn-checkout" onclick="goCheckout()">
-                        <i class="fas fa-credit-card"></i> 去结算
-                    </button>
+                    <div class="summary-row summary-total">
+                        <span>应付总额</span>
+                        <span><span class="bct-symbol">Ⓟ</span><span id="pay-total">0</span> 人气值</span>
+                    </div>
+                    
+                    <div class="cart-actions">
+                        <button type="button" class="btn btn-checkout" onclick="goCheckout()">
+                            <i class="fas fa-credit-card"></i> 去结算
+                        </button>
+                        <a href="../product/list.php" class="btn btn-continue">
+                            <i class="fas fa-arrow-left"></i> 继续购物
+                        </a>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>
@@ -436,12 +678,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function updateQuantity(itemId, change) {
             const input = document.getElementById('quantity-' + itemId);
             let newQuantity = parseInt(input.value) + change;
-            
             if (newQuantity < 1) newQuantity = 1;
-            
             input.value = newQuantity;
-            
-            // 自动提交表单
             input.form.querySelector('button[type="submit"]').click();
         }
         
@@ -466,6 +704,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 count += qty;
             });
             document.getElementById('selected-total').textContent = total.toLocaleString();
+            document.getElementById('pay-total').textContent = total.toLocaleString();
             document.getElementById('selected-count').textContent = count + ' 件';
         }
         

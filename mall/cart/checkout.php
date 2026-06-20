@@ -20,12 +20,14 @@ require_once '../../classes/Product.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Address.php';
 require_once '../../classes/User.php';
+require_once '../../classes/Shop.php';
 
 $cart = new Cart($pdo);
 $product = new Product($pdo);
 $order = new Order($pdo);
 $address = new Address($pdo);
 $user = new User($pdo);
+$shop = new Shop($pdo);
 
 $userId = $_SESSION['user_id'];
 $userInfo = $user->getUserById($userId);
@@ -83,6 +85,12 @@ foreach ($validItems as $item) {
     $shopGroups[$shopId]['total'] += $item['price'] * $item['quantity'];
 }
 
+// 加载每个店铺支持的支付城市/区块
+foreach ($shopGroups as $shopId => &$group) {
+    $group['payment_settings'] = $shop->getShopPaymentSettings($shopId);
+}
+unset($group);
+
 // 计算总金额
 $totalAmount = 0;
 foreach ($validItems as $item) {
@@ -118,12 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 try {
                     // 创建订单
+                    $defaultPayment = $group['payment_settings'][0] ?? null;
                     $orderData = [
                         'user_id' => $userId,
                         'shop_id' => $shopId,
                         'total_amount' => $group['total'],
-                        'payment_city' => ($paymentMethod == 'bct') ? ($group['items'][0]['payment_city'] ?? '') : '',
+                        'payment_city' => ($paymentMethod == 'bct') ? ($defaultPayment['city'] ?? '') : '',
                         'payment_amount' => ($paymentMethod == 'bct') ? $group['total'] : 0,
+                        'payment_block_id' => ($paymentMethod == 'bct') ? ($defaultPayment['block_id'] ?? '') : '',
                         'payment_method' => $paymentMethod,
                         'shipping_address' => $shippingAddress,
                         'buyer_note' => $remark
@@ -189,6 +199,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "订单创建失败: " . $e->getMessage();
         }
     }
+}
+
+// 格式化店铺支付城市/区块显示
+function formatCheckoutPaymentSettings($settings) {
+    if (empty($settings)) {
+        return '<span class="payment-empty">暂未设置人气值收款</span>';
+    }
+    $parts = [];
+    foreach ($settings as $s) {
+        $city = htmlspecialchars($s['city'] ?? '-');
+        $zone = htmlspecialchars($s['block_zone'] ?? '');
+        $number = htmlspecialchars($s['block_number'] ?? '');
+        $blockText = $zone || $number ? ($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '') : '未绑定区块';
+        $parts[] = '<span class="payment-badge">' . $city . ' ' . $blockText . '</span>';
+    }
+    return implode('', $parts);
 }
 ?>
 
@@ -387,6 +413,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .product-quantity {
             color: #666;
             font-size: 14px;
+        }
+        
+        /* 店铺分组与收款信息 */
+        .shop-group-checkout {
+            margin-bottom: 20px;
+        }
+        
+        .shop-group-checkout:last-child {
+            margin-bottom: 0;
+        }
+        
+        .shop-group-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .shop-group-header .shop-payment-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-weight: normal;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .payment-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #fff7ed;
+            color: #c2410c;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid #fed7aa;
+            white-space: nowrap;
+        }
+        
+        .payment-empty {
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
         }
         
         /* 支付方式 */
@@ -625,16 +699,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="products-section">
                             <h3 class="section-title">确认商品信息</h3>
                             <div class="products-list">
-                                <?php foreach ($validItems as $item): ?>
-                                    <div class="product-item">
-                                        <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
-                                             alt="<?php echo htmlspecialchars($item['name']); ?>" 
-                                             class="product-image">
-                                        <div class="product-info">
-                                            <div class="product-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                                            <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
+                                <?php foreach ($shopGroups as $shopId => $group): ?>
+                                    <div class="shop-group-checkout">
+                                        <div class="shop-group-header">
+                                            <i class="fas fa-store"></i> <?php echo htmlspecialchars($group['shop_name']); ?>
+                                            <div class="shop-payment-info">
+                                                <i class="fas fa-coins"></i> 人气值结算至：
+                                                <?php echo formatCheckoutPaymentSettings($group['payment_settings']); ?>
+                                            </div>
                                         </div>
-                                        <div class="product-quantity">x<?php echo $item['quantity']; ?></div>
+                                        <?php foreach ($group['items'] as $item): ?>
+                                            <div class="product-item">
+                                                <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
+                                                     alt="<?php echo htmlspecialchars($item['name']); ?>" 
+                                                     class="product-image">
+                                                <div class="product-info">
+                                                    <div class="product-name"><?php echo htmlspecialchars($item['name']); ?></div>
+                                                    <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
+                                                </div>
+                                                <div class="product-quantity">x<?php echo $item['quantity']; ?></div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>

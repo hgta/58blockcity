@@ -86,8 +86,8 @@ class Order {
             
             $stmt = $this->pdo->prepare("
                 INSERT INTO orders 
-                (order_no, user_id, shop_id, total_amount, payment_city, payment_amount, buyer_note, status, expire_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
+                (order_no, user_id, shop_id, total_amount, payment_city, payment_amount, payment_block_id, buyer_note, status, expire_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
             ");
             
             $stmt->execute([
@@ -97,6 +97,7 @@ class Order {
                 $data['total_amount'],
                 $data['payment_city'],
                 $data['payment_amount'],
+                $data['payment_block_id'] ?? '',
                 $data['buyer_note'] ?? '',
                 'pending'
             ]);
