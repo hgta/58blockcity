@@ -630,10 +630,18 @@ class Shop {
      * 更新店铺支付设置
      */
     public function updatePaymentSettings($shopId, $paymentSettings) {
-        $inTransaction = $this->pdo->inTransaction();
+        // 如果连接残留了未提交的事务（如持久连接），先回滚清理，避免影响本次写入
+        if ($this->pdo->inTransaction()) {
+            error_log("updatePaymentSettings 检测到残留事务，先回滚清理: shop_id={$shopId}");
+            $this->pdo->rollBack();
+        }
+
         try {
-            if (!$inTransaction) {
-                $this->pdo->beginTransaction();
+            $beginResult = $this->pdo->beginTransaction();
+            if ($beginResult === false) {
+                $errorInfo = $this->pdo->errorInfo();
+                error_log("updatePaymentSettings beginTransaction 失败: shop_id={$shopId}, error=" . json_encode($errorInfo));
+                throw new Exception("开启事务失败: " . ($errorInfo[2] ?? 'unknown'));
             }
 
             // 先删除旧的支付设置
@@ -644,6 +652,7 @@ class Shop {
                 error_log("updatePaymentSettings DELETE 失败: shop_id={$shopId}, error=" . json_encode($errorInfo));
                 throw new Exception("删除旧支付设置失败: " . ($errorInfo[2] ?? 'unknown'));
             }
+            $deletedRows = $deleteStmt->rowCount();
 
             // 插入新的支付设置
             $insertStmt = $this->pdo->prepare("
@@ -652,6 +661,7 @@ class Shop {
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
 
+            $insertedRows = 0;
             foreach ($paymentSettings as $setting) {
                 $params = [
                     $shopId,
@@ -667,14 +677,19 @@ class Shop {
                     error_log("updatePaymentSettings INSERT 失败: shop_id={$shopId}, params=" . json_encode($params) . ", error=" . json_encode($errorInfo));
                     throw new Exception("保存支付设置失败: " . ($errorInfo[2] ?? 'unknown'));
                 }
+                $insertedRows += $insertStmt->rowCount();
             }
 
-            if (!$inTransaction) {
-                $this->pdo->commit();
+            $commitResult = $this->pdo->commit();
+            if ($commitResult === false) {
+                $errorInfo = $this->pdo->errorInfo();
+                error_log("updatePaymentSettings commit 失败: shop_id={$shopId}, deleted={$deletedRows}, inserted={$insertedRows}, error=" . json_encode($errorInfo));
+                throw new Exception("提交事务失败: " . ($errorInfo[2] ?? 'unknown'));
             }
+            error_log("updatePaymentSettings commit 成功: shop_id={$shopId}, deleted={$deletedRows}, inserted={$insertedRows}");
             return true;
         } catch (Exception $e) {
-            if (!$inTransaction && $this->pdo->inTransaction()) {
+            if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             error_log("updatePaymentSettings 异常: shop_id={$shopId}, settings=" . json_encode($paymentSettings) . ", error=" . $e->getMessage());

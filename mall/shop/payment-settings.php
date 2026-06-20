@@ -87,6 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if ($shop->updatePaymentSettings($shopId, $paymentSettings)) {
                     error_log("payment-settings 保存成功: shop_id={$shopId}, settings=" . json_encode($paymentSettings));
+                    // 立即查询数据库验证是否已持久化
+                    $verifySettings = $shop->getPaymentSettings($shopId);
+                    error_log("payment-settings 保存后验证: shop_id={$shopId}, saved_count=" . count($paymentSettings) . ", db_count=" . count($verifySettings));
                     // PRG 重定向，避免刷新重复提交
                     $redirectUrl = 'payment-settings.php?id=' . $shopId . '&saved=1';
                     header('Location: ' . $redirectUrl);
