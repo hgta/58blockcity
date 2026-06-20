@@ -359,3 +359,68 @@ function csrfField() {
 function requireCsrf() {
     validateCsrfToken();
 }
+
+/**
+ * 压缩上传图片：限制最大宽度，超过则等比缩放并转为 JPEG
+ * @param string $srcPath  源文件路径
+ * @param string $dir      目标目录
+ * @param string $origName 原始文件名
+ * @param int    $maxWidth 最大宽度（像素）
+ * @return string 最终存储路径（相对 uploads/...）
+ */
+function compressImage($srcPath, $dir, $origName, $maxWidth = 1200) {
+    $info = getimagesize($srcPath);
+    if (!$info) {
+        return str_replace('../', '', $srcPath); // 非图片，返回原路径
+    }
+
+    $width  = $info[0];
+    $height = $info[1];
+    $mime   = $info['mime'];
+
+    // 如果宽度未超过限制，直接返回原路径
+    if ($width <= $maxWidth) {
+        return str_replace('../', '', $srcPath);
+    }
+
+    // 计算新尺寸
+    $newWidth  = $maxWidth;
+    $newHeight = (int) round($height * ($maxWidth / $width));
+
+    // 根据原图类型创建图像资源
+    switch ($mime) {
+        case 'image/jpeg':
+            $src = imagecreatefromjpeg($srcPath);
+            break;
+        case 'image/png':
+            $src = imagecreatefrompng($srcPath);
+            break;
+        case 'image/gif':
+            $src = imagecreatefromgif($srcPath);
+            break;
+        default:
+            $src = imagecreatefromjpeg($srcPath);
+    }
+
+    if (!$src) {
+        return str_replace('../', '', $srcPath);
+    }
+
+    // 创建新图
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    // 保存为 JPEG（截图不需要透明通道，体积更小）
+    $newName = preg_replace('/\.[a-zA-Z]+$/', '.jpg', $origName);
+    $newPath = $dir . $newName;
+    imagejpeg($dst, $newPath, 85);
+
+    // 释放内存，删除原文件
+    imagedestroy($src);
+    imagedestroy($dst);
+    if ($newPath !== $srcPath && file_exists($srcPath)) {
+        unlink($srcPath);
+    }
+
+    return str_replace('../', '', $newPath);
+}

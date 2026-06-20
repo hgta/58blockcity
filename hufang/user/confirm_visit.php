@@ -53,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (in_array($_FILES['screenshot']['type'], $allowedTypes)) {
             if (move_uploaded_file($_FILES['screenshot']['tmp_name'], $uploadPath)) {
-                $screenshotPath = 'uploads/visit_screenshots/' . $fileName;
+                // 上传成功后压缩图片：限制最大宽度1200px，转JPEG以减小体积
+                $screenshotPath = compressImage($uploadPath, $uploadDir, $fileName, 1200);
             } else {
                 $error = "文件上传失败";
             }
