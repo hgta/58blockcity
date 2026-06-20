@@ -336,11 +336,11 @@ $orderItems = $order->getOrderDetails($orderId);
                     <div class="value">
                         <?php if ($paymentBlockInfo): ?>
                             <?php 
+                                $cityName = $paymentBlockInfo['city_name'] ?? $orderInfo['payment_city'];
                                 $zone = $paymentBlockInfo['zone'] ?? '';
                                 $number = $paymentBlockInfo['block_number'] ?? '';
-                                echo htmlspecialchars($orderInfo['payment_city'] ?? '') . ' ' . htmlspecialchars($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '');
+                                echo htmlspecialchars($cityName) . ' ' . htmlspecialchars($zone ? $zone . '区' : '') . ($number ? ' #' . $number : '');
                             ?>
-                            <div style="font-size:12px;opacity:0.7;margin-top:2px;">区块ID: <?php echo htmlspecialchars($orderInfo['payment_block_id']); ?></div>
                         <?php elseif ($defaultPayment): ?>
                             <?php echo htmlspecialchars($defaultPayment['city'] ?? ''); ?> #<?php echo htmlspecialchars($defaultPayment['block_id'] ?? '未设置'); ?>
                         <?php else: ?>
