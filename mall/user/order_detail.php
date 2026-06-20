@@ -358,7 +358,7 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
         </div>
         
         <!-- 支付信息 -->
-        <?php if (in_array($orderInfo['status'], ['paid', 'shipped', 'completed'])): ?>
+        <?php if ($orderInfo['status'] != 'cancelled'): ?>
         <div class="card">
             <div class="card-title"><i class="fas fa-credit-card"></i> 支付信息</div>
             <div class="info-row">
@@ -386,10 +386,18 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
                 <span class="info-value"><?php echo htmlspecialchars($orderInfo['payment_city']); ?></span>
             </div>
             <?php endif; ?>
+            <?php if (in_array($orderInfo['status'], ['paid', 'shipped', 'completed'])): ?>
             <div class="info-row">
                 <span class="info-label">支付时间</span>
                 <span class="info-value"><?php echo !empty($orderInfo['paid_at']) ? date('Y-m-d H:i:s', strtotime($orderInfo['paid_at'])) : '-'; ?></span>
             </div>
+            <?php endif; ?>
+            <?php if ($orderInfo['status'] == 'pending'): ?>
+            <div class="info-row" style="color:#f39c12;">
+                <span class="info-label">支付状态</span>
+                <span class="info-value">待付款</span>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         
