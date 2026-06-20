@@ -8,7 +8,7 @@ require_once '../../classes/Visit.php';
 checkLogin();
 
 // 获取互访圈ID
-$circleId = $_GET['id'] ?? 0;
+$circleId = intval(\$_GET['id']) ?? 0;
 if (!$circleId) {
     $_SESSION['error_message'] = '无效的互访圈ID';
     header('Location: index.php');
@@ -36,6 +36,7 @@ if ($_SESSION['user_id'] != $circleInfo['user_id']) {
 
 // 处理删除请求
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     try {
         // 开启事务
         $pdo->beginTransaction();
@@ -88,7 +89,9 @@ require_once '../includes/header.php';
             
             <p class="text-danger"><i class="fas fa-info-circle me-1"></i>将同时删除该互访圈的所有访问记录！</p>
             
-            <form method="post" class="mt-4">
+            <form method="post">
+                            <?= csrfField() ?>
+                         class="mt-4">
                 <div class="d-flex justify-content-between">
                     <a href="view.php?id=<?= $circleId ?>" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> 取消

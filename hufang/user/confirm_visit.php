@@ -8,7 +8,7 @@ require_once '../../classes/Notification.php';
 
 checkLogin();
 
-$visitId = $_GET['id'] ?? 0;
+$visitId = intval(\$_GET['id']) ?? 0;
 $visit = new Visit($pdo);
 $circle = new Circle($pdo);
 $user = new User($pdo);
@@ -31,6 +31,7 @@ if ($currentUserId != $visitInfo['owner_id']) {
 // 处理表单提交
 $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     $visitDate = $_POST['visit_date'] ?? date('Y-m-d');
     $nextSuggestDate = date('Y-m-d', strtotime($visitDate . ' +6 months'));
     $notes = $_POST['notes'] ?? '';
@@ -129,7 +130,9 @@ $defaultNextDate = date('Y-m-d', strtotime('+6 months'));
                         </div>
                     </div>
                     
-                    <form method="post" class="mt-4" enctype="multipart/form-data">
+                    <form method="post">
+                            <?= csrfField() ?>
+                         class="mt-4" enctype="multipart/form-data">
                         <div class="form-group">
                             <label for="visit_date">实际访问日期 *</label>
                             <input type="date" class="form-control" id="visit_date" name="visit_date" 

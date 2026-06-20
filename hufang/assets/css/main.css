@@ -3806,3 +3806,51 @@ footer {
     gap: 10px;
 }
 .user-header h2 i { color: #ff6b00; }
+
+/* 阶段二新增：互访圈卡片角标与紧凑模式 */
+.circle-visit-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    z-index: 2;
+}
+.circle-visit-badge.completed { background: #22c55e; }
+.circle-visit-badge.visited { background: #3b82f6; }
+.circle-visit-badge.pending { background: #f59e0b; }
+
+.circle-card .circle-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 8px;
+}
+
+.circle-card .stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.circle-card .stat-item .stat-count {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.circle-card .stat-item .stat-label {
+    display: block;
+    font-size: 11px;
+    color: #999;
+}
+
+.circle-card .stat-item.pending .stat-count { color: #f59e0b; }
+.circle-card .stat-item.confirmed .stat-count { color: #3b82f6; }
+.circle-card .stat-item.completed .stat-count { color: #22c55e; }
+

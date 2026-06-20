@@ -66,57 +66,17 @@ foreach ($userCircles as $c) {
         </div>
     <?php else: ?>
         <div class="circle-grid">
-            <?php foreach ($userCircles as $circle): ?>
-                <div class="circle-card">
-                    <div class="circle-header">
-						<h3><?= htmlspecialchars($circle['name']) ?></h3>
-						<div class="circle-header-info">
-							<span class="circle-location">
-								<i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>
-								<?= htmlspecialchars($circle['city']) ?>
-							</span>
-							<!-- 优化后的区块数显示 -->
-							<span class="block-count-badge">
-								<i class="fas fa-cube"></i>
-								<span><?= $circle['block_count'] ?> 区块</span>
-							</span>
-						</div>
-					</div>
-                    
-                    <div class="circle-body">
-                        <p><?= nl2br(htmlspecialchars($circle['description'])) ?></p>
-                    </div>
-                    
-                    <div class="circle-stats">
-                        <div class="stat-item pending">
-                            <span class="stat-count"><?= $circleStats[$circle['id']]['pending'] ?></span>
-                            <span class="stat-label">待处理</span>
-                        </div>
-                        <div class="stat-item confirmed">
-                            <span class="stat-count"><?= $circleStats[$circle['id']]['confirmed'] ?></span>
-                            <span class="stat-label">已确认</span>
-                        </div>
-                        <div class="stat-item completed">
-                            <span class="stat-count"><?= $circleStats[$circle['id']]['completed'] ?></span>
-                            <span class="stat-label">已完成</span>
-                        </div>
-                    </div>
-                    
-                    <div class="circle-actions">
-                        <button class="btn btn-sm btn-outline-secondary share-circle-btn mr-2" 
-                                data-circle-id="<?= $circle['id'] ?>" 
-                                data-toggle="tooltip" title="复制分享链接">
-                            <i class="fas fa-share-alt"></i>
-                        </button>
-                        <a href="../circles/view.php?id=<?= $circle['id'] ?>" class="btn btn-sm btn-primary">
-                            <i class="fas fa-eye"></i> 查看详情
-                        </a>
-                        <a href="visits.php?circle_id=<?= $circle['id'] ?>" class="btn btn-sm btn-secondary">
-                            <i class="fas fa-list"></i> 访问记录
-                        </a>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+            <?php foreach ($userCircles as $circle):
+                $stats = $circleStats[$circle['id']] ?? [];
+                $statsHtml = '<div class="circle-stats" style="margin-top:10px;">' .
+                    '<div class="stat-item pending"><span class="stat-count">' . ($stats['pending'] ?? 0) . '</span><span class="stat-label">待处理</span></div>' .
+                    '<div class="stat-item confirmed"><span class="stat-count">' . ($stats['confirmed'] ?? 0) . '</span><span class="stat-label">已确认</span></div>' .
+                    '<div class="stat-item completed"><span class="stat-count">' . ($stats['completed'] ?? 0) . '</span><span class="stat-label">已完成</span></div>' .
+                    '</div>';
+                $actions = '<button class="btn btn-sm btn-outline-secondary share-circle-btn mr-2" data-circle-id="' . (int)$circle['id'] . '" data-toggle="tooltip" title="复制分享链接"><i class="fas fa-share-alt"></i></button>' .
+                    '<a href="visits.php?circle_id=' . (int)$circle['id'] . '" class="btn btn-sm btn-secondary"><i class="fas fa-list"></i> 访问记录</a>';
+                echo renderCircleCard($circle, null, $actions, $statsHtml, true);
+            endforeach; ?>
         </div>
     <?php endif; ?>
 </div>
@@ -146,16 +106,6 @@ $(document).ready(function() {
             $(this).attr('data-original-title', '复制分享链接');
         }, 2000);
     });
-    
-    // 复制到剪贴板函数
-    function copyToClipboard(text) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-    }
 
     // 海报生成功能
     var posterBtn = document.getElementById('generatePoster');

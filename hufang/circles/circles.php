@@ -239,7 +239,7 @@ $isOwnProfile = ($userId == $currentUserId);
                                                     <a href="edit.php?id=<?= $circle['id'] ?>" class="btn btn-outline-secondary" title="编辑">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <a href="manage_visits.php?id=<?= $circle['id'] ?>" class="btn btn-outline-info" title="管理访问">
+                                                    <a href="../user/visits.php?circle_id=<?= $circle['id'] ?>" class="btn btn-outline-info" title="管理访问">
                                                         <i class="fas fa-handshake"></i>
                                                     </a>
                                                 <?php endif; ?>

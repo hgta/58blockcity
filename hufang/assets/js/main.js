@@ -4,14 +4,19 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化城市定位功能
-    //initCityLocation();
-    
+    // 初始化城市定位功能（高德 IP + 经纬度降级）
+    if (document.getElementById('userCity')) {
+        getCityInfo();
+    }
+
     // 初始化互访圈筛选功能
     initCircleFilters();
-    
+
     // 初始化其他交互组件
     initComponents();
+
+    // 将 PHP flash/session 消息转换为 Toast（无 JS 时保留原 alert）
+    initFlashToasts();
 });
 
 /**
@@ -406,4 +411,56 @@ function showModal(id) {
 }
 function hideModal(id) {
     document.getElementById(id).style.display = 'none';
+}
+
+/**
+ * 复制文本到剪贴板，并显示 Toast 反馈
+ */
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('链接已复制到剪贴板', 'success');
+        }).catch(() => {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('链接已复制到剪贴板', 'success');
+    } catch (err) {
+        showToast('复制失败，请手动复制', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+/**
+ * 把页面中由 PHP session 写入的 flash 提示转换为 Toast
+ * 无 JS 时原 alert 仍保留，保证可访问性
+ */
+function initFlashToasts() {
+    document.querySelectorAll('.alert-success, .alert-info, .alert-danger, .alert-warning').forEach(alert => {
+        const text = alert.textContent.trim();
+        if (!text) return;
+        let type = 'info';
+        if (alert.classList.contains('alert-success')) type = 'success';
+        if (alert.classList.contains('alert-danger')) type = 'error';
+        if (alert.classList.contains('alert-warning')) type = 'error';
+        showToast(text, type);
+        // 保留原 alert 一段时间后再隐藏，避免与 Toast 重复
+        alert.style.opacity = '0.6';
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 4000);
+    });
 }

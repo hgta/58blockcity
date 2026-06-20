@@ -4,7 +4,8 @@ class Visit {
     const STATUS_PENDING = 'pending';
     const STATUS_CONFIRMED = 'confirmed';
     const STATUS_COMPLETED = 'completed';
-	
+    const STATUS_CANCELLED = 'cancelled';
+
     private $pdo;
     
     public function __construct($pdo) {
@@ -25,23 +26,72 @@ class Visit {
 	public function recordReturn($visitId, $returnDate, $notes = '', $screenshotPath = null) {
 		$stmt = $this->pdo->prepare("UPDATE visits 
 									SET return_date = ?, 
-										status = 'completed',
+										status = ?,
 										notes = ?,
 										screenshot_path = ?,
 										updated_at = NOW()
 									WHERE id = ?");
-		return $stmt->execute([$returnDate, $notes, $screenshotPath, $visitId]);
+		return $stmt->execute([$returnDate, self::STATUS_COMPLETED, $notes, $screenshotPath, $visitId]);
 	}
     
-    public function getUserVisits($userId) {
-        $stmt = $this->pdo->prepare("SELECT v.*, c.name as circle_name, c.city, u.username as circle_owner
+    public function getUserVisits($userId, $status = null, $search = '', $page = null, $perPage = 15, $sort = 'newest') {
+        $sql = "SELECT v.*, c.name as circle_name, c.city, u.username as circle_owner
                                    FROM visits v
                                    JOIN circles c ON v.circle_id = c.id
                                    JOIN users u ON c.user_id = u.id
-                                   WHERE v.visitor_id = ?
-                                   ORDER BY v.created_at DESC");
-        $stmt->execute([$userId]);
+                                   WHERE v.visitor_id = ?";
+        $params = [$userId];
+
+        if ($status) {
+            $sql .= " AND v.status = ?";
+            $params[] = $status;
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (c.name LIKE ? OR c.city LIKE ? OR u.username LIKE ?)";
+            $term = "%$search%";
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+
+        $orderBy = $sort === 'oldest' ? 'v.created_at ASC' : 'v.created_at DESC';
+        $sql .= " ORDER BY $orderBy";
+
+        if ($page !== null) {
+            $offset = ($page - 1) * $perPage;
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = (int)$perPage;
+            $params[] = (int)$offset;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    public function getUserVisitsCount($userId, $status = null, $search = '') {
+        $sql = "SELECT COUNT(*) FROM visits v
+                JOIN circles c ON v.circle_id = c.id
+                JOIN users u ON c.user_id = u.id
+                WHERE v.visitor_id = ?";
+        $params = [$userId];
+
+        if ($status) {
+            $sql .= " AND v.status = ?";
+            $params[] = $status;
+        }
+        if (!empty($search)) {
+            $sql .= " AND (c.name LIKE ? OR c.city LIKE ? OR u.username LIKE ?)";
+            $term = "%$search%";
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
     
     // 修改后的方法：支持按用户ID和状态筛选
@@ -76,12 +126,12 @@ class Visit {
 		$stmt = $this->pdo->prepare("UPDATE visits 
 									SET visit_date = ?, 
 										next_suggest_date = ?,
-										status = 'confirmed',
+										status = ?,
 										notes = ?,
 										screenshot_path = ?,
 										updated_at = NOW()
 									WHERE id = ?");
-		return $stmt->execute([$visitDate, $nextSuggestDate, $notes, $screenshotPath, $visitId]);
+		return $stmt->execute([$visitDate, $nextSuggestDate, self::STATUS_CONFIRMED, $notes, $screenshotPath, $visitId]);
 	}
 
     public function getVisitById($id) {
@@ -111,8 +161,8 @@ class Visit {
 	public function requestVisit($circleId, $visitorId, $applicantCircleId) {
 		$stmt = $this->pdo->prepare("INSERT INTO visits 
 			(circle_id, visitor_id, applicant_circle_id, status) 
-			VALUES (?, ?, ?, 'pending')");
-		return $stmt->execute([$circleId, $visitorId, $applicantCircleId]);
+			VALUES (?, ?, ?, ?)");
+		return $stmt->execute([$circleId, $visitorId, $applicantCircleId, self::STATUS_PENDING]);
 	}
 	
 	public function getCircleVisitsV2($circleId) {
@@ -286,30 +336,30 @@ public function adminConfirmVisit($visitId, $visitDate, $adminNotes) {
     $stmt = $this->pdo->prepare("UPDATE visits 
                                 SET visit_date = ?,
                                     next_suggest_date = ?,
-                                    status = 'confirmed',
+                                    status = ?,
                                     admin_notes = ?,
                                     updated_at = NOW()
                                 WHERE id = ?");
-    return $stmt->execute([$visitDate, $nextDate, $adminNotes, $visitId]);
+    return $stmt->execute([$visitDate, $nextDate, self::STATUS_CONFIRMED, $adminNotes, $visitId]);
 }
 
 public function adminCompleteVisit($visitId, $returnDate, $adminNotes) {
     $stmt = $this->pdo->prepare("UPDATE visits 
                                 SET return_date = ?,
-                                    status = 'completed',
+                                    status = ?,
                                     admin_notes = ?,
                                     updated_at = NOW()
                                 WHERE id = ?");
-    return $stmt->execute([$returnDate, $adminNotes, $visitId]);
+    return $stmt->execute([$returnDate, self::STATUS_COMPLETED, $adminNotes, $visitId]);
 }
 
 public function adminCancelVisit($visitId, $adminNotes) {
     $stmt = $this->pdo->prepare("UPDATE visits 
-                                SET status = 'cancelled',
+                                SET status = ?,
                                     admin_notes = ?,
                                     updated_at = NOW()
                                 WHERE id = ?");
-    return $stmt->execute([$adminNotes, $visitId]);
+    return $stmt->execute([self::STATUS_CANCELLED, $adminNotes, $visitId]);
 }
 
 	/**

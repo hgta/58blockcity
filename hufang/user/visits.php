@@ -7,77 +7,68 @@ require_once '../../classes/Visit.php';
 checkLogin();
 
 $userId = $_SESSION['user_id'];
-$circleId = $_GET['circle_id'] ?? null;
 $visit = new Visit($pdo);
 $circle = new Circle($pdo);
 
+$circleId = isset($_GET['circle_id']) ? intval($_GET['circle_id']) : 0;
+$search = trim($_GET['search'] ?? '');
+$status = $_GET['status'] ?? 'all';
+$sort = ($_GET['sort'] ?? 'newest') === 'oldest' ? 'oldest' : 'newest';
+$page = max(1, intval($_GET['page'] ?? 1));
+$perPage = 10;
+
 if ($circleId) {
     $circleInfo = $circle->getCircleById($circleId);
-    $visits = $visit->getCircleVisits($circleId);
-    $pageTitle = "互访圈: ".htmlspecialchars($circleInfo['name'])." 的访问记录";
+    $visits = $visit->getCircleVisitsById($circleId);
+    $pageTitle = "互访圈: " . htmlspecialchars($circleInfo['name'] ?? '') . " 的访问记录";
+    $total = count($visits);
+    $totalPages = 1;
 } else {
-    $visits = $visit->getUserVisits($userId);
+    $statusFilter = in_array($status, ['pending', 'confirmed', 'completed']) ? $status : null;
+    $visits = $visit->getUserVisits($userId, $statusFilter, $search, $page, $perPage, $sort);
+    $total = $visit->getUserVisitsCount($userId, $statusFilter, $search);
+    $totalPages = (int) ceil($total / $perPage);
     $pageTitle = "我的所有访问记录";
 }
 
-// 按状态分类
-$visitsByStatus = [
-    'pending' => [],
-    'confirmed' => [],
-    'completed' => []
-];
-
-foreach ($visits as $v) {
-    $status = $v['status'];
-    if (isset($visitsByStatus[$status])) {
-        $visitsByStatus[$status][] = $v;
+// 各状态计数用于 tab 标签
+$statusCounts = ['all' => 0, 'pending' => 0, 'confirmed' => 0, 'completed' => 0];
+if (!$circleId) {
+    $statusCounts['all'] = $visit->getUserVisitsCount($userId, null, $search);
+    foreach (['pending', 'confirmed', 'completed'] as $s) {
+        $statusCounts[$s] = $visit->getUserVisitsCount($userId, $s, $search);
     }
 }
 
-// 渲染访问列表的辅助函数
+$statusLabels = [
+    'all' => '全部记录',
+    'pending' => '待处理',
+    'confirmed' => '已确认',
+    'completed' => '已完成'
+];
+
+function buildQuery($overrides) {
+    $params = array_merge($_GET, $overrides);
+    if (isset($params['page'])) {
+        unset($params['page']);
+    }
+    return http_build_query($params);
+}
+
 function renderVisitList($list, $circleId) {
     if (empty($list)) {
-        echo '<div class="empty-state">
-                <div class="empty-icon"><i class="fas fa-exchange-alt"></i></div>
-                <h3>暂无访问记录</h3>
-                <p>这里还没有任何访问记录</p>
-              </div>';
+        echo renderEmptyState('exchange-alt', '暂无访问记录', '这里还没有任何访问记录');
         return;
     }
     echo '<div class="visit-list">';
     foreach ($list as $v) {
-        $statusLabels = ['pending'=>'待处理','confirmed'=>'已确认','completed'=>'已完成','cancelled'=>'已取消'];
-        $label = $statusLabels[$v['status']] ?? $v['status'];
-        echo '<div class="visit-item status-'.$v['status'].'">
-            <div class="visit-user">
-                <img src="../assets/images/'.htmlspecialchars($v['avatar'] ?? 'default.jpg').'" class="avatar">
-                <span class="username">'.htmlspecialchars($v['username'] ?? '').'</span>
-            </div>
-            <div class="visit-info">
-                <div class="info-row">
-                    <span class="label">互访圈:</span>
-                    <span class="value">'.htmlspecialchars($v['circle_name']).'</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">状态:</span>
-                    <span class="status-badge '.$v['status'].'">'.$label.'</span>
-                </div>';
-        if (!empty($v['visit_date'])) {
-            echo '<div class="info-row"><span class="label">访问日期:</span><span class="value">'.htmlspecialchars($v['visit_date']).'</span></div>';
-        }
-        if (!empty($v['return_date'])) {
-            echo '<div class="info-row"><span class="label">回访日期:</span><span class="value">'.htmlspecialchars($v['return_date']).'</span></div>';
-        }
-        echo '</div>
-            <div class="visit-actions">';
+        $actions = '<a href="visit_detail.php?id=' . (int)$v['id'] . '" class="btn btn-sm btn-secondary"><i class="fas fa-info-circle"></i> 详情</a>';
         if ($v['status'] == 'pending' && $circleId) {
-            echo '<a href="confirm_visit.php?id='.$v['id'].'" class="btn btn-sm btn-primary"><i class="fas fa-check"></i> 确认</a>';
+            $actions = '<a href="confirm_visit.php?id=' . (int)$v['id'] . '" class="btn btn-sm btn-primary mr-2"><i class="fas fa-check"></i> 确认</a>' . $actions;
         } elseif ($v['status'] == 'confirmed' && !$circleId) {
-            echo '<a href="record_return.php?id='.$v['id'].'" class="btn btn-sm btn-success"><i class="fas fa-check-double"></i> 记录回访</a>';
+            $actions = '<a href="record_return.php?id=' . (int)$v['id'] . '" class="btn btn-sm btn-success mr-2"><i class="fas fa-check-double"></i> 记录回访</a>' . $actions;
         }
-        echo '<a href="visit_detail.php?id='.$v['id'].'" class="btn btn-sm btn-secondary"><i class="fas fa-info-circle"></i> 详情</a>
-            </div>
-        </div>';
+        echo renderVisitItem($v, true, $actions);
     }
     echo '</div>';
 }
@@ -88,7 +79,7 @@ function renderVisitList($list, $circleId) {
 <div class="container user-container">
     <div class="user-header">
         <h2><i class="fas fa-exchange-alt"></i> <?= $pageTitle ?></h2>
-        
+
         <?php if ($circleId): ?>
             <a href="circles.php" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> 返回我的互访圈
@@ -96,38 +87,70 @@ function renderVisitList($list, $circleId) {
         <?php endif; ?>
     </div>
 
-    <div class="visit-tabs">
-        <div class="tabs-header">
-            <div class="tab-item active" data-tab="all" onclick="switchVisitTab('all')">全部记录 (<?= count($visits) ?>)</div>
-            <div class="tab-item" data-tab="pending" onclick="switchVisitTab('pending')">待处理 (<?= count($visitsByStatus['pending']) ?>)</div>
-            <div class="tab-item" data-tab="confirmed" onclick="switchVisitTab('confirmed')">已确认 (<?= count($visitsByStatus['confirmed']) ?>)</div>
-            <div class="tab-item" data-tab="completed" onclick="switchVisitTab('completed')">已完成 (<?= count($visitsByStatus['completed']) ?>)</div>
-        </div>
-        
-        <div class="tabs-content">
-            <div class="tab-pane active" id="tab-all">
-                <?php renderVisitList($visits, $circleId); ?>
-            </div>
-            <div class="tab-pane" id="tab-pending">
-                <?php renderVisitList($visitsByStatus['pending'], $circleId); ?>
-            </div>
-            <div class="tab-pane" id="tab-confirmed">
-                <?php renderVisitList($visitsByStatus['confirmed'], $circleId); ?>
-            </div>
-            <div class="tab-pane" id="tab-completed">
-                <?php renderVisitList($visitsByStatus['completed'], $circleId); ?>
-            </div>
+    <?php if (!$circleId): ?>
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="form-row align-items-end">
+                <div class="col-md-5">
+                    <label for="search">搜索</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="<?= htmlspecialchars($search) ?>" placeholder="互访圈名称、城市、圈主">
+                </div>
+                <div class="col-md-3">
+                    <label for="sort">排序</label>
+                    <select class="form-control" id="sort" name="sort">
+                        <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>最新优先</option>
+                        <option value="oldest" <?= $sort === 'oldest' ? 'selected' : '' ?>>最早优先</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> 查询</button>
+                    <a href="visits.php" class="btn btn-outline-secondary">重置</a>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
-<script>
-function switchVisitTab(name) {
-    document.querySelectorAll('.visit-tabs .tab-item').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.visit-tabs .tab-pane').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('tab-' + name).classList.add('active');
-}
-</script>
+    <div class="visit-tabs">
+        <div class="tabs-header">
+            <?php foreach ($statusLabels as $key => $label): ?>
+                <?php $active = ($status === $key || ($key === 'all' && !in_array($status, ['pending','confirmed','completed']))) ? 'active' : ''; ?>
+                <a href="?<?= buildQuery(['status' => $key]) ?>" class="tab-item <?= $active ?>">
+                    <?= $label ?> (<?= $statusCounts[$key] ?>)
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="tabs-content mt-3">
+        <?php renderVisitList($visits, $circleId); ?>
+    </div>
+
+    <?php if (!$circleId && $totalPages > 1): ?>
+    <nav aria-label="访问记录分页" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <?php if ($page > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?<?= buildQuery(['page' => $page - 1]) ?>">上一页</a>
+                </li>
+            <?php endif; ?>
+
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <?php $active = ($i === $page) ? 'active' : ''; ?>
+                <li class="page-item <?= $active ?>">
+                    <a class="page-link" href="?<?= buildQuery(['page' => $i]) ?>"><?= $i ?></a>
+                </li>
+            <?php endfor; ?>
+
+            <?php if ($page < $totalPages): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?<?= buildQuery(['page' => $page + 1]) ?>">下一页</a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
+    <?php endif; ?>
+</div>
 
 <?php require_once '../includes/footer.php'; ?>

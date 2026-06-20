@@ -3,14 +3,19 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/User.php';
+require_once '../../classes/Notification.php';
 require_once '../../classes/Visit.php';
+
+
+
 
 checkLogin();
 
-$circleId = $_GET['id'] ?? 0;
+$circleId = intval(\$_GET['id']) ?? 0;
 $circle = new Circle($pdo);
 $user = new User($pdo);
 $visit = new Visit($pdo);
+$notification = new Notification($pdo);
 
 $circleInfo = $circle->getCircleById($circleId);
 if (!$circleInfo) {
@@ -28,10 +33,10 @@ $currentUser = $user->getUserById($_SESSION['user_id']);
 //              $_SESSION['user_id'] != $circleInfo['user_id']);
 $canRequest = (1 && $_SESSION['user_id'] != $circleInfo['user_id']);
 
-// 检查是否已有待处理或已确认的访问请求
+// 检查是否已有待处理、已确认或已完成的访问请求
 foreach ($visits as $v) {
     if ($v['visitor_id'] == $_SESSION['user_id'] && 
-        ($v['status'] == 'pending' || $v['status'] == 'confirmed')) {
+        in_array($v['status'], ['pending', 'confirmed', 'completed'])) {
         $canRequest = false;
         break;
     }
@@ -39,11 +44,21 @@ foreach ($visits as $v) {
 
 // 处理访问申请
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $canRequest) {
-    $applicantCircleId = $_POST['applicant_circle_id'] ?? 0;
+    $applicantCircleId = intval(\$_POST['applicant_circle_id']) ?? 0;
     
     if (empty($applicantCircleId)) {
         $_SESSION['flash_message'] = '请选择您的互访圈';
     } elseif ($visit->requestVisit($circleId, $_SESSION['user_id'], $applicantCircleId)) {
+        // 通知圈主有新申请
+        $applicantCircle = $circle->getCircleById($applicantCircleId);
+        $applicantCircleName = $applicantCircle['name'] ?? '您的圈子';
+        $message = "用户 {$_SESSION['username']} 申请从「{$applicantCircleName}」访问您的圈子「{$circleInfo['name']}」";
+        $notification->create(
+            $circleInfo['user_id'],
+            'visit_request',
+            $circleId,
+            $message
+        );
         $_SESSION['flash_message'] = '互访申请已提交，等待对方确认';
         header("Location: view.php?id=$circleId");
         exit;
@@ -141,9 +156,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
                                     </div>
                                     
                                     <div class="visit-details">
-                                        <div class="status-badge <?= $visit['status'] ?>">
-                                            <?= $visit['status'] ?>
-                                        </div>
+                                    <?php $statusInfo = getVisitStatusLabel($visit['status']); ?>
+                                    <div class="status-badge badge-<?= $statusInfo['class'] ?>">
+                                        <?= $statusInfo['label'] ?>
+                                    </div>
                                         <?php if ($visit['visit_date']): ?>
                                             <div class="detail-item">
                                                 <i class="fas fa-calendar-day"></i>
@@ -217,6 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
 					</div>
 					<div class="card-body">
 						<form method="post">
+                            <?= csrfField() ?>
 							<!--<div class="form-group">
 								<label>您的城市</label>
 								<input type="text" class="form-control" value="<?= 
@@ -271,9 +288,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
                         ?>
                         
                         <?php if ($userVisit): ?>
+                            <?php $statusInfo = getVisitStatusLabel($userVisit['status']); ?>
                             <div class="visit-status">
-                                <div class="status-badge <?= $userVisit['status'] ?>">
-                                    <?= $userVisit['status'] ?>
+                                <div class="status-badge badge-<?= $statusInfo['class'] ?>">
+                                    <?= $statusInfo['label'] ?>
                                 </div>
                                 
                                 <?php if ($userVisit['visit_date']): ?>
@@ -284,7 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
                                 <?php endif; ?>
                                 
                                 <?php if ($userVisit['status'] == 'confirmed' && !$userVisit['return_date']): ?>
-                                    <a href="record_return.php?id=<?= $userVisit['id'] ?>" 
+                                    <a href="../user/record_return.php?id=<?= $userVisit['id'] ?>" 
                                        class="btn btn-success btn-block mt-3">
                                         <i class="fas fa-check-double"></i> 记录回访
                                     </a>

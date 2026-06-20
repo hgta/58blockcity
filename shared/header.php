@@ -109,6 +109,38 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                 </a>
             <?php endforeach; ?>
             <?php if (isset($_SESSION['user_id'])): ?>
+                <?php if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/hufang/') !== false): ?>
+                    <div class="dropdown d-inline-block">
+                        <a href="#" class="nav-button" id="notificationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="position:relative;">
+                            <i class="fas fa-bell"></i> 通知
+                            <?php if (!empty($notification_count)): ?>
+                                <span class="notification-badge"><?= $notification_count > 9 ? '9+' : $notification_count ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown" style="min-width:280px; max-width:360px;">
+                            <?php if (empty($notifications)): ?>
+                                <span class="dropdown-item-text text-muted">暂无通知</span>
+                            <?php else: ?>
+                                <?php foreach ($notifications as $n): ?>
+                                    <?php
+                                    $link = '../user/notifications.php';
+                                    if ($n['type'] === 'visit_request') {
+                                        $link = "../user/visits.php?circle_id=" . intval($n['related_id']);
+                                    } elseif (in_array($n['type'], ['visit_confirm', 'return_confirm'])) {
+                                        $link = "../user/visit_detail.php?id=" . intval($n['related_id']);
+                                    }
+                                    $bold = empty($n['is_read']) ? 'font-weight-bold' : 'font-weight-normal';
+                                    ?>
+                                    <a class="dropdown-item <?= $bold ?> text-truncate" href="<?= $link ?>">
+                                        <?= htmlspecialchars($n['content']) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center text-primary" href="../user/notifications.php">查看全部通知</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <a href="../user/dashboard.php" class="nav-button"><i class="fas fa-user"></i> 个人中心</a>
                 <a href="../auth/logout.php" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
             <?php else: ?>

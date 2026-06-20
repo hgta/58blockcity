@@ -23,101 +23,90 @@ if (isset($_SESSION['user_id'])) {
     $visit = new Visit($pdo);
     $visitedMap = $visit->getUserVisitedCircleIds($_SESSION['user_id']);
 }
+
+$site_config['title']       = e($selectedCity) . '全部互访圈 - 58互访圈';
+$site_config['description'] = '浏览 ' . e($selectedCity) . ' 的全部互访圈，发现城市间互访交流的机会。';
+$site_config['keywords']    = '58,互访圈,' . e($selectedCity) . ',城市互访,BlockCity';
+$site_config['canonical_url'] = 'https://v.58.tl/circles/all.php';
+$site_config['extra_head']  = '<link rel="stylesheet" href="../assets/css/main.css">';
+
+require_once '../includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= htmlspecialchars($selectedCity) ?>全部互访圈 - 58互访圈</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f5f7fa; color:#333; }
-.container { max-width:1200px; margin:0 auto; padding:20px; }
-.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-.page-header h1 { font-size:22px; }
-.page-header a { color:#ff6b00; text-decoration:none; font-size:14px; }
-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-th { background:#f8f9fa; text-align:left; padding:12px 16px; font-size:13px; color:#666; font-weight:500; }
-td { padding:10px 16px; font-size:14px; border-bottom:1px solid #f0f0f0; }
-tr:hover { background:#fafbfc; }
-.badge { padding:2px 8px; border-radius:10px; font-size:11px; }
-.badge-completed { background:#d4edda; color:#155724; }
-.badge-visited { background:#d1ecf1; color:#0c5460; }
-.badge-pending { background:#fff3cd; color:#856404; }
-.btn { display:inline-block; padding:4px 12px; background:#ff6b00; color:#fff; text-decoration:none; border-radius:4px; font-size:12px; }
-.search-bar { display:flex; gap:8px; margin-bottom:16px; }
-.search-bar input { flex:1; padding:8px 14px; border:1px solid #e0e0e0; border-radius:20px; font-size:14px; outline:none; }
-.pagination { display:flex; gap:6px; justify-content:center; padding:20px 0; }
-.pagination a { padding:8px 14px; border:1px solid #e0e0e0; border-radius:6px; text-decoration:none; color:#333; font-size:14px; }
-.pagination a.active { background:#ff6b00; color:#fff; border-color:#ff6b00; }
-</style>
-</head>
-<body>
+
 <div class="container">
-    <div class="page-header">
-        <h1><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($selectedCity) ?> 的互访圈 (<?= $totalCount ?>)</h1>
-        <a href="../index.php?city=<?= urlencode($selectedCity) ?>"><i class="fas fa-arrow-left"></i> 返回首页</a>
+    <div class="user-header">
+        <h2><i class="fas fa-map-marker-alt"></i> <?= e($selectedCity) ?> 的互访圈 <small class="text-muted">(<?= $totalCount ?>)</small></h2>
+        <a href="../index.php?city=<?= urlencode($selectedCity) ?>" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> 返回首页</a>
     </div>
 
-    <form method="GET" class="search-bar">
-        <input type="hidden" name="city" value="<?= htmlspecialchars($selectedCity) ?>">
-        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="搜索圈子名称或描述...">
-        <button type="submit" class="btn"><i class="fas fa-search"></i> 搜索</button>
+    <form method="GET" class="search-form" style="margin-bottom:16px;">
+        <input type="hidden" name="city" value="<?= e($selectedCity) ?>">
+        <div class="input-group">
+            <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="搜索圈子名称或描述...">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> 搜索</button>
+            </div>
+        </div>
     </form>
 
     <?php if (empty($circles)): ?>
-    <div style="text-align:center;padding:60px;color:#999;">
-        <i class="fas fa-users-slash" style="font-size:48px;margin-bottom:16px;"></i>
-        <h3>暂无互访圈</h3>
-    </div>
+        <?= renderEmptyState('users-slash', '暂无互访圈', '该城市还没有任何互访圈，成为第一个创建者吧！',
+            '<a href="create.php" class="btn btn-primary"><i class="fas fa-plus"></i> 创建互访圈</a>') ?>
     <?php else: ?>
-    <table>
-        <thead>
-            <tr>
-                <th>互访圈</th>
-                <th>城市</th>
-                <th>区块数</th>
-                <th>圈主</th>
-                <th>状态</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($circles as $c):
-                $vs = $visitedMap[$c['id']] ?? null;
-                $badge = '';
-                if ($vs === 'completed') $badge = '<span class="badge badge-completed">已互访</span>';
-                elseif (in_array($vs, ['visited','returned'])) $badge = '<span class="badge badge-visited">已访</span>';
-                elseif (in_array($vs, ['pending','confirmed'])) $badge = '<span class="badge badge-pending">已访问</span>';
-            ?>
-            <tr>
-                <td><strong><?= htmlspecialchars($c['name']) ?></strong></td>
-                <td><?= htmlspecialchars($c['city']) ?></td>
-                <td><?= $c['block_count'] ?></td>
-                <td><?= htmlspecialchars($c['username']) ?></td>
-                <td><?= $badge ?: '<span style="color:#ccc;">-</span>' ?></td>
-                <td><a href="view.php?id=<?= $c['id'] ?>" class="btn">详情</a></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-hover bg-white rounded shadow-sm">
+            <thead class="thead-light">
+                <tr>
+                    <th>互访圈</th>
+                    <th>城市</th>
+                    <th>区块数</th>
+                    <th>圈主</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($circles as $c):
+                    $visitStatus = $visitedMap[$c['id']] ?? null;
+                    $statusInfo = getVisitStatusLabel($visitStatus ?: '');
+                ?>
+                <tr>
+                    <td><strong><?= e($c['name']) ?></strong></td>
+                    <td><?= e($c['city']) ?></td>
+                    <td><?= $c['block_count'] ?></td>
+                    <td><?= e($c['username']) ?></td>
+                    <td>
+                        <?php if ($visitStatus): ?>
+                            <span class="status-badge badge-<?= $statusInfo['class'] ?>"><?= $statusInfo['label'] ?></span>
+                        <?php else: ?>
+                            <span style="color:#ccc;">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="view.php?id=<?= (int)$c['id'] ?>" class="btn btn-primary btn-sm">详情</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <?php if ($totalPages > 1): ?>
-    <div class="pagination">
-        <?php if ($page > 1): ?>
-            <a href="?city=<?= urlencode($selectedCity) ?>&page=<?= $page-1 ?><?php echo $search?'&search='.urlencode($search):'' ?>">上一页</a>
-        <?php endif; ?>
-        <?php for ($i = max(1,$page-2); $i <= min($totalPages,$page+2); $i++): ?>
-            <a href="?city=<?= urlencode($selectedCity) ?>&page=<?= $i ?><?php echo $search?'&search='.urlencode($search):'' ?>" class="<?= $i==$page?'active':'' ?>"><?= $i ?></a>
-        <?php endfor; ?>
-        <?php if ($page < $totalPages): ?>
-            <a href="?city=<?= urlencode($selectedCity) ?>&page=<?= $page+1 ?><?php echo $search?'&search='.urlencode($search):'' ?>">下一页</a>
-        <?php endif; ?>
+    <div class="d-flex justify-content-center">
+        <ul class="pagination">
+            <?php if ($page > 1): ?>
+                <li class="page-item"><a class="page-link" href="?city=<?= urlencode($selectedCity) ?>&page=<?= $page - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">上一页</a></li>
+            <?php endif; ?>
+            <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
+                <li class="page-item <?= $i == $page ? 'active' : '' ?>"><a class="page-link" href="?city=<?= urlencode($selectedCity) ?>&page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?>"><?= $i ?></a></li>
+            <?php endfor; ?>
+            <?php if ($page < $totalPages): ?>
+                <li class="page-item"><a class="page-link" href="?city=<?= urlencode($selectedCity) ?>&page=<?= $page + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">下一页</a></li>
+            <?php endif; ?>
+        </ul>
     </div>
     <?php endif; ?>
     <?php endif; ?>
 </div>
-</body>
-</html>
+
+<?php require_once '../includes/footer.php'; ?>

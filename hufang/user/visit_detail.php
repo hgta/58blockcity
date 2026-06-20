@@ -4,13 +4,15 @@ require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/Visit.php';
 require_once '../../classes/User.php';
+require_once '../../classes/Notification.php';
 
 checkLogin();
 
-$visitId = $_GET['id'] ?? 0;
+$visitId = intval(\$_GET['id']) ?? 0;
 $visit = new Visit($pdo);
 $circle = new Circle($pdo);
 $user = new User($pdo);
+$notification = new Notification($pdo);
 
 // 获取访问记录详情
 $visitInfo = $visit->getVisitById($visitId);
@@ -36,9 +38,17 @@ if ($currentUserId != $visitInfo['visitor_id'] && $currentUserId != $circleInfo[
 
 // 处理表单提交（记录回访或更新笔记）
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     if (isset($_POST['record_return']) && $currentUserId == $visitInfo['visitor_id']) {
         $returnDate = $_POST['return_date'] ?? date('Y-m-d');
         if ($visit->recordReturn($visitId, $returnDate)) {
+            $message = "{$visitInfo['visitor_name']} 已记录对「{$visitInfo['circle_name']}」的回访";
+            $notification->create(
+                $visitInfo['owner_id'],
+                'return_confirm',
+                $visitId,
+                $message
+            );
             $_SESSION['flash_message'] = '回访记录已更新';
             header("Location: visit_detail.php?id=$visitId");
             exit;
@@ -73,8 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <h1><i class="fas fa-exchange-alt"></i> 互访详情</h1>
-        <div class="status-badge large <?= $visitInfo['status'] ?>">
-            <?= $visitInfo['status'] ?>
+        <?php $statusInfo = getVisitStatusLabel($visitInfo['status']); ?>
+        <div class="status-badge large badge-<?= $statusInfo['class'] ?>">
+            <?= $statusInfo['label'] ?>
         </div>
     </div>
 
@@ -176,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <?php if ($currentUserId == $circleInfo['user_id']): ?>
                         <form method="post">
+                            <?= csrfField() ?>
                             <div class="form-group">
                                 <textarea class="form-control" name="notes" rows="4"><?= 
                                     htmlspecialchars($visitInfo['notes'] ?? '') ?></textarea>
@@ -207,7 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endif; ?>
                     
                     <?php if ($currentUserId == $visitInfo['visitor_id'] && $visitInfo['status'] == 'confirmed' && !$visitInfo['return_date']): ?>
-                        <form method="post" class="mb-3">
+                        <form method="post">
+                            <?= csrfField() ?>
+                         class="mb-3">
                             <div class="form-group">
                                 <label>回访日期</label>
                                 <input type="date" class="form-control" name="return_date" 
@@ -232,21 +246,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="card-body">
                     <div class="timeline">
-                        <div class="timeline-item <?= $visitInfo['created_at'] ? 'active' : '' ?>">
+                        <?php $s = $visitInfo['status']; $completed = in_array($s, ['confirmed','completed']); $done = $s === 'completed'; ?>
+                        <div class="timeline-item active">
                             <div class="timeline-dot"></div>
                             <div class="timeline-content">
                                 <h4>申请提交</h4>
                                 <p><?= date('Y-m-d H:i', strtotime($visitInfo['created_at'])) ?></p>
                             </div>
                         </div>
-                        <div class="timeline-item <?= $visitInfo['status'] == 'confirmed' ? 'active' : '' ?>">
+                        <div class="timeline-item <?= $completed ? 'active' : '' ?>">
                             <div class="timeline-dot"></div>
                             <div class="timeline-content">
                                 <h4>访问确认</h4>
                                 <p><?= $visitInfo['visit_date'] ? date('Y-m-d', strtotime($visitInfo['visit_date'])) : '待确认' ?></p>
                             </div>
                         </div>
-                        <div class="timeline-item <?= $visitInfo['status'] == 'completed' ? 'active' : '' ?>">
+                        <div class="timeline-item <?= $done ? 'active' : '' ?>">
                             <div class="timeline-dot"></div>
                             <div class="timeline-content">
                                 <h4>回访完成</h4>

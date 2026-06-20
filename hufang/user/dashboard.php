@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/Visit.php';
+require_once '../../classes/Notification.php';
 
 checkLogin();
 
@@ -16,6 +17,9 @@ $pendingVisits = $visit->getCircleVisits($userId, 'pending');
 $confirmedVisits = $visit->getCircleVisits($userId, 'confirmed');
 $completedVisits = $visit->getCircleVisits($userId, 'completed');
 $myVisits = $visit->getUserVisits($userId);
+$notification = new Notification($pdo);
+$unreadNotifications = $notification->getUnreadCount($userId);
+$recentNotifications = $notification->getUserNotifications($userId, 5);
 ?>
 
 <?php require_once '../includes/header.php'; ?>
@@ -103,30 +107,12 @@ $myVisits = $visit->getUserVisits($userId);
                 </div>
                 <div class="card-body">
                     <?php if (empty($userCircles)): ?>
-                        <div class="empty-state-sm">
-                            <i class="fas fa-users-slash"></i>
-                            <p>您还没有创建任何互访圈</p>
-                            <a href="../circles/create.php" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> 创建第一个互访圈
-                            </a>
-                        </div>
+                        <?= renderEmptyState('users-slash', '您还没有创建任何互访圈', '创建一个互访圈，开始与其他用户互动吧',
+                            '<a href="../circles/create.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> 创建第一个互访圈</a>') ?>
                     <?php else: ?>
-                        <div class="circle-list-mini">
+                        <div class="circle-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
                             <?php foreach (array_slice($userCircles, 0, 5) as $circle): ?>
-                                <div class="circle-item">
-                                    <div class="circle-info">
-                                        <h4><?= htmlspecialchars($circle['name']) ?></h4>
-                                        <div class="circle-meta">
-                                            <span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($circle['city']) ?></span>
-                                            <span><i class="fas fa-cube"></i> <?= $circle['block_count'] ?> 区块</span>
-                                        </div>
-                                    </div>
-                                    <div class="circle-actions">
-                                        <a href="../circles/view.php?id=<?= $circle['id'] ?>" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> 查看
-                                        </a>
-                                    </div>
-                                </div>
+                                <?= renderCircleCard($circle, null, '', '', true) ?>
                             <?php endforeach; ?>
                         </div>
                         <?php if (count($userCircles) > 5): ?>
@@ -152,29 +138,11 @@ $myVisits = $visit->getUserVisits($userId);
                 </div>
                 <div class="card-body">
                     <?php if (empty($myVisits)): ?>
-                        <div class="empty-state-sm">
-                            <i class="fas fa-exchange-alt"></i>
-                            <p>您还没有任何访问记录</p>
-                        </div>
+                        <?= renderEmptyState('exchange-alt', '您还没有任何访问记录', '申请互访后会在这里显示') ?>
                     <?php else: ?>
-                        <div class="visit-list-mini">
+                        <div class="visit-list">
                             <?php foreach (array_slice($myVisits, 0, 5) as $visit): ?>
-                                <div class="visit-item status-<?= $visit['status'] ?>">
-                                    <div class="visit-info">
-                                        <h4><?= htmlspecialchars($visit['circle_name']) ?></h4>
-                                        <div class="visit-meta">
-                                            <span><i class="fas fa-user"></i> <?= htmlspecialchars($visit['circle_owner']) ?></span>
-                                            <span class="status-badge <?= $visit['status'] ?>"><?= $visit['status'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="visit-date">
-                                        <?php if ($visit['visit_date']): ?>
-                                            <i class="fas fa-calendar-day"></i> <?= $visit['visit_date'] ?>
-                                        <?php else: ?>
-                                            <i class="fas fa-clock"></i> 待确认
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
+                                <?= renderVisitItem($visit, false) ?>
                             <?php endforeach; ?>
                         </div>
                         <?php if (count($myVisits) > 5): ?>
@@ -190,6 +158,41 @@ $myVisits = $visit->getUserVisits($userId);
         </div>
     </div>
     
+    <!-- 通知与待处理聚合 -->
+    <?php if ($unreadNotifications > 0 || !empty($pendingVisits)): ?>
+    <div class="dashboard-card mt-4">
+        <div class="card-header">
+            <h3><i class="fas fa-bell"></i> 需要处理的事项</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <?php if ($unreadNotifications > 0): ?>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <i class="fas fa-bell fa-2x text-warning mr-3"></i>
+                        <div>
+                            <h5 class="mb-1"><?= $unreadNotifications ?> 条未读通知</h5>
+                            <a href="notifications.php" class="btn btn-sm btn-outline-primary">查看通知</a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($pendingVisits)): ?>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex align-items-center p-3 border rounded">
+                        <i class="fas fa-clock fa-2x text-info mr-3"></i>
+                        <div>
+                            <h5 class="mb-1"><?= count($pendingVisits) ?> 个待处理请求</h5>
+                            <a href="visits.php?status=pending" class="btn btn-sm btn-outline-info">处理请求</a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- 待处理的访问请求 -->
     <div class="dashboard-card mt-4">
         <div class="card-header">

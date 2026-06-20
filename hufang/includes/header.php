@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/functions.php';
 $site_config['title']       = '58互访圈 - 城市间互访交流平台 | 58 Hufang';
 $site_config['description'] = '58互访圈是基于区块城市BlockCity的城市间互访交流平台，支持创建互访圈、跨城互访、访问记录管理，打造城市社交新体验。';
 $site_config['keywords']    = '58,互访圈,区块城市,BlockCity,DAO,同城交流,互访,城市社交';
@@ -13,6 +14,19 @@ $site_config['nav_links']   = [
     ['url'=>'../circles/create.php','icon'=>'plus-circle','text'=>'创建互访圈'],
     ['url'=>'../rankings/index.php','icon'=>'trophy','text'=>'排行榜'],
 ];
-// 加载 hufang 专用样式（覆盖根 main.css 中的冲突定义）
-$site_config['extra_head'] = '<link rel="stylesheet" href="/assets/css/main.css">';
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="stylesheet" href="/assets/css/main.css">';
+
+// 计算当前用户未读通知数与最近通知列表（用于头部下拉）
+$notification_count = 0;
+$notifications = [];
+if (isset($_SESSION['user_id'])) {
+    if (!isset($pdo)) {
+        require_once __DIR__ . '/../../config/database.php';
+    }
+    require_once __DIR__ . '/../../classes/Notification.php';
+    $notification = new Notification($pdo);
+    $notification_count = $notification->getUnreadCount($_SESSION['user_id']);
+    $notifications = $notification->getUserNotifications($_SESSION['user_id'], 5);
+}
+
 require_once __DIR__ . '/../../shared/header.php';
