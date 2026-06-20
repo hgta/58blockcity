@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					</div>
 					<div class="card-body">
 						<?php if ($visitInfo['screenshot_path']): ?>
-							<img src="../<?= htmlspecialchars($visitInfo['screenshot_path']) ?>" class="img-fluid rounded mb-3" alt="访问截图">
+							<img src="../<?= htmlspecialchars($visitInfo['screenshot_path']) ?>" class="img-fluid rounded mb-3" alt="访问截图" style="max-width:100%; max-height:400px; object-fit:contain;">
 						<?php else: ?>
 							<p class="text-muted">未上传访问截图</p>
 						<?php endif; ?>
