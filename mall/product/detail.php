@@ -639,12 +639,17 @@ if (isset($_SESSION['user_id'])) {
             <div class="product-gallery">
                 <?php $mainImagePath = $productDetail['main_image'] ?: 'assets/images/default-product.jpg'; ?>
 
-                <?php if (!empty($productDetail['video_url'])): ?>
+                <?php if (!empty($productDetail['video_url'])): 
+                    $videoUrl = $productDetail['video_url'];
+                    $isExternalVideo = preg_match('#^(https?:)?//#i', $videoUrl);
+                    $videoSrc = $isExternalVideo ? $videoUrl : '../' . $videoUrl;
+                    $videoType = $isExternalVideo ? 'video/mp4' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'webm' ? 'video/webm' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogv' || pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogg' ? 'video/ogg' : 'video/mp4'));
+                ?>
                     <!-- 有视频时优先展示视频 -->
                     <div class="product-video-wrapper" style="position:relative;margin-bottom:15px;">
                         <span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;padding:3px 10px;border-radius:4px;font-size:12px;z-index:2;">🎬 视频介绍</span>
                         <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-height:400px;border-radius:8px;background:#000;">
-                            <source src="<?php echo '../' . htmlspecialchars($productDetail['video_url']); ?>" type="video/mp4">
+                            <source src="<?php echo htmlspecialchars($videoSrc); ?>" type="<?php echo htmlspecialchars($videoType); ?>">
                             您的浏览器不支持视频播放
                         </video>
                     </div>
@@ -802,11 +807,17 @@ if (isset($_SESSION['user_id'])) {
                 <?php endif; ?>
 
                 <!-- 商品视频（详情正文展示） -->
-                <?php if (!empty($productDetail['video_url'])): ?>
+                <?php if (!empty($productDetail['video_url'])): 
+                    $videoUrl2 = $productDetail['video_url'];
+                    $isExternalVideo2 = preg_match('#^(https?:)?//#i', $videoUrl2);
+                    $videoSrc2 = $isExternalVideo2 ? $videoUrl2 : '../' . $videoUrl2;
+                    $ext2 = strtolower(pathinfo($videoUrl2, PATHINFO_EXTENSION));
+                    $videoType2 = $ext2 === 'webm' ? 'video/webm' : ($ext2 === 'ogv' || $ext2 === 'ogg' ? 'video/ogg' : 'video/mp4');
+                ?>
                     <div style="margin-top: 30px;">
                         <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-video"></i> 视频介绍</h4>
                         <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-width:640px;border-radius:8px;background:#000;">
-                            <source src="<?php echo '../' . htmlspecialchars($productDetail['video_url']); ?>" type="video/mp4">
+                            <source src="<?php echo htmlspecialchars($videoSrc2); ?>" type="<?php echo htmlspecialchars($videoType2); ?>">
                             您的浏览器不支持视频播放
                         </video>
                     </div>
