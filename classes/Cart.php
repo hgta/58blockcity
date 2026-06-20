@@ -233,7 +233,7 @@ class Cart {
      */
     private function getProductInfo($productId) {
         try {
-            $sql = "SELECT * FROM products WHERE id = ? AND deleted_at IS NULL";
+            $sql = "SELECT * FROM products WHERE id = ?";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$productId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);

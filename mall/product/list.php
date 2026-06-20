@@ -534,7 +534,7 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                                             <i class="fas fa-eye"></i> 查看详情
                                         </a>
                                         <?php if (isset($_SESSION['user_id'])): ?>
-                                            <button class="btn btn-cart" onclick="addToCart(<?php echo $product['id']; ?>)">
+                                            <button class="btn btn-cart" onclick="addToCart(<?php echo $product['id']; ?>, this)">
                                                 <i class="fas fa-cart-plus"></i> 加购物车
                                             </button>
                                         <?php else: ?>
@@ -592,27 +592,40 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
     </div>
     
     <script>
-        function addToCart(productId) {
+        function addToCart(productId, btn) {
+            if (btn) {
+                btn.disabled = true;
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
             fetch('../cart/add_to_cart.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: 'product_id=' + productId + '&quantity=1'
+                body: 'product_id=' + encodeURIComponent(productId) + '&quantity=1'
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
                 if (data.success) {
                     showToast('已添加到购物车', 'success');
                     if (data.cart_count !== undefined) {
-                        const cartBadge = document.querySelector('.cart-badge');
+                        var cartBadge = document.querySelector('.cart-badge');
                         if (cartBadge) cartBadge.textContent = data.cart_count;
                     }
                 } else {
                     showToast(data.message || '添加失败', 'error');
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
                 console.error('Error:', error);
                 showToast('网络错误，请重试', 'error');
             });
@@ -624,7 +637,7 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
             document.body.appendChild(t);
             setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ t.remove(); },300); },2000);
         }
-        }
+
     </script>
     
     <?php include '../includes/footer.php'; ?>

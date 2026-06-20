@@ -63,41 +63,7 @@ $reviewStats = $review->getProductReviewStats($productId);
 $reviews = $review->getProductReviews($productId, 1, 10);
 $reviewCount = $review->getProductReviewCount($productId);
 
-// 处理添加到购物车
-$success = '';
-$error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
-    if (!isset($_SESSION['user_id'])) {
-        header("Location: ../auth/login.php?redirect=" . urlencode($_SERVER['REQUEST_URI']));
-        exit();
-    }
-    
-    $userId = $_SESSION['user_id'];
-    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
-    
-    // 验证数量
-    if ($quantity < 1) {
-        $error = '数量必须大于0';
-    } elseif ($quantity > $productDetail['stock']) {
-        $error = '库存不足，最多可购买 ' . $productDetail['stock'] . ' 件';
-    } else {
-        try {
-            // 使用数据库存储购物车数据
-            $result = $cart->addItem($userId, $productId, $quantity);
-            
-            if ($result) {
-                $success = '商品已成功加入购物车！';
-                // 更新购物车数量显示
-                $cartCount = $cart->getItemCount($userId);
-            } else {
-                $error = '添加到购物车失败，请稍后重试';
-            }
-        } catch (Exception $e) {
-            $error = $e->getMessage();
-        }
-    }
-}
 
 // 处理评价提交
 $reviewError = '';
@@ -656,15 +622,15 @@ if (isset($_SESSION['user_id'])) {
         </div>
         
         <!-- 消息显示 -->
-        <?php if ($success): ?>
+        <?php if (!empty($reviewSuccess)): ?>
             <div class="message success-message">
-                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
+                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($reviewSuccess); ?>
             </div>
         <?php endif; ?>
         
-        <?php if ($error): ?>
+        <?php if (!empty($reviewError)): ?>
             <div class="message error-message">
-                <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($reviewError); ?>
             </div>
         <?php endif; ?>
         
@@ -758,7 +724,7 @@ if (isset($_SESSION['user_id'])) {
                 </div>
 
                 <!-- 购买选项 -->
-                <form method="POST" action="" class="purchase-options">
+                <form method="POST" action="" class="purchase-options" onsubmit="return false;">
                     <div class="quantity-selector">
                         <div class="quantity-label">数量</div>
                         <div class="quantity-controls">
@@ -773,7 +739,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
 
                     <div class="action-buttons">
-                        <button type="submit" name="add_to_cart" class="btn btn-cart">
+                        <button type="button" class="btn btn-cart" onclick="addToCart(<?php echo $productId; ?>, document.getElementById('quantity-input').value, 0, this)">
                             <i class="fas fa-shopping-cart"></i> 加入购物车
                         </button>
                         <button type="button" class="btn btn-buy" onclick="buyNow(<?php echo $productId; ?>, this)">
@@ -1055,40 +1021,76 @@ if (isset($_SESSION['user_id'])) {
             }
         });
         
-        // 防止表单重复提交
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 添加中...';
-        });
-        
-        // 立即购买：先加入购物车，再跳转结算
-        function buyNow(productId, btn) {
-            var qty = document.getElementById('quantity-input').value;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
-            
-            fetch('../cart/add_to_cart.php', {
+        // 通用提示
+        function showToast(msg, type) {
+            var t = document.createElement('div');
+            t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;animation:fadeIn .3s;' + (type === 'success' ? 'background:#27ae60;' : 'background:#e74c3c;');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(function() {
+                t.style.opacity = '0';
+                t.style.transition = 'opacity .3s';
+                setTimeout(function() { t.remove(); }, 300);
+            }, 2000);
+        }
+
+        // 通用：加入购物车
+        function addToCart(productId, quantity, clearFirst, btn) {
+            quantity = parseInt(quantity) || 1;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (clearFirst ? '处理中...' : '添加中...');
+            }
+
+            var body = 'product_id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+            if (clearFirst) body += '&clear_first=1';
+
+            return fetch('../cart/add_to_cart.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'product_id=' + productId + '&quantity=' + qty + '&clear_first=1'
+                body: body
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) {
-                    window.location.href = '../cart/checkout.php';
-                } else {
-                    alert(data.message || '操作失败');
+                if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-bolt"></i> 立即购买';
+                    btn.innerHTML = clearFirst
+                        ? '<i class="fas fa-bolt"></i> 立即购买'
+                        : '<i class="fas fa-shopping-cart"></i> 加入购物车';
                 }
+                if (data.success) {
+                    showToast(data.message || '已加入购物车', 'success');
+                    if (data.cart_count !== undefined) {
+                        var cartBadge = document.querySelector('.cart-badge');
+                        if (cartBadge) cartBadge.textContent = data.cart_count;
+                    }
+                } else {
+                    showToast(data.message || '添加失败', 'error');
+                }
+                return data;
             })
             .catch(function() {
-                alert('网络错误，请重试');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-bolt"></i> 立即购买';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = clearFirst
+                        ? '<i class="fas fa-bolt"></i> 立即购买'
+                        : '<i class="fas fa-shopping-cart"></i> 加入购物车';
+                }
+                showToast('网络错误，请重试', 'error');
+                throw new Error('Network error');
             });
         }
+
+        // 立即购买：先加入购物车，再跳转结算
+        function buyNow(productId, btn) {
+            var qty = document.getElementById('quantity-input').value;
+            addToCart(productId, qty, 1, btn).then(function(data) {
+                if (data.success) {
+                    window.location.href = '../cart/checkout.php';
+                }
+            });
+        }
+
 
         // 图片放大查看
         function showImageModal(src) {
