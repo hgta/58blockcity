@@ -308,9 +308,9 @@ require_once '../includes/header.php';
 .toolbar-title .text-muted { font-weight: 400; font-size: 14px; color: #94a3b8; }
 .shop-sort-bar { display: flex; gap: 6px; flex-wrap: wrap; }
 .shop-sort-bar .btn-sm { font-size: 12px; padding: 6px 14px; border-radius: 20px; }
-.product-grid-row {
-    margin-bottom: 10px;
-}
+.product-grid-row .col-lg-3,
+.product-grid-row .col-md-4,
+.product-grid-row .col-sm-6 { margin-bottom: 24px; }
 .product-card {
     border: none;
     border-radius: 12px;
