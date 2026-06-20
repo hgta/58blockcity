@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../../config/database.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Shop.php';
+require_once '../includes/functions.php';
 
 $order = new Order($pdo);
 $shop = new Shop($pdo);
@@ -296,7 +297,7 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
             <div class="product-list">
                 <?php foreach ($orderItems as $item): ?>
                 <div class="product-item">
-                    <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" alt="">
+                    <img src="<?php echo htmlspecialchars(normalizeImageUrl($item['image_url'])); ?>" alt="">
                     <div class="product-meta">
                         <div class="name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                         <div class="spec">默认规格</div>

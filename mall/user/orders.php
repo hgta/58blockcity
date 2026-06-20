@@ -16,6 +16,21 @@ require_once '../../config/database.php';
 // 加载订单类
 require_once '../../classes/Order.php';
 require_once '../../classes/User.php';
+require_once '../includes/functions.php';
+
+// 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
+if (!function_exists('normalizeImageUrl')) {
+    function normalizeImageUrl($imageUrl) {
+        if (empty($imageUrl)) {
+            return '../assets/images/default-product.jpg';
+        }
+        $imageUrl = trim($imageUrl);
+        if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
+            return $imageUrl;
+        }
+        return '../' . $imageUrl;
+    }
+}
 
 $order = new Order($pdo);
 $user = new User($pdo);
@@ -491,8 +506,8 @@ $statusClassMap = [
                             foreach ($orderDetails as $detail): 
                             ?>
                                 <div class="product-item">
-                                    <img src="<?php echo htmlspecialchars($detail['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
-                                         alt="<?php echo htmlspecialchars($detail['product_name']); ?>" 
+                                    <img src="<?php echo htmlspecialchars(normalizeImageUrl($detail['image_url'])); ?>"
+                                         alt="<?php echo htmlspecialchars($detail['product_name']); ?>"
                                          class="product-image">
                                     
                                     <div class="product-details">

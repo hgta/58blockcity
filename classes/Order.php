@@ -387,7 +387,11 @@ class Order {
             
             // 自动检测并取消过期订单
             if ($order && $order['status'] == 'pending' && !empty($order['expire_at'])) {
-                if (strtotime($order['expire_at']) <= time()) {
+                // 使用 MySQL 的 UNIX_TIMESTAMP 做比较，避免 PHP 与数据库时区不一致导致误判断
+                $checkStmt = $this->pdo->prepare("SELECT UNIX_TIMESTAMP(?) < UNIX_TIMESTAMP(NOW()) as expired");
+                $checkStmt->execute([$order['expire_at']]);
+                $check = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                if (!empty($check['expired'])) {
                     $this->autoCancelExpiredOrder($orderId);
                     // 重新获取更新后的订单状态
                     $stmt->execute($params);
