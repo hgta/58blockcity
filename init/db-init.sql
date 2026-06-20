@@ -428,6 +428,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `payment_block_id` varchar(100) DEFAULT NULL COMMENT '支付区块ID',
   `status` enum('pending','paid','shipped','completed','cancelled','refunded') DEFAULT 'pending',
   `buyer_note` text COMMENT '买家留言',
+  `shipping_address` varchar(500) DEFAULT NULL COMMENT '收货地址',
   `seller_note` text COMMENT '卖家备注',
   `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
   `shipped_at` datetime DEFAULT NULL COMMENT '发货时间',

@@ -36,10 +36,14 @@ $recentOrders = $order->getUserOrders($userId, ['page' => 1, 'per_page' => 5]);
 $shopDailyStats = [];
 $shopProductStats = [];
 $shopCouponStats = [];
+$shopOrderStatusStats = [];
 if ($hasShop) {
     $shopDailyStats = $shop->getShopDailyStats($shopId);
     $shopProductStats = $product->getShopProductStats($shopId);
     $shopCouponStats = $coupon->getShopCouponStats($shopId);
+    $shopOrderStatusStats = $order->getShopOrderStatusStats($shopId);
+    // 获取店铺待处理订单列表（最多5条）
+    $pendingShopOrders = $order->getShopOrdersWithFilter($shopId, ['status' => 'paid', 'page' => 1, 'per_page' => 5]);
 }
 
 $recentProducts = $product->getRecentProducts(6);
@@ -138,13 +142,13 @@ require_once '../includes/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="dash-stat-card stat-teal">
+                    <a href="../shop/orders.php?id=<?= $shopId ?>" class="dash-stat-card stat-teal" style="text-decoration:none;color:#fff;">
                         <div class="dash-stat-icon"><i class="fas fa-file-invoice"></i></div>
                         <div class="dash-stat-info">
                             <div class="dash-stat-value"><?= $shopDailyStats['today']['orders'] ?? 0 ?></div>
                             <div class="dash-stat-label">今日订单</div>
                         </div>
-                    </div>
+                    </a>
                     <div class="dash-stat-card stat-indigo">
                         <div class="dash-stat-icon"><i class="fas fa-box"></i></div>
                         <div class="dash-stat-info">
@@ -160,6 +164,20 @@ require_once '../includes/header.php';
                         </div>
                     </div>
                 </div>
+                <?php $pendingCount = ($shopOrderStatusStats['pending'] ?? 0) + ($shopOrderStatusStats['paid'] ?? 0); ?>
+                <?php if ($pendingCount > 0): ?>
+                <div class="shop-pending-bar">
+                    <div class="pending-bar-left">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>有 <strong><?= $pendingCount ?></strong> 个订单待处理
+                        <?php if (($shopOrderStatusStats['paid'] ?? 0) > 0): ?>
+                            （<?= $shopOrderStatusStats['paid'] ?>个待发货）
+                        <?php endif; ?>
+                        </span>
+                    </div>
+                    <a href="../shop/orders.php?id=<?= $shopId ?>&status=paid" class="btn btn-sm btn-warning">立即处理</a>
+                </div>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
@@ -175,7 +193,7 @@ require_once '../includes/header.php';
                             <?php if (!empty($recentOrders)): ?>
                                 <div class="order-mini-list">
                                     <?php foreach ($recentOrders as $o): ?>
-                                        <div class="order-mini-item">
+                                        <a href="order_detail.php?id=<?= $o['id'] ?>" class="order-mini-item" style="text-decoration:none;color:inherit;">
                                             <div class="order-mini-left">
                                                 <div class="order-mini-no"><?= htmlspecialchars($o['order_no']) ?></div>
                                                 <div class="order-mini-time"><?= date('m-d H:i', strtotime($o['created_at'])) ?></div>
@@ -188,7 +206,7 @@ require_once '../includes/header.php';
                                             <div class="order-mini-right">
                                                 <div class="order-mini-amount">¥<?= number_format($o['total_amount'], 2) ?></div>
                                             </div>
-                                        </div>
+                                        </a>
                                     <?php endforeach; ?>
                                 </div>
                             <?php else: ?>
@@ -249,6 +267,23 @@ require_once '../includes/header.php';
                                     <a href="../shop/orders.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">订单</a>
                                     <a href="../shop/coupons.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">优惠券</a>
                                 </div>
+                                <?php if (!empty($pendingShopOrders)): ?>
+                                <div class="mt-3">
+                                    <div class="pending-title">
+                                        <i class="fas fa-clock text-warning"></i> 待发货订单
+                                    </div>
+                                    <?php foreach ($pendingShopOrders as $po): ?>
+                                    <a href="../shop/ship_order.php?id=<?= $shopId ?>&order_id=<?= $po['id'] ?>" class="pending-order-item">
+                                        <span class="pending-order-no"><?= htmlspecialchars($po['order_no']) ?></span>
+                                        <span class="pending-order-amount">¥<?= number_format($po['total_amount'], 0) ?></span>
+                                        <i class="fas fa-chevron-right text-muted" style="font-size:11px;"></i>
+                                    </a>
+                                    <?php endforeach; ?>
+                                    <?php if (count($pendingShopOrders) >= 5): ?>
+                                    <a href="../shop/orders.php?id=<?= $shopId ?>&status=paid" class="pending-view-all">查看全部待发货订单 →</a>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php else: ?>
@@ -396,6 +431,43 @@ require_once '../includes/header.php';
 .shop-dashboard-section { margin-bottom: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .section-header h5 { margin: 0; font-weight: 700; color: #1a1a2e; }
+
+.shop-pending-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; padding: 12px 16px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border-radius: 10px; border-left: 4px solid #ffc107;
+    font-size: 14px;
+}
+.shop-pending-bar .pending-bar-left { display: flex; align-items: center; gap: 8px; color: #856404; }
+.shop-pending-bar .pending-bar-left i { font-size: 18px; }
+.shop-pending-bar .pending-bar-left strong { color: #d39e00; }
+.shop-pending-bar .btn-warning { font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+.pending-title {
+    font-size: 13px; font-weight: 600; color: #856404;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px; padding-bottom: 6px;
+    border-bottom: 1px solid #ffeeba;
+}
+.pending-order-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; text-decoration: none;
+    color: #495057; background: #f8f9fa;
+    margin-bottom: 5px; transition: all 0.15s;
+}
+.pending-order-item:hover {
+    background: #fff3cd; color: #856404;
+    text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.pending-order-no { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pending-order-amount { color: #e74c3c; font-weight: 700; white-space: nowrap; }
+.pending-view-all {
+    display: block; text-align: center; font-size: 12px;
+    color: #ff6b00; text-decoration: none; padding: 4px 0;
+}
+.pending-view-all:hover { color: #e55d00; }
 
 .order-mini-list { }
 .order-mini-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f1f3f5; transition: background 0.15s; }

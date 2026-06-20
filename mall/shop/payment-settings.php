@@ -47,10 +47,11 @@ $error = '';
 $success = '';
 
 // 处理支付设置更新
+$debugInfo = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("payment-settings POST: shop_id={$shopId}, raw_post=" . json_encode($_POST));
 
-    $paymentSettings = [];
+    $paymentSettingsData = [];
     $hasActivePayment = false;
     
     if (isset($_POST['payment_cities']) && is_array($_POST['payment_cities']) && isset($_POST['block_id']) && is_array($_POST['block_id'])) {
@@ -66,15 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
 
-            // 只有启用的城市才保存，使用固定默认支付参数
+            // 保存所有城市（包括未启用的），保留 is_active 状态
+            $entry = [
+                'city' => $city,
+                'block_id' => $blockId ?: '',
+                'is_active' => $isActive,
+                'min_amount' => 1,
+                'exchange_rate' => 0.1000
+            ];
+            $paymentSettingsData[] = $entry;
             if ($isActive) {
-                $paymentSettings[] = [
-                    'city' => $city,
-                    'block_id' => $blockId,
-                    'is_active' => 1,
-                    'min_amount' => 1,
-                    'exchange_rate' => 0.1000
-                ];
                 $hasActivePayment = true;
             }
         }
@@ -85,12 +87,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = '请至少启用一个城市的支付方式';
         } else {
             try {
-                if ($shop->updatePaymentSettings($shopId, $paymentSettings)) {
-                    error_log("payment-settings 保存成功: shop_id={$shopId}, settings=" . json_encode($paymentSettings));
+                if ($shop->updatePaymentSettings($shopId, $paymentSettingsData)) {
+                    error_log("payment-settings 保存成功: shop_id={$shopId}, settings=" . json_encode($paymentSettingsData));
                     // 立即查询数据库验证是否已持久化
                     $verifySettings = $shop->getPaymentSettings($shopId);
-                    error_log("payment-settings 保存后验证: shop_id={$shopId}, saved_count=" . count($paymentSettings) . ", db_count=" . count($verifySettings));
+                    error_log("payment-settings 保存后验证: shop_id={$shopId}, saved_count=" . count($paymentSettingsData) . ", db_count=" . count($verifySettings));
+                    $debugInfo['saved_count'] = count($paymentSettingsData);
+                    $debugInfo['db_count'] = count($verifySettings);
+                    $debugInfo['verify'] = $verifySettings;
                     // PRG 重定向，避免刷新重复提交
+                    // 把调试信息存到 session 中，重定向后再显示
+                    $_SESSION['payment_debug'] = $debugInfo;
                     $redirectUrl = 'payment-settings.php?id=' . $shopId . '&saved=1';
                     header('Location: ' . $redirectUrl);
                     exit;
@@ -108,6 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // 从 URL 参数读取保存成功提示
 if (isset($_GET['saved']) && $_GET['saved'] == '1') {
     $success = '支付设置更新成功';
+    // 从 session 恢复调试信息
+    if (isset($_SESSION['payment_debug'])) {
+        $debugInfo = $_SESSION['payment_debug'];
+        unset($_SESSION['payment_debug']);
+    }
 }
 
 // 将支付设置转换为以城市为键的数组，便于模板使用
@@ -201,8 +213,53 @@ require_once '../includes/header.php';
                     <?php endif; ?>
                     
                     <?php if ($success): ?>
-                        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+                        <div class="alert alert-success">
+                            <?= htmlspecialchars($success) ?>
+                            <?php if (!empty($debugInfo)): ?>
+                            <span class="text-muted small ml-2">
+                                （保存 <?= $debugInfo['saved_count'] ?? '?' ?> 条，数据库实际 <?= $debugInfo['db_count'] ?? '?' ?> 条记录）
+                            </span>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
+                    
+                    <?php if (!empty($debugInfo) && !empty($debugInfo['verify'])): ?>
+                    <details class="mb-3" style="font-size:12px;">
+                        <summary class="text-muted" style="cursor:pointer;">数据库记录详情（调试用）</summary>
+                        <table class="table table-sm table-bordered mt-2">
+                            <thead><tr><th>城市</th><th>区块ID</th><th>启用</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($debugInfo['verify'] as $row): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($row['city']) ?></td>
+                                    <td><?= htmlspecialchars($row['block_id']) ?></td>
+                                    <td><?= $row['is_active'] ? '✅ 是' : '❌ 否' ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </details>
+                    <?php endif; ?>
+                    
+                    <details class="mb-3" style="font-size:12px;">
+                        <summary class="text-muted" style="cursor:pointer;">当前加载的设置（调试用，共 <?= count($paymentSettings) ?> 条）</summary>
+                        <table class="table table-sm table-bordered mt-2">
+                            <thead><tr><th>城市</th><th>区块ID</th><th>启用</th></tr></thead>
+                            <tbody>
+                            <?php if (!empty($paymentSettings)): ?>
+                                <?php foreach ($paymentSettings as $row): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($row['city']) ?></td>
+                                    <td><?= htmlspecialchars($row['block_id']) ?></td>
+                                    <td><?= $row['is_active'] ? '✅ 是' : '❌ 否' ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="3" class="text-muted text-center">数据库无记录</td></tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </details>
                     
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="text-muted small">
