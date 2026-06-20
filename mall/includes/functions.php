@@ -9,12 +9,12 @@ if (!function_exists('normalizeImageUrl')) {
      */
     function normalizeImageUrl($imageUrl) {
         if (empty($imageUrl)) {
-            return '../assets/images/default-product.jpg';
+            return '/assets/images/default-product.jpg';
         }
         $imageUrl = trim($imageUrl);
         if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
             return $imageUrl;
         }
-        return '../' . $imageUrl;
+        return '/' . ltrim($imageUrl, '/');
     }
 }

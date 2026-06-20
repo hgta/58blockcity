@@ -3,6 +3,21 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
+require_once '../includes/functions.php';
+
+// 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
+if (!function_exists('normalizeImageUrl')) {
+    function normalizeImageUrl($imageUrl) {
+        if (empty($imageUrl)) {
+            return '/assets/images/default-product.jpg';
+        }
+        $imageUrl = trim($imageUrl);
+        if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
+            return $imageUrl;
+        }
+        return '/' . ltrim($imageUrl, '/');
+    }
+}
 
 // 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
@@ -240,7 +255,7 @@ require_once '../includes/header.php';
                                         <div class="buyer-info">
                                             <div class="buyer-avatar">
                                                 <?php if (!empty($o['buyer_avatar'])): ?>
-                                                    <img src="<?= htmlspecialchars($o['buyer_avatar']) ?>" alt="">
+                                                    <img src="<?= htmlspecialchars(normalizeImageUrl($o['buyer_avatar'])) ?>" alt="" onerror="this.src='/assets/images/default-product.jpg'">
                                                 <?php else: ?>
                                                     <div class="avatar-placeholder"><?= mb_substr($o['buyer_name'] ?? '用', 0, 1) ?></div>
                                                 <?php endif; ?>

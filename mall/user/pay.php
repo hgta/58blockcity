@@ -13,6 +13,21 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../../config/database.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Shop.php';
+require_once '../includes/functions.php';
+
+// 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
+if (!function_exists('normalizeImageUrl')) {
+    function normalizeImageUrl($imageUrl) {
+        if (empty($imageUrl)) {
+            return '/assets/images/default-product.jpg';
+        }
+        $imageUrl = trim($imageUrl);
+        if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
+            return $imageUrl;
+        }
+        return '/' . ltrim($imageUrl, '/');
+    }
+}
 
 $order = new Order($pdo);
 $shop = new Shop($pdo);
@@ -339,7 +354,7 @@ $orderItems = $order->getOrderDetails($orderId);
             <div class="product-list">
                 <?php foreach ($orderItems as $item): ?>
                 <div class="product-item">
-                    <img src="<?php echo htmlspecialchars($item['image_url'] ?: '../assets/images/default-product.jpg'); ?>" alt="">
+                    <img src="<?php echo htmlspecialchars(normalizeImageUrl($item['image_url'])); ?>" alt="" onerror="this.src='/assets/images/default-product.jpg'">
                     <div class="product-meta">
                         <div class="name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                     </div>

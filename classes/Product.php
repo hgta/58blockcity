@@ -59,8 +59,45 @@ class Product {
     }
     
     /**
-     * 获取店铺商品统计
+     * 获取店铺商品（支持分页和排序）
      */
+    public function getProductsByShopPaged($shopId, $page = 1, $perPage = 12, $sort = 'newest') {
+        try {
+            $page = max(1, intval($page));
+            $perPage = max(1, intval($perPage));
+            $offset = ($page - 1) * $perPage;
+
+            $orderBy = 'created_at DESC';
+            switch ($sort) {
+                case 'price_asc':
+                    $orderBy = 'price_bct ASC, price_cny ASC, created_at DESC';
+                    break;
+                case 'price_desc':
+                    $orderBy = 'price_bct DESC, price_cny DESC, created_at DESC';
+                    break;
+                case 'sales':
+                    $orderBy = 'sold_count DESC, created_at DESC';
+                    break;
+                case 'newest':
+                default:
+                    $orderBy = 'created_at DESC';
+                    break;
+            }
+
+            $stmt = $this->pdo->prepare("
+                SELECT * FROM products
+                WHERE shop_id = ?
+                ORDER BY $orderBy
+                LIMIT $perPage OFFSET $offset
+            ");
+            $stmt->execute([$shopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("获取店铺商品分页失败: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function getShopProductStats($shopId) {
         $stmt = $this->pdo->prepare("
             SELECT 

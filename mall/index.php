@@ -58,7 +58,7 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
         
         /* 轮播图样式 */
         .banner-section {
-            margin: 20px 0 30px;
+            margin: 10px 0 15px;
         }
         
         .banner-slider {
@@ -88,8 +88,8 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
         .category-section {
             background: white;
             border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
@@ -111,14 +111,14 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
         }
         
         .category-icon {
-            width: 60px;
-            height: 60px;
+            width: 48px;
+            height: 48px;
             background: linear-gradient(135deg, #3498db, #2980b9);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
+            margin: 0 auto 6px;
             color: white;
             font-size: 24px;
         }
@@ -132,8 +132,8 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
         .section {
             background: white;
             border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
@@ -141,8 +141,8 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
         }
         
@@ -404,13 +404,13 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
     
     <div class="container">
         <!-- Banner + 搜索 -->
-        <div class="banner-section" style="margin:15px 0 20px;">
-            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:12px;padding:20px 24px;color:#fff;text-align:center;">
-                <h1 style="font-size:24px;font-weight:700;margin:0 0 6px;">58人气值购物商城</h1>
-                <p style="font-size:14px;opacity:.85;margin:0 0 12px;">基于区块城市BlockCity的BCT商城交易平台</p>
+        <div class="banner-section" style="margin:10px 0 15px;">
+            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:12px;padding:12px 18px;color:#fff;text-align:center;">
+                <h1 style="font-size:20px;font-weight:700;margin:0 0 4px;">58人气值购物商城</h1>
+                <p style="font-size:13px;opacity:.85;margin:0 0 6px;">基于区块城市BlockCity的BCT商城交易平台</p>
                 <form method="GET" action="product/list.php" style="max-width:460px;margin:0 auto;display:flex;gap:8px;">
-                    <input type="text" name="search" placeholder="搜索商品..." style="flex:1;padding:10px 14px;border:none;border-radius:8px;font-size:14px;outline:none;">
-                    <button type="submit" style="padding:10px 20px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                    <input type="text" name="search" placeholder="搜索商品..." style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:14px;outline:none;">
+                    <button type="submit" style="padding:8px 16px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
                         <i class="fas fa-search"></i> 搜索
                     </button>
                 </form>

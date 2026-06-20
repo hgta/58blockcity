@@ -297,7 +297,7 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
             <div class="product-list">
                 <?php foreach ($orderItems as $item): ?>
                 <div class="product-item">
-                    <img src="<?php echo htmlspecialchars(normalizeImageUrl($item['image_url'])); ?>" alt="">
+                    <img src="<?php echo htmlspecialchars(normalizeImageUrl($item['image_url'])); ?>" alt="" onerror="this.src='/assets/images/default-product.jpg'">
                     <div class="product-meta">
                         <div class="name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                         <div class="spec">默认规格</div>
