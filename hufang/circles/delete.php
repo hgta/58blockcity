@@ -8,7 +8,7 @@ require_once '../../classes/Visit.php';
 checkLogin();
 
 // 获取互访圈ID
-$circleId = intval(\$_GET['id']) ?? 0;
+$circleId = intval($_GET['id']) ?? 0;
 if (!$circleId) {
     $_SESSION['error_message'] = '无效的互访圈ID';
     header('Location: index.php');

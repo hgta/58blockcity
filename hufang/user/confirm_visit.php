@@ -8,7 +8,7 @@ require_once '../../classes/Notification.php';
 
 checkLogin();
 
-$visitId = intval(\$_GET['id']) ?? 0;
+$visitId = intval($_GET['id']) ?? 0;
 $visit = new Visit($pdo);
 $circle = new Circle($pdo);
 $user = new User($pdo);

@@ -11,7 +11,7 @@ require_once '../../classes/Visit.php';
 
 checkLogin();
 
-$circleId = intval(\$_GET['id']) ?? 0;
+$circleId = intval($_GET['id']) ?? 0;
 $circle = new Circle($pdo);
 $user = new User($pdo);
 $visit = new Visit($pdo);
@@ -44,7 +44,7 @@ foreach ($visits as $v) {
 
 // 处理访问申请
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $canRequest) {
-    $applicantCircleId = intval(\$_POST['applicant_circle_id']) ?? 0;
+    $applicantCircleId = intval($_POST['applicant_circle_id']) ?? 0;
     
     if (empty($applicantCircleId)) {
         $_SESSION['flash_message'] = '请选择您的互访圈';
