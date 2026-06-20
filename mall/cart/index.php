@@ -96,16 +96,16 @@ function formatPaymentSetting($settings) {
     return implode('', $parts);
 }
 
-// 统一处理商品图片路径：相对路径补 ../，绝对路径保持原样
+// 统一处理商品图片路径
 function normalizeImageUrl($imageUrl) {
     if (empty($imageUrl)) {
-        return '../assets/images/default-product.jpg';
+        return '/assets/images/default-product.jpg';
     }
     $imageUrl = trim($imageUrl);
     if (preg_match('#^(https?:)?//#i', $imageUrl) || substr($imageUrl, 0, 1) === '/') {
         return $imageUrl;
     }
-    return '../' . $imageUrl;
+    return '/' . ltrim($imageUrl, '/');
 }
 ?>
 
@@ -332,11 +332,11 @@ function normalizeImageUrl($imageUrl) {
             background: #e9ecef;
         }
 
-        .quantity-btn:first-child {
+        .quantity-btn:first-of-type {
             border-radius: 6px 0 0 6px;
         }
 
-        .quantity-btn:last-of-type {
+        .quantity-plus {
             border-radius: 0 6px 6px 0;
         }
 
@@ -636,7 +636,7 @@ function normalizeImageUrl($imageUrl) {
                                         <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, -1)">-</button>
                                         <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" 
                                                min="1" class="quantity-input" id="quantity-<?php echo $item['id']; ?>">
-                                        <button type="button" class="quantity-btn" onclick="updateQuantity(<?php echo $item['id']; ?>, 1)">+</button>
+                                        <button type="button" class="quantity-btn quantity-plus" onclick="updateQuantity(<?php echo $item['id']; ?>, 1)">+</button>
                                         <button type="submit" name="update_quantity" style="display: none;"></button>
                                     </form>
                                 </div>
