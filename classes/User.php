@@ -8,8 +8,19 @@ class User {
     
     public function register($username, $email, $password, $city) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $this->pdo->prepare("INSERT INTO users (username, email, password, city) VALUES (?, ?, ?, ?)");
-        return $stmt->execute([$username, $email, $hashedPassword, $city]);
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO users (username, email, password, city) VALUES (?, ?, ?, ?)");
+            return $stmt->execute([$username, $email, $hashedPassword, $city]);
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000 || strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                if (strpos($e->getMessage(), 'email') !== false) {
+                    throw new Exception('该邮箱已被注册，请使用其他邮箱或直接登录');
+                } elseif (strpos($e->getMessage(), 'username') !== false) {
+                    throw new Exception('该用户名已被使用，请更换用户名');
+                }
+            }
+            throw $e;
+        }
     }
     
     public function login($username, $password) {
