@@ -89,9 +89,8 @@ require_once '../includes/header.php';
             
             <p class="text-danger"><i class="fas fa-info-circle me-1"></i>将同时删除该互访圈的所有访问记录！</p>
             
-            <form method="post">
+            <form method="post" class="mt-4">
                             <?= csrfField() ?>
-                         class="mt-4">
                 <div class="d-flex justify-content-between">
                     <a href="view.php?id=<?= $circleId ?>" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> 取消

@@ -34,9 +34,8 @@ require_once '../includes/header.php';
     <div class="page-header d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-bell"></i> 通知中心</h1>
         <?php if ($unreadCount > 0): ?>
-            <form method="post">
+            <form method="post" class="d-inline">
                             <?= csrfField() ?>
-                         class="d-inline">
                 <button type="submit" name="mark_all_read" class="btn btn-outline-primary">
                     <i class="fas fa-check-double"></i> 全部标记已读
                 </button>
