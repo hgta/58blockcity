@@ -748,6 +748,7 @@ require_once '../includes/header.php';
                 ?>
                 <?php endif; ?>
                 <!-- 添加/编辑商品表单 -->
+                <form method="POST" enctype="multipart/form-data" id="productForm">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
@@ -769,7 +770,7 @@ require_once '../includes/header.php';
                             <?php endif; ?>
                             <?php endif; ?>
                         </div>
-                        <a href="products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary">
+                        <a href="products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary" type="button">
                             <i class="fas fa-arrow-left"></i> 返回列表
                         </a>
                     </div>
@@ -781,8 +782,6 @@ require_once '../includes/header.php';
                         <?php if ($success): ?>
                             <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
                         <?php endif; ?>
-
-                        <form method="POST" enctype="multipart/form-data" id="productForm">
                             <?php if ($action === 'edit'): ?>
                                 <?php if (!$editProduct || $editProduct['shop_id'] != $shopId): ?>
                                     <div class="alert alert-danger">商品不存在或无权编辑</div>
@@ -1038,9 +1037,9 @@ require_once '../includes/header.php';
                                 </button>
                                 <a href="products.php?id=<?= $shopId ?>" class="btn btn-outline-secondary btn-lg">取消返回</a>
                             </div>
-                        </form>
                     </div>
                 </div>
+                </form>
                 
             <?php else: ?>
                 <!-- 商品列表 -->
