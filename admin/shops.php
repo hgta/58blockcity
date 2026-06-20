@@ -30,7 +30,13 @@ $total = $countStmt->fetchColumn();
 $totalPages = ceil($total / $perPage);
 $offset = ($page - 1) * $perPage;
 
-$stmt = $pdo->prepare("SELECT s.*, u.username as owner_name, (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id) as product_count FROM shops s LEFT JOIN users u ON s.user_id = u.id $where ORDER BY s.created_at DESC LIMIT ? OFFSET ?");
+$stmt = $pdo->prepare("
+    SELECT s.*, u.username as owner_name, 
+           (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id) as product_count,
+           COALESCE((SELECT SUM(p2.sold_count) FROM products p2 WHERE p2.shop_id = s.id), 0) as total_sales
+    FROM shops s LEFT JOIN users u ON s.user_id = u.id 
+    $where ORDER BY s.created_at DESC LIMIT ? OFFSET ?
+");
 foreach ($params as $i => $v) { $stmt->bindValue($i+1, $v); }
 $stmt->bindValue(count($params)+1, $perPage, PDO::PARAM_INT);
 $stmt->bindValue(count($params)+2, $offset, PDO::PARAM_INT);
@@ -61,7 +67,7 @@ require_once '../shared/admin/admin-header.php';
     <div class="admin-card-body" style="padding:0;">
         <table class="admin-data-table">
             <thead>
-                <tr><th>店铺</th><th>店主</th><th>商品数</th><th>评分</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+                <tr><th>店铺</th><th>店主</th><th>商品数</th><th>销量</th><th>评分</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($shops as $s): ?>
@@ -69,8 +75,18 @@ require_once '../shared/admin/admin-header.php';
                 <tr>
                     <td>
                         <div style="display:flex;align-items:center;gap:10px;">
-                            <?php if (!empty($s['shop_logo'])): ?>
-                                <img src="../<?= htmlspecialchars($s['shop_logo']) ?>" style="width:36px;height:36px;border-radius:6px;object-fit:cover;">
+                            <?php 
+                                $logoUrl = $s['shop_logo'] ?? '';
+                                if ($logoUrl) {
+                                    // 处理路径：去掉可能的前缀 ../
+                                    $logoUrl = '/' . ltrim(preg_replace('#^(\.\./)+#', '', $logoUrl), '/');
+                                }
+                            ?>
+                            <?php if (!empty($logoUrl)): ?>
+                                <img src="<?= htmlspecialchars($logoUrl) ?>" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:none;align-items:center;justify-content:center;color:#64748b;">
+                                    <i class="fas fa-store"></i>
+                                </div>
                             <?php else: ?>
                                 <div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;">
                                     <i class="fas fa-store"></i>
@@ -84,6 +100,7 @@ require_once '../shared/admin/admin-header.php';
                     </td>
                     <td><?= htmlspecialchars($s['owner_name'] ?? '未知') ?></td>
                     <td><?= $s['product_count'] ?></td>
+                    <td><?= number_format($s['total_sales'] ?? 0) ?></td>
                     <td><?= number_format($s['rating'] ?? 5, 1) ?></td>
                     <td><span class="admin-badge <?= $s['status']=='active'?'success':($s['status']=='pending'?'warning':($s['status']=='suspended'?'danger':'default')) ?>"><?= $statusMap[$s['status']] ?? $s['status'] ?></span></td>
                     <td><?= $s['created_at'] ? date('Y-m-d', strtotime($s['created_at'])) : '-' ?></td>
@@ -91,7 +108,7 @@ require_once '../shared/admin/admin-header.php';
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($shops)): ?>
-                <tr><td colspan="7" style="text-align:center;color:#64748b;padding:30px;">未找到店铺</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:#64748b;padding:30px;">未找到店铺</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
