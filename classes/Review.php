@@ -57,7 +57,7 @@ class Review {
             $offset = ($page - 1) * $limit;
             
             $sql = "SELECT r.*, 
-                           u.nickname, u.avatar,
+                           u.username as nickname, u.avatar,
                            oi.product_name
                     FROM reviews r
                     INNER JOIN users u ON r.user_id = u.id
