@@ -41,6 +41,22 @@ class Review {
             // 更新商品和店铺评分统计
             $this->updateProductRating($data['product_id']);
             $this->updateShopRating($data['shop_id']);
+
+            // 通知店主
+            try {
+                $shopStmt = $this->pdo->prepare("SELECT user_id FROM shops WHERE id = ?");
+                $shopStmt->execute([$data['shop_id']]);
+                $sellerId = $shopStmt->fetchColumn();
+                if ($sellerId && $sellerId != $data['user_id']) {
+                    $notify = new Notification($this->pdo);
+                    $notify->sendSystemNotify($sellerId, 'new_review', $reviewId,
+                        '您的商品收到一条新评价：' . mb_substr($data['content'] ?? '', 0, 50),
+                        '../../mall/product/detail.php?id=' . $data['product_id']
+                    );
+                }
+            } catch (Exception $e) {
+                error_log("评价通知失败: " . $e->getMessage());
+            }
             
             return $reviewId;
         } catch (Exception $e) {
@@ -224,6 +240,22 @@ class Review {
         $reviewId = $this->pdo->lastInsertId();
         $this->updateProductRating($productId);
         $this->updateShopRating($data['shop_id']);
+
+        // 通知店主：收到新评价
+        try {
+            $shopStmt = $this->pdo->prepare("SELECT user_id FROM shops WHERE id = ?");
+            $shopStmt->execute([$data['shop_id']]);
+            $sellerId = $shopStmt->fetchColumn();
+            if ($sellerId) {
+                $notify = new Notification($this->pdo);
+                $notify->sendSystemNotify($sellerId, 'new_review', $reviewId,
+                    '您的商品收到一条新评价：' . mb_substr($data['content'] ?? '', 0, 50),
+                    '../../mall/product/detail.php?id=' . $productId
+                );
+            }
+        } catch (Exception $e) {
+            error_log("评价通知失败: " . $e->getMessage());
+        }
 
         return $reviewId;
     }

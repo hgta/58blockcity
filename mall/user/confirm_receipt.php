@@ -14,6 +14,8 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once '../../config/database.php';
 require_once '../../classes/Order.php';
+require_once '../../classes/Shop.php';
+require_once '../../classes/Notification.php';
 
 $userId = $_SESSION['user_id'];
 $orderId = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
@@ -40,6 +42,16 @@ if ($orderInfo['status'] != 'shipped') {
 try {
     $result = $order->confirmReceipt($orderId, $userId);
     if ($result) {
+        // 通知卖家：买家已确认收货
+        $shopObj = new Shop($pdo);
+        $sellerShop = $shopObj->getShopById($orderInfo['shop_id']);
+        if ($sellerShop) {
+            $notify = new Notification($pdo);
+            $notify->sendSystemNotify($sellerShop['user_id'], 'order_done', $orderId,
+                '订单 ' . $orderInfo['order_no'] . ' 买家已确认收货，交易完成',
+                '../../shop/orders.php?id=' . $orderInfo['shop_id']
+            );
+        }
         echo json_encode(['success' => true, 'message' => '确认收货成功']);
     } else {
         echo json_encode(['success' => false, 'message' => '确认收货失败']);

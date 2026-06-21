@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../../config/database.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Shop.php';
+require_once '../../classes/Notification.php';
 require_once '../includes/functions.php';
 
 // 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
@@ -76,6 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $successMsg = '支付确认成功，订单状态已更新为已付款';
             // 重新获取订单
             $orderInfo = $order->getOrderById($orderId, $userId);
+            // 通知卖家：有新订单已付款
+            $notify = new Notification($pdo);
+            $shopOwner = $shop->getShopById($orderInfo['shop_id']);
+            if ($shopOwner) {
+                $notify->sendSystemNotify($shopOwner['user_id'], 'order_paid', $orderId,
+                    '订单 ' . $orderInfo['order_no'] . ' 已付款，金额 ' . number_format($orderInfo['total_amount'], 0) . ' 人气值，请及时发货',
+                    '../../shop/orders.php?id=' . $orderInfo['shop_id']
+                );
+            }
         } else {
             $errorMsg = '支付确认失败，请稍后重试';
         }

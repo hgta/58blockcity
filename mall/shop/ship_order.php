@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
+require_once '../../classes/Notification.php';
 
 // 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
@@ -63,6 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($result) {
             $success = '订单已发货';
+            // 通知买家：订单已发货
+            $notify = new Notification($pdo);
+            $notify->sendSystemNotify($orderInfo['user_id'], 'order_shipped', $orderId,
+                '订单 ' . $orderInfo['order_no'] . ' 已发货，物流：' . $shippingCompany . ' ' . $trackingNo,
+                '../../user/order_detail.php?id=' . $orderId
+            );
         } else {
             $error = '发货失败，请重试';
         }

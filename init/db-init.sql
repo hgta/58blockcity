@@ -404,8 +404,10 @@ CREATE TABLE IF NOT EXISTS `nft_transactions` (
 CREATE TABLE IF NOT EXISTS `notifications` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `type` enum('visit_request','visit_confirm','return_confirm','system') NOT NULL,
+  `from_user_id` int(11) DEFAULT NULL COMMENT '私信发送者ID',
+  `type` enum('visit_request','visit_confirm','return_confirm','system','order_paid','order_shipped','order_done','new_review','dm') NOT NULL,
   `related_id` int(11) DEFAULT NULL,
+  `related_url` varchar(500) DEFAULT NULL COMMENT '跳转链接',
   `content` text NOT NULL,
   `is_read` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
