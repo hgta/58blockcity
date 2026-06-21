@@ -110,9 +110,9 @@ header { background:<?= $theme ?>; color:white; padding:15px 0; box-shadow:0 2px
     display: flex; align-items: center; justify-content: center; padding: 0 4px;
 }
 .dropdown { position: relative; }
-.dropdown-menu { display: none; position: absolute; top: 100%; right: 0; z-index: 1000; background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 8px 0; margin-top: 6px; }
+.dropdown-menu { display: none; position: absolute; top: 100%; right: 0; z-index: 1000; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 8px 0; margin-top: 6px; min-width: 280px; max-width: 360px; width: max-content; }
 .dropdown-menu.show { display: block; }
-.dropdown-item { display: block; padding: 8px 16px; font-size: 13px; color: #333; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dropdown-item { display: block; padding: 10px 16px; font-size: 13px; color: #333; text-decoration: none; line-height: 1.5; }
 .dropdown-item:hover { background: #f5f5f5; color: #1e293b; text-decoration: none; }
 .dropdown-divider { height: 1px; background: #e9ecef; margin: 4px 0; }
 .city-location-bar { background:#fff3e0; color:#e65100; text-align:center; padding:8px; font-size:13px; }
