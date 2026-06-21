@@ -670,7 +670,7 @@ if (isset($_SESSION['user_id'])) {
                     $videoUrl = $productDetail['video_url'];
                     $isExternalVideo = preg_match('#^(https?:)?//#i', $videoUrl);
                     $videoSrc = $isExternalVideo ? $videoUrl : '/' . ltrim($videoUrl, '/');
-                    $videoType = $isExternalVideo ? 'video/mp4' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'webm' ? 'video/webm' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogv' || pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogg' ? 'video/ogg' : 'video/mp4'));
+                    $videoType = $isExternalVideo ? 'video/mp4' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'webm' ? 'video/webm' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogv' || pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogg' ? 'video/ogg' : (strtolower(pathinfo($videoUrl, PATHINFO_EXTENSION)) === 'mov' ? 'video/quicktime' : 'video/mp4')));
                 ?>
                     <!-- 有视频时优先展示视频 -->
                     <div class="product-video-wrapper" style="position:relative;margin-bottom:15px;">
@@ -856,7 +856,7 @@ if (isset($_SESSION['user_id'])) {
                     $isExternalVideo2 = preg_match('#^(https?:)?//#i', $videoUrl2);
                     $videoSrc2 = $isExternalVideo2 ? $videoUrl2 : '/' . ltrim($videoUrl2, '/');
                     $ext2 = strtolower(pathinfo($videoUrl2, PATHINFO_EXTENSION));
-                    $videoType2 = $ext2 === 'webm' ? 'video/webm' : ($ext2 === 'ogv' || $ext2 === 'ogg' ? 'video/ogg' : 'video/mp4');
+                    $videoType2 = $ext2 === 'webm' ? 'video/webm' : ($ext2 === 'ogv' || $ext2 === 'ogg' ? 'video/ogg' : ($ext2 === 'mov' ? 'video/quicktime' : 'video/mp4'));
                 ?>
                     <div style="margin-top: 30px;">
                         <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-video"></i> 视频介绍</h4>

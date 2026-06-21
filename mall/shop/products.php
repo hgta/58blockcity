@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
                     } else {
-                        $videoError = $videoResult['error'];
+                        $error = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
                     $errCode = $_FILES['product_video']['error'];
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                         UPLOAD_ERR_NO_TMP_DIR => '服务器临时目录缺失，请联系管理员',
                         UPLOAD_ERR_CANT_WRITE => '服务器写入失败，请联系管理员',
                     ];
-                    $videoError = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
+                    $error = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
                 }
             }
             if (!$error && empty($videoUrl) && !empty($_POST['video_link'])) {
@@ -234,6 +234,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
 // 处理编辑商品
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     $productId = intval($_POST['product_id']);
+    $editProductForVideo = $product->getProductById($productId, true);
+    $existingVideoUrl = ($editProductForVideo && $editProductForVideo['shop_id'] == $shopId) ? ($editProductForVideo['video_url'] ?: null) : null;
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
     $categoryId = intval($_POST['category_id']);
@@ -272,15 +274,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 }
             }
 
-            // 处理视频上传或链接（移到前面）
-            $videoUrl = null;
+            // 处理视频上传或链接（移到前面，默认保留原视频）
+            $videoUrl = $existingVideoUrl;
             if (isset($_FILES['product_video'])) {
                 if ($_FILES['product_video']['error'] === UPLOAD_ERR_OK) {
                     $videoResult = uploadVideo($_FILES['product_video']);
                     if ($videoResult['success']) {
                         $videoUrl = $videoResult['file_path'];
                     } else {
-                        $videoError = $videoResult['error'];
+                        $error = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
                     $errCode = $_FILES['product_video']['error'];
@@ -291,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                         UPLOAD_ERR_NO_TMP_DIR => '服务器临时目录缺失，请联系管理员',
                         UPLOAD_ERR_CANT_WRITE => '服务器写入失败，请联系管理员',
                     ];
-                    $videoError = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
+                    $error = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
                 }
             }
             if (!$error && $videoUrl === null && !empty($_POST['video_link'])) {
@@ -598,14 +600,14 @@ function uploadMultipleImages($files, &$errorMsg) {
 
 // 视频上传函数
 function uploadVideo($file) {
-    $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
-    $allowedExts  = ['mp4', 'webm', 'ogg'];
+    $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+    $allowedExts  = ['mp4', 'webm', 'ogg', 'mov'];
     $maxSize = 50 * 1024 * 1024; // 50MB
 
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowedExts)) {
         error_log("uploadVideo: 扩展名不匹配 ext=$ext");
-        return ['success' => false, 'error' => '只允许上传 MP4、WebM、OGG 格式的视频'];
+        return ['success' => false, 'error' => '只允许上传 MP4、WebM、OGG、MOV 格式的视频'];
     }
     if (!in_array($file['type'], $allowedTypes)) {
         error_log("uploadVideo: MIME类型不匹配 type={$file['type']}");
@@ -1767,6 +1769,9 @@ if (videoInput && videoArea) {
             </div>
             <input type="hidden" name="remove_video" id="removeVideoFlag" value="0">
         `;
+        // 必须保留文件输入域，否则表单提交时不会带上视频文件
+        videoInput.style.display = 'none';
+        videoArea.appendChild(videoInput);
         document.getElementById('videoUploadInfo').innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> 视频已选择：' + file.name + ' (' + formatSize(file.size) + ')</span>';
 
         // 加载到隐藏 video 元素用于 Canvas 截帧
@@ -1857,6 +1862,9 @@ function resetVideoUpload() {
         </div>
         <input type="hidden" name="remove_video" id="removeVideoFlag" value="1">
     `;
+    // 保留文件输入域，确保下次选择/提交时仍能上传
+    videoInput.style.display = 'none';
+    videoArea.appendChild(videoInput);
     document.getElementById('videoUploadInfo').textContent = '';
     document.getElementById('video_thumbnail').value = '';
     thumbSection.style.display = 'none';
