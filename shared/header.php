@@ -103,6 +103,18 @@ header { background:<?= $theme ?>; color:white; padding:15px 0; box-shadow:0 2px
 .nav-button { padding:6px 14px; border-radius:20px; color:white; text-decoration:none; font-size:13px; margin-left:6px; transition:all .3s; display:inline-flex; align-items:center; gap:5px; }
 .nav-button:hover { background:rgba(255,255,255,0.2); color:white; text-decoration:none; }
 .nav-button i { font-size:13px; }
+.notification-badge {
+    position: absolute; top: -2px; right: -2px;
+    background: #ef4444; color: #fff; font-size: 10px; font-weight: 700;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; padding: 0 4px;
+}
+.dropdown { position: relative; }
+.dropdown-menu { display: none; position: absolute; top: 100%; right: 0; z-index: 1000; background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 8px 0; margin-top: 6px; }
+.dropdown-menu.show { display: block; }
+.dropdown-item { display: block; padding: 8px 16px; font-size: 13px; color: #333; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dropdown-item:hover { background: #f5f5f5; color: #1e293b; text-decoration: none; }
+.dropdown-divider { height: 1px; background: #e9ecef; margin: 4px 0; }
 .city-location-bar { background:#fff3e0; color:#e65100; text-align:center; padding:8px; font-size:13px; }
 .city-location-bar a { color:#e65100; font-weight:bold; }
 main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
@@ -162,13 +174,13 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
             <?php endforeach; ?>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <div class="dropdown d-inline-block">
-                    <a href="#" class="nav-button" id="notificationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="position:relative;">
+                    <a href="#" class="nav-button" id="notificationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-bell"></i>
                         <?php if (!empty($notification_count)): ?>
                             <span class="notification-badge"><?= $notification_count > 9 ? '9+' : $notification_count ?></span>
                         <?php endif; ?>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown" style="min-width:300px; max-width:380px;">
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationDropdown">
                         <?php if (empty($notifications)): ?>
                             <span class="dropdown-item-text text-muted">暂无通知</span>
                         <?php else: ?>
