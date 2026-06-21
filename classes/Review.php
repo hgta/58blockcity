@@ -2,6 +2,8 @@
 /**
  * 商品评价类
  */
+require_once __DIR__ . '/Notification.php';
+
 class Review {
     private $pdo;
     
