@@ -501,9 +501,11 @@ $totalPages = ceil($totalProducts / $itemsPerPage);
                     <div class="products-grid">
                         <?php foreach ($products as $product): ?>
                             <div class="product-card">
-                                <img src="<?php echo '../'.htmlspecialchars($product['thumb_image'] ?: $product['image_url'] ?: '../assets/images/default-product.jpg'); ?>" 
-                                     alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                     class="product-image">
+                                <a href="detail.php?id=<?php echo $product['id']; ?>">
+                                    <img src="<?php echo '/' . ltrim($product['thumb_image'] ?: $product['image_url'] ?: 'assets/images/default-product.jpg', '/'); ?>" 
+                                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                                         class="product-image" onerror="this.src='/assets/images/default-product.jpg'">
+                                </a>
                                 
                                 <div class="product-info">
                                     <h3 class="product-name">
