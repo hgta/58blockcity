@@ -142,7 +142,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                         $videoError = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $videoError = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                    $errCode = $_FILES['product_video']['error'];
+                    $errMap = [
+                        UPLOAD_ERR_INI_SIZE   => '视频文件超过服务器限制（php.ini upload_max_filesize），建议压缩视频或联系管理员',
+                        UPLOAD_ERR_FORM_SIZE  => '视频文件超过表单限制（MAX_FILE_SIZE），建议压缩视频',
+                        UPLOAD_ERR_PARTIAL    => '视频仅上传了部分，请重试',
+                        UPLOAD_ERR_NO_TMP_DIR => '服务器临时目录缺失，请联系管理员',
+                        UPLOAD_ERR_CANT_WRITE => '服务器写入失败，请联系管理员',
+                    ];
+                    $videoError = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
                 }
             }
             if (!$error && empty($videoUrl) && !empty($_POST['video_link'])) {
@@ -275,7 +283,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                         $videoError = $videoResult['error'];
                     }
                 } elseif ($_FILES['product_video']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $videoError = '视频上传失败（错误码：' . $_FILES['product_video']['error'] . '），请检查文件大小或格式';
+                    $errCode = $_FILES['product_video']['error'];
+                    $errMap = [
+                        UPLOAD_ERR_INI_SIZE   => '视频文件超过服务器限制（php.ini upload_max_filesize），建议压缩视频或联系管理员',
+                        UPLOAD_ERR_FORM_SIZE  => '视频文件超过表单限制（MAX_FILE_SIZE），建议压缩视频',
+                        UPLOAD_ERR_PARTIAL    => '视频仅上传了部分，请重试',
+                        UPLOAD_ERR_NO_TMP_DIR => '服务器临时目录缺失，请联系管理员',
+                        UPLOAD_ERR_CANT_WRITE => '服务器写入失败，请联系管理员',
+                    ];
+                    $videoError = $errMap[$errCode] ?? '视频上传失败（错误码：' . $errCode . '），请重试或联系管理员';
                 }
             }
             if (!$error && $videoUrl === null && !empty($_POST['video_link'])) {
@@ -588,20 +604,31 @@ function uploadVideo($file) {
 
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowedExts)) {
+        error_log("uploadVideo: 扩展名不匹配 ext=$ext");
         return ['success' => false, 'error' => '只允许上传 MP4、WebM、OGG 格式的视频'];
     }
     if (!in_array($file['type'], $allowedTypes)) {
+        error_log("uploadVideo: MIME类型不匹配 type={$file['type']}");
         return ['success' => false, 'error' => '视频格式不支持：' . htmlspecialchars($file['type'])];
     }
     if ($file['size'] > $maxSize) {
+        error_log("uploadVideo: 文件过大 size={$file['size']}");
         return ['success' => false, 'error' => '视频大小不能超过 50MB'];
     }
 
     $uploadDir = __DIR__ . '/../assets/uploads/videos/';
+    error_log("uploadVideo: 目标目录=$uploadDir, 可写=" . (is_writable(dirname($uploadDir)) ? '是' : '否'));
+
     if (!is_dir($uploadDir)) {
-        if (!@mkdir($uploadDir, 0777, true)) {
-            return ['success' => false, 'error' => '无法创建视频上传目录，请联系管理员检查权限'];
+        if (!@mkdir($uploadDir, 0755, true)) {
+            $mkdirError = error_get_last();
+            error_log("uploadVideo: mkdir 失败 dir=$uploadDir error=" . json_encode($mkdirError));
+            return ['success' => false, 'error' => '无法创建视频上传目录，请联系管理员检查目录权限'];
         }
+    }
+    if (!is_writable($uploadDir)) {
+        error_log("uploadVideo: 目录不可写 dir=$uploadDir");
+        return ['success' => false, 'error' => '视频上传目录无写入权限，请联系管理员'];
     }
 
     $fileName = uniqid() . '_' . time() . '.' . $ext;
@@ -609,9 +636,12 @@ function uploadVideo($file) {
     $relativePath = 'assets/uploads/videos/' . $fileName;
 
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
+        error_log("uploadVideo: 上传成功 path=$filePath");
         return ['success' => true, 'file_path' => $relativePath];
     }
-    return ['success' => false, 'error' => '视频保存失败'];
+    $moveError = error_get_last();
+    error_log("uploadVideo: move_uploaded_file 失败 from={$file['tmp_name']} to=$filePath error=" . json_encode($moveError));
+    return ['success' => false, 'error' => '视频保存失败，请稍后重试或联系管理员'];
 }
 
 // Base64 解码为图片（视频截帧用）
