@@ -159,6 +159,12 @@ if (isset($_SESSION['user_id'])) {
             overflow: hidden;
         }
 
+        .product-category-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 13px; color: #64748b; margin-bottom: 10px;
+            background: #f1f5f9; padding: 4px 10px; border-radius: 6px;
+        }
+
         /* 销量浏览横排 */
         .product-meta {
             display: flex;
@@ -463,6 +469,20 @@ if (isset($_SESSION['user_id'])) {
             background: #ff5252;
             transform: translateY(-2px);
         }
+
+        .owner-actions {
+            display: flex; gap: 8px; margin-top: 12px; padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .owner-btn {
+            flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .owner-btn-edit { background: #f1f5f9; color: #475569; }
+        .owner-btn-edit:hover { background: #e2e8f0; color: #1e293b; text-decoration: none; }
+        .owner-btn-copy { background: #fff7ed; color: #c2410c; }
+        .owner-btn-copy:hover { background: #fed7aa; color: #9a3412; text-decoration: none; }
         
         .btn-buy {
             background: #e74c3c;
@@ -642,13 +662,13 @@ if (isset($_SESSION['user_id'])) {
                 <?php if (!empty($productDetail['video_url'])): 
                     $videoUrl = $productDetail['video_url'];
                     $isExternalVideo = preg_match('#^(https?:)?//#i', $videoUrl);
-                    $videoSrc = $isExternalVideo ? $videoUrl : '../' . $videoUrl;
+                    $videoSrc = $isExternalVideo ? $videoUrl : '/' . ltrim($videoUrl, '/');
                     $videoType = $isExternalVideo ? 'video/mp4' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'webm' ? 'video/webm' : (pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogv' || pathinfo($videoUrl, PATHINFO_EXTENSION) === 'ogg' ? 'video/ogg' : 'video/mp4'));
                 ?>
                     <!-- 有视频时优先展示视频 -->
                     <div class="product-video-wrapper" style="position:relative;margin-bottom:15px;">
                         <span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;padding:3px 10px;border-radius:4px;font-size:12px;z-index:2;">🎬 视频介绍</span>
-                        <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-height:400px;border-radius:8px;background:#000;">
+                        <video controls poster="<?php echo '/' . ltrim($mainImagePath, '/'); ?>" style="width:100%;max-height:400px;border-radius:8px;background:#000;">
                             <source src="<?php echo htmlspecialchars($videoSrc); ?>" type="<?php echo htmlspecialchars($videoType); ?>">
                             您的浏览器不支持视频播放
                         </video>
@@ -680,6 +700,12 @@ if (isset($_SESSION['user_id'])) {
             <!-- 商品信息区域 -->
             <div class="product-info">
                 <h1 class="product-title"><?php echo htmlspecialchars($productDetail['name']); ?></h1>
+
+                <?php if (!empty($productDetail['category_name'])): ?>
+                <div class="product-category-badge">
+                    <i class="fas fa-tag"></i> <?php echo htmlspecialchars($productDetail['category_name']); ?>
+                </div>
+                <?php endif; ?>
 
                 <div class="product-meta">
                     <div><i class="fas fa-chart-line"></i> 销量: <?php echo number_format($productDetail['sold_count']); ?></div>
@@ -753,6 +779,17 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </form>
 
+                <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == ($productDetail['shop_owner_id'] ?? 0)): ?>
+                <div class="owner-actions">
+                    <a href="../shop/products.php?action=edit&id=<?php echo $productDetail['shop_id']; ?>&product_id=<?php echo $productId; ?>" class="owner-btn owner-btn-edit">
+                        <i class="fas fa-edit"></i> 编辑商品
+                    </a>
+                    <a href="../shop/products.php?action=add&id=<?php echo $productDetail['shop_id']; ?>&copy_from=<?php echo $productId; ?>" class="owner-btn owner-btn-copy">
+                        <i class="fas fa-clone"></i> 卖同款
+                    </a>
+                </div>
+                <?php endif; ?>
+
                 <!-- 店铺信息（右侧精简版） -->
                 <?php if ($shopInfo): ?>
                 <div class="info-card">
@@ -810,13 +847,13 @@ if (isset($_SESSION['user_id'])) {
                 <?php if (!empty($productDetail['video_url'])): 
                     $videoUrl2 = $productDetail['video_url'];
                     $isExternalVideo2 = preg_match('#^(https?:)?//#i', $videoUrl2);
-                    $videoSrc2 = $isExternalVideo2 ? $videoUrl2 : '../' . $videoUrl2;
+                    $videoSrc2 = $isExternalVideo2 ? $videoUrl2 : '/' . ltrim($videoUrl2, '/');
                     $ext2 = strtolower(pathinfo($videoUrl2, PATHINFO_EXTENSION));
                     $videoType2 = $ext2 === 'webm' ? 'video/webm' : ($ext2 === 'ogv' || $ext2 === 'ogg' ? 'video/ogg' : 'video/mp4');
                 ?>
                     <div style="margin-top: 30px;">
                         <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-video"></i> 视频介绍</h4>
-                        <video controls poster="<?php echo '../' . htmlspecialchars($mainImagePath); ?>" style="width:100%;max-width:640px;border-radius:8px;background:#000;">
+                        <video controls poster="<?php echo '/' . ltrim($mainImagePath, '/'); ?>" style="width:100%;max-width:640px;border-radius:8px;background:#000;">
                             <source src="<?php echo htmlspecialchars($videoSrc2); ?>" type="<?php echo htmlspecialchars($videoType2); ?>">
                             您的浏览器不支持视频播放
                         </video>

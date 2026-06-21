@@ -747,6 +747,18 @@ require_once '../includes/header.php';
                     }
                 ?>
                 <?php endif; ?>
+                <?php if ($action === 'add' && isset($_GET['copy_from'])): ?>
+                <?php 
+                    $copyFromId = intval($_GET['copy_from']);
+                    $copyProduct = $product->getProductById($copyFromId, true);
+                    if ($copyProduct && in_array($copyProduct['shop_id'], array_column($shop->getUserShops($_SESSION['user_id']), 'id'))) {
+                        $copyCategoryId = $copyProduct['category_id'];
+                        $copyPriceBct = $copyProduct['price_bct'];
+                        $copyPriceCny = $copyProduct['price_cny'];
+                        $copyStock = $copyProduct['stock'];
+                    }
+                ?>
+                <?php endif; ?>
                 <!-- 添加/编辑商品表单 -->
                 <form method="POST" enctype="multipart/form-data" id="productForm">
                 <div class="card">
@@ -822,7 +834,7 @@ require_once '../includes/header.php';
                                                     <div class="input-group">
                                                         <div class="input-group-prepend"><span class="input-group-text">BCT</span></div>
                                                         <input type="number" class="form-control" id="price_bct" name="price_bct"
-                                                               value="<?= isset($editProduct) ? intval($editProduct['price_bct']) : (isset($_POST['price_bct']) ? intval($_POST['price_bct']) : '') ?>"
+                                                               value="<?= isset($editProduct) ? intval($editProduct['price_bct']) : (isset($_POST['price_bct']) ? intval($_POST['price_bct']) : (isset($copyPriceBct) ? $copyPriceBct : '')) ?>"
                                                                step="1" min="1" required placeholder="例如 100">
                                                     </div>
                                                 </div>
@@ -833,7 +845,7 @@ require_once '../includes/header.php';
                                                     <div class="input-group">
                                                         <div class="input-group-prepend"><span class="input-group-text">¥</span></div>
                                                         <input type="number" class="form-control" id="price_cny" name="price_cny"
-                                                               value="<?= isset($editProduct) ? $editProduct['price_cny'] : (isset($_POST['price_cny']) ? $_POST['price_cny'] : '') ?>"
+                                                               value="<?= isset($editProduct) ? $editProduct['price_cny'] : (isset($_POST['price_cny']) ? $_POST['price_cny'] : (isset($copyPriceCny) ? $copyPriceCny : '')) ?>"
                                                                step="0.01" min="0" placeholder="可选">
                                                     </div>
                                                 </div>
@@ -850,7 +862,7 @@ require_once '../includes/header.php';
                                                             <optgroup label="📁 <?= htmlspecialchars($parent['name']) ?>">
                                                                 <?php foreach ($parent['children'] as $child): ?>
                                                                     <option value="<?= $child['id'] ?>"
-                                                                        <?= (isset($editProduct) && $editProduct['category_id'] == $child['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $child['id']) ? 'selected' : '' ?>>
+                                                                        <?= (isset($editProduct) && $editProduct['category_id'] == $child['id']) || (isset($_POST['category_id']) && $_POST['category_id'] == $child['id']) || (isset($copyCategoryId) && $copyCategoryId == $child['id']) ? 'selected' : '' ?>>
                                                                         &nbsp;&nbsp;<?= htmlspecialchars($child['name']) ?>
                                                                     </option>
                                                                 <?php endforeach; ?>
@@ -863,7 +875,7 @@ require_once '../includes/header.php';
                                                 <div class="form-group">
                                                     <label for="stock">库存数量 *</label>
                                                     <input type="number" class="form-control" id="stock" name="stock"
-                                                           value="<?= isset($editProduct) ? $editProduct['stock'] : (isset($_POST['stock']) ? $_POST['stock'] : 0) ?>"
+                                                           value="<?= isset($editProduct) ? $editProduct['stock'] : (isset($_POST['stock']) ? $_POST['stock'] : (isset($copyStock) ? $copyStock : 0)) ?>"
                                                            min="0" required>
                                                 </div>
                                             </div>
