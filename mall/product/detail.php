@@ -163,6 +163,10 @@ if (isset($_SESSION['user_id'])) {
             display: inline-flex; align-items: center; gap: 4px;
             font-size: 13px; color: #64748b; margin-bottom: 10px;
             background: #f1f5f9; padding: 4px 10px; border-radius: 6px;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .product-category-badge:hover {
+            background: #e2e8f0; color: #1e293b; text-decoration: none;
         }
 
         /* 销量浏览横排 */
@@ -702,9 +706,9 @@ if (isset($_SESSION['user_id'])) {
                 <h1 class="product-title"><?php echo htmlspecialchars($productDetail['name']); ?></h1>
 
                 <?php if (!empty($productDetail['category_name'])): ?>
-                <div class="product-category-badge">
+                <a href="list.php?category_id=<?php echo $productDetail['category_id']; ?>" class="product-category-badge">
                     <i class="fas fa-tag"></i> <?php echo htmlspecialchars($productDetail['category_name']); ?>
-                </div>
+                </a>
                 <?php endif; ?>
 
                 <div class="product-meta">
