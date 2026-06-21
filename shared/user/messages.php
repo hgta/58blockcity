@@ -134,15 +134,15 @@ $typeLabels = [
                 $typeInfo = $typeLabels[$m['type']] ?? ['label' => $m['type'], 'icon' => 'bell', 'color' => '#6b7280'];
                 $link = $m['related_url'] ?? '#';
                 if ($m['type'] === 'visit_request') {
-                    $link = "visits.php?circle_id=" . intval($m['related_id']);
+                    $link = "https://v.58.tl/user/visits.php?circle_id=" . intval($m['related_id']);
                 } elseif (in_array($m['type'], ['visit_confirm', 'return_confirm'])) {
-                    $link = "visit_detail.php?id=" . intval($m['related_id']);
+                    $link = "https://v.58.tl/user/visit_detail.php?id=" . intval($m['related_id']);
                 } elseif ($m['type'] === 'order_paid' || $m['type'] === 'order_done') {
-                    $link = "../shop/orders.php?id=" . intval($m['related_id']);
+                    $link = "https://mall.58.tl/shop/orders.php?id=" . intval($m['related_id']);
                 } elseif ($m['type'] === 'order_shipped') {
-                    $link = "order_detail.php?id=" . intval($m['related_id']);
+                    $link = "https://mall.58.tl/user/order_detail.php?id=" . intval($m['related_id']);
                 } elseif ($m['type'] === 'new_review') {
-                    $link = "../product/detail.php?id=" . intval($m['related_id']);
+                    $link = "https://mall.58.tl/product/detail.php?id=" . intval($m['related_id']);
                 }
             ?>
                 <a href="<?= $link ?>" class="msg-item <?= empty($m['is_read']) ? 'unread' : '' ?>">
