@@ -68,5 +68,39 @@ if (!empty($site_config['footer_extra'])) {
 <script src="/city/city.js"></script>
 <script>getCityInfo();</script>
 
+<script>
+(function(){
+    var toggle = document.getElementById('menuToggle');
+    var actions = document.getElementById('headerActions');
+    var overlay = document.getElementById('menuOverlay');
+    if (!toggle || !actions) return;
+
+    function openMenu() {
+        actions.classList.add('open');
+        if (overlay) overlay.classList.add('open');
+        toggle.innerHTML = '✕';
+        toggle.setAttribute('aria-expanded', 'true');
+    }
+    function closeMenu() {
+        actions.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+        toggle.innerHTML = '☰';
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        actions.classList.contains('open') ? closeMenu() : openMenu();
+    });
+    if (overlay) {
+        overlay.addEventListener('click', closeMenu);
+    }
+    document.addEventListener('click', function(e) {
+        if (actions.classList.contains('open') && !actions.contains(e.target) && e.target !== toggle) {
+            closeMenu();
+        }
+    });
+})();
+</script>
+
 </body>
 </html>

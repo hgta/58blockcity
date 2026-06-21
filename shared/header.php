@@ -89,7 +89,41 @@ header { background:<?= $theme ?>; color:white; padding:15px 0; box-shadow:0 2px
 .city-location-bar { background:#fff3e0; color:#e65100; text-align:center; padding:8px; font-size:13px; }
 .city-location-bar a { color:#e65100; font-weight:bold; }
 main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
-@media(max-width:768px){ .header-container{flex-wrap:wrap} .nav-button{font-size:11px; padding:5px 8px} }
+
+/* 汉堡菜单按钮 */
+.menu-toggle {
+    display: none;
+    background: none; border: none; color: white; font-size: 24px;
+    cursor: pointer; padding: 8px 12px; border-radius: 8px;
+    line-height: 1;
+}
+.menu-toggle:hover { background: rgba(255,255,255,0.15); }
+
+@media(max-width:768px){
+    .header-container{flex-wrap:wrap}
+    .menu-toggle { display: block; }
+    .header-actions {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        padding-top: 12px;
+        gap: 2px;
+    }
+    .header-actions.open { display: flex; }
+    .header-actions .nav-button {
+        display: flex; width: 100%; margin: 0;
+        padding: 12px 16px; font-size: 15px; border-radius: 10px;
+        justify-content: flex-start;
+    }
+    .header-actions .nav-button i { font-size: 16px; width: 24px; text-align: center; }
+    /* 菜单遮罩 */
+    .menu-overlay {
+        display: none;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.3); z-index: 99;
+    }
+    .menu-overlay.open { display: block; }
+}
 </style>
 
 <header>
@@ -101,7 +135,8 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                 <span><?= htmlspecialchars($site_config['logo_tag'] ?? '') ?></span>
             </div>
         </div>
-        <div class="header-actions">
+        <button class="menu-toggle" id="menuToggle" aria-label="导航菜单">☰</button>
+        <div class="header-actions" id="headerActions">
             <?php foreach ($nav_links as $nav): ?>
                 <a href="<?= $nav['url'] ?>" class="nav-button">
                     <?php if (!empty($nav['icon'])): ?><i class="fas fa-<?= $nav['icon'] ?>"></i><?php endif; ?>
@@ -150,6 +185,8 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
         </div>
     </div>
 </header>
+
+<div class="menu-overlay" id="menuOverlay"></div>
 
 <div class="city-location-bar" id="cityLocationBar">
     欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>

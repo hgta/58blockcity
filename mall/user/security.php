@@ -189,6 +189,13 @@ require_once '../includes/header.php';
 .tip-item i { font-size: 20px; margin-top: 2px; }
 .tip-item h6 { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
 .tip-item p { margin: 0; }
+
+@media(max-width:768px){
+    .row { flex-direction: column; }
+    .col-md-3, .col-md-6, .col-md-9 { width: 100%; max-width: 100%; flex: none; }
+    .form-control { width: 100%; font-size: 16px; }
+    .btn { min-height: 44px; width: 100%; }
+}
 </style>
 
 <?php require_once '../includes/footer.php'; ?>

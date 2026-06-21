@@ -246,6 +246,13 @@ require_once '../includes/header.php';
     color: #fff; display: flex; align-items: center; justify-content: center;
     font-size: 48px; font-weight: 700; margin: 0 auto;
 }
+
+@media(max-width:768px){
+    .row { flex-direction: column; }
+    .col-md-3, .col-md-4, .col-md-6, .col-md-9 { width: 100%; max-width: 100%; flex: none; }
+    .form-control, .form-select { width: 100%; font-size: 16px; }
+    .btn { min-height: 44px; width: 100%; }
+}
 </style>
 
 <?php require_once '../includes/footer.php'; ?>

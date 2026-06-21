@@ -177,6 +177,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .required {
             color: #e74c3c;
         }
+        @media(max-width:768px){
+            .row { flex-direction: column; }
+            .col-md-4, .col-md-6, .col-md-8 { width: 100%; max-width: 100%; flex: none; }
+            .form-control, .form-select { width: 100%; font-size: 16px; }
+            .btn { min-height: 44px; width: 100%; }
+            textarea.form-control { min-height: 100px; }
+        }
     </style>
 </head>
 <body>

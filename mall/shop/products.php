@@ -1547,6 +1547,29 @@ textarea.form-control { resize: vertical; min-height: 120px; }
     padding: 20px;
     text-align: center;
 }
+
+/* 移动端适配 */
+@media(max-width:768px){
+    .product-toolbar { flex-direction: column; gap: 10px; }
+    .toolbar-left { width: 100%; flex-wrap: wrap; }
+    .toolbar-right { width: 100%; flex-wrap: wrap; gap: 8px; }
+    .filter-tabs { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; padding-bottom: 4px; }
+    .filter-tab { white-space: nowrap; flex-shrink: 0; }
+    .search-box-sm { width: 100%; }
+    .search-box-sm input { width: 100%; }
+    .check-all-wrap { width: 100%; margin-bottom: 4px; }
+    .batch-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+    .pagination-wrap { flex-direction: column; align-items: center; gap: 8px; }
+}
+@media(max-width:480px){
+    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .product-card .product-body { padding: 10px; }
+    .product-card .product-title { font-size: 13px; }
+    .section-title { font-size: 14px; }
+    .form-group label { font-size: 12px; }
+    .form-control { font-size: 13px; padding: 8px 10px; }
+    .btn-lg { padding: 8px 16px; font-size: 14px; }
+}
 </style>
 
 <script>

@@ -243,11 +243,11 @@ require_once '../includes/header.php';
                                         $hasBlocks = !empty($userBlocksByCity[$cityId]);
                                         ?>
                                         <tr class="payment-setting-row" data-city-id="<?= $cityId ?>" data-city="<?= $cityCode ?>">
-                                            <td>
+                                            <td data-label="城市">
                                                 <strong><?= htmlspecialchars($cityName) ?></strong>
                                                 <input type="hidden" name="payment_cities[]" value="<?= $cityCode ?>">
                                             </td>
-                                            <td>
+                                            <td data-label="接收区块">
                                                 <select class="form-control form-control-sm block-id-select"
                                                         name="block_id[<?= $cityCode ?>]"
                                                         data-city="<?= $cityCode ?>"
@@ -272,7 +272,7 @@ require_once '../includes/header.php';
                                                     <?php endif; ?>
                                                 </small>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-center" data-label="启用">
                                                 <div class="custom-control custom-switch">
                                                     <input type="checkbox" class="custom-control-input payment-toggle"
                                                            id="is_active_<?= $cityCode ?>"
@@ -374,6 +374,29 @@ require_once '../includes/header.php';
 .mb-0 { margin-bottom: 0 !important; }
 .text-center { text-align: center !important; }
 .text-muted { color: #6c757d !important; }
+
+/* 移动端适配 */
+@media(max-width:768px){
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #paymentSettingsTable thead { display: none; }
+    #paymentSettingsTable tbody tr {
+        display: block; margin-bottom: 12px;
+        border: 1px solid #dee2e6; border-radius: 8px;
+        padding: 12px; background: #fff;
+    }
+    #paymentSettingsTable tbody td {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 0; border: none; font-size: 14px;
+    }
+    #paymentSettingsTable tbody td::before {
+        content: attr(data-label);
+        font-weight: 600; color: #475569; font-size: 13px;
+        flex-shrink: 0; margin-right: 12px;
+    }
+    #citySearchBox { flex-direction: column; }
+    #citySearchBox input { max-width: 100% !important; }
+    .custom-switch { padding-left: 44px; }
+}
 </style>
 
 <script>
@@ -431,12 +454,12 @@ function createCityRowHTML(cityCode, city) {
         : '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 您在该城市暂无已认领区块</span> <a href="https://block.58.tl/block/city.php?id=' + cityId + '" target="_blank" class="text-primary" style="text-decoration:underline;">去认领 &rarr;</a>';
 
     return '<tr class="payment-setting-row" data-city-id="' + cityId + '" data-city="' + cityCode + '">' +
-        '<td><strong>' + cityName + '</strong><input type="hidden" name="payment_cities[]" value="' + cityCode + '"></td>' +
-        '<td>' +
+        '<td data-label="城市"><strong>' + cityName + '</strong><input type="hidden" name="payment_cities[]" value="' + cityCode + '"></td>' +
+        '<td data-label="接收区块">' +
             '<select class="form-control form-control-sm block-id-select" name="block_id[' + cityCode + ']" data-city="' + cityCode + '" data-city-id="' + cityId + '"' + (hasBlocks ? '' : ' disabled') + '>' + options + '</select>' +
             '<small class="form-text text-muted block-hint" data-city="' + cityCode + '">' + hint + '</small>' +
         '</td>' +
-        '<td class="text-center">' +
+        '<td class="text-center" data-label="启用">' +
             '<div class="custom-control custom-switch">' +
                 '<input type="checkbox" class="custom-control-input payment-toggle" id="is_active_' + cityCode + '" name="is_active[' + cityCode + ']" value="1" data-city="' + cityCode + '">' +
                 '<label class="custom-control-label" for="is_active_' + cityCode + '"></label>' +
