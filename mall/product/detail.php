@@ -30,9 +30,15 @@ if (!$productId) {
 $productDetail = $product->getProductById($productId);
 
 if (!$productDetail) {
-    header("Location: list.php");
+    http_response_code(404);
+    include '../../404.php';
     exit();
 }
+
+// 旧 URL 301 跳转到规范 URL
+require_once '../../classes/SeoHelper.php';
+$canonicalUrl = SeoHelper::productUrl($productId, $productDetail['name'] ?? '');
+SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 // 增加商品浏览量
 $product->incrementViewCount($productId);
@@ -127,6 +133,45 @@ $cartCount = 0;
 if (isset($_SESSION['user_id'])) {
     $cartCount = $cart->getItemCount($_SESSION['user_id']);
 }
+
+// SEO 数据准备
+require_once '../../classes/SeoHelper.php';
+$productName = htmlspecialchars($productDetail['name'] ?? '商品详情');
+$productDesc = SeoHelper::excerpt($productDetail['description'] ?? '', 100);
+$mainImageUrl = SeoHelper::fullUrl($mainImagePath ?? '/assets/images/default-product.jpg');
+$canonicalUrl = SeoHelper::productUrl($productId, $productDetail['name']);
+$avgRating = round($reviewStats['avg_rating'] ?? 0, 1);
+
+// Product JSON-LD 结构化数据
+$productSchema = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Product',
+    'name' => $productName,
+    'image' => $mainImageUrl,
+    'description' => $productDesc,
+    'url' => $canonicalUrl,
+    'brand' => [
+        '@type' => 'Brand',
+        'name' => htmlspecialchars($shopInfo['shop_name'] ?? '58人气值商城'),
+    ],
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => $productDetail['price'] ?? '0',
+        'priceCurrency' => 'CNY',
+        'availability' => 'https://schema.org/InStock',
+        'seller' => [
+            '@type' => 'Store',
+            'name' => htmlspecialchars($shopInfo['shop_name'] ?? '58人气值商城'),
+        ],
+    ],
+];
+if ($reviewCount > 0) {
+    $productSchema['aggregateRating'] = [
+        '@type' => 'AggregateRating',
+        'ratingValue' => (string)$avgRating,
+        'reviewCount' => (string)$reviewCount,
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -134,7 +179,18 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($productDetail['name']); ?> - 58人气值商城</title>
+    <title><?php echo $productName; ?> - 58人气值商城</title>
+    <meta name="description" content="<?php echo SeoHelper::description($productDesc, '58人气值商城'); ?>">
+    <meta name="keywords" content="58,人气值,BCT,<?php echo $productName; ?>,商城,区块城市">
+    <link rel="canonical" href="<?php echo $canonicalUrl; ?>">
+    <meta property="og:title" content="<?php echo $productName; ?> - 58人气值商城">
+    <meta property="og:description" content="<?php echo SeoHelper::description($productDesc, '58人气值商城'); ?>">
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="<?php echo $canonicalUrl; ?>">
+    <meta property="og:image" content="<?php echo $mainImageUrl; ?>">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="800">
+    <script type="application/ld+json"><?php echo json_encode($productSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
     <style>
         /* 人气值符号样式 */
         .bct-symbol {

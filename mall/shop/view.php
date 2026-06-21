@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../includes/functions.php';
+require_once '../../classes/SeoHelper.php';
 
 // 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
 if (!function_exists('normalizeImageUrl')) {
@@ -32,9 +33,14 @@ $product = new Product($pdo);
 // 获取店铺信息
 $shopInfo = $shop->getShopById($shopId);
 if (!$shopInfo) {
-    header('Location: list.php');
+    http_response_code(404);
+    include '../../404.php';
     exit;
 }
+
+// 旧 URL 301 跳转到规范 URL
+$canonicalUrl = SeoHelper::shopUrl($shopId, $shopInfo['shop_name'] ?? '');
+SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 // 检查店铺状态
 if ($shopInfo['status'] !== 'active') {
@@ -61,8 +67,17 @@ if (!isset($errorMessage)) {
     $currentPageProducts = [];
 }
 
-// 增加店铺浏览数（可选）
-// $shop->incrementViewCount($shopId);
+// 动态 SEO 配置
+$shopName = htmlspecialchars($shopInfo['shop_name'] ?? '店铺详情');
+$shopDesc = SeoHelper::excerpt($shopInfo['shop_description'] ?? '', 100);
+$shopLogo = normalizeImageUrl($shopInfo['shop_logo'] ?? '');
+$canonicalUrl = SeoHelper::shopUrl($shopId, $shopInfo['shop_name']);
+$site_config['title']       = SeoHelper::title($shopName . ' - 58人气值商城店铺');
+$site_config['description'] = SeoHelper::description($shopDesc, '58人气值商城');
+$site_config['keywords']    = '58,人气值,BCT,' . $shopName . ',店铺,商城,区块城市';
+$site_config['canonical_url'] = $canonicalUrl;
+$site_config['og_image']    = $shopLogo;
+$site_config['og_type']     = 'website';
 
 require_once '../includes/header.php';
 ?>

@@ -5,6 +5,7 @@ require_once 'includes/auth.php';
 require_once '../classes/City.php';
 require_once '../classes/Block.php';
 require_once '../classes/User.php';
+require_once '../classes/SeoHelper.php';
 
 // 获取城市拼音从URL
 //$city_pinyin = basename($_SERVER['PHP_SELF'], '.php');
@@ -23,6 +24,10 @@ if (!$city_info) {
     include '../404.php';
     exit();
 }
+
+// 旧 URL 301 跳转到规范 URL
+$canonicalUrl = SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin);
+SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 $city_id = $city_info['id'];
 $city_name = $city_info['name'];

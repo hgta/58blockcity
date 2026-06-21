@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Category.php';
+require_once '../../classes/SeoHelper.php';
 
 // 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
@@ -218,6 +219,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
 
                 if ($productId) {
                     $success = '商品添加成功！';
+                    // 百度主动推送
+                    if (class_exists('SeoHelper')) {
+                        SeoHelper::baiduPush(SeoHelper::productUrl($productId, $productData['name'] ?? ''));
+                    }
                     // 重定向到商品列表
                     header('Location: products.php?id=' . $shopId . '&success=' . urlencode($success));
                     exit;
@@ -374,6 +379,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                 // 更新商品
                 if ($product->updateProduct($productId, $updateData)) {
                     $success = '商品更新成功！';
+                    // 百度主动推送
+                    if (class_exists('SeoHelper')) {
+                        SeoHelper::baiduPush(SeoHelper::productUrl($productId, $updateData['name'] ?? ''));
+                    }
                     // 重定向到商品列表
                     header('Location: products.php?id=' . $shopId . '&success=' . urlencode($success));
                     exit;

@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/City.php';
+require_once '../../classes/SeoHelper.php';
 
 checkLogin();
 

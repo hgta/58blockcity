@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../../config/database.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Category.php';
-
+require_once '../../classes/SeoHelper.php';
  
 
 $shop = new Shop($pdo);
@@ -54,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = $shop->createShop($userId, $data);
             
             if ($result) {
+                // 百度主动推送
+                if (class_exists('SeoHelper')) {
+                    SeoHelper::baiduPush(SeoHelper::shopUrl($result, $shopName));
+                }
                 header("Location: manage.php");
                 exit();
             } else {

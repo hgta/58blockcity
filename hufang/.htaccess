@@ -1,1 +1,8 @@
- 
+RewriteEngine On
+RewriteBase /
+
+# 互访圈详情伪静态
+RewriteRule ^circle/([0-9]+)-.*\.html$ circles/view.php?id=$1 [L,QSA]
+
+# 自定义 404
+ErrorDocument 404 /404.php

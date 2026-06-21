@@ -1,1 +1,36 @@
- 
+RewriteEngine On
+RewriteBase /
+
+# Sitemap 重写：sitemap.xml 实际执行 sitemap.php
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# 城市页伪静态（兼容旧 URL）
+RewriteRule ^city/([a-z]+)\.html$ city.php?pinyin=$1 [L,QSA]
+
+# 商城商品伪静态
+RewriteRule ^mall/product/([0-9]+)-.*\.html$ mall/product/detail.php?id=$1 [L,QSA]
+
+# 商城店铺伪静态
+RewriteRule ^mall/shop/([0-9]+)-.*\.html$ mall/shop/view.php?id=$1 [L,QSA]
+
+# 互访圈伪静态
+RewriteRule ^circle/([0-9]+)-.*\.html$ hufang/circles/view.php?id=$1 [L,QSA]
+
+# NFT 伪静态
+RewriteRule ^nft/([0-9]+)-.*\.html$ nft/nft/view.php?id=$1 [L,QSA]
+
+# 强制 HTTPS（如服务器已配置 SSL 可取消注释）
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
+
+# 规范化 www 与非 www（请按实际主域名选择其一）
+# 选项 A：强制 www
+# RewriteCond %{HTTP_HOST} ^58\.tl$ [NC]
+# RewriteRule ^(.*)$ https://www.58.tl/$1 [L,R=301]
+
+# 选项 B：强制非 www
+# RewriteCond %{HTTP_HOST} ^www\.58\.tl$ [NC]
+# RewriteRule ^(.*)$ https://58.tl/$1 [L,R=301]
+
+# 自定义 404 页面
+ErrorDocument 404 /404.php

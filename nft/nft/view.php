@@ -7,6 +7,7 @@ require_once '../../classes/City.php';
 require_once '../../classes/PurchaseRequest.php';
 require_once '../../classes/Comment.php';
 require_once '../../classes/Block.php';
+require_once '../../classes/SeoHelper.php';
 
 checkLogin();
 
@@ -23,9 +24,26 @@ $block = new Block($pdo);
 // 获取NFT详情
 $nftInfo = $nft->getNftById($nftId);
 if (!$nftInfo) {
-    header("Location: /nft/claim_list.php");
+    http_response_code(404);
+    include '../../../404.php';
     exit;
 }
+
+// 旧 URL 301 跳转到规范 URL
+$canonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
+SeoHelper::redirectIfNotCanonical($canonicalUrl);
+
+// SEO 配置
+$nftName = htmlspecialchars($nftInfo['name'] ?? 'NFT详情');
+$nftDesc = SeoHelper::excerpt($nftInfo['description'] ?? '', 100);
+$nftImage = SeoHelper::fullUrl($nftInfo['image_url'] ?? $nftInfo['main_image'] ?? '/assets/images/og-nft.jpg');
+$canonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
+$site_config['title']       = SeoHelper::title($nftName . ' - 58 NFT');
+$site_config['description'] = SeoHelper::description($nftDesc, '58 NFT头像市场');
+$site_config['keywords']    = '58,NFT,头像,数字收藏,' . $nftName . ',区块城市';
+$site_config['canonical_url'] = $canonicalUrl;
+$site_config['og_image']    = $nftImage;
+$site_config['og_type']     = 'website';
 
 // 获取统计数据
 $claimedCities = $nft->getClaimedCities($nftId);

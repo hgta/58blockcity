@@ -1,1 +1,14 @@
- 
+RewriteEngine On
+RewriteBase /
+
+# 商品详情伪静态
+RewriteRule ^product/([0-9]+)-.*\.html$ product/detail.php?id=$1 [L,QSA]
+
+# 店铺详情伪静态
+RewriteRule ^shop/([0-9]+)-.*\.html$ shop/view.php?id=$1 [L,QSA]
+
+# 商品列表分类页（可选）
+RewriteRule ^product/category/([0-9]+)-.*\.html$ product/list.php?category=$1 [L,QSA]
+
+# 自定义 404
+ErrorDocument 404 /404.php

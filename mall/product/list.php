@@ -49,14 +49,33 @@ $categories = $category->getAllCategories();
 
 // 计算总页数
 $totalPages = ceil($totalProducts / $itemsPerPage);
+
+// SEO 配置
+require_once '../../classes/SeoHelper.php';
+$categoryName = '全部商品';
+if ($categoryId && isset($categories[$categoryId])) {
+    $categoryName = htmlspecialchars($categories[$categoryId]['name']);
+} elseif (!empty($search)) {
+    $categoryName = htmlspecialchars($search) . ' 的搜索结果';
+}
+$canonicalUrl = SeoHelper::productListUrl($categoryId, $categoryName);
+$description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人气值支付，免费开店，海量商品等你发现。';
 ?>
+
 
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商品浏览 - 58人气值商城</title>
+    <title><?php echo $categoryName; ?> - 58人气值商城</title>
+    <meta name="description" content="<?php echo htmlspecialchars($description); ?>">
+    <meta name="keywords" content="58,人气值,BCT,<?php echo $categoryName; ?>,商城,区块城市">
+    <link rel="canonical" href="<?php echo $canonicalUrl; ?>">
+    <meta property="og:title" content="<?php echo $categoryName; ?> - 58人气值商城">
+    <meta property="og:description" content="<?php echo htmlspecialchars($description); ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?php echo $canonicalUrl; ?>">
     <style>
         .products-container {
             max-width: 1200px;

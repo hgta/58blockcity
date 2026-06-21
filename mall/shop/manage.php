@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Order.php';
+require_once '../../classes/SeoHelper.php';
 
 // 检查用户是否已登录（必须在输出 HTML 之前）
 if (!isset($_SESSION['user_id'])) {
@@ -86,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($shop->updateShop($shopId, $updateData)) {
                 $success = '店铺信息更新成功';
                 $userShop = $shop->getShopById($shopId);
+                // 百度主动推送
+                if (class_exists('SeoHelper')) {
+                    SeoHelper::baiduPush(SeoHelper::shopUrl($shopId, $updateData['shop_name'] ?? $userShop['shop_name']));
+                }
             } else {
                 $error = '店铺信息更新失败';
             }

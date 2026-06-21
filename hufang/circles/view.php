@@ -5,6 +5,7 @@ require_once '../../classes/Circle.php';
 require_once '../../classes/User.php';
 require_once '../../classes/Notification.php';
 require_once '../../classes/Visit.php';
+require_once '../../classes/SeoHelper.php';
 
 
 
@@ -19,9 +20,14 @@ $notification = new Notification($pdo);
 
 $circleInfo = $circle->getCircleById($circleId);
 if (!$circleInfo) {
-    header('Location: index.php');
+    http_response_code(404);
+    include '../../../404.php';
     exit;
 }
+
+// 旧 URL 301 跳转到规范 URL
+$canonicalUrl = SeoHelper::circleUrl($circleId, $circleInfo['name'] ?? '');
+SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 $ownerInfo = $user->getUserById($circleInfo['user_id']);
 $visits = $visit->getCircleVisitsById($circleId);//getCircleVisits
@@ -66,6 +72,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $
         $_SESSION['flash_message'] = '申请提交失败，请重试';
     }
 }
+
+// SEO 配置
+$circleName = htmlspecialchars($circleInfo['name'] ?? '互访圈详情');
+$circleDesc = SeoHelper::excerpt($circleInfo['description'] ?? '', 100);
+$circleCity = htmlspecialchars($circleInfo['city'] ?? '');
+$canonicalUrl = SeoHelper::circleUrl($circleId, $circleInfo['name'] ?? '');
+$site_config['title']       = SeoHelper::title($circleName . ' - 58互访圈');
+$site_config['description'] = SeoHelper::description($circleDesc, '58互访圈');
+$site_config['keywords']    = '58,互访圈,区块城市,' . $circleName . ',' . $circleCity . ',城市社交';
+$site_config['canonical_url'] = $canonicalUrl;
+$site_config['og_image']    = 'https://58.tl/assets/images/og-hufang.jpg';
+$site_config['og_type']     = 'website';
 ?>
 
 <?php require_once '../includes/header.php'; ?>

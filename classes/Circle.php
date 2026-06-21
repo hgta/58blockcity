@@ -23,7 +23,7 @@ class Circle {
                 (user_id, name, description, city, category, block_count) 
                 VALUES (?, ?, ?, ?, ?, ?)");
             
-            return $stmt->execute([
+            $stmt->execute([
                 (int)$userId, 
                 htmlspecialchars(trim($name)), 
                 htmlspecialchars(trim($description)), 
@@ -31,9 +31,10 @@ class Circle {
                 htmlspecialchars(trim($category)), 
                 (int)$blockCount
             ]);
+            return (int)$this->pdo->lastInsertId();
         } catch (PDOException $e) {
             $this->logError($e);
-            return false;
+            return 0;
         }
     }
 

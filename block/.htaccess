@@ -1,1 +1,8 @@
- 
+RewriteEngine On
+RewriteBase /
+
+# 城市页伪静态
+RewriteRule ^city/([a-z]+)\.html$ city.php?pinyin=$1 [L,QSA]
+
+# 自定义 404
+ErrorDocument 404 /404.php

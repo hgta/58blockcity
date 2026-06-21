@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/City.php';
+require_once '../../classes/SeoHelper.php';
 
 checkLogin();
 
@@ -35,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = '互访圈信息已更新！';
             // 刷新数据
             $circleInfo = $circle->getCircleById($circleId);
+            // 百度主动推送
+            if (class_exists('SeoHelper')) {
+                SeoHelper::baiduPush(SeoHelper::circleUrl($circleId, $name));
+            }
         } else {
             $error = '更新互访圈时出错，请稍后再试';
         }
