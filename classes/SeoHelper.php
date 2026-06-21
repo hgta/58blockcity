@@ -193,19 +193,58 @@ class SeoHelper
             return;
         }
         $current = self::currentUrl();
-        // 去除 index.php 等常见入口后缀，统一比较主机+路径
         $currentParts = parse_url($current);
         $canonicalParts = parse_url($canonicalUrl);
         if (!$currentParts || !$canonicalParts) {
             return;
         }
-        // 兼容 http/https 差异，只比较 host + path + query
-        $currentKey = strtolower($currentParts['host'] ?? '') . ($currentParts['path'] ?? '') . ($currentParts['query'] ?? '');
-        $canonicalKey = strtolower($canonicalParts['host'] ?? '') . ($canonicalParts['path'] ?? '') . ($canonicalParts['query'] ?? '');
+
+        // 对 path/query 做 URL 解码，避免编码差异导致误判
+        $currentKey = strtolower($currentParts['host'] ?? '')
+            . rawurldecode($currentParts['path'] ?? '')
+            . rawurldecode($currentParts['query'] ?? '');
+        $canonicalKey = strtolower($canonicalParts['host'] ?? '')
+            . rawurldecode($canonicalParts['path'] ?? '')
+            . rawurldecode($canonicalParts['query'] ?? '');
+
         if ($currentKey !== $canonicalKey) {
             header('HTTP/1.1 301 Moved Permanently');
-            header('Location: ' . $canonicalUrl);
+            // 对外跳转时确保 URL 编码安全，避免中文直接出现在 HTTP header 中
+            header('Location: ' . self::encodeUrl($canonicalUrl));
             exit;
         }
+    }
+
+    /**
+     * 对 URL 的中文/特殊字符进行安全编码，同时保留 :// / ? & = 等 URL 结构字符
+     */
+    private static function encodeUrl($url)
+    {
+        $parts = parse_url($url);
+        if (!$parts) {
+            return $url;
+        }
+        $out = ($parts['scheme'] ?? 'https') . '://';
+        if (!empty($parts['user'])) {
+            $out .= $parts['user'];
+            if (!empty($parts['pass'])) {
+                $out .= ':' . $parts['pass'];
+            }
+            $out .= '@';
+        }
+        $out .= $parts['host'] ?? '';
+        if (!empty($parts['port'])) {
+            $out .= ':' . $parts['port'];
+        }
+        if (!empty($parts['path'])) {
+            $out .= implode('/', array_map('rawurlencode', explode('/', $parts['path'])));
+        }
+        if (!empty($parts['query'])) {
+            $out .= '?' . $parts['query'];
+        }
+        if (!empty($parts['fragment'])) {
+            $out .= '#' . $parts['fragment'];
+        }
+        return $out;
     }
 }

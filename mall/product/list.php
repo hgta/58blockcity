@@ -520,7 +520,7 @@ $description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人�
                     <div class="products-grid">
                         <?php foreach ($products as $product): ?>
                             <div class="product-card">
-                                <a href="detail.php?id=<?php echo $product['id']; ?>">
+                                <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>">
                                     <img src="<?php echo '/' . ltrim($product['thumb_image'] ?: $product['image_url'] ?: 'assets/images/default-product.jpg', '/'); ?>" 
                                          alt="<?php echo htmlspecialchars($product['name']); ?>" 
                                          class="product-image" onerror="this.src='/assets/images/default-product.jpg'">
@@ -528,7 +528,7 @@ $description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人�
                                 
                                 <div class="product-info">
                                     <h3 class="product-name">
-                                        <a href="detail.php?id=<?php echo $product['id']; ?>" 
+                                        <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>" 
                                            style="color: inherit; text-decoration: none;">
                                             <?php echo htmlspecialchars($product['name']); ?>
                                         </a>
@@ -551,7 +551,7 @@ $description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人�
                                     </div>
                                     
                                     <div class="product-actions">
-                                        <a href="detail.php?id=<?php echo $product['id']; ?>" class="btn btn-detail">
+                                        <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>" class="btn btn-detail">
                                             <i class="fas fa-eye"></i> 查看详情
                                         </a>
                                         <?php if (isset($_SESSION['user_id'])): ?>
