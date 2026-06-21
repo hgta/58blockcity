@@ -706,7 +706,7 @@ if (isset($_SESSION['user_id'])) {
                 <h1 class="product-title"><?php echo htmlspecialchars($productDetail['name']); ?></h1>
 
                 <?php if (!empty($productDetail['category_name'])): ?>
-                <a href="list.php?category_id=<?php echo $productDetail['category_id']; ?>" class="product-category-badge">
+                <a href="list.php?category=<?php echo $productDetail['category_id']; ?>" class="product-category-badge">
                     <i class="fas fa-tag"></i> <?php echo htmlspecialchars($productDetail['category_name']); ?>
                 </a>
                 <?php endif; ?>
