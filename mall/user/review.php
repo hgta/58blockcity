@@ -298,7 +298,7 @@ $pageTitle = '评价订单';
                             <?php endfor; ?>
                         </div>
                         
-                        <textarea class="review-textarea" name="reviews[<?php echo $item['id']; ?>][content]" placeholder="分享您的使用体验，帮助其他买家了解商品..." maxlength="500"></textarea>
+                        <textarea class="review-textarea" name="reviews[<?php echo $item['id']; ?>][content]" placeholder="分享您的使用体验，帮助其他买家了解商品..." maxlength="500" required></textarea>
                         
                         <div class="image-upload">
                             <label class="image-upload-btn" onclick="document.getElementById('img<?php echo $item['id']; ?>').click()">

@@ -885,10 +885,13 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     </div>
                     <div style="flex:1;">
-                        <?php foreach ([5,4,3,2,1] as $star): 
-                            $count = $reviewStats["{$star}_star"] ?? 0;
+                        <?php
+                        $starKeyMap = [1 => 'one_star', 2 => 'two_star', 3 => 'three_star', 4 => 'four_star', 5 => 'five_star'];
+                        foreach ([5,4,3,2,1] as $star):
+                            $count = $reviewStats[$starKeyMap[$star]] ?? 0;
                             $percent = $reviewCount > 0 ? round($count / $reviewCount * 100) : 0;
                         ?>
+
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                                 <span style="font-size:12px;color:#666;width:24px;"><?php echo $star; ?>星</span>
                                 <div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
@@ -918,7 +921,7 @@ if (isset($_SESSION['user_id'])) {
                                 </div>
                                 <div style="margin-left:auto;font-size:12px;color:#999;"><?php echo date('Y-m-d', strtotime($r['created_at'])); ?></div>
                             </div>
-                            <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:8px;"><?php echo nl2br(htmlspecialchars($r['content'])); ?></div>
+                            <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:8px;"><?php echo !empty($r['content']) ? nl2br(htmlspecialchars($r['content'])) : '<span style="color:#999;">用户未填写文字评价</span>'; ?></div>
                             <?php if (!empty($r['images'])): 
                                 $reviewImages = json_decode($r['images'], true);
                                 if (is_array($reviewImages) && !empty($reviewImages)): 

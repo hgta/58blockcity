@@ -21,11 +21,13 @@ class Review {
                 throw new Exception("您已经评价过该商品了");
             }
             
-            $sql = "INSERT INTO reviews 
-                    (order_id, order_item_id, product_id, user_id, shop_id, rating, content, images, is_anonymous, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-            
-            $stmt = $this->pdo->prepare($sql);
+        $sql = "INSERT INTO reviews
+                (order_id, order_item_id, product_id, user_id, shop_id, rating, content, images, is_anonymous, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $data['rating'] = max(1, min(5, intval($data['rating'] ?? 5)));
+
+        $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 $data['order_id'],
                 $data['order_item_id'],
@@ -224,9 +226,11 @@ class Review {
             }
         }
 
-        $sql = "INSERT INTO reviews 
+        $sql = "INSERT INTO reviews
                 (order_id, order_item_id, product_id, user_id, shop_id, rating, content, images, is_anonymous, created_at)
                 VALUES (NULL, NULL, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $data['rating'] = max(1, min(5, intval($data['rating'] ?? 5)));
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
