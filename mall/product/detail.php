@@ -93,9 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
         }
     }
 
+    // 评分可选，未选时默认5星
     if ($rating < 1 || $rating > 5) {
-        $reviewError = '请选择评分';
-    } elseif (empty($content)) {
+        $rating = 5;
+    }
+    if (empty($content)) {
         $reviewError = '请输入评价内容';
     } else {
         try {
@@ -109,10 +111,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
                 'is_anonymous' => $isAnonymous,
             ]);
             $reviewSuccess = '评价发布成功！';
-            // 刷新评价数据
+            // 刷新评价数据 + 商品评分
             $reviews = $review->getProductReviews($productId, 1, 10);
             $reviewCount = $review->getProductReviewCount($productId);
             $reviewStats = $review->getProductReviewStats($productId);
+            $productDetail = $product->getProductById($productId);
         } catch (Exception $e) {
             $reviewError = $e->getMessage();
         }
@@ -960,7 +963,7 @@ if (isset($_SESSION['user_id'])) {
                 <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="submit_review" value="1">
                     <div style="margin-bottom:10px;">
-                        <label style="font-size:13px;color:#666;">评分</label>
+                        <label style="font-size:13px;color:#666;">评分 <span style="color:#999;">(可选)</span></label>
                         <div id="star-rating" style="display:flex;gap:4px;font-size:24px;cursor:pointer;">
                             <?php for ($i = 1; $i <= 5; $i++): ?>
                                 <span data-star="<?= $i ?>" style="color:#ddd;" onclick="setRating(<?= $i ?>)">★</span>
