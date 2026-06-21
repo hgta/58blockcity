@@ -44,6 +44,7 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-home',        'text' => '总控看板', 'url' => 'dashboard.php'],
         ['icon' => 'fa-users',       'text' => '用户管理', 'url' => 'users.php'],
         ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],
+        ['icon' => 'fa-comments',    'text' => '评论管理', 'url' => 'reviews.php'],
     ],
     'block' => [
         ['icon' => 'fa-home',        'text' => '管理看板', 'url' => 'dashboard.php'],
@@ -54,6 +55,7 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-box',         'text' => '商品管理', 'url' => 'categories.php'],
         ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],
         ['icon' => 'fa-users',       'text' => '用户管理', 'url' => 'users.php'],
+        ['icon' => 'fa-comments',    'text' => '评论管理', 'url' => 'reviews.php'],
         ['icon' => 'fa-seedling',    'text' => '数据种子', 'url' => 'seed.php'],
     ],
     'nft' => [

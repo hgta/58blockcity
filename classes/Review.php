@@ -303,4 +303,70 @@ class Review {
             error_log("更新店铺评分失败: " . $e->getMessage());
         }
     }
+
+    /**
+     * 管理端：获取所有评论（分页+搜索+状态筛选）
+     */
+    public function getAllReviews($page = 1, $perPage = 20, $status = '', $search = '') {
+        try {
+            $where = "1=1";
+            $params = [];
+            if ($status && in_array($status, ['pending','approved','rejected'])) {
+                $where .= " AND r.status = ?";
+                $params[] = $status;
+            }
+            if ($search) {
+                $where .= " AND (r.content LIKE ? OR u.username LIKE ? OR p.name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+
+            $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM reviews r LEFT JOIN users u ON r.user_id = u.id LEFT JOIN products p ON r.product_id = p.id WHERE $where");
+            $countStmt->execute($params);
+            $total = $countStmt->fetchColumn();
+
+            $offset = ($page - 1) * $perPage;
+            $sql = "SELECT r.*, u.username, u.avatar, p.name as product_name, p.main_image as product_image
+                    FROM reviews r
+                    LEFT JOIN users u ON r.user_id = u.id
+                    LEFT JOIN products p ON r.product_id = p.id
+                    WHERE $where
+                    ORDER BY r.created_at DESC
+                    LIMIT $perPage OFFSET $offset";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return ['rows' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total];
+        } catch (Exception $e) {
+            error_log("获取评论列表失败: " . $e->getMessage());
+            return ['rows' => [], 'total' => 0];
+        }
+    }
+
+    /**
+     * 管理端：删除评论
+     */
+    public function deleteReview($reviewId) {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM reviews WHERE id = ?");
+            return $stmt->execute([$reviewId]);
+        } catch (Exception $e) {
+            error_log("删除评论失败: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 管理端：更新评论状态
+     */
+    public function updateReviewStatus($reviewId, $status) {
+        try {
+            $stmt = $this->pdo->prepare("UPDATE reviews SET status = ? WHERE id = ?");
+            return $stmt->execute([$status, $reviewId]);
+        } catch (Exception $e) {
+            error_log("更新评论状态失败: " . $e->getMessage());
+            return false;
+        }
+    }
 }
