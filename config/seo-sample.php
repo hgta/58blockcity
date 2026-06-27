@@ -1,6 +1,10 @@
 <?php
 /**
- * 全站 SEO 配置文件
+ * 全站 SEO 配置示例文件
+ *
+ * 使用方式：
+ *   复制本文件为 config/seo.php，然后填入真实配置。
+ *   config/seo.php 已被加入 .gitignore，不会提交到仓库。
  *
  * 请在百度搜索资源平台获取 token 后填入 baidu_token。
  * 配置变更后无需重启，PHP 每次请求都会读取。

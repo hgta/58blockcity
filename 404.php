@@ -15,6 +15,16 @@
         .box a { display:inline-block; padding:12px 30px; background:#ff6b00; color:white; border-radius:6px; text-decoration:none; font-size:16px; transition:all .3s; }
         .box a:hover { background:#e05d00; }
     </style>
+    <!-- 百度统计 -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";
+      var s = document.getElementsByTagName("script")[0]; 
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
 </head>
 <body>
     <div class="box">

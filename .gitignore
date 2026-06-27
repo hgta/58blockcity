@@ -1,5 +1,6 @@
 # 敏感配置（复制 database-sample.php 为 database.php 并填写真实配置）
 config/database.php
+config/seo.php
 
 # 系统文件
 .DS_Store

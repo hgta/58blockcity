@@ -20,6 +20,16 @@
     
     <script charset="UTF-8" id="LA_COLLECT" src="js-sdk-pro.min.js"></script>
     <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <!-- 百度统计 -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
 	<script src="/city/city.js"></script>
     <style>
         /* 全局样式 */
