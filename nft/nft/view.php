@@ -45,6 +45,33 @@ $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = $nftImage;
 $site_config['og_type']     = 'website';
 
+// NFT Product 结构化数据
+$nftCanonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
+$nftJsonLd = '<script type="application/ld+json">' . json_encode([
+    '@context'    => 'https://schema.org',
+    '@type'       => 'Product',
+    'name'        => $nftName,
+    'description' => $nftDesc,
+    'url'         => $nftCanonicalUrl,
+    'image'       => $nftImage,
+    'category'    => 'DigitalArt',
+    'offers'      => [
+        '@type' => 'Offer',
+        'price' => number_format(floatval($nftInfo['price'] ?? 0), 2),
+        'priceCurrency' => 'BCT',
+        'availability'  => 'https://schema.org/InStock',
+        'url'   => $nftCanonicalUrl,
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
+// 面包屑
+$nftBreadcrumbJsonLd = SeoHelper::breadcrumbList([
+    ['name' => '58 NFT', 'url' => 'https://nft.58.tl/'],
+    ['name' => 'NFT列表', 'url' => 'https://nft.58.tl/nft/claim_list.php'],
+    ['name' => $nftName, 'url' => null],
+]);
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $nftJsonLd . $nftBreadcrumbJsonLd;
+
 // 获取统计数据
 $claimedCities = $nft->getClaimedCities($nftId);
 $saleCities = $nft->getSaleCities($nftId);

@@ -58,8 +58,20 @@ if ($categoryId && isset($categories[$categoryId])) {
 } elseif (!empty($search)) {
     $categoryName = htmlspecialchars($search) . ' 的搜索结果';
 }
-$canonicalUrl = SeoHelper::productListUrl($categoryId, $categoryName);
+$canonicalUrl = SeoHelper::productListUrl($categoryId, $categoryName, $page);
 $description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人气值支付，免费开店，海量商品等你发现。';
+$prevPageUrl  = ($page > 1)        ? SeoHelper::productListUrl($categoryId, $categoryName, $page - 1) : '';
+$nextPageUrl  = ($page < $totalPages) ? SeoHelper::productListUrl($categoryId, $categoryName, $page + 1) : '';
+
+// 生成 ItemList 结构化数据
+$itemListData = [];
+foreach ($products as $p) {
+    $itemListData[] = [
+        'url'  => SeoHelper::productUrl($p['id'], $p['name']),
+        'name' => htmlspecialchars($p['name']),
+    ];
+}
+$itemListJsonLd = SeoHelper::itemListSchema($itemListData, $categoryName);
 ?>
 
 
@@ -76,6 +88,9 @@ $description  = '浏览58人气值商城的' . $categoryName . '，支持BCT人�
     <meta property="og:description" content="<?php echo htmlspecialchars($description); ?>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?php echo $canonicalUrl; ?>">
+    <?php if ($prevPageUrl): ?><link rel="prev" href="<?php echo $prevPageUrl; ?>"><?php endif; ?>
+    <?php if ($nextPageUrl): ?><link rel="next" href="<?php echo $nextPageUrl; ?>"><?php endif; ?>
+    <?php echo $itemListJsonLd; ?>
     <style>
         .products-container {
             max-width: 1200px;

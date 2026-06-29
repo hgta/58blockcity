@@ -45,6 +45,15 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- DNS 预解析 + 预连接（加速 CDN 资源加载） -->
+    <link rel="dns-prefetch" href="//sdk.51.la">
+    <link rel="dns-prefetch" href="//hm.baidu.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//code.jquery.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
     <title><?= htmlspecialchars($site_config['title']) ?></title>
     <meta name="description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta name="keywords" content="<?= htmlspecialchars($site_config['keywords']) ?>">

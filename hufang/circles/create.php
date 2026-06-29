@@ -26,6 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $circle = new Circle($pdo);
         if ($circle->create($userId, $name, $description, $city, $category, $blockCount)) {
             $success = '互访圈创建成功！';
+            // 百度主动推送新创建的互访圈
+            $newCircleId = $pdo->lastInsertId();
+            if ($newCircleId) {
+                SeoHelper::baiduPush(SeoHelper::circleUrl($newCircleId, $name));
+            }
             $_POST = []; // 清空表单
         } else {
             $error = '创建互访圈时出错，请稍后再试';

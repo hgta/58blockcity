@@ -157,6 +157,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
 }
 ?>
 
+<?php
+// ========== 城市详情页个性化 SEO 元数据 ==========
+$cityName      = htmlspecialchars($city_info['name'] ?? $city_name);
+$cityPinyin    = htmlspecialchars($city_info['pinyin'] ?? $city_pinyin);
+$cityArea      = htmlspecialchars($city_info['area_code'] ?? '');
+$cityResident  = intval($city_info['resident_count'] ?? 0);
+$cityBlocks    = intval($city_info['activated_blocks'] ?? 0);
+$blockCount    = $city_info['total_blocks'] ?? 89;
+$canonicalUrl  = SeoHelper::cityUrl($cityPinyin);
+
+$site_config['title']       = SeoHelper::title("{$cityName}区块城市 - 58区块城市");
+$site_config['description'] = SeoHelper::description(
+    "{$cityName}区块城市详情页，提供{$cityName}市人口{$cityResident}万、激活{$cityBlocks}个区块等关键数据，展示{$cityName}{$blockCount}大区块地图，是了解{$cityName}数字经济与元宇宙发展的重要门户。",
+    '58区块城市'
+);
+$site_config['keywords']    = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},{$cityName}数字经济,{$cityName}区块地图" . ($cityArea ? ",{$cityArea}" : '');
+$site_config['canonical_url'] = $canonicalUrl;
+$site_config['og_image']    = 'https://58.tl/assets/images/og-city-' . SeoHelper::slug($cityName) . '.jpg';
+$site_config['og_type']     = 'website';
+$site_config['city_name_for_schema'] = $cityName;
+
+// 面包屑结构化数据
+$cityBreadcrumbJsonLd = SeoHelper::breadcrumbList([
+    ['name' => '58区块城市', 'url' => 'https://www.58.tl/'],
+    ['name' => '城市列表', 'url' => 'https://www.58.tl/all-cities.php'],
+    ['name' => $cityName, 'url' => null],
+]);
+
+// City 结构化数据 (Schema.org City)
+$cityJsonLd = '<script type="application/ld+json">' . json_encode([
+    '@context'      => 'https://schema.org',
+    '@type'         => 'City',
+    'name'          => $cityName,
+    'url'           => $canonicalUrl,
+    'containedInPlace' => ['@type' => 'Country', 'name' => '中国'],
+    'description'   => "{$cityName}区块链城市元宇宙服务平台",
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrumbJsonLd . $cityJsonLd;
+?>
+
 <?php require_once 'includes/header.php'; ?>
 
 <style>

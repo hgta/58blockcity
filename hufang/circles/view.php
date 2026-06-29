@@ -84,6 +84,26 @@ $site_config['keywords']    = '58,互访圈,区块城市,' . $circleName . ',' .
 $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = 'https://58.tl/assets/images/og-hufang.jpg';
 $site_config['og_type']     = 'website';
+
+// 互访圈 Organization 结构化数据
+$circleOwnerName = htmlspecialchars($ownerInfo['username'] ?? '');
+$circleJsonLd = '<script type="application/ld+json">' . json_encode([
+    '@context'  => 'https://schema.org',
+    '@type'     => 'Organization',
+    'name'      => $circleName,
+    'description' => $circleDesc,
+    'url'       => $canonicalUrl,
+    'location'  => ['@type' => 'Place', 'address' => ['@type' => 'PostalAddress', 'addressLocality' => $circleCity]],
+    'founder'   => ['@type' => 'Person', 'name' => $circleOwnerName],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
+// 面包屑
+$circleBreadcrumbJsonLd = SeoHelper::breadcrumbList([
+    ['name' => '58互访圈', 'url' => 'https://v.58.tl/'],
+    ['name' => $circleCity . '互访圈', 'url' => 'https://v.58.tl/index.php?city=' . urlencode($circleCity)],
+    ['name' => $circleName, 'url' => null],
+]);
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd . $circleBreadcrumbJsonLd;
 ?>
 
 <?php require_once '../includes/header.php'; ?>

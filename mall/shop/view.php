@@ -79,6 +79,33 @@ $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = $shopLogo;
 $site_config['og_type']     = 'website';
 
+// 店铺 Store/LocalBusiness 结构化数据
+$shopName = htmlspecialchars($shopInfo['shop_name'] ?? '');
+$shopDesc = SeoHelper::excerpt($shopInfo['shop_description'] ?? '', 150);
+$storeJsonLd = '<script type="application/ld+json">' . json_encode([
+    '@context'  => 'https://schema.org',
+    '@type'     => 'Store',
+    'name'      => $shopName,
+    'description' => $shopDesc,
+    'url'       => $canonicalUrl,
+    'image'     => $shopLogo,
+    'aggregateRating' => [
+        '@type' => 'AggregateRating',
+        'ratingValue' => number_format(floatval($shopInfo['rating'] ?? 0), 1),
+        'reviewCount' => intval($shopInfo['review_count'] ?? 0),
+        'bestRating'  => 5,
+        'worstRating' => 0,
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
+// 面包屑
+$shopBreadcrumbJsonLd = SeoHelper::breadcrumbList([
+    ['name' => '58人气值商城', 'url' => 'https://mall.58.tl/'],
+    ['name' => '店铺列表', 'url' => 'https://mall.58.tl/shop/list.php'],
+    ['name' => $shopName, 'url' => null],
+]);
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $storeJsonLd . $shopBreadcrumbJsonLd;
+
 require_once '../includes/header.php';
 ?>
 

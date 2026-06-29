@@ -59,11 +59,18 @@ class SeoHelper
         return 'https://mall.58.tl/shop/' . intval($id) . '-' . self::slug($name) . '.html';
     }
 
-    public static function productListUrl($categoryId = 0, $categoryName = '')
+    public static function productListUrl($categoryId = 0, $categoryName = '', $page = 1)
     {
         $url = 'https://mall.58.tl/product/list.php';
+        $params = [];
         if ($categoryId) {
-            $url .= '?category=' . intval($categoryId);
+            $params[] = 'category=' . intval($categoryId);
+        }
+        if ($page > 1) {
+            $params[] = 'page=' . intval($page);
+        }
+        if (!empty($params)) {
+            $url .= '?' . implode('&', $params);
         }
         return $url;
     }
@@ -213,6 +220,66 @@ class SeoHelper
             header('Location: ' . self::encodeUrl($canonicalUrl));
             exit;
         }
+    }
+
+    /* ========== 结构化数据 (JSON-LD) ========== */
+
+    /**
+     * 生成 BreadcrumbList JSON-LD 结构化数据
+     *
+     * @param array $items [['name'=>'首页','url'=>'/'], ['name'=>'商品详情','url'=>null]]
+     * @return string JSON-LD 脚本标签
+     */
+    public static function breadcrumbList(array $items)
+    {
+        if (empty($items)) return '';
+        $list = [];
+        $pos = 1;
+        foreach ($items as $item) {
+            $el = [
+                '@type' => 'ListItem',
+                'position' => $pos++,
+                'name' => $item['name'],
+            ];
+            if (!empty($item['url'])) {
+                $el['item'] = $item['url'];
+            }
+            $list[] = $el;
+        }
+        return '<script type="application/ld+json">' . json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => $list,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    }
+
+    /**
+     * 生成 ItemList JSON-LD 结构化数据（用于列表页）
+     *
+     * @param array  $items    [['url'=>'...','name'=>'...'], ...]
+     * @param string $listName 列表名称
+     * @return string JSON-LD 脚本标签
+     */
+    public static function itemListSchema(array $items, $listName = '商品列表')
+    {
+        if (empty($items)) return '';
+        $elements = [];
+        $pos = 1;
+        foreach ($items as $item) {
+            $elements[] = [
+                '@type' => 'ListItem',
+                'position' => $pos++,
+                'url' => $item['url'],
+                'name' => $item['name'],
+            ];
+        }
+        return '<script type="application/ld+json">' . json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'ItemList',
+            'name' => $listName,
+            'itemListElement' => $elements,
+            'numberOfItems' => count($elements),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
     }
 
     /**
