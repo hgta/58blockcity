@@ -1,10 +1,13 @@
 <?php
-require_once '../config/database.php';
-require_once '../includes/auth.php';
-require_once '../classes/Model.php';
-require_once '../classes/User.php';
+require_once '../../config/database.php';
+require_once '../../includes/auth.php';
+require_once '../../classes/Model.php';
+require_once '../../classes/User.php';
 
-checkAdmin();
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header('Location: ../auth/login.php');
+    exit;
+}
 
 $model = new Model($pdo);
 $user = new User($pdo);
@@ -75,7 +78,7 @@ $admin_site_config = [
     'site'       => 'mall',
     'page_title' => '模特管理 - 58商城后台',
 ];
-require_once '../shared/admin/admin-header.php';
+require_once '../../shared/admin/admin-header.php';
 ?>
 
 <div class="admin-content">
@@ -252,4 +255,4 @@ require_once '../shared/admin/admin-header.php';
     <?php endif; ?>
 </div>
 
-<?php require_once '../shared/admin/admin-footer.php'; ?>
+<?php require_once '../../shared/admin/admin-footer.php'; ?>
