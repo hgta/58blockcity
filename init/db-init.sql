@@ -1388,6 +1388,51 @@ ALTER TABLE `visits`
 ALTER TABLE `coupons`
   ADD CONSTRAINT `fk_coupons_shop` FOREIGN KEY (`shop_id`) REFERENCES `shops` (`id`) ON DELETE CASCADE;
 
+-- ============================================================
+-- 模特库 (Model Library)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `models` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL COMMENT '关联站内用户',
+  `nickname` varchar(100) NOT NULL COMMENT '昵称',
+  `gender` enum('男','女','保密') DEFAULT '保密',
+  `age` tinyint(3) UNSIGNED DEFAULT NULL,
+  `qq` varchar(20) DEFAULT NULL,
+  `weixin` varchar(100) DEFAULT NULL,
+  `weibo` varchar(200) DEFAULT NULL,
+  `xiaohongshu` varchar(200) DEFAULT NULL COMMENT '小红书',
+  `height` decimal(5,1) DEFAULT NULL COMMENT '身高 cm',
+  `weight` decimal(4,1) DEFAULT NULL COMMENT '体重 kg',
+  `measurements` varchar(50) DEFAULT NULL COMMENT '三围',
+  `hobbies` text DEFAULT NULL COMMENT '爱好',
+  `like_count` int(11) DEFAULT 0 COMMENT '点赞数',
+  `product_count` int(11) DEFAULT 0 COMMENT '关联商品数',
+  `review_count` int(11) DEFAULT 0 COMMENT '关联评论数',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  KEY `idx_like_count` (`like_count`),
+  KEY `idx_product_count` (`product_count`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `model_likes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `model_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `model_user` (`model_id`, `user_id`),
+  KEY `idx_model_id` (`model_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `products`
+  ADD COLUMN `model_id` int(11) DEFAULT NULL AFTER `shop_id`,
+  ADD KEY `idx_model_id` (`model_id`);
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

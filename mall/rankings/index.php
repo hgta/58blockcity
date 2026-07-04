@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once '../../config/database.php';
 require_once '../../classes/MallRanking.php';
+require_once '../../classes/SeoHelper.php';
 
 $ranking = new MallRanking($pdo);
 $stats = $ranking->getRankingStats();
@@ -11,6 +12,7 @@ $stats = $ranking->getRankingStats();
 $mainTab = $_GET['tab'] ?? 'product';
 $productType = $_GET['type'] ?? 'popular';
 $shopType = $_GET['type'] ?? 'sales';
+$modelType = $_GET['type'] ?? 'product_count';
 
 $productTypes = [
     'popular' => ['name'=>'人气榜','icon'=>'fire','desc'=>'最多人浏览的商品'],
@@ -24,10 +26,17 @@ $shopTypes = [
     'rating' => ['name'=>'评分榜','icon'=>'star','desc'=>'评分最高的店铺'],
 ];
 
+$modelTypes = [
+    'product_count' => ['name'=>'关联商品','icon'=>'box','desc'=>'关联商品数最多'],
+    'like_count'    => ['name'=>'点赞榜','icon'=>'heart','desc'=>'点赞数最高'],
+    'review_count'  => ['name'=>'口碑榜','icon'=>'comments','desc'=>'评论数最多'],
+];
+
 $productRanking = ($mainTab === 'product') ? $ranking->getProductRanking($productType, 20) : [];
 $shopRanking = ($mainTab === 'shop') ? $ranking->getShopRanking($shopType, 20) : [];
-$currentType = ($mainTab === 'product') ? $productType : $shopType;
-$currentTypes = ($mainTab === 'product') ? $productTypes : $shopTypes;
+$modelRanking = ($mainTab === 'model') ? $ranking->getModelRanking($modelType, 20) : [];
+$currentType = ($mainTab === 'product') ? $productType : (($mainTab === 'shop') ? $shopType : $modelType);
+$currentTypes = ($mainTab === 'product') ? $productTypes : (($mainTab === 'shop') ? $shopTypes : $modelTypes);
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -98,8 +107,9 @@ a{text-decoration:none;color:inherit}
     </div>
 
     <div class="main-tabs">
-        <div class="main-tab <?= $mainTab==='product'?'active':'' ?>" onclick="location.href='?tab=product&type=<?= $productType ?>'"><i class="fas fa-trophy"></i> 商品排行榜</div>
-        <div class="main-tab <?= $mainTab==='shop'?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $shopType ?>'"><i class="fas fa-store"></i> 店铺排行榜</div>
+        <div class="main-tab <?= $mainTab==='product'?'active':'' ?>" onclick="location.href='?tab=product&type=<?= $productType ?>'"><i class="fas fa-trophy"></i> 商品排行</div>
+        <div class="main-tab <?= $mainTab==='shop'?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $shopType ?>'"><i class="fas fa-store"></i> 店铺排行</div>
+        <div class="main-tab <?= $mainTab==='model'?'active':'' ?>" onclick="location.href='?tab=model&type=product_count'"><i class="fas fa-user-circle"></i> 模特排行</div>
     </div>
 
     <div class="sub-tabs">
@@ -107,9 +117,13 @@ a{text-decoration:none;color:inherit}
             <?php foreach ($productTypes as $key => $t): ?>
                 <div class="sub-tab <?= $productType===$key?'active':'' ?>" onclick="location.href='?tab=product&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
             <?php endforeach; ?>
-        <?php else: ?>
+        <?php elseif ($mainTab === 'shop'): ?>
             <?php foreach ($shopTypes as $key => $t): ?>
                 <div class="sub-tab <?= $shopType===$key?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($modelTypes as $key => $t): ?>
+                <div class="sub-tab <?= $modelType===$key?'active':'' ?>" onclick="location.href='?tab=model&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
@@ -155,7 +169,7 @@ a{text-decoration:none;color:inherit}
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-        <?php else: ?>
+        <?php elseif ($mainTab === 'shop'): ?>
             <?php if (empty($shopRanking)): ?>
                 <div class="empty"><i class="fas fa-store"></i><p>暂无排行数据</p></div>
             <?php else: ?>
@@ -175,6 +189,29 @@ a{text-decoration:none;color:inherit}
                             <div class="shop-metric sales"><div class="m-val"><?= number_format($s['total_sales']) ?></div><div class="m-lbl">总销量</div></div>
                             <div class="shop-metric rating"><div class="m-val"><?= number_format($s['rating'],1) ?></div><div class="m-lbl">评分</div></div>
                             <div class="shop-metric"><div class="m-val"><?= $s['review_count']??0 ?></div><div class="m-lbl">评价数</div></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if (empty($modelRanking)): ?>
+                <div class="empty"><i class="fas fa-user-circle"></i><p>暂无模特排行数据</p></div>
+            <?php else: ?>
+                <?php foreach ($modelRanking as $i => $m): ?>
+                    <div class="shop-rank-item">
+                        <div class="rank-num"><?= $i+1 ?></div>
+                        <img class="shop-logo" src="<?= htmlspecialchars($m['avatar']?:'https://58.tl/assets/images/default-avatar.jpg') ?>" alt="">
+                        <div class="shop-info">
+                            <div class="rank-name"><a href="<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>"><?= htmlspecialchars($m['nickname']) ?> @<?= htmlspecialchars($m['username']) ?></a></div>
+                            <div class="rank-meta">
+                                <?php if ($m['gender'] !== '保密'): ?><span><?= $m['gender'] ?></span><?php endif; ?>
+                                <?php if ($m['height']): ?><span><?= $m['height'] ?>cm</span><?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="shop-metrics">
+                            <div class="shop-metric sales"><div class="m-val"><?= $m['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
+                            <div class="shop-metric rating"><div class="m-val"><?= $m['like_count'] ?></div><div class="m-lbl">点赞数</div></div>
+                            <div class="shop-metric"><div class="m-val"><?= $m['review_count'] ?></div><div class="m-lbl">评论数</div></div>
                         </div>
                     </div>
                 <?php endforeach; ?>

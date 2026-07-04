@@ -255,15 +255,17 @@ class Product {
      */
     public function getProductById($productId, $includeInactive = false) {
         try {
-            $sql = "SELECT p.*, 
+            $sql = "SELECT p.*,
                            p.main_image as image_url,
                            p.sold_count as sales_count,
                            p.price_bct as price,
                            c.name as category_name,
-                           s.shop_name, s.user_id as shop_owner_id, s.id as shop_id
+                           s.shop_name, s.user_id as shop_owner_id, s.id as shop_id,
+                           m.nickname as model_nickname
                     FROM products p
                     LEFT JOIN product_categories c ON p.category_id = c.id
                     LEFT JOIN shops s ON p.shop_id = s.id
+                    LEFT JOIN models m ON p.model_id = m.id
                     WHERE p.id = ?";
             if (!$includeInactive) {
                 $sql .= " AND p.status = 'active'";
@@ -289,13 +291,15 @@ class Product {
             
             $stmt = $this->pdo->prepare("
                 INSERT INTO products
-                (shop_id, category_id, name, description, main_image, thumb_image, images, video_url,
+                (shop_id, model_id, category_id, name, description, main_image, thumb_image, images, video_url,
                  price_type, price_bct, price_cny, stock, status, is_recommended)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
+            $modelId = !empty($data['model_id']) ? intval($data['model_id']) : null;
             $stmt->execute([
                 $data['shop_id'],
+                $modelId,
                 $data['category_id'],
                 $data['name'],
                 $data['description'],
@@ -313,7 +317,14 @@ class Product {
             
             $productId = $this->pdo->lastInsertId();
             $this->pdo->commit();
-            
+
+            // 如果创建时关联了模特，刷新计数
+            if ($modelId) {
+                if (!class_exists('Model')) require_once __DIR__ . '/Model.php';
+                $model = new Model($this->pdo);
+                $model->refreshCounts($modelId);
+            }
+
             return $productId;
         } catch (Exception $e) {
             $this->pdo->rollBack();
@@ -326,7 +337,7 @@ class Product {
      */
     public function updateProduct($productId, $data) {
         $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url', 'price_type', 
-                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id'];
+                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id', 'model_id'];
         $setParts = [];
         $params = [];
         
@@ -344,7 +355,19 @@ class Product {
         $params[] = $productId;
         $sql = "UPDATE products SET " . implode(', ', $setParts) . ", updated_at = NOW() WHERE id = ?";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
+        $result = $stmt->execute($params);
+
+        // 如果更改了 model_id，刷新对应模特的商品计数
+        if ($result && isset($data['model_id'])) {
+            $newModelId = $data['model_id'] ? intval($data['model_id']) : null;
+            // 刷新新模特计数
+            if ($newModelId) {
+                if (!class_exists('Model')) require_once __DIR__ . '/Model.php';
+                $model = new Model($this->pdo);
+                $model->refreshCounts($newModelId);
+            }
+        }
+        return $result;
     }
     
     /**

@@ -79,4 +79,15 @@ while ($nft = $stmt->fetch(PDO::FETCH_ASSOC)) {
     urlNode(SeoHelper::nftUrl($nft['id'], $name), '0.6', 'weekly', $lastmod);
 }
 
+// 7. 模特页
+try {
+    $stmt = $pdo->query("SELECT id, nickname, updated_at FROM models WHERE status='active' ORDER BY id DESC LIMIT 2000");
+    while ($model = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $lastmod = $model['updated_at'] ? date('Y-m-d', strtotime($model['updated_at'])) : $now;
+        urlNode(SeoHelper::modelUrl($model['id'], $model['nickname']), '0.7', 'weekly', $lastmod);
+    }
+} catch (Exception $e) {
+    // models 表尚未创建，跳过
+}
+
 echo '</urlset>', "\n";

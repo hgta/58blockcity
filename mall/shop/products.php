@@ -851,6 +851,30 @@ require_once '../includes/header.php';
                                 <div class="col-md-8">
                                     <div class="form-section">
                                         <h5 class="section-title"><i class="fas fa-tag"></i> 基本信息</h5>
+                                        <?php
+                                        // 加载模特列表供选择
+                                        if (class_exists('Model')) {
+                                            $modelObj = new Model($pdo);
+                                            $models = $modelObj->getAll();
+                                        } else {
+                                            require_once '../../classes/Model.php';
+                                            $modelObj = new Model($pdo);
+                                            $models = $modelObj->getAll();
+                                        }
+                                        $currentModelId = isset($editProduct) ? ($editProduct['model_id'] ?? '') : (isset($_POST['model_id']) ? $_POST['model_id'] : '');
+                                        ?>
+                                        <div class="form-group">
+                                            <label for="model_id">关联模特（可选）</label>
+                                            <select name="model_id" id="model_id" class="form-control" style="max-width:300px;">
+                                                <option value="">-- 不关联模特 --</option>
+                                                <?php foreach ($models as $m): ?>
+                                                <option value="<?= $m['id'] ?>" <?= $currentModelId == $m['id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($m['nickname']) ?> (<?= htmlspecialchars($m['username']) ?>)
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <small class="text-muted">选择拍摄该商品的模特，需先在后台添加模特</small>
+                                        </div>
                                         <div class="form-group">
                                             <label for="name">商品名称 *</label>
                                             <input type="text" class="form-control form-control-lg" id="name" name="name"

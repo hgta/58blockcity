@@ -793,6 +793,17 @@ if ($reviewCount > 0) {
                 </a>
                 <?php endif; ?>
 
+                <?php if (!empty($productDetail['model_nickname'])): ?>
+                <div class="product-model-badge" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:#fff3f0;border-radius:6px;border:1px solid #ffd4c4;">
+                    <i class="fas fa-user-circle" style="color:#ff6b00;font-size:18px;"></i>
+                    <span style="color:#666;">模特：</span>
+                    <a href="<?= SeoHelper::modelUrl($productDetail['model_id'], $productDetail['model_nickname']) ?>" 
+                       style="color:#ff6b00;font-weight:bold;text-decoration:none;">
+                        <?= htmlspecialchars($productDetail['model_nickname']) ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+
                 <div class="product-meta">
                     <div><i class="fas fa-chart-line"></i> 销量: <?php echo number_format($productDetail['sold_count']); ?></div>
                     <div><i class="fas fa-eye"></i> 浏览: <?php echo number_format($productDetail['view_count']); ?></div>

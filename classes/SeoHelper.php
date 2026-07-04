@@ -91,6 +91,11 @@ class SeoHelper
         return 'https://nft.58.tl/nft/' . intval($id) . ($slug ? '-' . $slug : '') . '.html';
     }
 
+    public static function modelUrl($id, $nickname)
+    {
+        return 'https://mall.58.tl/model/' . intval($id) . '-' . self::slug($nickname) . '.html';
+    }
+
     /**
      * 生成 title，自动截断到合理长度
      */

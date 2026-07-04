@@ -81,4 +81,27 @@ class MallRanking {
 
         return $stats;
     }
+
+    /**
+     * 模特排行
+     * @param string $type product_count | like_count | review_count
+     */
+    public function getModelRanking($type = 'product_count', $limit = 20)
+    {
+        $allowed = ['product_count', 'like_count', 'review_count'];
+        if (!in_array($type, $allowed)) $type = 'product_count';
+
+        $sql = "SELECT m.id, m.nickname, m.gender, m.height, m.{$type} as sort_value, 
+                       m.product_count, m.like_count, m.review_count,
+                       u.username, u.avatar 
+                FROM models m 
+                JOIN users u ON m.user_id = u.id 
+                WHERE m.status = 'active' AND m.{$type} > 0
+                ORDER BY m.{$type} DESC 
+                LIMIT " . intval($limit);
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
