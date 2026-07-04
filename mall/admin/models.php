@@ -93,111 +93,134 @@ require_once '../../shared/admin/admin-header.php';
         $isEdit = (bool)$editModel;
         $formData = $isEdit ? $editModel : [];
     ?>
-    <div class="admin-card">
-        <h3><?= $isEdit ? '编辑模特' : '添加模特' ?></h3>
-        <form method="post" class="admin-form">
-            <input type="hidden" name="action" value="save">
-            <input type="hidden" name="id" value="<?= $isEdit ? $formData['id'] : '' ?>">
+    <div class="admin-card" style="margin-bottom:20px;">
+        <div class="admin-card-header">
+            <span class="admin-card-title"><?= $isEdit ? '编辑模特' : '添加模特' ?></span>
+        </div>
+        <div class="admin-card-body">
+            <form method="post">
+                <input type="hidden" name="action" value="save">
+                <input type="hidden" name="id" value="<?= $isEdit ? $formData['id'] : '' ?>">
 
-            <div class="admin-form-row">
-                <div class="admin-form-group">
-                    <label>昵称 <span style="color:red">*</span></label>
-                    <input type="text" name="nickname" value="<?= htmlspecialchars($formData['nickname'] ?? '') ?>" required maxlength="100">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">昵称 <span style="color:#ef4444">*</span></label>
+                        <input type="text" name="nickname" value="<?= htmlspecialchars($formData['nickname'] ?? '') ?>" required maxlength="100"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">站内用户</label>
+                        <?php if ($isEdit): ?>
+                            <input type="text" value="<?= htmlspecialchars($formData['username'] ?? '-') ?>" disabled
+                                   style="width:100%;padding:8px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#64748b;font-size:14px;">
+                            <input type="hidden" name="user_id" value="<?= $formData['user_id'] ?>">
+                        <?php else: ?>
+                            <input type="number" name="user_id" placeholder="输入用户ID（可选）" min="1"
+                                   style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <div class="admin-form-group">
-                    <label>站内用户</label>
-                    <?php if ($isEdit): ?>
-                        <input type="text" value="<?= htmlspecialchars($formData['username']) ?>" disabled>
-                        <small>关联用户：<?= htmlspecialchars($formData['username']) ?></small>
-                        <input type="hidden" name="user_id" value="<?= $formData['user_id'] ?>">
-                    <?php else: ?>
-                        <input type="number" name="user_id" placeholder="输入用户ID（可选）" min="1">
-                        <small>输入站内用户的数字ID</small>
-                    <?php endif; ?>
-                </div>
-            </div>
 
-            <div class="admin-form-row">
-                <div class="admin-form-group">
-                    <label>性别</label>
-                    <select name="gender">
-                        <?php foreach (['保密','男','女'] as $g): ?>
-                        <option value="<?= $g ?>" <?= ($formData['gender'] ?? '保密') === $g ? 'selected' : '' ?>><?= $g ?></option>
-                        <?php endforeach; ?>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">性别</label>
+                        <select name="gender" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                            <?php foreach (['保密','男','女'] as $g): ?>
+                            <option value="<?= $g ?>" <?= ($formData['gender'] ?? '保密') === $g ? 'selected' : '' ?>><?= $g ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">年龄</label>
+                        <input type="number" name="age" value="<?= htmlspecialchars($formData['age'] ?? '') ?>" min="1" max="120"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">身高 (cm)</label>
+                        <input type="number" step="0.1" name="height" value="<?= htmlspecialchars($formData['height'] ?? '') ?>" min="100" max="220"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">体重 (kg)</label>
+                        <input type="number" step="0.1" name="weight" value="<?= htmlspecialchars($formData['weight'] ?? '') ?>" min="30" max="150"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">三围</label>
+                    <input type="text" name="measurements" value="<?= htmlspecialchars($formData['measurements'] ?? '') ?>" placeholder="例：86-60-88"
+                           style="width:100%;max-width:300px;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">QQ</label>
+                        <input type="text" name="qq" value="<?= htmlspecialchars($formData['qq'] ?? '') ?>"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">微信</label>
+                        <input type="text" name="weixin" value="<?= htmlspecialchars($formData['weixin'] ?? '') ?>"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">微博</label>
+                        <input type="text" name="weibo" value="<?= htmlspecialchars($formData['weibo'] ?? '') ?>"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">小红书</label>
+                        <input type="text" name="xiaohongshu" value="<?= htmlspecialchars($formData['xiaohongshu'] ?? '') ?>"
+                               style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">爱好</label>
+                    <textarea name="hobbies" rows="3"
+                              style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;resize:vertical;"><?= htmlspecialchars($formData['hobbies'] ?? '') ?></textarea>
+                </div>
+
+                <?php if ($isEdit): ?>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;">状态</label>
+                    <select name="status" style="padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;">
+                        <option value="active" <?= ($formData['status'] ?? '') === 'active' ? 'selected' : '' ?>>启用</option>
+                        <option value="inactive" <?= ($formData['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>停用</option>
                     </select>
                 </div>
-                <div class="admin-form-group">
-                    <label>年龄</label>
-                    <input type="number" name="age" value="<?= htmlspecialchars($formData['age'] ?? '') ?>" min="1" max="120">
-                </div>
-                <div class="admin-form-group">
-                    <label>身高 (cm)</label>
-                    <input type="number" step="0.1" name="height" value="<?= htmlspecialchars($formData['height'] ?? '') ?>" min="100" max="220">
-                </div>
-                <div class="admin-form-group">
-                    <label>体重 (kg)</label>
-                    <input type="number" step="0.1" name="weight" value="<?= htmlspecialchars($formData['weight'] ?? '') ?>" min="30" max="150">
-                </div>
-            </div>
+                <?php endif; ?>
 
-            <div class="admin-form-group">
-                <label>三围</label>
-                <input type="text" name="measurements" value="<?= htmlspecialchars($formData['measurements'] ?? '') ?>" placeholder="例：86-60-88">
-            </div>
-
-            <div class="admin-form-row">
-                <div class="admin-form-group">
-                    <label>QQ</label>
-                    <input type="text" name="qq" value="<?= htmlspecialchars($formData['qq'] ?? '') ?>">
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button type="submit" class="admin-btn admin-btn-primary"><?= $isEdit ? '更新' : '创建' ?></button>
+                    <a href="models.php" class="admin-btn admin-btn-secondary">取消</a>
                 </div>
-                <div class="admin-form-group">
-                    <label>微信</label>
-                    <input type="text" name="weixin" value="<?= htmlspecialchars($formData['weixin'] ?? '') ?>">
-                </div>
-                <div class="admin-form-group">
-                    <label>微博</label>
-                    <input type="text" name="weibo" value="<?= htmlspecialchars($formData['weibo'] ?? '') ?>">
-                </div>
-                <div class="admin-form-group">
-                    <label>小红书</label>
-                    <input type="text" name="xiaohongshu" value="<?= htmlspecialchars($formData['xiaohongshu'] ?? '') ?>">
-                </div>
-            </div>
-
-            <div class="admin-form-group">
-                <label>爱好</label>
-                <textarea name="hobbies" rows="3"><?= htmlspecialchars($formData['hobbies'] ?? '') ?></textarea>
-            </div>
-
-            <?php if ($isEdit): ?>
-            <div class="admin-form-group">
-                <label>状态</label>
-                <select name="status">
-                    <option value="active" <?= ($formData['status'] ?? '') === 'active' ? 'selected' : '' ?>>启用</option>
-                    <option value="inactive" <?= ($formData['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>停用</option>
-                </select>
-            </div>
-            <?php endif; ?>
-
-            <button type="submit" class="admin-btn admin-btn-primary"><?= $isEdit ? '更新' : '创建' ?></button>
-            <a href="models.php" class="admin-btn">取消</a>
-        </form>
+            </form>
+        </div>
     </div>
     <?php endif; ?>
 
     <!-- 搜索 -->
-    <div class="admin-card">
-        <form method="get" class="admin-search-form">
-            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="搜索昵称或用户名...">
-            <button type="submit" class="admin-btn">搜索</button>
-            <?php if ($search): ?>
-            <a href="models.php" class="admin-btn">清除</a>
-            <?php endif; ?>
-        </form>
+    <div class="admin-card" style="margin-bottom:20px;">
+        <div class="admin-card-body">
+            <form method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="搜索昵称或用户名..."
+                       style="padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;min-width:200px;">
+                <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm"><i class="fas fa-search"></i> 搜索</button>
+                <?php if ($search): ?>
+                <a href="models.php" class="admin-btn admin-btn-secondary admin-btn-sm"><i class="fas fa-redo"></i> 清除</a>
+                <?php endif; ?>
+            </form>
+        </div>
     </div>
 
     <!-- 模特列表 -->
-    <div class="admin-card">
+    <div class="admin-card" style="margin-bottom:20px;">
+        <div class="admin-card-header">
+            <span class="admin-card-title">模特列表 (<?= $total ?>)</span>
+        </div>
+        <div class="admin-card-body" style="padding:0;">
         <table class="admin-table">
             <thead>
                 <tr>
@@ -239,6 +262,7 @@ require_once '../../shared/admin/admin-header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- 分页 -->
