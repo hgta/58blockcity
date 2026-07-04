@@ -191,6 +191,16 @@ if ($reviewCount > 0) {
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
     <script type="application/ld+json"><?php echo json_encode($productSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+    <!-- BreadcrumbList 结构化数据 -->
+    <script type="application/ld+json"><?php echo json_encode([
+        '@context' => 'https://schema.org',
+        '@type'    => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => '58人气值商城', 'item' => 'https://mall.58.tl/'],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => '商品列表', 'item' => 'https://mall.58.tl/product/list.php'],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $productName],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
     <style>
         /* 人气值符号样式 */
         .bct-symbol {
@@ -692,10 +702,23 @@ if ($reviewCount > 0) {
     }
 }
     </style>
+    <!-- 51.LA 统计 -->
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>LA.init({id:"Km945dEjfme2S7Eg",ck:"Km945dEjfme2S7Eg"})</script>
+    <!-- 百度统计 -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
 </head>
 <body>
     <?php include '../includes/header.php'; ?>
-    
+
     <div class="product-detail-container">
         <!-- 面包屑导航 -->
         <div class="breadcrumb">

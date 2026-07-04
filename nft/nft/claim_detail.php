@@ -5,6 +5,7 @@ require_once '../../classes/NFT.php';
 require_once '../../classes/City.php';
 require_once '../../classes/Comment.php';
 require_once '../../classes/Block.php';
+require_once '../../classes/SeoHelper.php';
 
 checkLogin();
 
@@ -68,7 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		if ($blockInfo && $nft->claimNft($nftId, $userId, $cityId, $blockId)) {
-			$_SESSION['success_message'] = '认领成功！';            
+			$_SESSION['success_message'] = '认领成功！';
+			// 百度主动推送
+			SeoHelper::baiduPush(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
 			header("Location: /user/collection.php");
 			exit;
 		} else {

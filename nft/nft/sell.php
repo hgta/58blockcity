@@ -5,6 +5,7 @@ require_once '../../classes/Transaction.php';
 require_once '../../classes/User.php';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
+require_once '../../classes/SeoHelper.php';
 
 // 验证登录状态
 checkLogin();
@@ -67,6 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($result) {
             $_SESSION['message'] = "NFT已成功上架出售";
+            // 百度主动推送
+            SeoHelper::baiduPush(SeoHelper::nftUrl($nftId, $nftDetails['name'] ?? ''));
             header("Location: /user/collection.php");
             exit();
         } else {

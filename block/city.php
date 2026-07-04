@@ -142,6 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             $result = $block->claimMultipleBlocks($current_user_id, $city_id, $current_zone, $selected_blocks);
             if ($result) {
                 $success_message = "成功认领 " . count($selected_blocks) . " 个区块！";
+                // 百度主动推送
+                SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
                 $error_message = "认领失败，请重试";
             }
@@ -149,6 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             $result = $block->claimBlock($current_user_id, $city_id, $current_zone, $block_number);
             if ($result) {
                 $success_message = "成功认领区块 {$block_number}！";
+                // 百度主动推送
+                SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
                 $error_message = "认领失败，区块可能已被认领";
             }

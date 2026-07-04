@@ -433,6 +433,17 @@
             margin-left: 5px;
         }
     </style>
+    <!-- BreadcrumbList 结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "58区块城市", "item": "https://www.58.tl/"},
+        {"@type": "ListItem", "position": 2, "name": "TOP200热门城市"}
+      ]
+    }
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
