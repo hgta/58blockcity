@@ -19,7 +19,7 @@ class Model
         $stmt = $this->pdo->prepare(
             "SELECT m.*, u.username, u.avatar 
              FROM models m 
-             JOIN users u ON m.user_id = u.id 
+             LEFT LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.id = ?"
         );
         $stmt->execute([intval($id)]);
@@ -34,7 +34,7 @@ class Model
         $stmt = $this->pdo->prepare(
             "SELECT m.*, u.username, u.avatar 
              FROM models m 
-             JOIN users u ON m.user_id = u.id 
+             LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.user_id = ?"
         );
         $stmt->execute([intval($userId)]);
@@ -46,8 +46,15 @@ class Model
      */
     public function create($data)
     {
-        $fields = ['user_id', 'nickname'];
-        $values = [intval($data['user_id']), trim($data['nickname'])];
+        // 昵称必填
+        $fields = ['nickname'];
+        $values = [trim($data['nickname'])];
+
+        // user_id 可选
+        if (!empty($data['user_id'])) {
+            $fields[] = 'user_id';
+            $values[] = intval($data['user_id']);
+        }
 
         $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'height', 'weight', 'measurements', 'hobbies'];
         foreach ($optional as $f) {
@@ -108,14 +115,14 @@ class Model
             $params = [$searchTerm, $searchTerm];
         }
 
-        $countSql = "SELECT COUNT(*) FROM models m JOIN users u ON m.user_id = u.id" . $where;
+        $countSql = "SELECT COUNT(*) FROM models m LEFT JOIN users u ON m.user_id = u.id" . $where;
         $stmt = $this->pdo->prepare($countSql);
         $stmt->execute($params);
         $total = $stmt->fetchColumn();
 
         $sql = "SELECT m.*, u.username, u.avatar 
                 FROM models m 
-                JOIN users u ON m.user_id = u.id" . $where . " 
+                LEFT JOIN users u ON m.user_id = u.id" . $where . " 
                 ORDER BY m.id DESC 
                 LIMIT {$perPage} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
@@ -133,7 +140,7 @@ class Model
         $stmt = $this->pdo->prepare(
             "SELECT m.id, m.nickname, u.username 
              FROM models m 
-             JOIN users u ON m.user_id = u.id 
+             LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.status = ? 
              ORDER BY m.nickname ASC"
         );
@@ -295,7 +302,7 @@ class Model
             "SELECT m.id, m.nickname, m.gender, m.height, m.{$type} as sort_value, 
                     u.username, u.avatar
              FROM models m 
-             JOIN users u ON m.user_id = u.id 
+             LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.status = 'active' 
              ORDER BY m.{$type} DESC 
              LIMIT " . intval($limit)

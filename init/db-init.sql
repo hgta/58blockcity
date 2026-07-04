@@ -1394,7 +1394,7 @@ ALTER TABLE `coupons`
 
 CREATE TABLE IF NOT EXISTS `models` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL COMMENT '关联站内用户',
+  `user_id` int(11) DEFAULT NULL COMMENT '关联站内用户（可选）',
   `nickname` varchar(100) NOT NULL COMMENT '昵称',
   `gender` enum('男','女','保密') DEFAULT '保密',
   `age` tinyint(3) UNSIGNED DEFAULT NULL,

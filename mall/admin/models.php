@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 // 新建
-                if (empty($data['nickname']) || $data['user_id'] <= 0) {
-                    $actionMsg = '<div class="admin-alert admin-alert-error">昵称和站内用户为必填项</div>';
+                if (empty($data['nickname'])) {
+                    $actionMsg = '<div class="admin-alert admin-alert-error">昵称为必填项</div>';
                 } elseif ($model->create($data)) {
                     $actionMsg = '<div class="admin-alert admin-alert-success">模特创建成功</div>';
                 } else {
@@ -105,13 +105,13 @@ require_once '../../shared/admin/admin-header.php';
                     <input type="text" name="nickname" value="<?= htmlspecialchars($formData['nickname'] ?? '') ?>" required maxlength="100">
                 </div>
                 <div class="admin-form-group">
-                    <label>站内用户 <span style="color:red">*</span></label>
+                    <label>站内用户</label>
                     <?php if ($isEdit): ?>
                         <input type="text" value="<?= htmlspecialchars($formData['username']) ?>" disabled>
                         <small>关联用户：<?= htmlspecialchars($formData['username']) ?></small>
                         <input type="hidden" name="user_id" value="<?= $formData['user_id'] ?>">
                     <?php else: ?>
-                        <input type="number" name="user_id" placeholder="输入用户ID" required min="1">
+                        <input type="number" name="user_id" placeholder="输入用户ID（可选）" min="1">
                         <small>输入站内用户的数字ID</small>
                     <?php endif; ?>
                 </div>
