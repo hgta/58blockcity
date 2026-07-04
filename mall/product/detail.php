@@ -1007,7 +1007,7 @@ if ($reviewCount > 0) {
                             ?>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                     <?php foreach ($reviewImages as $img): ?>
-                                        <img src="<?php echo '../' . htmlspecialchars($img); ?>" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showImageModal(this.src)">
+                                        <img src="<?php echo '../' . htmlspecialchars($img); ?>" alt="评价图片" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showImageModal(this.src)">
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; endif; ?>

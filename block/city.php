@@ -1114,6 +1114,29 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     <?php endif; ?>
 </div>
 
+<?php
+// ========== 热门城市内链网格 ==========
+$crossCities = $city->getHotCitiesList(12);
+if (!empty($crossCities)):
+?>
+<div style="max-width:1200px;margin:40px auto;padding:0 15px;">
+    <h3 style="font-size:20px;font-weight:bold;color:#333;margin-bottom:16px;">🔥 探索更多城市</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+        <?php foreach ($crossCities as $c): ?>
+        <a href="<?= SeoHelper::cityUrl($c['pinyin']) ?>" 
+           style="display:block;padding:10px 14px;background:#f8f8f8;border-radius:6px;text-decoration:none;color:#333;font-size:14px;text-align:center;transition:all 0.2s;"
+           onmouseover="this.style.background='#ff6b00';this.style.color='#fff'"
+           onmouseout="this.style.background='#f8f8f8';this.style.color='#333'">
+            <?= htmlspecialchars($c['name']) ?>
+        </a>
+        <?php endforeach; ?>
+        <a href="../all-cities.php" style="display:block;padding:10px 14px;background:#ff6b00;border-radius:6px;text-decoration:none;color:#fff;font-size:14px;text-align:center;font-weight:bold;">
+            更多城市 →
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php require_once 'includes/footer.php'; ?>
 
 <?php if ($view_mode === 'zone'): ?>

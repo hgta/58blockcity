@@ -153,6 +153,21 @@ $letters = range('A', 'Z');
             .footer-grid{grid-template-columns:1fr!important}
         }
     </style>
+    <!-- Organization 结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "58区块城市",
+      "alternateName": "BlockCity",
+      "url": "https://www.58.tl",
+      "logo": "https://58.tl/assets/images/logo.png",
+      "sameAs": [
+        "https://www.58.tl"
+      ],
+      "description": "基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理"
+    }
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
