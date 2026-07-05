@@ -47,6 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['like']) && $userId) {
     exit;
 }
 
+// 处理留言
+$msgSuccess = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message_text']) && $userId) {
+    $msg = trim($_POST['message_text'] ?? '');
+    if (mb_strlen($msg) < 2) {
+        $msgSuccess = '<p style="color:#e74c3c;">留言内容至少2个字符</p>';
+    } elseif ($model->addMessage($modelId, $userId, $msg)) {
+        header("Location: view.php?id=$modelId#messages");
+        exit;
+    }
+}
+
+// 获取留言
+$messages = $model->getMessages($modelId, 1, 10);
+$messageCount = $model->getMessageCount($modelId);
+
 // SEO 配置
 $nickname = htmlspecialchars($modelInfo['nickname']);
 $site_config['title']       = SeoHelper::title($nickname . ' - 58模特库');
@@ -95,7 +111,7 @@ require_once '../includes/header.php';
         <div style="flex:1;min-width:250px;">
             <h1 style="font-size:28px;margin:0 0 10px;"><?= $nickname ?></h1>
             <div style="display:flex;flex-wrap:wrap;gap:15px;color:#666;font-size:15px;margin-bottom:15px;">
-                <?php if ($modelInfo['username']): ?><span><i class="fas fa-user"></i> @<?= htmlspecialchars($modelInfo['username']) ?></span><?php endif; ?>
+                <?php if ($modelInfo['username']): ?><span><i class="fas fa-user"></i> <a href="#messages" style="color:#3498db;text-decoration:none;">@<?= htmlspecialchars($modelInfo['username']) ?></a></span><?php endif; ?>
                 <?php if ($modelInfo['gender'] !== '保密'): ?><span><i class="fas fa-venus-mars"></i> <?= $modelInfo['gender'] ?></span><?php endif; ?>
                 <?php if ($modelInfo['city']): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($modelInfo['city']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['age']): ?><span><i class="fas fa-birthday-cake"></i> <?= $modelInfo['age'] ?>岁</span><?php endif; ?>
@@ -117,6 +133,7 @@ require_once '../includes/header.php';
             <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
                 <span style="color:#666;"><strong><?= $modelInfo['product_count'] ?></strong> 件商品</span>
                 <span style="color:#666;">❤️ <strong><?= $modelInfo['like_count'] ?></strong> 赞</span>
+                <span style="color:#666;"><a href="#messages" style="color:#666;text-decoration:none;">💬 <strong><?= $messageCount ?></strong> 留言</a></span>
                 <?php if ($userId && $userId != $modelInfo['user_id']): ?>
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="like" value="1">
@@ -127,6 +144,47 @@ require_once '../includes/header.php';
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+
+    <!-- 留言区 -->
+    <div id="messages" style="margin-bottom:30px;scroll-margin-top:80px;">
+        <h3 style="font-size:20px;margin-bottom:15px;">💬 留言 (<?= $messageCount ?>条)</h3>
+
+        <?php if ($userId): ?>
+        <form method="post" style="margin-bottom:20px;display:flex;gap:10px;">
+            <input type="text" name="message_text" maxlength="500" placeholder="给 <?= $nickname ?> 留言..."
+                   style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+            <button type="submit" style="padding:10px 20px;background:#ff6b00;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap;">发送</button>
+        </form>
+        <?php else: ?>
+        <p style="color:#999;margin-bottom:16px;">请<a href="../auth/login.php" style="color:#ff6b00;">登录</a>后留言</p>
+        <?php endif; ?>
+        <?= $msgSuccess ?>
+
+        <?php if (empty($messages)): ?>
+        <p style="color:#999;padding:20px;text-align:center;">暂无留言，快来抢沙发~</p>
+        <?php else: ?>
+        <?php foreach ($messages as $msg): 
+            $msgAvatar = !empty($msg['user_avatar']) ? '/assets/images/' . $msg['user_avatar'] : '';
+        ?>
+        <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+            <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#f0f0f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                <?php if ($msgAvatar): ?>
+                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;">
+                <?php else: ?>
+                <i class="fas fa-user" style="color:#ccc;font-size:18px;"></i>
+                <?php endif; ?>
+            </div>
+            <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <strong style="font-size:14px;"><?= htmlspecialchars($msg['username'] ?? '匿名') ?></strong>
+                    <span style="font-size:12px;color:#999;"><?= date('m-d H:i', strtotime($msg['created_at'])) ?></span>
+                </div>
+                <p style="font-size:14px;color:#444;margin:0;word-break:break-all;"><?= nl2br(htmlspecialchars($msg['message'])) ?></p>
+            </div>
+        </div>
+        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <!-- 作品图集 -->

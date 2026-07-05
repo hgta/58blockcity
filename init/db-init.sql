@@ -1431,6 +1431,17 @@ CREATE TABLE IF NOT EXISTS `model_likes` (
   KEY `idx_model_id` (`model_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `model_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `model_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_model_id` (`model_id`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ALTER TABLE `products`
   ADD COLUMN `model_id` int(11) DEFAULT NULL AFTER `shop_id`,
   ADD KEY `idx_model_id` (`model_id`);

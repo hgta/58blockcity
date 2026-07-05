@@ -311,4 +311,43 @@ class Model
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * 给模特留言
+     */
+    public function addMessage($modelId, $userId, $message)
+    {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO model_messages (model_id, user_id, message) VALUES (?, ?, ?)"
+        );
+        return $stmt->execute([intval($modelId), intval($userId), trim($message)]);
+    }
+
+    /**
+     * 获取留言列表
+     */
+    public function getMessages($modelId, $page = 1, $perPage = 10)
+    {
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $stmt = $this->pdo->prepare(
+            "SELECT mm.*, u.username, u.avatar as user_avatar 
+             FROM model_messages mm 
+             LEFT JOIN users u ON mm.user_id = u.id 
+             WHERE mm.model_id = ? 
+             ORDER BY mm.created_at DESC 
+             LIMIT {$perPage} OFFSET {$offset}"
+        );
+        $stmt->execute([intval($modelId)]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 获取留言总数
+     */
+    public function getMessageCount($modelId)
+    {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM model_messages WHERE model_id = ?");
+        $stmt->execute([intval($modelId)]);
+        return intval($stmt->fetchColumn());
+    }
 }
