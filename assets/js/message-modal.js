@@ -58,7 +58,7 @@ function openMessage(userId, username) {
     modal.querySelector('.msg-form input').focus();
 
     // 加载最近消息
-    fetch('https://www.58.tl/messages/ajax.php?action=recent&with=' + _msgToId)
+    fetch('/messages/ajax.php?action=recent&with=' + _msgToId)
         .then(function(r){ return r.json(); })
         .then(function(data){
             if (!data || !data.length) {
@@ -87,7 +87,7 @@ function sendMsg(e) {
     var btn = document.querySelector('#msg-modal .msg-form button');
     btn.disabled = true; btn.textContent = '发送中...';
 
-    fetch('https://www.58.tl/messages/ajax.php?action=send', {
+    fetch('/messages/ajax.php?action=send', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'to_user_id=' + _msgToId + '&message=' + encodeURIComponent(text)
