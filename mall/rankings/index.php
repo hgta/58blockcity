@@ -200,7 +200,10 @@ a{text-decoration:none;color:inherit}
                 <?php foreach ($modelRanking as $i => $m): ?>
                     <div class="shop-rank-item">
                         <div class="rank-num"><?= $i+1 ?></div>
-                        <img class="shop-logo" src="<?= htmlspecialchars($m['avatar']?:'https://58.tl/assets/images/default-avatar.jpg') ?>" alt="">
+                        <?php 
+                        $rAvatar = $m['model_avatar'] ? '../' . $m['model_avatar'] : ($m['user_avatar'] ? (strpos($m['user_avatar'],'/')!==false ? '../'.$m['user_avatar'] : '/assets/images/'.$m['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
+                        ?>
+                        <img class="shop-logo" src="<?= htmlspecialchars($rAvatar) ?>" alt="">
                         <div class="shop-info">
                             <div class="rank-name"><a href="<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>"><?= htmlspecialchars($m['nickname']) ?> @<?= htmlspecialchars($m['username']) ?></a></div>
                             <div class="rank-meta">

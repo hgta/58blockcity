@@ -91,13 +91,13 @@ class MallRanking {
         $allowed = ['product_count', 'like_count', 'review_count'];
         if (!in_array($type, $allowed)) $type = 'product_count';
 
-        $sql = "SELECT m.id, m.nickname, m.gender, m.height, m.{$type} as sort_value, 
-                       m.product_count, m.like_count, m.review_count,
-                       u.username, u.avatar 
-                FROM models m 
-                JOIN users u ON m.user_id = u.id 
+        $sql = "SELECT m.id, m.nickname, m.gender, m.height, m.avatar as model_avatar,
+                       m.product_count, m.like_count, m.review_count, m.{$type} as sort_value, 
+                       u.username, u.avatar as user_avatar
+                FROM models m
+                LEFT JOIN users u ON m.user_id = u.id
                 WHERE m.status = 'active' AND m.{$type} > 0
-                ORDER BY m.{$type} DESC 
+                ORDER BY m.{$type} DESC
                 LIMIT " . intval($limit);
 
         $stmt = $this->pdo->prepare($sql);
