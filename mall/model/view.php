@@ -76,7 +76,18 @@ $site_config['title']       = SeoHelper::title($nickname . ' - 58模特库');
 $site_config['description'] = SeoHelper::description("模特{$nickname}的专属展示页，查看TA的模特作品与关联商品。", '58人气值商城');
 $site_config['keywords']    = '58,模特,' . $nickname . ',商城,区块城市';
 $site_config['canonical_url'] = $canonicalUrl;
-$modelAvatar = !empty($modelInfo['avatar']) ? '../' . $modelInfo['avatar'] : (!empty($modelInfo['user_avatar']) ? '/assets/images/' . $modelInfo['user_avatar'] : '');
+$modelAvatar = '';
+if (!empty($modelInfo['avatar'])) {
+    $modelAvatar = '../' . $modelInfo['avatar'];
+} elseif (!empty($modelInfo['user_avatar'])) {
+    // 用户头像可能是 assets/uploads/avatars/xxx.jpg 或 uploads/avatars/xxx.jpg
+    $ua = $modelInfo['user_avatar'];
+    if (strpos($ua, '/') !== false) {
+        $modelAvatar = '../' . $ua; // 已含路径
+    } else {
+        $modelAvatar = '/assets/images/' . $ua; // 旧格式文件名
+    }
+}
 $site_config['og_image']    = $modelAvatar ?: 'https://58.tl/assets/images/og-mall.jpg';
 $site_config['og_type']     = 'profile';
 

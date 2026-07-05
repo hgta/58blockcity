@@ -243,7 +243,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                         <?php endif; ?>
                     </div>
                 </div>
-                <a href="/messages/" class="nav-button" style="position:relative;">
+                <a href="https://www.58.tl/messages/" class="nav-button" style="position:relative;">
                     <i class="fas fa-envelope"></i> 站内信
                     <?php if ($message_unread > 0): ?>
                     <span class="notification-badge"><?= $message_unread > 9 ? '9+' : $message_unread ?></span>
