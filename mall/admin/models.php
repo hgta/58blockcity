@@ -15,6 +15,39 @@ $user = new User($pdo);
 $city = new City($pdo);
 $allCities = $city->getAllCities();
 
+// 头像上传处理
+function uploadModelAvatar($file) {
+    if (!$file || $file['error'] !== UPLOAD_ERR_OK || $file['size'] === 0) return null;
+    $allowed = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
+    if (!in_array($file['type'], $allowed) || $file['size'] > 5*1024*1024) return null;
+    $subDir = date('Ym') . '/';
+    $uploadDir = __DIR__ . '/../assets/uploads/models/' . $subDir;
+    if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
+    $ext = ($file['type'] === 'image/png') ? 'png' : (($file['type'] === 'image/gif') ? 'gif' : 'jpg');
+    $fname = uniqid() . '_' . time() . '.' . $ext;
+    $path = $uploadDir . $fname;
+    $relPath = 'assets/uploads/models/' . $subDir . $fname;
+    // 压缩为 400x400
+    $src = null;
+    switch($file['type']){
+        case 'image/jpeg':case 'image/jpg':$src=@imagecreatefromjpeg($file['tmp_name']);break;
+        case 'image/png':$src=@imagecreatefrompng($file['tmp_name']);break;
+        case 'image/gif':$src=@imagecreatefromgif($file['tmp_name']);break;
+        case 'image/webp':$src=@imagecreatefromwebp($file['tmp_name']);break;
+    }
+    if ($src) {
+        $w = imagesx($src); $h = imagesy($src);
+        $size = min($w, $h);
+        $dst = imagecreatetruecolor(400, 400);
+        imagecopyresampled($dst, $src, 0, 0, ($w-$size)/2, ($h-$size)/2, 400, 400, $size, $size);
+        imagejpeg($dst, $path, 80);
+        imagedestroy($src); imagedestroy($dst);
+        return $relPath;
+    }
+    if (move_uploaded_file($file['tmp_name'], $path)) return $relPath;
+    return null;
+}
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $perPage = 20;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -28,9 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $actionMsg = '<div class="admin-alert admin-alert-success">模特已停用</div>';
             }
         } elseif ($_POST['action'] === 'save') {
+            // 处理头像上传
+            $avatarPath = uploadModelAvatar($_FILES['avatar_file'] ?? null);
             $data = [
                 'user_id'  => !empty($_POST['user_id']) ? intval($_POST['user_id']) : null,
                 'nickname'  => trim($_POST['nickname'] ?? ''),
+                'avatar'   => $avatarPath,
                 'gender'    => $_POST['gender'] ?? '保密',
                 'age'       => $_POST['age'] !== '' ? intval($_POST['age']) : null,
                 'city'      => trim($_POST['city'] ?? ''),
@@ -103,6 +139,23 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
             <form method="post">
                 <input type="hidden" name="action" value="save">
                 <input type="hidden" name="id" value="<?= $isEdit ? $formData['id'] : '' ?>">
+
+                <div style="display:flex;gap:20px;margin-bottom:16px;align-items:flex-start;">
+                    <div style="flex-shrink:0;">
+                        <label style="<?= $labelStyle ?>">头像</label>
+                        <div style="width:100px;height:100px;border-radius:8px;overflow:hidden;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;margin-bottom:6px;">
+                            <?php $avatarUrl = !empty($formData['avatar']) ? '../' . $formData['avatar'] : ''; ?>
+                            <?php if ($avatarUrl): ?>
+                            <img src="<?= htmlspecialchars($avatarUrl) ?>" style="width:100%;height:100%;object-fit:cover;" id="avatar-preview">
+                            <?php else: ?>
+                            <i class="fas fa-camera" style="font-size:28px;color:#475569;" id="avatar-placeholder"></i>
+                            <img src="" style="width:100%;height:100%;object-fit:cover;display:none;" id="avatar-preview">
+                            <?php endif; ?>
+                        </div>
+                        <input type="file" name="avatar_file" accept="image/*" style="font-size:12px;color:#94a3b8;max-width:100px;" onchange="previewAvatar(this)">
+                        <?php if ($avatarUrl): ?><small style="color:#64748b;">留空则不更换</small><?php endif; ?>
+                    </div>
+                    <div style="flex:1;min-width:0;">
 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
                     <div>
@@ -185,6 +238,8 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     <button type="submit" class="admin-btn admin-btn-primary"><?= $isEdit ? '更新' : '创建' ?></button>
                     <a href="models.php" class="admin-btn admin-btn-secondary">取消</a>
                 </div>
+                    </div><!-- close flex inner -->
+                </div><!-- close flex container -->
             </form>
         </div>
     </div>
@@ -274,5 +329,21 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
     </div>
     <?php endif; ?>
 </div>
+
+<script>
+function previewAvatar(input) {
+    var preview = document.getElementById('avatar-preview');
+    var placeholder = document.getElementById('avatar-placeholder');
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            if (placeholder) placeholder.style.display = 'none';
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 
 <?php require_once '../../shared/admin/admin-footer.php'; ?>

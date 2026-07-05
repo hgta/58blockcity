@@ -56,7 +56,7 @@ class Model
             $values[] = intval($data['user_id']);
         }
 
-        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'height', 'weight', 'measurements', 'hobbies'];
+        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies'];
         foreach ($optional as $f) {
             if (isset($data[$f]) && $data[$f] !== '') {
                 $fields[] = $f;
@@ -77,7 +77,7 @@ class Model
     {
         $sets = [];
         $values = [];
-        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'height', 'weight', 'measurements', 'hobbies', 'status'];
+        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'status'];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $data)) {
                 $sets[] = "$f = ?";

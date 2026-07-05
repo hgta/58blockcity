@@ -131,10 +131,12 @@ require_once '../includes/header.php';
     <!-- 作品图集 -->
     <?php if (!empty($galleryImages)): ?>
     <div style="margin-bottom:30px;">
-        <h3 style="font-size:20px;margin-bottom:15px;">📸 作品图集</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
-            <?php foreach ($galleryImages as $img): ?>
-            <div style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#f5f5f5;">
+        <h3 style="font-size:20px;margin-bottom:15px;">📸 作品图集 <small style="color:#999;font-size:13px;">(点击查看大图)</small></h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;" id="gallery-grid">
+            <?php foreach ($galleryImages as $i => $img): ?>
+            <div class="gallery-item" data-index="<?= $i ?>" data-src="../<?= htmlspecialchars($img) ?>"
+                 style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#f5f5f5;cursor:pointer;transition:transform 0.2s;"
+                 onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
                 <img src="../<?= htmlspecialchars($img) ?>" alt="作品图片" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
             </div>
             <?php endforeach; ?>
@@ -183,5 +185,50 @@ require_once '../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<!-- 图片灯箱 Modal -->
+<div id="lightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;" onclick="closeLightbox(event)">
+    <span style="position:absolute;top:20px;right:30px;color:#fff;font-size:36px;cursor:pointer;z-index:10000;" onclick="closeLightbox()">&times;</span>
+    <button onclick="event.stopPropagation();prevImage()" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);color:#fff;border:none;font-size:32px;padding:12px 18px;cursor:pointer;border-radius:50%;z-index:10000;">‹</button>
+    <img id="lightbox-img" src="" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:4px;" onclick="event.stopPropagation()">
+    <button onclick="event.stopPropagation();nextImage()" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);color:#fff;border:none;font-size:32px;padding:12px 18px;cursor:pointer;border-radius:50%;z-index:10000;">›</button>
+    <div style="position:absolute;bottom:30px;color:#fff;font-size:14px;" id="lightbox-counter"></div>
+</div>
+
+<script>
+var galleryImages = [];
+var currentIndex = 0;
+document.querySelectorAll('.gallery-item').forEach(function(el, i) {
+    galleryImages.push(el.dataset.src);
+    el.addEventListener('click', function(e) { e.stopPropagation(); openLightbox(i); });
+});
+function openLightbox(idx) {
+    currentIndex = idx;
+    document.getElementById('lightbox-img').src = galleryImages[idx];
+    document.getElementById('lightbox-counter').textContent = (idx+1) + ' / ' + galleryImages.length;
+    document.getElementById('lightbox').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e) {
+    if (e && e.target !== document.getElementById('lightbox')) return;
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = '';
+}
+function prevImage() {
+    currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
+    openLightbox(currentIndex);
+}
+function nextImage() {
+    currentIndex = (currentIndex + 1) % galleryImages.length;
+    openLightbox(currentIndex);
+}
+document.addEventListener('keydown', function(e) {
+    if (document.getElementById('lightbox').style.display === 'flex') {
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'Escape') { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = ''; }
+    }
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>
