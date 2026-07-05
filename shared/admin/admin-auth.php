@@ -96,7 +96,7 @@ function logAdminAction($action, $target = '', $detail = '') {
             $action,
             $target,
             $detail,
-            $_SERVER['REMOTE_ADDR'] ?? ''
+            $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? ''
         ]);
     } catch (PDOException $e) {
         error_log("记录管理员日志失败: " . $e->getMessage());

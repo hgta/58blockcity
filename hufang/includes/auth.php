@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 86400 * 30, // 30天
         'path' => '/',
-        'domain' => $_SERVER['HTTP_HOST'],
+        'domain' => '.58.tl',
         'secure' => isset($_SERVER['HTTPS']), // 仅在HTTPS下传输
         'httponly' => true, // 防止JavaScript访问
         'samesite' => 'Lax' // CSRF防护
