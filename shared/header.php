@@ -36,6 +36,20 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
     }
 }
 
+// 加载站内信未读数
+$message_unread = 0;
+if (isset($_SESSION['user_id']) && isset($pdo) && !isset($message_unread_computed)) {
+    if (!class_exists('Message')) {
+        $msgClassPath = __DIR__ . '/../classes/Message.php';
+        if (file_exists($msgClassPath)) { require_once $msgClassPath; }
+    }
+    if (class_exists('Message')) {
+        $messageObj = new Message($pdo);
+        $message_unread = $messageObj->getUnreadCount($_SESSION['user_id']);
+    }
+    $message_unread_computed = true;
+}
+
 $nav_links = $site_config['nav_links'] ?? [];
 $extra_head = $site_config['extra_head'] ?? '';
 $theme = $site_config['theme_color'] ?? '#ff6b00';
@@ -94,6 +108,7 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://58.tl/assets/js/main.js"></script>
+    <script src="https://58.tl/assets/js/message-modal.js"></script>
     <?= $extra_head ?>
     <!-- 51.LA 统计 -->
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
@@ -228,6 +243,12 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                         <?php endif; ?>
                     </div>
                 </div>
+                <a href="/messages/" class="nav-button" style="position:relative;">
+                    <i class="fas fa-envelope"></i> 站内信
+                    <?php if ($message_unread > 0): ?>
+                    <span class="notification-badge"><?= $message_unread > 9 ? '9+' : $message_unread ?></span>
+                    <?php endif; ?>
+                </a>
                 <a href="../user/dashboard.php" class="nav-button"><i class="fas fa-user"></i> 个人中心</a>
                 <a href="../auth/logout.php" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
             <?php else: ?>

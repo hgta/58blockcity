@@ -2,6 +2,7 @@
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Model.php';
+require_once '../../classes/Message.php';
 require_once '../../classes/SeoHelper.php';
 
 $modelId = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -47,21 +48,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['like']) && $userId) {
     exit;
 }
 
-// 处理留言
+// 处理留言（通过统一站内信发给模特关联的用户）
+$messageObj = new Message($pdo);
 $msgSuccess = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message_text']) && $userId) {
+$modelUserId = $modelInfo['user_id'] ?? 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message_text']) && $userId && $modelUserId) {
     $msg = trim($_POST['message_text'] ?? '');
-    if (mb_strlen($msg) < 2) {
-        $msgSuccess = '<p style="color:#e74c3c;">留言内容至少2个字符</p>';
-    } elseif ($model->addMessage($modelId, $userId, $msg)) {
+    if (mb_strlen($msg) < 1) {
+        $msgSuccess = '<p style="color:#e74c3c;">请输入留言内容</p>';
+    } elseif ($messageObj->send($userId, $modelUserId, $msg)) {
         header("Location: view.php?id=$modelId#messages");
         exit;
     }
 }
 
-// 获取留言
-$messages = $model->getMessages($modelId, 1, 10);
-$messageCount = $model->getMessageCount($modelId);
+// 获取留言（当前用户与模特用户的会话）
+$messages = [];
+$messageCount = 0;
+if ($modelUserId && $userId) {
+    $messages = $messageObj->getMessages($userId, $modelUserId, 1, 10);
+    $messageCount = count($messageObj->getMessages($userId, $modelUserId, 1, 9999));
+}
 
 // SEO 配置
 $nickname = htmlspecialchars($modelInfo['nickname']);

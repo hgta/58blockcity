@@ -1442,6 +1442,22 @@ CREATE TABLE IF NOT EXISTS `model_messages` (
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- --------------------------------------------------------
+-- 统一站内信
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `user_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `from_user_id` int(11) NOT NULL,
+  `to_user_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_to_user` (`to_user_id`, `is_read`),
+  KEY `idx_conversation` (`from_user_id`, `to_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ALTER TABLE `products`
   ADD COLUMN `model_id` int(11) DEFAULT NULL AFTER `shop_id`,
   ADD KEY `idx_model_id` (`model_id`);
