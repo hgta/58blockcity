@@ -71,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'user_id'  => !empty($_POST['user_id']) ? intval($_POST['user_id']) : null,
                 'nickname'  => trim($_POST['nickname'] ?? ''),
-                'avatar'   => $avatarPath,
                 'gender'    => $_POST['gender'] ?? '保密',
                 'age'       => $_POST['age'] !== '' ? intval($_POST['age']) : null,
                 'city'      => trim($_POST['city'] ?? ''),
@@ -84,6 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'measurements' => trim($_POST['measurements'] ?? ''),
                 'hobbies'   => trim($_POST['hobbies'] ?? ''),
             ];
+
+            // 只有实际上传了文件才设置 avatar，避免覆盖旧头像
+            if ($avatarPath) {
+                $data['avatar'] = $avatarPath;
+            }
 
             if ($modelId > 0) {
                 $data['status'] = $_POST['status'] ?? 'active';
@@ -141,7 +145,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
             <span class="admin-card-title"><?= $isEdit ? '编辑模特' : '添加模特' ?></span>
         </div>
         <div class="admin-card-body">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="save">
                 <input type="hidden" name="id" value="<?= $isEdit ? $formData['id'] : '' ?>">
 
