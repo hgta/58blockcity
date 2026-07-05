@@ -91,7 +91,9 @@ if (!empty($modelInfo['avatar'])) {
         $modelAvatar = '/assets/images/' . $ua; // 旧格式文件名
     }
 }
-$site_config['og_image']    = $modelAvatar ?: 'https://58.tl/assets/images/og-mall.jpg';
+// OG image 必须用绝对 URL
+$ogImage = $modelAvatar ? (strpos($modelAvatar, '://') !== false ? $modelAvatar : 'https://mall.58.tl/' . ltrim($modelAvatar, '/')) : 'https://58.tl/assets/images/og-mall.jpg';
+$site_config['og_image']    = $ogImage;
 $site_config['og_type']     = 'profile';
 
 // Person JSON-LD

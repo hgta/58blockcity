@@ -76,7 +76,7 @@ $site_config['title']       = SeoHelper::title($shopName . ' - 58人气值商城
 $site_config['description'] = SeoHelper::description($shopDesc, '58人气值商城');
 $site_config['keywords']    = '58,人气值,BCT,' . $shopName . ',店铺,商城,区块城市';
 $site_config['canonical_url'] = $canonicalUrl;
-$site_config['og_image']    = $shopLogo;
+$site_config['og_image']    = strpos($shopLogo, '://') !== false ? $shopLogo : 'https://mall.58.tl/' . ltrim($shopLogo, '/');
 $site_config['og_type']     = 'website';
 
 // 店铺 Store/LocalBusiness 结构化数据
