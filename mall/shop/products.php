@@ -211,7 +211,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'price_cny' => $priceCny,
                     'stock' => $stock,
                     'status' => $status,
-                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0
+                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0,
+                    'model_id' => !empty($_POST['model_id']) ? intval($_POST['model_id']) : null,
                 ];
 
                 // 创建商品
@@ -346,7 +347,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'stock' => $stock,
                     'status' => $status,
                     'video_url' => $videoUrl,
-                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0
+                    'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0,
+                    'model_id' => !empty($_POST['model_id']) ? intval($_POST['model_id']) : null,
                 ];
 
                 // 支持移动到其他店铺（仅限该用户拥有的店铺）
