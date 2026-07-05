@@ -22,6 +22,9 @@ if (!$modelInfo || $modelInfo['status'] !== 'active') {
 
 // 旧 URL 301 跳转到规范 URL
 $canonicalUrl = SeoHelper::modelUrl($modelId, $modelInfo['nickname'] ?? '');
+// 分享用 URL，中文编码防止微信等截断
+$shareUrl = 'https://mall.58.tl/model/' . $modelId . '-' . rawurlencode(SeoHelper::slug($modelInfo['nickname'] ?? '')) . '.html';
+$shareUrl = rtrim($shareUrl, '-.html') . '.html';
 SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 // 分页参数
@@ -166,7 +169,7 @@ require_once '../includes/header.php';
                 <button onclick="copyShareLink()" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#555;display:flex;align-items:center;gap:4px;">
                     📋 复制链接
                 </button>
-                <a href="https://service.weibo.com/share/share.php?url=<?= urlencode($canonicalUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>" target="_blank" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;text-decoration:none;font-size:13px;color:#e6162d;display:flex;align-items:center;gap:4px;">
+                <a href="https://service.weibo.com/share/share.php?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>" target="_blank" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;text-decoration:none;font-size:13px;color:#e6162d;display:flex;align-items:center;gap:4px;">
                     微博
                 </a>
                 <a href="javascript:void(0)" onclick="shareQQ()" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;text-decoration:none;font-size:13px;color:#12b7f5;display:flex;align-items:center;gap:4px;">
@@ -179,7 +182,7 @@ require_once '../includes/header.php';
     <script>
     function copyShareLink() {
         var input = document.createElement('input');
-        input.value = '<?= $canonicalUrl ?>';
+        input.value = '<?= $shareUrl ?>';
         document.body.appendChild(input);
         input.select();
         document.execCommand('copy');
@@ -187,7 +190,7 @@ require_once '../includes/header.php';
         alert('链接已复制到剪贴板');
     }
     function shareQQ() {
-        window.open('https://connect.qq.com/widget/shareqq/index.html?url=<?= urlencode($canonicalUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>&desc=<?= urlencode('快来看看' . $nickname . '的模特作品！') ?>');
+        window.open('https://connect.qq.com/widget/shareqq/index.html?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>&desc=<?= urlencode('快来看看' . $nickname . '的模特作品！') ?>');
     }
     </script>
 
