@@ -1402,6 +1402,7 @@ CREATE TABLE IF NOT EXISTS `models` (
   `weixin` varchar(100) DEFAULT NULL,
   `weibo` varchar(200) DEFAULT NULL,
   `xiaohongshu` varchar(200) DEFAULT NULL COMMENT '小红书',
+  `city` varchar(100) DEFAULT NULL COMMENT '所在城市',
   `height` decimal(5,1) DEFAULT NULL COMMENT '身高 cm',
   `weight` decimal(4,1) DEFAULT NULL COMMENT '体重 kg',
   `measurements` varchar(50) DEFAULT NULL COMMENT '三围',

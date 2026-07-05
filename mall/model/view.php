@@ -96,6 +96,7 @@ require_once '../includes/header.php';
             <div style="display:flex;flex-wrap:wrap;gap:15px;color:#666;font-size:15px;margin-bottom:15px;">
                 <?php if ($modelInfo['username']): ?><span><i class="fas fa-user"></i> @<?= htmlspecialchars($modelInfo['username']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['gender'] !== '保密'): ?><span><i class="fas fa-venus-mars"></i> <?= $modelInfo['gender'] ?></span><?php endif; ?>
+                <?php if ($modelInfo['city']): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($modelInfo['city']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['age']): ?><span><i class="fas fa-birthday-cake"></i> <?= $modelInfo['age'] ?>岁</span><?php endif; ?>
                 <?php if ($modelInfo['height']): ?><span><i class="fas fa-ruler-vertical"></i> <?= $modelInfo['height'] ?>cm</span><?php endif; ?>
                 <?php if ($modelInfo['weight']): ?><span><i class="fas fa-weight-scale"></i> <?= $modelInfo['weight'] ?>kg</span><?php endif; ?>
