@@ -53,7 +53,8 @@ $site_config['title']       = SeoHelper::title($nickname . ' - 58模特库');
 $site_config['description'] = SeoHelper::description("模特{$nickname}的专属展示页，查看TA的模特作品与关联商品。", '58人气值商城');
 $site_config['keywords']    = '58,模特,' . $nickname . ',商城,区块城市';
 $site_config['canonical_url'] = $canonicalUrl;
-$site_config['og_image']    = $modelInfo['avatar'] ?: 'https://58.tl/assets/images/og-mall.jpg';
+$modelAvatar = !empty($modelInfo['avatar']) ? '../' . $modelInfo['avatar'] : (!empty($modelInfo['user_avatar']) ? '/assets/images/' . $modelInfo['user_avatar'] : '');
+$site_config['og_image']    = $modelAvatar ?: 'https://58.tl/assets/images/og-mall.jpg';
 $site_config['og_type']     = 'profile';
 
 // Person JSON-LD
@@ -84,8 +85,8 @@ require_once '../includes/header.php';
     <div style="display:flex;gap:30px;margin-bottom:30px;flex-wrap:wrap;">
         <div style="flex-shrink:0;">
             <div style="width:160px;height:160px;border-radius:50%;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border:3px solid #ff6b00;">
-                <?php if (!empty($modelInfo['avatar'])): ?>
-                <img src="<?= htmlspecialchars($modelInfo['avatar']) ?>" alt="<?= $nickname ?>" style="width:100%;height:100%;object-fit:cover;">
+                <?php if ($modelAvatar): ?>
+                <img src="<?= htmlspecialchars($modelAvatar) ?>" alt="<?= $nickname ?>" style="width:100%;height:100%;object-fit:cover;">
                 <?php else: ?>
                 <i class="fas fa-user" style="font-size:60px;color:#ccc;"></i>
                 <?php endif; ?>

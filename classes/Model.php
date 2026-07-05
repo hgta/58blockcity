@@ -17,7 +17,7 @@ class Model
     public function getById($id)
     {
         $stmt = $this->pdo->prepare(
-            "SELECT m.*, u.username, u.avatar 
+            "SELECT m.*, u.username, u.avatar as user_avatar 
              FROM models m 
              LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.id = ?"
@@ -32,7 +32,7 @@ class Model
     public function getByUserId($userId)
     {
         $stmt = $this->pdo->prepare(
-            "SELECT m.*, u.username, u.avatar 
+            "SELECT m.*, u.username, u.avatar as user_avatar 
              FROM models m 
              LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.user_id = ?"
@@ -120,7 +120,7 @@ class Model
         $stmt->execute($params);
         $total = $stmt->fetchColumn();
 
-        $sql = "SELECT m.*, u.username, u.avatar 
+        $sql = "SELECT m.*, u.username, u.avatar as user_avatar 
                 FROM models m 
                 LEFT JOIN users u ON m.user_id = u.id" . $where . " 
                 ORDER BY m.id DESC 
@@ -300,8 +300,8 @@ class Model
             $type = 'product_count';
         }
         $stmt = $this->pdo->prepare(
-            "SELECT m.id, m.nickname, m.gender, m.height, m.{$type} as sort_value, 
-                    u.username, u.avatar
+            "SELECT m.id, m.nickname, m.gender, m.height, m.like_count, m.product_count, m.review_count, m.{$type} as sort_value, 
+                    u.username, u.avatar as user_avatar
              FROM models m 
              LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.status = 'active' 
