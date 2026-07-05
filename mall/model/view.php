@@ -165,9 +165,9 @@ require_once '../includes/header.php';
                 <?php endif; ?>
             </div>
             <!-- 分享按钮 -->
-            <div style="display:flex;gap:8px;margin-top:12px;">
-                <button onclick="copyShareLink()" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#555;display:flex;align-items:center;gap:4px;">
-                    📋 复制链接
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <button onclick="shareModel()" style="padding:6px 14px;border-radius:20px;border:1px solid #ff6b00;background:#ff6b00;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;">
+                    📤 分享
                 </button>
                 <a href="https://service.weibo.com/share/share.php?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>" target="_blank" style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;text-decoration:none;font-size:13px;color:#e6162d;display:flex;align-items:center;gap:4px;">
                     微博
@@ -180,14 +180,26 @@ require_once '../includes/header.php';
     </div>
 
     <script>
-    function copyShareLink() {
-        var input = document.createElement('input');
-        input.value = '<?= $shareUrl ?>';
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        alert('链接已复制到剪贴板');
+    function shareModel() {
+        var shareUrl = '<?= $shareUrl ?>';
+        var shareTitle = <?= json_encode($nickname . ' - 58模特库') ?>;
+        var shareText = <?= json_encode('快来看看' . $nickname . '的模特作品！') ?>;
+
+        if (navigator.share) {
+            navigator.share({
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl,
+            }).catch(function(){});
+        } else {
+            var input = document.createElement('input');
+            input.value = shareUrl;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('链接已复制到剪贴板');
+        }
     }
     function shareQQ() {
         window.open('https://connect.qq.com/widget/shareqq/index.html?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($nickname . ' - 58模特库') ?>&desc=<?= urlencode('快来看看' . $nickname . '的模特作品！') ?>');
