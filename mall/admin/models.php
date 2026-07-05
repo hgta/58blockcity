@@ -27,13 +27,19 @@ function uploadModelAvatar($file) {
     $fname = uniqid() . '_' . time() . '.' . $ext;
     $path = $uploadDir . $fname;
     $relPath = 'assets/uploads/models/' . $subDir . $fname;
-    // 压缩为 400x400
+    // 压缩为 400x400，WebP 不支持 GD 时直接保存
     $src = null;
-    switch($file['type']){
-        case 'image/jpeg':case 'image/jpg':$src=@imagecreatefromjpeg($file['tmp_name']);break;
-        case 'image/png':$src=@imagecreatefrompng($file['tmp_name']);break;
-        case 'image/gif':$src=@imagecreatefromgif($file['tmp_name']);break;
-        case 'image/webp':$src=@imagecreatefromwebp($file['tmp_name']);break;
+    $gdOk = true;
+    if ($file['type'] === 'image/webp' && !function_exists('imagecreatefromwebp')) {
+        $gdOk = false; // GD 不支持 WebP，直接保存原文件
+    }
+    if ($gdOk) {
+        switch($file['type']){
+            case 'image/jpeg':case 'image/jpg':$src=@imagecreatefromjpeg($file['tmp_name']);break;
+            case 'image/png':$src=@imagecreatefrompng($file['tmp_name']);break;
+            case 'image/gif':$src=@imagecreatefromgif($file['tmp_name']);break;
+            case 'image/webp':$src=@imagecreatefromwebp($file['tmp_name']);break;
+        }
     }
     if ($src) {
         $w = imagesx($src); $h = imagesy($src);
@@ -44,6 +50,7 @@ function uploadModelAvatar($file) {
         imagedestroy($src); imagedestroy($dst);
         return $relPath;
     }
+    // GD 处理失败或 WebP 不支持的兜底：直接保存原文件
     if (move_uploaded_file($file['tmp_name'], $path)) return $relPath;
     return null;
 }
