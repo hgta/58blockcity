@@ -9,8 +9,20 @@ if (!$userId) {
     exit;
 }
 
-$username = $_SESSION['username'] ?? '';
 $msg = new Message($pdo);
+
+// 处理发送（必须在任何 HTML 输出之前）
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
+    $toId = intval($_POST['to_user_id'] ?? 0);
+    $text = trim($_POST['message'] ?? '');
+    if ($toId > 0 && !empty($text)) {
+        $msg->send($userId, $toId, $text);
+        header("Location: ?with=$toId");
+        exit;
+    }
+}
+
+$username = $_SESSION['username'] ?? '';
 $conversations = $msg->getConversations($userId);
 $unreadTotal = $msg->getUnreadCount($userId);
 
@@ -20,6 +32,13 @@ if ($withUser > 0) {
     $msg->markRead($userId, $withUser);
     $chatMessages = $msg->getMessages($userId, $withUser, 1, 50);
     $unreadTotal = $msg->getUnreadCount($userId);
+}
+
+// 头像辅助函数
+function avatarUrl($avatar) {
+    if (empty($avatar)) return '';
+    if (strpos($avatar, '/') !== false) return '/' . $avatar;
+    return '/assets/images/' . $avatar;
 }
 ?>
 <!DOCTYPE html>
@@ -75,7 +94,10 @@ if ($withUser > 0) {
         <?php else: ?>
         <?php foreach ($conversations as $c): ?>
         <a href="?with=<?= $c['partner_id'] ?>" class="conv-item <?= $withUser == $c['partner_id'] ? 'active' : '' ?>">
-            <div class="conv-avatar"><?= $c['user_avatar'] ? '<img src="/assets/images/'.$c['user_avatar'].'">' : '<i class="fas fa-user"></i>' ?></div>
+            <div class="conv-avatar">
+                <?php $cAvatar = avatarUrl($c['user_avatar']); ?>
+                <?= $cAvatar ? '<img src="'.htmlspecialchars($cAvatar).'">' : '<i class="fas fa-user"></i>' ?>
+            </div>
             <div class="conv-info">
                 <div class="conv-name"><?= htmlspecialchars($c['username'] ?? '用户'.$c['partner_id']) ?></div>
                 <div class="conv-preview">点击查看对话</div>
@@ -94,19 +116,26 @@ if ($withUser > 0) {
 
 <div class="chat-area">
     <?php if ($withUser > 0): 
-        // 获取对方信息
-        $partnerStmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+        $partnerStmt = $pdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
         $partnerStmt->execute([$withUser]);
         $partner = $partnerStmt->fetch();
         $partnerName = htmlspecialchars($partner['username'] ?? '用户');
+        $partnerAvatar = avatarUrl($partner['avatar'] ?? '');
     ?>
     <div class="chat-header"><?= $partnerName ?></div>
     <div class="chat-body" id="chat-body">
         <?php if (empty($chatMessages)): ?>
         <div class="chat-empty"><i class="fas fa-comments"></i>暂无消息</div>
         <?php else: ?>
-        <?php foreach ($chatMessages as $cm): $isMe = $cm['from_user_id'] == $userId; ?>
+        <?php foreach ($chatMessages as $cm): $isMe = $cm['from_user_id'] == $userId; 
+            $mAvatar = avatarUrl($cm['user_avatar'] ?? '');
+        ?>
         <div class="chat-msg <?= $isMe ? 'me' : '' ?>">
+            <?php if (!$isMe): ?>
+            <div class="conv-avatar" style="width:32px;height:32px;align-self:flex-end;margin-bottom:2px;">
+                <?= $mAvatar ? '<img src="'.htmlspecialchars($mAvatar).'">' : '<i class="fas fa-user" style="font-size:14px;"></i>' ?>
+            </div>
+            <?php endif; ?>
             <div>
                 <div class="chat-bubble"><?= nl2br(htmlspecialchars($cm['message'])) ?></div>
                 <div class="chat-time"><?= date('H:i', strtotime($cm['created_at'])) ?></div>
@@ -125,18 +154,5 @@ if ($withUser > 0) {
     <div class="chat-empty"><i class="fas fa-inbox"></i>选择一个会话开始聊天</div>
     <?php endif; ?>
 </div>
-
-<?php
-// 处理发送
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
-    $toId = intval($_POST['to_user_id'] ?? 0);
-    $text = trim($_POST['message'] ?? '');
-    if ($toId > 0 && !empty($text)) {
-        $msg->send($userId, $toId, $text);
-        header("Location: ?with=$toId");
-        exit;
-    }
-}
-?>
 </body>
 </html>
