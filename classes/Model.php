@@ -238,13 +238,14 @@ class Model
      */
     public function getModelProductImages($modelId, $limit = 50)
     {
+        $limitNum = intval($limit);
         $stmt = $this->pdo->prepare(
             "SELECT main_image, thumb_image, images 
              FROM products 
              WHERE model_id = ? AND status = 'active' 
-             ORDER BY created_at DESC LIMIT ?"
+             ORDER BY created_at DESC LIMIT {$limitNum}"
         );
-        $stmt->execute([intval($modelId), intval($limit)]);
+        $stmt->execute([intval($modelId)]);
         $allImages = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             if (!empty($row['main_image'])) {
