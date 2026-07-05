@@ -62,14 +62,19 @@ function getCityFromCoords(lat, lng) {
  * 更新城市显示
  */
 function updateCityDisplay(cityName) {
-    const cityLink = document.getElementById('cityLink');
-    if (cityLink) {
-        cityLink.textContent = cityName;
-        cityLink.href = `https://www.blockcity.pub/?city=${encodeURIComponent(cityName)}`;
-    }
-    const cityLink2 = document.getElementById('cityLink2');
-    if (cityLink2) {
-        cityLink2.href = `https://www.blockcity.pub/?city=${encodeURIComponent(cityName)}`;
+    const cityElement = document.getElementById('userCity');
+    if (cityElement) {
+        cityElement.textContent = cityName;
+        
+        // 更新城市链接
+        const cityLink = document.getElementById('cityLink');
+        if (cityLink) {
+            cityLink.href = `https://www.blockcity.pub/?city=${encodeURIComponent(cityName)}`;
+        }
+        const cityLink2 = document.getElementById('cityLink2');
+        if (cityLink2) {
+            cityLink2.href = cityLink ? cityLink.href : '';
+        }
     }
 }
 
@@ -360,7 +365,7 @@ function getCityInfo() {
 	  const city = ipData.city; // 当前城市名（如"北京市"）
 	  const adcode = ipData.adcode; // 当前adcode
 	  
-	  document.getElementById('cityLink').textContent = city.replace('市', '');
+	  document.getElementById('userCity').textContent = city.replace('市', '');
 
 	  // 步骤2：通过地理编码查询电话区号
 	  return fetch('https://restapi.amap.com/v3/geocode/geo?address='+city+'&key=c7ebabae441606f172364f6d644a9ce4');    
@@ -369,7 +374,7 @@ function getCityInfo() {
 	.then(geoData => {
 	  const citycode = geoData.geocodes[0].citycode;
 	  document.getElementById('cityLink').href = 'https://www.blockcity.pub/'+citycode+'?iclc';  
-		document.getElementById('cityLink2').href = document.getElementById('cityLink').href;
+		document.getElementById('cityLink2').href = document.getElementById("cityLink").href;
 	})
 	.catch(error => {
 		if(navigator.geolocation) {
@@ -379,9 +384,9 @@ function getCityInfo() {
 					.then(data => {
 						if(data.regeocode && data.regeocode.addressComponent.city) {
 							const city = data.regeocode.addressComponent.city.replace('市', '');
-							document.getElementById('cityLink').textContent = city;
+							document.getElementById('userCity').textContent = city;
 							document.getElementById('cityLink').href = 'https://www.blockcity.pub/'+data.regeocode.addressComponent.citycode+'?iclc';
-		document.getElementById('cityLink2').href = document.getElementById('cityLink').href;
+		document.getElementById('cityLink2').href = document.getElementById("cityLink").href;
 						}
 					});
 			});
