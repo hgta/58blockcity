@@ -19,7 +19,7 @@ class Model
         $stmt = $this->pdo->prepare(
             "SELECT m.*, u.username, u.avatar 
              FROM models m 
-             LEFT LEFT JOIN users u ON m.user_id = u.id 
+             LEFT JOIN users u ON m.user_id = u.id 
              WHERE m.id = ?"
         );
         $stmt->execute([intval($id)]);
