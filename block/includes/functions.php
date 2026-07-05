@@ -115,11 +115,7 @@ function getClientIp() {
         return trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
     }
     return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-} else {
-        return $_SERVER['REMOTE_ADDR'];
-    }
 }
-
 /**
  * 生成分页HTML
  * @param int $currentPage 当前页码
