@@ -262,7 +262,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
 <div class="menu-overlay" id="menuOverlay"></div>
 
 <div class="city-location-bar" id="cityLocationBar">
-    欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+    欢迎您，来自于<a href="https://www.58.tl/city/beijing.html" id="cityLink">未知城市</a>的朋友，<a href="https://www.58.tl/city/beijing.html" id="cityLink2">点击进入您的区块城市</a>
 </div>
 
 <main class="container">
