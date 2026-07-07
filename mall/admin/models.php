@@ -286,7 +286,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     <!-- 头像 -->
                     <div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid #334155;">
                         <?php if (!empty($m['avatar'])): ?>
-                        <img src="<?= htmlspecialchars($m['avatar']) ?>" style="width:100%;height:100%;object-fit:cover;">
+                        <img src="../<?= htmlspecialchars($m['avatar']) ?>" style="width:100%;height:100%;object-fit:cover;">
                         <?php else: ?>
                         <i class="fas fa-user" style="font-size:22px;color:#475569;"></i>
                         <?php endif; ?>
