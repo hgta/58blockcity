@@ -19,9 +19,8 @@
             '</form>' +
         '</div>';
     modal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;';
-    document.body.appendChild(modal);
 
-    // 样式
+    // 样式（先创建 style，等 DOM ready 后统一注入）
     var style = document.createElement('style');
     style.textContent = '.msg-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5)}' +
         '.msg-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;max-width:90%;max-height:80%;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)}' +
@@ -40,7 +39,16 @@
         '.msg-form button{padding:10px 18px;background:#ff6b00;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;white-space:nowrap}' +
         '.msg-loading{text-align:center;color:#999;padding:20px}' +
         '.msg-empty{text-align:center;color:#ccc;padding:30px;font-size:14px}';
-    document.head.appendChild(style);
+    // 等 body 可用后再注入
+    function injectDOM() {
+        document.body.appendChild(modal);
+        document.head.appendChild(style);
+    }
+    if (document.body) {
+        injectDOM();
+    } else {
+        document.addEventListener('DOMContentLoaded', injectDOM);
+    }
 })();
 
 var _msgToId = 0, _msgToName = '';
