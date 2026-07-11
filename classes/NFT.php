@@ -577,7 +577,7 @@ class NFT {
 		return $stmt->fetchAll();//$stmt->fetchAll(PDO::FETCH_COLUMN, 0);
 	}
 	
-	public function getSaleList($city = '', $rarity = '', $minPrice = '', $maxPrice = '', $currency = 'all', $sort = 'newest', $limit = 24, $offset = 0) {
+	public function getSaleList($city = '', $minPrice = '', $maxPrice = '', $currency = 'all', $sort = 'newest', $limit = 24, $offset = 0) {
 		$sql = "SELECT 
 					n.id AS nft_id,
 					n.code,
@@ -585,25 +585,24 @@ class NFT {
 					t.price,
 					t.currency,
 					t.created_at,
-					u.username AS seller_name
+					u.username AS seller_name,
+					c.id AS city_id,
+					c.name AS city_name,
+					(SELECT COUNT(*) FROM nft_purchase_requests WHERE nft_id = n.id AND status = 'active') AS purchase_count
 				FROM nft_avatars n
 				JOIN nft_transactions t ON n.id = t.nft_id
 				JOIN users u ON t.seller_id = u.id
+				JOIN cities c ON t.city_id = c.id
 				WHERE t.status = 'listed'";
 		
 		// 添加筛选条件
 		$conditions = [];
 		$params = [];
 		
-		/* if (!empty($city)) {
-			$conditions[] = "n.city = ?";
+		if (!empty($city)) {
+			$conditions[] = "c.name = ?";
 			$params[] = $city;
-		} 
-		
-		if (!empty($rarity)) {
-			$conditions[] = "n.rarity = ?";
-			$params[] = $rarity;
-		}*/
+		}
 		
 		if (is_numeric($minPrice)) {
 			$conditions[] = "t.price >= ?";
@@ -632,14 +631,14 @@ class NFT {
 			case 'price_desc':
 				$sql .= " ORDER BY t.price DESC";
 				break;
-			case 'rare':
-				$sql .= " ORDER BY FIELD(n.rarity, 'legendary', 'epic', 'rare', 'common')";
+			case 'hot':
+				$sql .= " ORDER BY purchase_count DESC, t.created_at DESC";
 				break;
 			default:
 				$sql .= " ORDER BY t.created_at DESC";
 		}
 		
-		// 添加分页 - 这里需要明确指定参数类型
+		// 添加分页
 		$sql .= " LIMIT ? OFFSET ?";
 		
 		$stmt = $this->pdo->prepare($sql);
@@ -658,24 +657,20 @@ class NFT {
 		return $stmt->fetchAll();
 	}
 
-	public function getTotalSaleCount($city = '', $rarity = '', $minPrice = '', $maxPrice = '', $currency = 'all') {
+	public function getTotalSaleCount($city = '', $minPrice = '', $maxPrice = '', $currency = 'all') {
 		$sql = "SELECT COUNT(*)
 				FROM nft_avatars n
 				JOIN nft_transactions t ON n.id = t.nft_id
+				JOIN cities c ON t.city_id = c.id
 				WHERE t.status = 'listed'";
 		
 		$conditions = [];
 		$params = [];
 		
-		/* if (!empty($city)) {
-			$conditions[] = "n.city = ?";
+		if (!empty($city)) {
+			$conditions[] = "c.name = ?";
 			$params[] = $city;
-		} 
-		
-		if (!empty($rarity)) {
-			$conditions[] = "n.rarity = ?";
-			$params[] = $rarity;
-		}*/
+		}
 		
 		if (is_numeric($minPrice)) {
 			$conditions[] = "t.price >= ?";
