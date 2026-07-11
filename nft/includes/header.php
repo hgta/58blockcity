@@ -9,6 +9,7 @@ $site_config['logo_sub']    = $site_config['logo_sub'] ?? '头像';
 $site_config['logo_tag']    = $site_config['logo_tag'] ?? 'BlockCity NFT头像交易平台';
 $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../','icon'=>'home','text'=>'返回首页'],
+    ['url'=>'../ranking/index.php','icon'=>'trophy','text'=>'排行榜'],
     ['url'=>'../nft/claim_list.php','icon'=>'hand-holding-heart','text'=>'认领'],
     ['url'=>'../nft/sale_list.php','icon'=>'tag','text'=>'售卖'],
     ['url'=>'../nft/purchase_list.php','icon'=>'hand-holding-usd','text'=>'求购'],

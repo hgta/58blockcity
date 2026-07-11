@@ -1291,6 +1291,25 @@ public function getRecentActivities($nftId, $limit = 10) {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * 后台标签列表（带分页）
+     */
+    public function getTagsForAdmin($page = 1, $perPage = 20) {
+        $page = max(1, intval($page));
+        $perPage = max(1, intval($perPage));
+        $offset = ($page - 1) * $perPage;
+        $total = $this->pdo->query("SELECT COUNT(*) FROM tags")->fetchColumn();
+        $stmt = $this->pdo->prepare(
+            "SELECT t.*, COUNT(nt.nft_avatar_id) as nft_count
+             FROM tags t LEFT JOIN nft_tags nt ON t.id = nt.tag_id
+             GROUP BY t.id ORDER BY nft_count DESC, t.id DESC
+             LIMIT $perPage OFFSET $offset"
+        );
+        $stmt->execute();
+        $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return ['list' => $list, 'total' => (int)$total, 'pages' => ceil($total / $perPage)];
+    }
+
     public function getNftWithTags($id) {
         $stmt = $this->pdo->prepare("SELECT * FROM nft_avatars WHERE id = ?");
         $stmt->execute([intval($id)]);

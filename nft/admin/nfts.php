@@ -138,45 +138,69 @@ $inputStyle = 'padding:8px 12px;background:#0f172a;border:1px solid #334155;bord
 
 <!-- NFT 列表 -->
 <div class="admin-card">
-    <div class="admin-card-header"><span class="admin-card-title">NFT 列表 (<?= $total ?>)</span></div>
+    <div class="admin-card-header">
+        <span class="admin-card-title">NFT 列表</span>
+        <span class="admin-page-info">共 <?= $total ?> 个</span>
+    </div>
     <div class="admin-card-body" style="padding:0;">
-        <table class="admin-table">
+        <div class="admin-table-responsive">
+        <table class="admin-data-table">
             <thead><tr>
                 <th>ID</th><th>图片</th><th>编号</th><th>求购</th><th>售卖</th><th>评论</th><th>操作</th>
             </tr></thead>
             <tbody>
             <?php if (empty($nfts)): ?>
-            <tr><td colspan="7" style="text-align:center;padding:30px;">暂无数据</td></tr>
+            <tr><td colspan="7" class="admin-empty-state" style="padding:30px;">暂无数据</td></tr>
             <?php else: foreach ($nfts as $n): ?>
             <tr>
                 <td><?= $n['id'] ?></td>
                 <td><?php if($n['base_image']): ?><img src="../avatar/<?= htmlspecialchars($n['base_image']) ?>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;"><?php endif; ?></td>
                 <td><strong><?= htmlspecialchars($n['code']) ?></strong></td>
-                <td><?= $n['buy_count'] ?></td>
-                <td><?= $n['sale_count'] ?></td>
-                <td><?= $n['comment_count'] ?></td>
+                <td><span class="admin-badge warning"><?= $n['buy_count'] ?></span></td>
+                <td><span class="admin-badge info"><?= $n['sale_count'] ?></span></td>
+                <td><span class="admin-badge default"><?= $n['comment_count'] ?></span></td>
                 <td>
-                    <a href="?view=<?= $n['id'] ?>" class="admin-btn admin-btn-sm">查看</a>
-                    <a href="nft_form.php?edit=<?= $n['id'] ?>" class="admin-btn admin-btn-sm">编辑</a>
-                    <form method="post" style="display:inline" onsubmit="return confirm('确定删除该NFT?')">
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="id" value="<?= $n['id'] ?>">
-                        <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger">删除</button>
-                    </form>
+                    <div class="admin-btn-group">
+                        <a href="?view=<?= $n['id'] ?>" class="admin-btn admin-btn-sm">查看</a>
+                        <a href="nft_form.php?edit=<?= $n['id'] ?>" class="admin-btn admin-btn-sm">编辑</a>
+                        <form method="post" style="display:inline" onsubmit="return confirm('确定删除该NFT?')">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="<?= $n['id'] ?>">
+                            <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger">删除</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             <?php endforeach; endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 
 <?php if ($totalPages > 1): ?>
-<div style="text-align:center;margin-top:20px;">
-    <?php for ($i=1; $i<=$totalPages; $i++): ?>
-    <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&tag_id=<?= $tagId ?>" class="admin-btn admin-btn-sm <?= $i==$page?'admin-btn-primary':'admin-btn-secondary' ?>" style="margin:0 2px;"><?= $i ?></a>
-    <?php endfor; ?>
-</div>
+<nav class="admin-pagination">
+    <?php
+    $qs = '&search=' . urlencode($search) . '&tag_id=' . $tagId;
+    $showPrev = $page > 1;
+    $showNext = $page < $totalPages;
+    ?>
+    <?php if ($showPrev): ?><a href="?page=<?= $page - 1 ?><?= $qs ?>"><i class="fas fa-chevron-left"></i></a>
+    <?php else: ?><span class="disabled"><i class="fas fa-chevron-left"></i></span><?php endif; ?>
+    <?php
+    $last = 0; $window = 2;
+    for ($i = 1; $i <= $totalPages; $i++) {
+        if ($i == 1 || $i == $totalPages || abs($i - $page) <= $window) {
+            if ($last && $i - $last > 1) echo '<span class="disabled">…</span>';
+            $last = $i;
+            if ($i == $page) echo '<span class="current">' . $i . '</span>';
+            else echo '<a href="?page=' . $i . $qs . '">' . $i . '</a>';
+        }
+    }
+    ?>
+    <?php if ($showNext): ?><a href="?page=<?= $page + 1 ?><?= $qs ?>"><i class="fas fa-chevron-right"></i></a>
+    <?php else: ?><span class="disabled"><i class="fas fa-chevron-right"></i></span><?php endif; ?>
+</nav>
 <?php endif; ?>
 </div>
 
