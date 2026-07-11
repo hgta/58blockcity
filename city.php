@@ -280,7 +280,7 @@ $keywords = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},Bl
         <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
         <div class="promotion-header"><i>🎉</i> 限时优惠</div>
         <div class="promotion-content">
-            凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7.7折优惠</strong>！<br>
+            凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7.5折优惠</strong>！<br>
             详情请扫描下方二维码添加客服微信咨询。
         </div>
         <div class="promotion-qrcode">
