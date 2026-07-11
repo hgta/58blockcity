@@ -12,7 +12,7 @@ class BCTOrder {
     }
     
     // 创建订单
-    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null) {
+    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null, $durationDays = 0) {
         try {
             $this->pdo->beginTransaction();
             
@@ -24,23 +24,26 @@ class BCTOrder {
             // 计算总金额
             $total = $amount * $price;
             
-            // 如果是出售订单，检查并冻结余额
+            // 如果是出售订单，验证余额（不扣余额，交易完成时才处理）
             if($type == 'sell') {
                 $account = new UserBCTAccount($this->pdo);
                 $userAccount = $account->getAccount($userId, $city);
                 
-                if(!$userAccount || $userAccount['balance'] - $userAccount['frozen'] < $amount) {
+                if(!$userAccount || $userAccount['balance'] < $amount) {
                     throw new Exception("可用余额不足");
                 }
-                
-                $account->updateBalance($userId, $city, $amount, true);
             }
+            
+            // 计算过期时间
+            $expiresAt = ($durationDays > 0) 
+                ? date('Y-m-d H:i:s', strtotime("+{$durationDays} days"))
+                : null;
             
             // 创建订单
             $orderNo = $this->generateOrderNo();
             $stmt = $this->pdo->prepare("INSERT INTO bct_orders 
-                (order_no, user_id, city, type, amount, price, total_amount, trade_type, contact_info) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (order_no, user_id, city, type, amount, price, total_amount, trade_type, contact_info, expires_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
             $stmt->execute([
                 $orderNo, 
@@ -51,7 +54,8 @@ class BCTOrder {
                 $price, 
                 $total, 
                 $tradeType,
-                $contactInfo
+                $contactInfo,
+                $expiresAt
             ]);
             
             $orderId = $this->pdo->lastInsertId();
@@ -62,6 +66,20 @@ class BCTOrder {
             $this->pdo->rollBack();
             return false;
         }
+    }
+
+    // 取消订单
+    public function cancelOrder($orderId, $userId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND user_id = ? AND status IN ('pending','processing')");
+        $stmt->execute([$orderId, $userId]);
+        $order = $stmt->fetch();
+        
+        if (!$order) return false;
+        
+        // 卖单：余额未扣过，取消时不需退还
+        
+        $stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'canceled' WHERE id = ?");
+        return $stmt->execute([$orderId]);
     }
     
     // 平台交易自动匹配
@@ -204,10 +222,7 @@ class BCTOrder {
         $netAmount = round($totalAmount - $fee, 2);
         
         // 转账流程
-        // 1. 解冻卖方冻结的BCT
-        $account->updateBalance($sellOrder['user_id'], $sellOrder['city'], -$amount, true);
-        
-        // 2. 将BCT从卖方转到买方
+        // 将BCT从卖方转到买方（余额直接扣除）
         $account->transfer($sellOrder['user_id'], $buyOrder['user_id'], $sellOrder['city'], $amount);
         
         // 3. 创建交易记录
@@ -245,49 +260,53 @@ class BCTOrder {
             $remainingAmount = $originalAmount - $tradedAmount;
             $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = ?, status = 'processing' WHERE id = ?");
             $stmt->execute([$remainingAmount, $orderId]);
-            
-            // 如果是卖单，解冻未成交部分的余额
-            if ($order['type'] == 'sell') {
-                $account = new UserBCTAccount($this->pdo);
-                // 解冻: updateBalance 的 $isFrozen=true 时 $amount 加到 frozen 字段
-                // 要减少 frozen，传负数
-                $account->updateBalance($order['user_id'], $order['city'], -$remainingAmount, true);
-            }
         }
     }
 	
 	/**
-	 * 获取用户订单
-	 * 
-	 * @param int $userId 用户ID
-	 * @param string $type 订单类型: all/buy/sell
-	 * @return array
+	 * 获取用户订单（带分页）
 	 */
-	public function getUserOrders($userId, $type = 'all', $page = 1, $perPage = 15) {
+	public function getUserOrders($userId, $type = 'all', $status = 'all', $page = 1, $perPage = 15) {
 		$sql = "SELECT * FROM bct_orders WHERE user_id = ?";
 		$params = [$userId];
 		
-		if ($type === 'buy') {
-			$sql .= " AND type = 'buy'";
-		} elseif ($type === 'sell') {
-			$sql .= " AND type = 'sell'";
+		if ($type === 'buy') { $sql .= " AND type = 'buy'"; $params[] = 'buy'; }
+		elseif ($type === 'sell') { $sql .= " AND type = 'sell'"; $params[] = 'sell'; }
+
+		if ($status === 'active') {
+			$sql .= " AND status IN ('pending','processing')";
+		} elseif ($status === 'pending') {
+			$sql .= " AND status = 'pending'";
+		} elseif ($status === 'completed') {
+			$sql .= " AND status = 'completed'";
 		}
 		
 		$sql .= " ORDER BY created_at DESC LIMIT " . (int)$perPage . " OFFSET " . ((int)$page - 1) * (int)$perPage;
 		
 		$stmt = $this->pdo->prepare($sql);
-		$stmt->execute($params);
+		$stmt->execute([$userId]);
 		return $stmt->fetchAll();
 	}
-	
-	public function getUserOrderCount($userId, $type = 'all') {
-		$sql = "SELECT COUNT(*) FROM bct_orders WHERE user_id = ?";
-		$params = [$userId];
-		if ($type === 'buy') { $sql .= " AND type = 'buy'"; }
-		elseif ($type === 'sell') { $sql .= " AND type = 'sell'"; }
-		$stmt = $this->pdo->prepare($sql);
-		$stmt->execute($params);
-		return (int)$stmt->fetchColumn();
+
+	/**
+	 * 获取用户订单统计
+	 */
+	public function getUserOrderStats($userId) {
+		$stats = ['buy_active' => 0, 'sell_active' => 0, 'completed' => 0];
+		
+		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='buy' AND status IN ('pending','processing')");
+		$stmt->execute([$userId]);
+		$stats['buy_active'] = (int)$stmt->fetchColumn();
+
+		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='sell' AND status IN ('pending','processing')");
+		$stmt->execute([$userId]);
+		$stats['sell_active'] = (int)$stmt->fetchColumn();
+
+		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND status = 'completed'");
+		$stmt->execute([$userId]);
+		$stats['completed'] = (int)$stmt->fetchColumn();
+
+		return $stats;
 	}
 	
 	// 在 classes/BCTOrder.php 的 BCTOrder 类中添加以下方法

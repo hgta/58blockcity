@@ -56,8 +56,9 @@ CREATE TABLE IF NOT EXISTS `bct_orders` (
   `mediator_id` int(11) DEFAULT NULL,
   `contact_info` varchar(255) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` datetime DEFAULT NULL COMMENT '过期时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='BCT交易订单表';
 
 -- --------------------------------------------------------
 
