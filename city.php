@@ -106,7 +106,12 @@ $rank = $dbStats['rank'] ?? '—';
 $residents = number_format((int)($dbStats['resident_count'] ?? 0));
 $blocks = number_format((int)($dbStats['activated_blocks'] ?? 0));
 $fund = number_format((float)($dbStats['current_balance'] ?? ($dbStats['total_fund'] ?? 0)), 1);
+// 区号格式化: JSON 中 4 位且前两位为 "00" 的去一个零 (0010→010, 0021→021)
+// 4 位区号如 0459 保持不变
 $areaNo = $dbStats['area_no'] ?? '';
+if (strlen($areaNo) === 4 && $areaNo[0] === '0' && $areaNo[1] === '0') {
+    $areaNo = substr($areaNo, 1);
+}
 
 // SEO
 $title = "{$cityName}区块城市 - 58区块城市 | 元宇宙同城平台";
@@ -225,7 +230,7 @@ $keywords = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},Bl
                         <div class="stat-value">¥<?= $fund ?></div>
                     </div>
                 </div>
-                <a href="https://www.blockcity.pub/?iclc<?= $areaNo ? '&areaNo=' . $areaNo : '' ?>" class="enter-city-btn">进入<?= htmlspecialchars($cityName) ?>区块城市</a>
+                <a href="https://www.blockcity.pub/<?= $areaNo ?: '?iclc' ?><?= $areaNo ? '?iclc' : '' ?>" class="enter-city-btn">进入<?= htmlspecialchars($cityName) ?>区块城市</a>
             </div>
         </div>
     </div>
@@ -290,6 +295,7 @@ $keywords = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},Bl
     </div>
     <script src="/city/city.js"></script>
     <script>
+        window.onload = getCityInfo;
         setTimeout(function() {
             document.getElementById('promotionFloating').style.display = 'block';
         }, 3000);
