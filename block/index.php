@@ -46,12 +46,17 @@ $recentClaims = $stmt->fetchAll();
 
 // A-Z 城市列表（折叠用）
 $citiesByLetter = [];
+$otherCities = []; // 拼音异常的城市放这里
 $stmt = $pdo->query("SELECT name, pinyin, rank FROM cities ORDER BY pinyin");
 $allCities = $stmt->fetchAll();
 $letters = range('A', 'Z');
 foreach ($allCities as $city) {
-    $fl = strtoupper(substr($city['pinyin'], 0, 1));
-    $citiesByLetter[$fl][] = $city;
+    $fl = strtoupper(substr($city['pinyin'] ?? '', 0, 1));
+    if ($fl && in_array($fl, $letters)) {
+        $citiesByLetter[$fl][] = $city;
+    } else {
+        $otherCities[] = $city;
+    }
 }
 
 require_once 'includes/header.php';
@@ -240,6 +245,16 @@ require_once 'includes/header.php';
         </div>
     </div>
     <?php endforeach; ?>
+    <?php if (!empty($otherCities)): ?>
+    <div class="block-city-group">
+        <h4>其他</h4>
+        <div class="block-city-group-inner">
+            <?php foreach ($otherCities as $city): ?>
+            <a href="city.php?name=<?= $city['pinyin'] ?>"><?= htmlspecialchars($city['name']) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
