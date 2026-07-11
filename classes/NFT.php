@@ -1216,12 +1216,6 @@ public function getRecentActivities($nftId, $limit = 10) {
     } */
 
 
-}
-
-
-
-
-?>
     public function createNft($data) {
         $stmt = $this->pdo->prepare(
             "INSERT INTO nft_avatars (code, base_image, avatar_id, avatar_key) VALUES (?,?,?,?)"
