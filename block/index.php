@@ -72,14 +72,14 @@ require_once 'includes/header.php';
 .block-stat .lbl{font-size:13px;color:#999}
 
 .block-search{display:flex;justify-content:center;margin-bottom:10px}
-.block-search input{padding:10px 16px;border:2px solid #e0e0e0;border-radius:8px 0 0 8px;font-size:15px;width:280px;outline:none;transition:.2s}
+.block-search input{padding:12px 16px;border:2px solid #e0e0e0;border-radius:8px 0 0 8px;font-size:15px;width:300px;outline:none;transition:.2s}
 .block-search input:focus{border-color:#ff6b00}
-.block-search button{padding:10px 20px;background:#ff6b00;color:#fff;border:none;border-radius:0 8px 8px 0;font-size:15px;cursor:pointer;font-weight:600}
+.block-search button{padding:12px 24px;background:#ff6b00;color:#fff;border:none;border-radius:0 8px 8px 0;font-size:15px;cursor:pointer;font-weight:700}
 .block-hot-links{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:30px}
 .block-hot-links a{display:inline-block;padding:5px 14px;background:#fff;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;text-decoration:none;transition:.15s}
 .block-hot-links a:hover{border-color:#ff6b00;color:#ff6b00}
 
-.block-grids{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-bottom:30px}
+.block-grids{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:30px}
 .block-city-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:.2s}
 .block-city-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
 .block-city-card-inner{padding:16px}
@@ -87,11 +87,11 @@ require_once 'includes/header.php';
 .block-city-name a{color:#333;text-decoration:none}
 .block-city-name a:hover{color:#ff6b00}
 
-.block-mini-grid{width:100%;border-spacing:1px;background:#e0e0e0;border-radius:6px;overflow:hidden}
-.block-mini-grid td{width:8.3%;padding-top:8.3%;position:relative;border-radius:1px}
-.block-mini-grid td.available{background:#e8f5e9}
-.block-mini-grid td.sold{background:#ff6b00}
-.block-mini-grid td.reserved{background:#fff3e0}
+.block-mini-grid{width:100%;border-spacing:1px;background:#ccc;border-radius:2px;overflow:hidden}
+.block-mini-grid td{padding:4px 2px;text-align:center;font-size:9px;color:#999;border-radius:1px;line-height:1.1;height:26px;width:8.3%}
+.block-mini-grid td.available{background:#fff}
+.block-mini-grid td.sold{background:#ff6b00;color:#fff;font-weight:700}
+.block-mini-grid td.reserved{background:#fff3e0;color:#e65100}
 
 .block-city-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#888}
 .block-city-meta .progress{flex:1;margin:0 10px;height:4px;background:#eee;border-radius:2px;overflow:hidden}
@@ -143,7 +143,7 @@ require_once 'includes/header.php';
     </div>
     <form class="block-search" action="city.php" method="get">
         <input type="text" name="name" placeholder="搜索城市名称或拼音...">
-        <button type="submit">🔍</button>
+        <button type="submit">🔍 查看区块地图</button>
     </form>
     <div class="block-hot-links">
         <a href="city.php?name=beijing">北京</a>
@@ -171,8 +171,9 @@ require_once 'includes/header.php';
                 <tr>
                 <?php for ($col = 1; $col <= 12; $col++): 
                     $status = $c['grid'][$r][$col] ?? 'available';
+                    $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($r, 2, '0', STR_PAD_LEFT);
                 ?>
-                    <td class="<?= $status ?>"></td>
+                    <td class="<?= $status ?>"><?= $bn ?></td>
                 <?php endfor; ?>
                 </tr>
                 <?php endfor; ?>
@@ -182,7 +183,7 @@ require_once 'includes/header.php';
                 <div class="progress"><div class="progress-bar" style="width:<?= $c['percent'] ?>%"></div></div>
                 <span><strong><?= $c['percent'] ?>%</strong></span>
             </div>
-            <a href="city.php?name=<?= $c['pinyin'] ?>" class="block-city-btn">查看全部 9 区 →</a>
+            <a href="city.php?name=<?= $c['pinyin'] ?>" class="block-city-btn">查看 101×99 完整区块地图 →</a>
         </div>
     </div>
     <?php endforeach; ?>
