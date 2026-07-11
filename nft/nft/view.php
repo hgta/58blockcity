@@ -33,14 +33,18 @@ if (!$nftInfo) {
 $canonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
 SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
-// SEO 配置
+// SEO 配置（标签需提前加载）
+$nftTags = $nft->getNftTags($nftId);
+$tagNames = array_map(function($t) { return $t['name']; }, $nftTags);
+$tagStr = !empty($tagNames) ? implode(',', $tagNames) : '';
+
 $nftName = htmlspecialchars($nftInfo['name'] ?? 'NFT详情');
 $nftDesc = SeoHelper::excerpt($nftInfo['description'] ?? '', 100);
 $nftImage = SeoHelper::fullUrl($nftInfo['image_url'] ?? $nftInfo['main_image'] ?? '/assets/images/og-nft.jpg');
 $canonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
-$site_config['title']       = SeoHelper::title($nftName . ' - 58 NFT');
-$site_config['description'] = SeoHelper::description($nftDesc, '58 NFT头像市场');
-$site_config['keywords']    = '58,NFT,头像,数字收藏,' . $nftName . ',区块城市';
+$site_config['title']       = SeoHelper::title($nftName . ($tagStr ? ' ' . $tagStr : '') . ' - 58 NFT');
+$site_config['description'] = SeoHelper::description($nftDesc . ($tagStr ? ' | 标签：' . $tagStr : ''), '58 NFT头像市场');
+$site_config['keywords']    = '58,NFT,头像,数字收藏,' . $nftName . ',' . $tagStr . ',区块城市';
 $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = $nftImage;
 $site_config['og_type']     = 'website';
@@ -55,6 +59,7 @@ $nftJsonLd = '<script type="application/ld+json">' . json_encode([
     'url'         => $nftCanonicalUrl,
     'image'       => $nftImage,
     'category'    => 'DigitalArt',
+    'keywords'    => $tagStr,
     'offers'      => [
         '@type' => 'Offer',
         'price' => number_format(floatval($nftInfo['price'] ?? 0), 2),
@@ -83,8 +88,6 @@ $userClaims = $nft->getUserClaims($userId, $nftId);
 // 获取最近活动记录（认领、上架、求购）
 $recentActivities = $nft->getRecentActivities($nftId, 10);
 
-// 获取NFT标签
-$tags = $nft->getNftTags($nftId);
 
 // 获取当前NFT的所有评论
 $comments = $comment->getCommentsByNft($nftId);
@@ -547,11 +550,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
                 </div>
                 
                 <!-- 标签显示 -->
-                <?php if (!empty($tags)): ?>
+                <?php if (!empty($nftTags)): ?>
                     <div class="tags-container">
                         <div class="tags-title">标签</div>
                         <div class="nft-tags">
-                            <?php foreach ($tags as $tag): ?>
+                            <?php foreach ($nftTags as $tag): ?>
                                 <?php if (isset($tag['name'])): ?>
                                 <a href="list.php?tag=<?= urlencode($tag['name']) ?>" 
                                    class="nft-tag">
