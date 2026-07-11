@@ -1,259 +1,347 @@
 <?php
 require_once '../../config/database.php';
-require_once '../../classes/NFT.php';
-require_once '../../classes/User.php';
-require_once '../../classes/Transaction.php';
 require_once '../../includes/auth.php';
 
-checkLogin();
+$txId = intval($_GET['tx'] ?? 0);
+if ($txId <= 0) {
+    header('Location: sale_list.php'); exit;
+}
 
-$nftId = $_GET['id'] ?? 0;
+// 未登录 → 跳登录页
+if (!isset($_SESSION['user_id'])) {
+    header('Location: /auth/login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    exit;
+}
+
 $userId = $_SESSION['user_id'];
 
-$nft = new NFT($pdo);
-$user = new User($pdo);
-$transaction = new Transaction($pdo);
+// 查询挂售记录
+$stmt = $pdo->prepare("
+    SELECT
+        t.id AS transaction_id, t.price, t.currency, t.transaction_type, t.status, t.seller_id,
+        n.id AS nft_id, n.code, n.base_image,
+        u.username AS seller_name,
+        c.id AS city_id, c.name AS city_name
+    FROM nft_transactions t
+    JOIN nft_avatars n ON t.nft_id = n.id
+    JOIN users u ON t.seller_id = u.id
+    JOIN cities c ON t.city_id = c.id
+    WHERE t.id = ? AND t.status = 'listed'
+");
+$stmt->execute([$txId]);
+$tx = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// 获取NFT详情
-$nftDetails = $nft->getNftById($nftId);
-if (!$nftDetails) {
-    $_SESSION['error'] = "NFT不存在";
-	//echo $_SESSION['error']; die();
-    header("Location: marketplace.php");
-    exit;
+if (!$tx) {
+    $error = '该 NFT 已售出或不存在';
 }
 
-// 检查NFT是否可购买（是否在售）
-if (!$nftDetails['is_for_sale']) {
-    $_SESSION['error'] = "该NFT暂不出售";
-	//echo $_SESSION['error']; die();
-    header("Location: marketplace.php");
-    exit;
+// 自买拦截
+if ($tx && $tx['seller_id'] == $userId) {
+    $error = '不能购买自己的 NFT';
 }
 
-// 检查用户是否在购买自己的NFT
-if ($nftDetails['owner_id'] == $userId) {
-    $_SESSION['error'] = "不能购买自己的NFT";
-	//echo $_SESSION['error']; die();
-    header("Location: marketplace.php");
-    exit;
+// 查询买家余额（人气值）
+$buyerPopularity = 0;
+if ($tx) {
+    $stmt = $pdo->prepare("SELECT popularity FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $buyerPopularity = (int)$stmt->fetchColumn();
 }
 
-// 获取用户信息（检查余额）
-$userInfo = $user->getUserById($userId);
+// POST 处理购买
+$result = '';
+$resultMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tx && !isset($error)) {
+    if ($tx['currency'] === 'popularity') {
+        // 人气值购买：检查余额
+        if ($buyerPopularity < $tx['price']) {
+            $error = '人气值不足，当前余额 Ⓟ' . number_format($buyerPopularity) . '，需要 Ⓟ' . number_format($tx['price']);
+        } else {
+            try {
+                $pdo->beginTransaction();
 
-// 处理购买请求
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $price = $nftDetails['price'];
-    $currency = $nftDetails['currency'];
-    
-    // 检查用户余额
-    if ($currency === 'popularity') {
-        if ($userInfo['popularity'] < $price) {
-            $_SESSION['error'] = "人气值不足";
-            header("Location: buy.php?id=" . $nftId);
-            exit;
+                // 1. 更新 transaction: status=completed, buyer_id
+                $stmt = $pdo->prepare("
+                    UPDATE nft_transactions 
+                    SET status = 'completed', buyer_id = ?, completed_at = NOW()
+                    WHERE id = ? AND status = 'listed'
+                ");
+                $stmt->execute([$userId, $tx['transaction_id']]);
+
+                if ($stmt->rowCount() === 0) {
+                    throw new Exception('该 NFT 已被他人购买');
+                }
+
+                // 2. 扣买家人气值
+                $stmt = $pdo->prepare("UPDATE users SET popularity = popularity - ? WHERE id = ?");
+                $stmt->execute([$tx['price'], $userId]);
+
+                // 3. 加卖家气值
+                $stmt = $pdo->prepare("UPDATE users SET popularity = popularity + ? WHERE id = ?");
+                $stmt->execute([$tx['price'], $tx['seller_id']]);
+
+                // 4. 转移 NFT 所有权
+                $stmt = $pdo->prepare("UPDATE nft_avatars SET owner_id = ? WHERE id = ?");
+                $stmt->execute([$userId, $tx['nft_id']]);
+
+                // 5. 更新 nft_city_user 所有权
+                $stmt = $pdo->prepare("
+                    UPDATE nft_city_user SET user_id = ?, is_current = 1 
+                    WHERE nft_id = ? AND city_id = ? AND is_current = 1
+                ");
+                $stmt->execute([$userId, $tx['nft_id'], $tx['city_id']]);
+
+                $pdo->commit();
+
+                // 刷新余额
+                $buyerPopularity -= $tx['price'];
+
+                header('Location: buy_success.php?tx=' . $tx['transaction_id'] . '&result=completed&code=' . urlencode($tx['code']));
+                exit;
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $error = $e->getMessage();
+            }
         }
-    } else if ($currency === 'cny') {
-        if ($userInfo['balance'] < $price) {
-            $_SESSION['error'] = "余额不足";
-            header("Location: buy.php?id=" . $nftId);
-            exit;
-        }
-    }
-    
-    // 执行购买交易
-    if ($transaction->purchaseNft($nftId, $userId, $price, $currency)) {
-        $_SESSION['success'] = "购买成功！";
-        
-        // 发送通知给原所有者
-        if ($nftDetails['owner_id']) {
-            $notificationMessage = "您的NFT " . $nftDetails['code'] . " 已被用户购买";
-            // 这里可以调用通知系统
-        }
-        
-        header("Location: /user/collection.php");
-        exit;
     } else {
-        $_SESSION['error'] = "购买失败，请稍后重试";
-        header("Location: buy.php?id=" . $nftId);
-        exit;
+        // 人民币购买：创建 pending 记录
+        $stmt = $pdo->prepare("
+            UPDATE nft_transactions 
+            SET status = 'pending', buyer_id = ?
+            WHERE id = ? AND status = 'listed'
+        ");
+        $stmt->execute([$userId, $tx['transaction_id']]);
+
+        if ($stmt->rowCount() === 0) {
+            $error = '该 NFT 已被他人购买或不存在';
+        } else {
+            header('Location: buy_success.php?tx=' . $tx['transaction_id'] . '&result=pending&code=' . urlencode($tx['code']));
+            exit;
+        }
     }
 }
 
-// 获取卖家信息
-$sellerInfo = $user->getUserById($nftDetails['owner_id']);
+require_once '../includes/header.php';
 ?>
 
-<?php require_once '../includes/header.php'; ?>
+<style>
+.buy-container {
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 16px;
+}
+.buy-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.buy-card-top {
+    text-align: center;
+    padding: 28px 20px 16px;
+    background: linear-gradient(135deg, #fff9f0, #fff);
+}
+.buy-avatar-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid #ff6b00;
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.buy-avatar-circle img {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+    border-radius: 50%;
+}
+.buy-nft-code {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ff6b00;
+}
+.buy-nft-meta {
+    font-size: 13px;
+    color: #888;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+.buy-card-body {
+    padding: 20px 24px 24px;
+}
+.buy-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.buy-info-row:last-child {
+    border-bottom: none;
+}
+.buy-info-label {
+    color: #888;
+}
+.buy-info-value {
+    font-weight: 700;
+    color: #333;
+}
+.buy-info-value.price {
+    font-size: 18px;
+    color: #ff6b00;
+}
+.buy-info-value.price-cny {
+    color: #22c55e;
+}
+.buy-warning {
+    background: #fff8e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #b45309;
+    margin: 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.buy-error {
+    background: #fee2e2;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #dc2626;
+    margin-bottom: 14px;
+}
+.buy-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    text-decoration: none;
+}
+.buy-btn-primary {
+    background: linear-gradient(135deg, #ff6b00, #f97316);
+    color: #fff;
+}
+.buy-btn-primary:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255,107,0,0.3);
+    color: #fff;
+}
+.buy-btn-outline {
+    background: #fff;
+    color: #ff6b00;
+    border: 2px solid #ff6b00;
+    margin-top: 10px;
+}
+.buy-btn-outline:hover {
+    background: #fff9f0;
+    color: #ff6b00;
+    text-decoration: none;
+}
+.buy-back-link {
+    display: block;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    margin-top: 16px;
+    text-decoration: none;
+}
+.buy-back-link:hover {
+    color: #ff6b00;
+}
+</style>
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-shopping-cart"></i> 购买NFT
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <?php if (isset($_SESSION['error'])): ?>
-                        <div class="alert alert-danger alert-dismissible fade show">
-                            <?= htmlspecialchars($_SESSION['error']) ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        <?php unset($_SESSION['error']); ?>
-                    <?php endif; ?>
-                    
-                    <div class="row">
-                        <!-- NFT信息 -->
-                        <div class="col-md-6">
-                            <div class="text-center mb-4">
-                                <img src="../avatar/<?= htmlspecialchars($nftDetails['base_image']) ?>" 
-                                     alt="NFT <?= htmlspecialchars($nftDetails['code']) ?>"
-                                     class="img-fluid rounded" style="max-height: 300px;">
-                                <h4 class="mt-3"><?= htmlspecialchars($nftDetails['code']) ?></h4>
-                                <div class="badge bg-<?= $nftDetails['rarity'] ?> mb-2">
-                                    <?= htmlspecialchars($nftDetails['rarity']) ?>
-                                </div>
-                                <p class="text-muted">
-                                    <i class="fas fa-map-marker-alt"></i> 
-                                    <?= htmlspecialchars($nftDetails['city']) ?>
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- 购买信息 -->
-                        <div class="col-md-6">
-                            <div class="p-3">
-                                <h5>购买详情</h5>
-                                
-                                <!-- 价格信息 -->
-                                <div class="mb-4 p-3 bg-light rounded">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span>价格：</span>
-                                        <span class="h5 text-primary mb-0">
-                                            <?= number_format($nftDetails['price'], $nftDetails['currency'] === 'cny' ? 2 : 0) ?>
-                                            <?= $nftDetails['currency'] === 'cny' ? '元' : '人气值' ?>
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- 卖家信息 -->
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span>卖家：</span>
-                                        <span><?= htmlspecialchars($sellerInfo['username'] ?? '未知用户') ?></span>
-                                    </div>
-                                    
-                                    <!-- 交易费用 -->
-                                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                                        <span>平台手续费：</span>
-                                        <span>
-                                            <?php
-                                            $feeRate = 0.025; // 2.5% 手续费
-                                            $fee = $nftDetails['price'] * $feeRate;
-                                            echo number_format($fee, $nftDetails['currency'] === 'cny' ? 2 : 0);
-                                            echo $nftDetails['currency'] === 'cny' ? '元' : '人气值';
-                                            ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- 用户余额信息 -->
-                                <div class="mb-4 p-3 bg-light rounded">
-                                    <h6>您的余额</h6>
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span>人气值：</span>
-                                        <span class="<?= $userInfo['popularity'] < $nftDetails['price'] && $nftDetails['currency'] === 'popularity' ? 'text-danger' : 'text-success' ?>">
-                                            <?= number_format($userInfo['popularity']) ?>
-                                        </span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span>人民币余额：</span>
-                                        <span class="<?= $userInfo['balance'] < $nftDetails['price'] && $nftDetails['currency'] === 'cny' ? 'text-danger' : 'text-success' ?>">
-                                            ￥<?= number_format($userInfo['balance'], 2) ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- 购买确认 -->
-                                <div class="alert alert-warning">
-                                    <small>
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                        购买后NFT将转移到您的账户，交易不可撤销。
-                                    </small>
-                                </div>
-                                
-                                <!-- 购买表单 -->
-                                <form method="post">
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-success btn-lg">
-                                            <i class="fas fa-check-circle"></i>
-                                            确认购买
-                                        </button>
-                                        <a href="marketplace.php" class="btn btn-outline-secondary">
-                                            <i class="fas fa-arrow-left"></i>
-                                            返回市场
-                                        </a>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- NFT详细信息 -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">NFT详细信息</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th width="40%">NFT编号：</th>
-                                    <td><?= htmlspecialchars($nftDetails['code']) ?></td>
-                                </tr>
-                                <tr>
-                                    <th>稀有度：</th>
-                                    <td>
-                                        <span class="badge bg-<?= $nftDetails['rarity'] ?>">
-                                            <?= htmlspecialchars($nftDetails['rarity']) ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>所属城市：</th>
-                                    <td><?= htmlspecialchars($nftDetails['city']) ?></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th width="40%">创建时间：</th>
-                                    <td><?= htmlspecialchars($nftDetails['created_at']) ?></td>
-                                </tr>
-                                <tr>
-                                    <th>上架时间：</th>
-                                    <td><?= htmlspecialchars($nftDetails['listed_at'] ?? '未上架') ?></td>
-                                </tr>
-                                <tr>
-                                    <th>交易类型：</th>
-                                    <td>
-                                        <span class="badge bg-info">
-                                            <?= $nftDetails['currency'] === 'cny' ? '人民币交易' : '人气值交易' ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="buy-container">
+    <h2 style="text-align:center;font-size:20px;margin-bottom:20px;color:#333;">🛒 确认购买</h2>
+
+    <?php if (isset($error)): ?>
+    <div class="buy-card">
+        <div class="buy-card-body" style="text-align:center;padding:30px;">
+            <div class="buy-error"><?= htmlspecialchars($error) ?></div>
+            <a href="sale_list.php" class="buy-btn buy-btn-primary">返回售卖市场</a>
         </div>
     </div>
+    <?php else: ?>
+    <div class="buy-card">
+        <div class="buy-card-top">
+            <div class="buy-avatar-circle">
+                <img src="../avatar/<?= htmlspecialchars($tx['base_image']) ?>" 
+                     alt="NFT <?= htmlspecialchars($tx['code']) ?>" loading="lazy">
+            </div>
+            <div class="buy-nft-code"><?= htmlspecialchars($tx['code']) ?></div>
+            <div class="buy-nft-meta">
+                <span>📍 <?= htmlspecialchars($tx['city_name']) ?></span>
+                <span>@<?= htmlspecialchars($tx['seller_name']) ?></span>
+            </div>
+        </div>
+        <div class="buy-card-body">
+            <div class="buy-info-row">
+                <span class="buy-info-label">售价</span>
+                <span class="buy-info-value price <?= $tx['currency'] === 'cny' ? 'price-cny' : '' ?>">
+                    <?= $tx['currency'] === 'cny' ? '¥' : 'Ⓟ ' ?>
+                    <?= number_format($tx['price'], $tx['currency'] === 'cny' ? 2 : 0) ?>
+                </span>
+            </div>
+
+            <?php if ($tx['currency'] === 'popularity'): ?>
+            <div class="buy-info-row">
+                <span class="buy-info-label">我的余额</span>
+                <span class="buy-info-value">Ⓟ <?= number_format($buyerPopularity) ?></span>
+            </div>
+            <div class="buy-info-row">
+                <span class="buy-info-label">购买后余额</span>
+                <span class="buy-info-value" style="color:<?= ($buyerPopularity - $tx['price']) < 0 ? '#dc2626' : '#22c55e' ?>">
+                    Ⓟ <?= number_format(max(0, $buyerPopularity - $tx['price'])) ?>
+                </span>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($buyerPopularity < $tx['price'] && $tx['currency'] === 'popularity'): ?>
+            <div class="buy-error">人气值不足! 当前余额 Ⓟ<?= number_format($buyerPopularity) ?>，需要 Ⓟ<?= number_format($tx['price']) ?></div>
+            <a href="sale_list.php" class="buy-btn buy-btn-outline">← 返回市场</a>
+            <?php else: ?>
+            <form method="post">
+                <button type="submit" class="buy-btn buy-btn-primary">
+                    <?php if ($tx['currency'] === 'cny'): ?>
+                    提交购买意向（等待卖家确认）
+                    <?php else: ?>
+                    确认购买 Ⓟ <?= number_format($tx['price']) ?>
+                    <?php endif; ?>
+                </button>
+            </form>
+
+            <?php if ($tx['currency'] === 'cny'): ?>
+            <div class="buy-warning">
+                <span>ℹ️</span> 卖家确认后该 NFT 将转移到您的收藏
+            </div>
+            <?php else: ?>
+            <div style="text-align:center;font-size:12px;color:#999;margin-top:10px;">
+                购买后该 NFT 将出现在您的收藏中
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
+
+            <a href="/nft/view.php?id=<?= $tx['nft_id'] ?>" class="buy-back-link">← 返回NFT详情</a>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once '../includes/footer.php'; ?>

@@ -585,6 +585,8 @@ class NFT {
 					t.price,
 					t.currency,
 					t.created_at,
+					t.id AS transaction_id,
+					t.seller_id,
 					u.username AS seller_name,
 					c.id AS city_id,
 					c.name AS city_name,

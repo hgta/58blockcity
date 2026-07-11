@@ -423,7 +423,7 @@ require_once '../includes/header.php';
             <a href="sale_list.php" class="sale-btn">查看全部在售</a>
         </div>
         <?php else: foreach ($sales as $s): ?>
-        <a href="/nft/view.php?id=<?= $s['nft_id'] ?>" class="sale-card">
+        <a href="/nft/buy.php?tx=<?= $s['transaction_id'] ?>" class="sale-card">
             <!-- 圆形头像 -->
             <div class="sale-avatar-wrap">
                 <div class="sale-avatar-circle">
