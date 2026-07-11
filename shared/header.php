@@ -123,6 +123,11 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
       s.parentNode.insertBefore(hm, s);
     })();
     </script>
+    <!-- 51.la 性能监控 -->
+    <script src="https://sdk.51.la/perf/js-sdk-perf.min.js" crossorigin="anonymous"></script>
+    <script>
+      new LingQue.Monitor().init({id:"LFfavVEfhfo7DVvu"});
+    </script>
 </head>
 <body>
 
