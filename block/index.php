@@ -1,279 +1,245 @@
 <?php
 require_once '../config/database.php';
-require_once '../classes/City.php';
-require_once '../classes/User.php';
 
-/*
-// 获取热门城市数据
-$hot_cities = [];
-$hot_cities_query = "SELECT * FROM cities WHERE is_hot = 1 ORDER BY rank LIMIT 18";
-$hot_result = $pdo->query($hot_cities_query);
-if ($hot_result && $hot_result->num_rows > 0) {
-    while ($row = $hot_result->fetch_assoc()) {
-        $hot_cities[] = $row;
+// 统计数据
+$totalCities = $pdo->query("SELECT COUNT(*) FROM cities")->fetchColumn();
+$totalSold = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status='sold'")->fetchColumn();
+$totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+
+// 热门城市
+$hotCities = [];
+$stmt = $pdo->query("SELECT name, pinyin, rank, resident_count FROM cities WHERE is_hot=1 ORDER BY rank LIMIT 8");
+$hotCities = $stmt->fetchAll();
+
+// 每个热门城市的 A 区区块统计数据（取前12行12列的样本）
+// block_number 格式: 0305 = col=03, row=05
+foreach ($hotCities as &$c) {
+    $stmt = $pdo->prepare("
+        SELECT b.block_number, b.status 
+        FROM blocks b JOIN cities c ON b.city_id = c.id 
+        WHERE c.id = (SELECT id FROM cities WHERE name = ?) AND b.zone = 'A'
+    ");
+    $stmt->execute([$c['name']]);
+    $allBlocks = $stmt->fetchAll();
+    $grid = [];
+    $soldCount = 0;
+    $totalCount = 0;
+    foreach ($allBlocks as $b) {
+        $col = intval(substr($b['block_number'], 0, 2));
+        $row = intval(substr($b['block_number'], 2, 2));
+        if ($row >= 1 && $row <= 12 && $col >= 1 && $col <= 12) {
+            $grid[$row][$col] = $b['status'];
+            if ($b['status'] === 'sold') $soldCount++;
+            $totalCount++;
+        }
     }
-}*/
+    $c['grid'] = $grid;
+    $c['sold_count'] = $soldCount;
+    $c['total'] = $totalCount;
+    $c['percent'] = $totalCount > 0 ? round($soldCount / $totalCount * 100) : 0;
+}
+unset($c);
 
+// 最近认领
+$stmt = $pdo->query("SELECT b.block_number, b.zone, c.name AS city_name, u.username, b.updated_at FROM blocks b JOIN users u ON b.owner_id = u.id JOIN cities c ON b.city_id = c.id WHERE b.status = 'sold' ORDER BY b.updated_at DESC LIMIT 8");
+$recentClaims = $stmt->fetchAll();
 
-// 初始化城市类
-$cityObj = new City($pdo);
+// A-Z 城市列表（折叠用）
+$citiesByLetter = [];
+$stmt = $pdo->query("SELECT name, pinyin, rank FROM cities ORDER BY pinyin");
+$allCities = $stmt->fetchAll();
+$letters = range('A', 'Z');
+foreach ($allCities as $city) {
+    $fl = strtoupper(substr($city['pinyin'], 0, 1));
+    $citiesByLetter[$fl][] = $city;
+}
 
-// 获取热门城市数据
-$hot_cities = $cityObj->getHotCitiesList(18);
-
-$cities_by_letter = $cityObj->getCitiesByLetter();
-$letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'];
-
-// 平台实时统计
-$totalCities = $cityObj->getTotalCitiesCount();
-$totalUsers = (new User($pdo))->getUserCount();
-$stmtActivated = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status = 'sold'");
-$totalActivated = $stmtActivated ? (int)$stmtActivated->fetchColumn() : 0;
+require_once 'includes/header.php';
 ?>
 
-<?php require_once 'includes/header.php'; ?>
+<style>
+.block-hero{text-align:center;padding:30px 0 20px}
+.block-hero h1{font-size:28px;font-weight:800;margin-bottom:6px}
+.block-hero p{color:#888;font-size:15px;margin-bottom:20px}
+.block-stats{display:flex;justify-content:center;gap:30px;margin-bottom:16px;flex-wrap:wrap}
+.block-stat{text-align:center}
+.block-stat .val{font-size:26px;font-weight:800;color:#ff6b00}
+.block-stat .lbl{font-size:13px;color:#999}
 
-    <!-- 平台实时统计面板 -->
-    <section class="platform-stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-card-block">
-                    <div class="stat-icon-block"><i class="fas fa-city"></i></div>
-                    <div class="stat-info-block">
-                        <div class="stat-value-block" data-count="<?= $totalCities ?>">0</div>
-                        <div class="stat-label-block">城市总数</div>
-                    </div>
-                </div>
-                <div class="stat-card-block">
-                    <div class="stat-icon-block"><i class="fas fa-cubes"></i></div>
-                    <div class="stat-info-block">
-                        <div class="stat-value-block" data-count="<?= $totalActivated ?>">0</div>
-                        <div class="stat-label-block">已激活区块</div>
-                    </div>
-                </div>
-                <div class="stat-card-block">
-                    <div class="stat-icon-block"><i class="fas fa-users"></i></div>
-                    <div class="stat-info-block">
-                        <div class="stat-value-block" data-count="<?= $totalUsers ?>">0</div>
-                        <div class="stat-label-block">注册用户</div>
-                    </div>
-                </div>
-                <div class="stat-card-block">
-                    <div class="stat-icon-block"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-info-block">
-                        <div class="stat-value-block" data-count="<?= number_format($totalActivated / max($totalCities,1), 1) ?>">0</div>
-                        <div class="stat-label-block">平均激活/城</div>
-                    </div>
-                </div>
+.block-search{display:flex;justify-content:center;margin-bottom:10px}
+.block-search input{padding:10px 16px;border:2px solid #e0e0e0;border-radius:8px 0 0 8px;font-size:15px;width:280px;outline:none;transition:.2s}
+.block-search input:focus{border-color:#ff6b00}
+.block-search button{padding:10px 20px;background:#ff6b00;color:#fff;border:none;border-radius:0 8px 8px 0;font-size:15px;cursor:pointer;font-weight:600}
+.block-hot-links{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:30px}
+.block-hot-links a{display:inline-block;padding:5px 14px;background:#fff;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;text-decoration:none;transition:.15s}
+.block-hot-links a:hover{border-color:#ff6b00;color:#ff6b00}
+
+.block-grids{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-bottom:30px}
+.block-city-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:.2s}
+.block-city-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+.block-city-card-inner{padding:16px}
+.block-city-name{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.block-city-name a{color:#333;text-decoration:none}
+.block-city-name a:hover{color:#ff6b00}
+
+.block-mini-grid{width:100%;border-spacing:1px;background:#e0e0e0;border-radius:6px;overflow:hidden}
+.block-mini-grid td{width:8.3%;padding-top:8.3%;position:relative;border-radius:1px}
+.block-mini-grid td.available{background:#e8f5e9}
+.block-mini-grid td.sold{background:#ff6b00}
+.block-mini-grid td.reserved{background:#fff3e0}
+
+.block-city-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#888}
+.block-city-meta .progress{flex:1;margin:0 10px;height:4px;background:#eee;border-radius:2px;overflow:hidden}
+.block-city-meta .progress-bar{height:100%;background:linear-gradient(90deg,#ff6b00,#ff9500);border-radius:2px}
+.block-city-btn{display:block;text-align:center;padding:8px;margin-top:10px;background:#fff9f0;color:#ff6b00;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;transition:.15s}
+.block-city-btn:hover{background:#ff6b00;color:#fff}
+
+.block-recent{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.04);margin-bottom:30px}
+.block-recent h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.block-recent-list{display:flex;flex-wrap:wrap;gap:8px 20px}
+.block-recent-item{font-size:13px;color:#888;white-space:nowrap}
+.block-recent-item strong{color:#333}
+
+.block-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:30px}
+.block-feature{background:#fff;border-radius:12px;padding:24px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:.2s}
+.block-feature:hover{transform:translateY(-2px)}
+.block-feature .icon{font-size:32px;margin-bottom:10px;display:block}
+.block-feature h4{font-size:15px;margin-bottom:4px;color:#333}
+.block-feature p{font-size:13px;color:#888}
+
+.block-all-cities{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.04)}
+.block-all-cities h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.block-letter-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
+.block-letter-nav a{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;font-size:12px;font-weight:600;color:#888;text-decoration:none;border:1px solid #e0e0e0;transition:.15s}
+.block-letter-nav a:hover,.block-letter-nav a.active{background:#ff6b00;color:#fff;border-color:#ff6b00}
+.block-city-group{margin-bottom:12px}
+.block-city-group h4{font-size:14px;color:#ff6b00;margin-bottom:6px;font-weight:700}
+.block-city-group-inner{display:flex;flex-wrap:wrap;gap:4px 14px}
+.block-city-group-inner a{font-size:13px;color:#666;text-decoration:none;transition:.15s}
+.block-city-group-inner a:hover{color:#ff6b00}
+
+@media(max-width:768px){
+    .block-hero h1{font-size:22px}
+    .block-grids{grid-template-columns:repeat(2,1fr);gap:10px}
+    .block-search input{width:200px}
+}
+@media(max-width:480px){
+    .block-grids{grid-template-columns:1fr}
+}
+</style>
+
+<div class="block-hero">
+    <h1>🔲 BlockCity 区块交易市场</h1>
+    <p>200+城市 · 9区布局 · 实时可视 · 一键认领</p>
+    <div class="block-stats">
+        <div class="block-stat"><div class="val"><?= number_format($totalCities) ?></div><div class="lbl">城市数</div></div>
+        <div class="block-stat"><div class="val"><?= number_format($totalSold) ?></div><div class="lbl">已售区块</div></div>
+        <div class="block-stat"><div class="val"><?= number_format($totalUsers) ?></div><div class="lbl">注册用户</div></div>
+    </div>
+    <form class="block-search" action="city.php" method="get">
+        <input type="text" name="name" placeholder="搜索城市名称或拼音...">
+        <button type="submit">🔍</button>
+    </form>
+    <div class="block-hot-links">
+        <a href="city.php?name=beijing">北京</a>
+        <a href="city.php?name=shanghai">上海</a>
+        <a href="city.php?name=shenzhen">深圳</a>
+        <a href="city.php?name=hangzhou">杭州</a>
+        <a href="city.php?name=guangzhou">广州</a>
+        <a href="city.php?name=chengdu">成都</a>
+        <a href="city.php?name=nanjing">南京</a>
+        <a href="city.php?name=wuhan">武汉</a>
+    </div>
+</div>
+
+<!-- 热门城市区块实况 -->
+<div class="block-grids">
+    <?php foreach ($hotCities as $c): ?>
+    <div class="block-city-card">
+        <div class="block-city-card-inner">
+            <div class="block-city-name">
+                <a href="city.php?name=<?= $c['pinyin'] ?>"><?= htmlspecialchars($c['name']) ?> A区</a>
+                <span style="font-size:12px;color:#ff6b00;">#<?= $c['rank'] ?></span>
             </div>
-        </div>
-    </section>
-
-    <!-- 城市搜索框 -->
-    <section class="city-search-section">
-        <div class="container">
-            <div class="city-search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="citySearchInput" placeholder="输入城市名或拼音快速定位..." autocomplete="off">
-                <span id="citySearchClear"><i class="fas fa-times"></i></span>
+            <table class="block-mini-grid">
+                <?php for ($r = 1; $r <= 12; $r++): ?>
+                <tr>
+                <?php for ($col = 1; $col <= 12; $col++): 
+                    $status = $c['grid'][$r][$col] ?? 'available';
+                ?>
+                    <td class="<?= $status ?>"></td>
+                <?php endfor; ?>
+                </tr>
+                <?php endfor; ?>
+            </table>
+            <div class="block-city-meta">
+                <span>已售 <?= $c['sold_count'] ?>/<?= $c['total'] ?></span>
+                <div class="progress"><div class="progress-bar" style="width:<?= $c['percent'] ?>%"></div></div>
+                <span><strong><?= $c['percent'] ?>%</strong></span>
             </div>
-            <div id="citySearchEmpty" class="city-search-empty" style="display:none;"><i class="fas fa-search-minus"></i> 未找到匹配的城市</div>
+            <a href="city.php?name=<?= $c['pinyin'] ?>" class="block-city-btn">查看全部 9 区 →</a>
         </div>
-    </section>
+    </div>
+    <?php endforeach; ?>
+</div>
 
-    <!-- 字母导航 -->
-    <nav class="letter-nav">
-        <div class="letter-nav-container">
-            <?php foreach ($letters as $letter): ?>
-                <a href="#<?= $letter ?>" class="letter-link" data-letter="<?= $letter ?>"><?= $letter ?></a>
+<!-- 最近动态 -->
+<?php if ($recentClaims): ?>
+<div class="block-recent">
+    <h3>📢 最近认领动态</h3>
+    <div class="block-recent-list">
+    <?php foreach ($recentClaims as $r): ?>
+        <span class="block-recent-item">
+            <strong><?= htmlspecialchars($r['username']) ?></strong>
+            认领了 <?= htmlspecialchars($r['city_name']) ?> <?= $r['zone'] ?>区 <?= $r['block_number'] ?>
+        </span>
+    <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- 核心功能 -->
+<div class="block-features">
+    <div class="block-feature">
+        <span class="icon">🗺️</span>
+        <h4>九区全景</h4>
+        <p>A-H 区 + Z区，3×3 网格全览</p>
+    </div>
+    <div class="block-feature">
+        <span class="icon">🔲</span>
+        <h4>合并查看</h4>
+        <p>跨区相邻区块 2×2 3×3 合并</p>
+    </div>
+    <div class="block-feature">
+        <span class="icon">💰</span>
+        <h4>透明定价</h4>
+        <p>每个区块实时价格，按区定价</p>
+    </div>
+    <div class="block-feature">
+        <span class="icon">📱</span>
+        <h4>一键认领</h4>
+        <p>登录后选中区块直接认领</p>
+    </div>
+</div>
+
+<!-- A-Z 城市列表 -->
+<div class="block-all-cities">
+    <h3>🏙 全部城市 A-Z</h3>
+    <div class="block-letter-nav">
+        <?php foreach ($letters as $l): ?>
+        <a href="#city-<?= $l ?>" onclick="document.getElementById('city-<?= $l ?>').scrollIntoView()"><?= $l ?></a>
+        <?php endforeach; ?>
+    </div>
+    <?php foreach ($citiesByLetter as $letter => $cities): ?>
+    <div class="block-city-group" id="city-<?= $letter ?>">
+        <h4><?= $letter ?></h4>
+        <div class="block-city-group-inner">
+            <?php foreach ($cities as $city): ?>
+            <a href="city.php?name=<?= $city['pinyin'] ?>"><?= htmlspecialchars($city['name']) ?></a>
             <?php endforeach; ?>
         </div>
-    </nav>
+    </div>
+    <?php endforeach; ?>
+</div>
 
-    <!-- 主要内容 -->
-    <main class="container">
-        <!-- 热门城市 -->
-        <section class="hot-cities">
-            <div class="section-header">
-                <h2 class="section-title"><i class="fas fa-fire-alt"></i> 热门区块城市</h2>
-                <a href="top200city.php" class="more-cities">查看全部 <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="hot-city-grid">
-                <?php foreach ($hot_cities as $city): ?>
-                    <a href="/city.php?name=<?= $city['pinyin'] ?>" class="hot-city-item">
-                        <span class="hc-name"><?= $city['name'] ?></span>
-                        <?php if ($city['is_hot']): ?><span class="hc-badge">HOT</span><?php endif; ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <!-- 城市列表 -->
-        <div class="city-list-container">
-            <?php foreach ($cities_by_letter as $letter => $cities): ?>
-                <section id="<?= $letter ?>" class="city-section">
-                    <div class="city-section-header">
-                        <span class="city-letter"><?= $letter ?></span>
-                        <span class="city-count"><?= count($cities) ?> 个城市</span>
-                    </div>
-                    <div class="city-grid">
-                        <?php foreach ($cities as $city): ?>
-                            <a href="/city.php?name=<?= $city['pinyin'] ?>" class="city-item <?= $city['is_hot'] ? 'hot-city' : '' ?>">
-                                <span class="ci-name"><?= $city['name'] ?></span>
-                                <i class="fas fa-chevron-right ci-arrow"></i>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-            <?php endforeach; ?>
-        </div>
-
-        <!-- 元宇宙特色 -->
-        <section class="metaverse-features">
-            <div class="section-header center">
-                <h2 class="section-title">BlockCity 元宇宙特色</h2>
-                <p class="section-subtitle">探索下一代去中心化城市服务平台</p>
-            </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-globe-asia"></i></div>
-                    <h3 class="feature-title">虚拟城市探索</h3>
-                    <p class="feature-desc">通过元宇宙技术，为您提供沉浸式的虚拟城市探索体验，足不出户逛遍全城。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-coins"></i></div>
-                    <h3 class="feature-title">数字资产交易</h3>
-                    <p class="feature-desc">基于区块链技术的数字资产交易平台，安全可靠地交易您的虚拟商品和服务。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
-                    <h3 class="feature-title">DAO 社区治理</h3>
-                    <p class="feature-desc">采用 DAO 去中心化自治组织模式，让用户参与平台治理和重大决策。</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- DAO社区 -->
-        <section class="dao-community">
-            <div class="dao-content">
-                <div class="dao-text">
-                    <span class="dao-tag"><i class="fas fa-rocket"></i> 社区共建</span>
-                    <h2 class="dao-title">加入 BlockCity DAO 社区</h2>
-                    <p>58区块城市正在构建全球最大的元宇宙同城 DAO 社区。通过持有平台通证，您可以参与社区治理、投票决策、分享收益，共同打造下一代去中心化城市服务平台。</p>
-                    <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入 DAO <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="dao-visual">
-                    <div class="dao-circle">
-                        <i class="fas fa-network-wired"></i>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-    
-    <?php include 'includes/footer.php'; ?>
-        
-
-    <script>
-        // 页面加载时获取城市信息
-        window.onload = function() {
-            getCityInfo();
-        };
-
-        // 平台统计数字动画
-        (function() {
-            function animateValue(el, target, duration) {
-                var start = 0;
-                var startTime = null;
-                function step(timestamp) {
-                    if (!startTime) startTime = timestamp;
-                    var progress = Math.min((timestamp - startTime) / duration, 1);
-                    var value = Math.floor(progress * target);
-                    el.textContent = value.toLocaleString();
-                    if (progress < 1) {
-                        requestAnimationFrame(step);
-                    } else {
-                        el.textContent = target.toLocaleString();
-                    }
-                }
-                requestAnimationFrame(step);
-            }
-            document.querySelectorAll('.stat-value-block[data-count]').forEach(function(el) {
-                var target = parseFloat(el.getAttribute('data-count').toString().replace(/,/g, ''));
-                if (!isNaN(target)) animateValue(el, target, 1200);
-            });
-        })();
-
-        // 城市搜索
-        (function() {
-            var input = document.getElementById('citySearchInput');
-            var clearBtn = document.getElementById('citySearchClear');
-            var emptyMsg = document.getElementById('citySearchEmpty');
-            if (!input) return;
-
-            var allCities = [];
-            document.querySelectorAll('.city-item').forEach(function(item) {
-                var name = item.textContent.trim();
-                var pinyin = item.getAttribute('href').replace('/city.php?name=', '');
-                allCities.push({ el: item, name: name, pinyin: pinyin, letter: item.closest('.city-section').id });
-            });
-
-            function doSearch() {
-                var query = input.value.trim().toLowerCase();
-                clearBtn.style.display = query ? 'flex' : 'none';
-                var hasMatch = false;
-                var matchedLetters = {};
-
-                allCities.forEach(function(c) {
-                    var match = c.name.indexOf(query) !== -1 || c.pinyin.indexOf(query) !== -1;
-                    c.el.style.display = match ? '' : 'none';
-                    c.el.classList.toggle('highlighted', match && query.length >= 1);
-                    if (match) {
-                        hasMatch = true;
-                        matchedLetters[c.letter] = true;
-                    }
-                });
-
-                document.querySelectorAll('.city-section').forEach(function(sec) {
-                    sec.classList.toggle('hidden', query.length > 0 && !matchedLetters[sec.id]);
-                });
-
-                document.querySelectorAll('.letter-link').forEach(function(link) {
-                    link.classList.toggle('active', !!matchedLetters[link.getAttribute('data-letter')]);
-                });
-
-                emptyMsg.style.display = (query.length > 0 && !hasMatch) ? 'block' : 'none';
-
-                if (hasMatch && query.length > 0) {
-                    var first = document.querySelector('.city-item.highlighted');
-                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-
-            input.addEventListener('input', doSearch);
-            clearBtn.addEventListener('click', function() {
-                input.value = '';
-                doSearch();
-                input.focus();
-            });
-        })();
-    </script>
-    
-    <!-- JSON-LD结构化数据 -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "58区块城市",
-      "url": "https://www.58.tl",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://www.58.tl/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      },
-      "description": "基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。",
-      "keywords": "58,区块城市,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市"
-    }
-    </script>
-</body>
-</html>
+<?php require_once 'includes/footer.php'; ?>
