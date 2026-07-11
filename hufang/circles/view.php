@@ -10,7 +10,7 @@ require_once '../../classes/SeoHelper.php';
 
 
 
-checkLogin();
+$isLoggedIn = isset($_SESSION['user_id']);
 
 $circleId = intval($_GET['id']) ?? 0;
 $circle = new Circle($pdo);
@@ -30,26 +30,27 @@ $canonicalUrl = SeoHelper::circleUrl($circleId, $circleInfo['name'] ?? '');
 SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
 $ownerInfo = $user->getUserById($circleInfo['user_id']);
-$visits = $visit->getCircleVisitsById($circleId);//getCircleVisits
+$visits = $visit->getCircleVisitsById($circleId);
 $canRequest = false;
 
-// 检查当前用户是否可以申请访问
-$currentUser = $user->getUserById($_SESSION['user_id']);
-//$canRequest = ($currentUser['city'] === $circleInfo['city'] && 
-//              $_SESSION['user_id'] != $circleInfo['user_id']);
-$canRequest = (1 && $_SESSION['user_id'] != $circleInfo['user_id']);
+// 检查当前用户是否可以申请访问（需登录）
+if ($isLoggedIn) {
+    $currentUser = $user->getUserById($_SESSION['user_id']);
+    if (!$currentUser) $currentUser = ['city' => ''];
+    $canRequest = ($_SESSION['user_id'] != $circleInfo['user_id']);
 
-// 检查是否已有待处理、已确认或已完成的访问请求
-foreach ($visits as $v) {
-    if ($v['visitor_id'] == $_SESSION['user_id'] && 
-        in_array($v['status'], ['pending', 'confirmed', 'completed'])) {
-        $canRequest = false;
-        break;
+    // 检查是否已有待处理、已确认或已完成的访问请求
+    foreach ($visits as $v) {
+        if ($v['visitor_id'] == $_SESSION['user_id'] && 
+            in_array($v['status'], ['pending', 'confirmed', 'completed'])) {
+            $canRequest = false;
+            break;
+        }
     }
 }
 
-// 处理访问申请
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $canRequest) {
+// 处理访问申请（需登录）
+if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_visit']) && $canRequest) {
     $applicantCircleId = intval($_POST['applicant_circle_id']) ?? 0;
     
     if (empty($applicantCircleId)) {
@@ -144,7 +145,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
             <a href="index.php" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> 返回列表
             </a>
-            <?php if ($_SESSION['user_id'] == $circleInfo['user_id']): ?>
+            <?php if ($isLoggedIn && $_SESSION['user_id'] == $circleInfo['user_id']): ?>
                 <a href="edit.php?id=<?= $circleInfo['id'] ?>" class="btn btn-primary">
                     <i class="fas fa-edit"></i> 编辑信息
                 </a>
@@ -213,7 +214,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
                                     </div>
                                     
                                     <div class="visit-actions">
-                                        <?php if ($visit['status'] == 'pending' && $_SESSION['user_id'] == $circleInfo['user_id']): ?>
+                                        <?php if ($isLoggedIn && $visit['status'] == 'pending' && $_SESSION['user_id'] == $circleInfo['user_id']): ?>
                                             <a href="../user/confirm_visit.php?id=<?= $visit['id'] ?>" class="btn btn-sm btn-primary">
                                                 <i class="fas fa-check"></i> 确认
                                             </a>
@@ -248,7 +249,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
                         </div>
                         <div class="stat-item">
                             <div class="stat-number"><?= 
-                                count(array_filter($visits, fn($v) => $v['status'] == 'completed')) ?></div>
+                                count(array_filter($visits, function($v) { return $v['status'] == 'completed'; })) ?></div>
                             <div class="stat-label">已完成</div>
                         </div>
                     </div>
@@ -256,7 +257,19 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
             </div>
             
             <!-- 操作卡片 -->
-            <?php if ($canRequest): ?>
+            <?php if (!$isLoggedIn): ?>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fas fa-handshake"></i> 申请互访</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <p style="color:#888;font-size:14px;">请先登录以申请互访</p>
+                        <a href="../auth/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> 登录
+                        </a>
+                    </div>
+                </div>
+            <?php elseif ($canRequest): ?>
 				<?php 
 				// 获取用户在同城的互访圈
 				$userCircles = $circle->getCirclesByConditions([
@@ -360,7 +373,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
             <?php endif; ?>
             
             <!-- 所有者管理卡片 -->
-            <?php if ($_SESSION['user_id'] == $circleInfo['user_id']): ?>
+            <?php if ($isLoggedIn && $_SESSION['user_id'] == $circleInfo['user_id']): ?>
                 <div class="card">
                     <div class="card-header">
                         <h3><i class="fas fa-cog"></i> 管理选项</h3>
