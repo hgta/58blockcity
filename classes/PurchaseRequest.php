@@ -157,4 +157,20 @@ public function getPurchaseRequestCountByNft($nftId) {
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return $result['count'] ?? 0;
 }
+
+    public function getNftPurchaseCounts() {
+        $sql = "SELECT nft_id, COUNT(*) as count, MAX(CAST(price AS DECIMAL(10,2))) as max_price
+                FROM nft_purchase_requests
+                WHERE status = 'pending'
+                GROUP BY nft_id";
+        $stmt = $this->pdo->query($sql);
+        $map = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $map[intval($row['nft_id'])] = [
+                'count' => intval($row['count']),
+                'max_price' => $row['max_price']
+            ];
+        }
+        return $map;
+    }
 }
