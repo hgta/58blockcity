@@ -35,6 +35,14 @@ function safeLoop($array, $callback) {
         echo '<li class="text-muted text-center py-3">暂无数据</li>';
     }
 }
+
+// 辅助函数：计算正确的头像URL
+function avatarUrl($avatar) {
+    $avatar = $avatar ?: 'default.jpg';
+    return (strpos($avatar, '/') !== false)
+        ? 'https://v.58.tl/' . $avatar
+        : 'https://v.58.tl/assets/images/' . $avatar;
+}
 ?>
 
 <?php require_once '../includes/header.php'; ?>
@@ -171,8 +179,8 @@ function safeLoop($array, $callback) {
                             <?php safeLoop($topUsersByClaims, function($index, $user) { ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="https://v.58.tl/assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" 
-                                     class="avatar-xs"
+                                <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
+                                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
                                      onerror="this.src='../assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['claim_count'] ?? 0 ?>个头像</span>
@@ -188,8 +196,8 @@ function safeLoop($array, $callback) {
                             <?php safeLoop($topUsersByListings, function($index, $user) { ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="https://v.58.tl/assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" 
-                                     class="avatar-xs"
+                                <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
+                                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
                                      onerror="this.src='../assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['listing_count'] ?? 0 ?>次挂售</span>
@@ -205,8 +213,8 @@ function safeLoop($array, $callback) {
                             <?php safeLoop($topUsersByTransactions, function($index, $user) { ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="https://v.58.tl/assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" 
-                                     class="avatar-xs"
+                                <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
+                                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
                                      onerror="this.src='../assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['transaction_count'] ?? 0 ?>笔成交</span>

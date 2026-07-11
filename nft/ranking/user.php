@@ -123,9 +123,16 @@ switch ($type) {
                                 <td><?= $index + 1 ?></td>
                                 <td>
                                     <div class="d-flex align-items-center" style="gap:10px;">
-                                        <img src="https://v.58.tl/assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" 
+                                        <?php 
+                                        $avatarFile = $user['avatar'] ?? 'default.jpg';
+                                        $avatarUrl = (strpos($avatarFile, '/') !== false) 
+                                            ? 'https://v.58.tl/' . $avatarFile 
+                                            : 'https://v.58.tl/assets/images/' . $avatarFile;
+                                        ?>
+                                        <img src="<?= htmlspecialchars($avatarUrl) ?>" 
                                              style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e2e8f0;"
-                                             alt="<?= htmlspecialchars($user['username']) ?>">
+                                             alt="<?= htmlspecialchars($user['username']) ?>"
+                                             onerror="this.src='../assets/images/default.jpg'">
                                         <a href="../profile/index.php?user_id=<?= $user['id'] ?>" class="font-weight-bold">
                                             <?= htmlspecialchars($user['username']) ?>
                                         </a>
