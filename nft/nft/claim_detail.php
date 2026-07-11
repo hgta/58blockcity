@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$_SESSION['success_message'] = '认领成功！';
 			// 百度主动推送
 			SeoHelper::baiduPush(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
-			header("Location: /user/collection.php");
+			header("Location: /nft/claim_list.php");
 			exit;
 		} else {
 			$_SESSION['error_message'] = '认领失败，请重试';    
