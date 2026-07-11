@@ -21,7 +21,7 @@ $notification = new Notification($pdo);
 $circleInfo = $circle->getCircleById($circleId);
 if (!$circleInfo) {
     http_response_code(404);
-    include '../../../404.php';
+    include '../../404.php';
     exit;
 }
 
