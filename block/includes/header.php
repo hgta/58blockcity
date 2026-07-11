@@ -1,4 +1,7 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) session_start();
+$isLoggedIn = isset($_SESSION['user_id']);
+
 $site_config['title']       = 'BlockCity区块市场 - 区块交易平台 | 58 BlockCity';
 $site_config['description'] = 'BlockCity区块城市区块交易平台，支持200+城市区块地图浏览、跨区相邻区块合并认领、区块买卖交易。';
 $site_config['keywords']    = '58,区块,区块城市,BlockCity,DAO,区块交易,区块认领';
@@ -73,6 +76,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
             <a href="/purchase_list.php"><i class="fas fa-hand-holding-usd"></i>求购</a>
             <a href="/claim_list.php"><i class="fas fa-hand-holding-heart"></i>认领</a>
             <a href="/top200city.php"><i class="fas fa-trophy"></i>排行</a>
+            <?php if ($isLoggedIn): ?>
+            <a href="/messages/"><i class="fas fa-envelope"></i>站内信</a>
+            <a href="/user/dashboard.php"><i class="fas fa-user"></i><?= htmlspecialchars(mb_substr($_SESSION['username'] ?? '我', 0, 4)) ?></a>
+            <a href="/auth/logout.php" style="color:#e74c3c"><i class="fas fa-sign-out-alt"></i>退出</a>
+            <?php else: ?>
+            <a href="/auth/login.php"><i class="fas fa-sign-in-alt"></i>登录</a>
+            <a href="/auth/register.php" style="background:#ff6b00;color:#fff;border-radius:6px;"><i class="fas fa-user-plus"></i>注册</a>
+            <?php endif; ?>
         </nav>
     </div>
 </header>
