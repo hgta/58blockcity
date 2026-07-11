@@ -40,11 +40,13 @@ if ($tx && $tx['seller_id'] == $userId) {
     $error = '不能购买自己的 NFT';
 }
 
-// 查询买家余额（人气值）
+// 查询买家余额（该城市的人气值）
 $buyerPopularity = 0;
 if ($tx) {
-    $stmt = $pdo->prepare("SELECT popularity FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
+    $stmt = $pdo->prepare("
+        SELECT popularity FROM user_city_popularity WHERE user_id = ? AND city = ?
+    ");
+    $stmt->execute([$userId, $tx['city_name']]);
     $buyerPopularity = (int)$stmt->fetchColumn();
 }
 
@@ -72,13 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tx && !isset($error)) {
                     throw new Exception('该 NFT 已被他人购买');
                 }
 
-                // 2. 扣买家人气值
-                $stmt = $pdo->prepare("UPDATE users SET popularity = popularity - ? WHERE id = ?");
-                $stmt->execute([$tx['price'], $userId]);
+                // 2. 扣买方人气值（按城市）
+                $stmt = $pdo->prepare("
+                    UPDATE user_city_popularity SET popularity = GREATEST(popularity - ?, 0)
+                    WHERE user_id = ? AND city = ?
+                ");
+                $stmt->execute([$tx['price'], $userId, $tx['city_name']]);
 
-                // 3. 加卖家气值
-                $stmt = $pdo->prepare("UPDATE users SET popularity = popularity + ? WHERE id = ?");
-                $stmt->execute([$tx['price'], $tx['seller_id']]);
+                // 3. 加卖方气值（按城市）
+                $stmt = $pdo->prepare("
+                    INSERT INTO user_city_popularity (user_id, city, popularity)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE popularity = popularity + VALUES(popularity)
+                ");
+                $stmt->execute([$tx['seller_id'], $tx['city_name'], $tx['price']]);
 
                 // 4. 转移 NFT 所有权
                 $stmt = $pdo->prepare("UPDATE nft_avatars SET owner_id = ? WHERE id = ?");
@@ -302,7 +311,7 @@ require_once '../includes/header.php';
 
             <?php if ($tx['currency'] === 'popularity'): ?>
             <div class="buy-info-row">
-                <span class="buy-info-label">我的余额</span>
+                <span class="buy-info-label">我的余额（<?= htmlspecialchars($tx['city_name']) ?>）</span>
                 <span class="buy-info-value">Ⓟ <?= number_format($buyerPopularity) ?></span>
             </div>
             <div class="buy-info-row">
