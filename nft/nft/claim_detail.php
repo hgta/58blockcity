@@ -135,7 +135,7 @@ $comments = $comment->getCommentsByNft($nftId);
                                                 <span class="text-muted">区块已认领</span>
                                             </div>
                                             <small class="text-muted">
-                                                <?= date('m-d H:i', strtotime($claim['claimed_at'])) ?>
+                                                <?= date('m-d H:i', strtotime($claim['created_at'])) ?>
                                             </small>
                                         </div>
                                         <?php if (!empty($claim['city_name'])): ?>
