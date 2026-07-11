@@ -60,8 +60,10 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-seedling',    'text' => '数据种子', 'url' => 'seed.php'],
     ],
     'nft' => [
-        ['icon' => 'fa-home',        'text' => 'NFT看板',  'url' => 'dashboard.php'],
-        ['icon' => 'fa-gavel',       'text' => '申诉审核', 'url' => 'appeal_review.php'],
+        ['icon' => 'fa-home',        'text' => 'NFT看板',   'url' => 'dashboard.php'],
+        ['icon' => 'fa-image',       'text' => 'NFT管理',   'url' => 'nfts.php'],
+        ['icon' => 'fa-tags',        'text' => '标签管理',  'url' => 'tags.php'],
+        ['icon' => 'fa-gavel',       'text' => '申诉审核',  'url' => 'appeal_review.php'],
     ],
     'hufang' => [
         ['icon' => 'fa-home',        'text' => '互访看板', 'url' => 'dashboard.php'],

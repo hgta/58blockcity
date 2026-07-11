@@ -1222,3 +1222,114 @@ public function getRecentActivities($nftId, $limit = 10) {
 
 
 ?>
+    public function createNft($data) {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO nft_avatars (code, base_image, avatar_id, avatar_key) VALUES (?,?,?,?)"
+        );
+        $stmt->execute([$data['code'], $data['base_image'] ?? '', $data['avatar_id'] ?? '', $data['avatar_key'] ?? '']);
+        $id = $this->pdo->lastInsertId();
+        if ($id && !empty($data['tag_ids'])) $this->setNftTags($id, $data['tag_ids']);
+        return $id;
+    }
+
+    public function updateNft($id, $data) {
+        $sets = []; $vals = [];
+        foreach (['code','base_image','avatar_id','avatar_key'] as $f) {
+            if (array_key_exists($f, $data)) { $sets[] = "$f = ?"; $vals[] = $data[$f]; }
+        }
+        if (empty($sets)) return false;
+        $vals[] = intval($id);
+        $stmt = $this->pdo->prepare("UPDATE nft_avatars SET " . implode(', ', $sets) . " WHERE id = ?");
+        $r = $stmt->execute($vals);
+        if ($r && isset($data['tag_ids'])) $this->setNftTags($id, $data['tag_ids']);
+        return $r;
+    }
+
+    public function deleteNft($id) {
+        $id = intval($id);
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->exec("DELETE FROM nft_tags WHERE nft_avatar_id = $id");
+            $this->pdo->exec("DELETE FROM comments WHERE nft_id = $id");
+            $this->pdo->exec("DELETE FROM nft_city_user WHERE nft_id = $id");
+            $this->pdo->exec("DELETE FROM nft_sales WHERE nft_id = $id");
+            $this->pdo->exec("DELETE FROM nft_purchase_requests WHERE nft_id = $id");
+            $this->pdo->exec("DELETE FROM nft_transactions WHERE nft_id = $id");
+            $stmt = $this->pdo->prepare("DELETE FROM nft_avatars WHERE id = ?");
+            $stmt->execute([$id]);
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) { $this->pdo->rollBack(); return false; }
+    }
+
+    public function setNftTags($nftId, $tagIds) {
+        $nftId = intval($nftId);
+        $this->pdo->exec("DELETE FROM nft_tags WHERE nft_avatar_id = $nftId");
+        if (empty($tagIds)) return;
+        $stmt = $this->pdo->prepare("INSERT INTO nft_tags (nft_avatar_id, tag_id) VALUES (?, ?)");
+        foreach ($tagIds as $tid) $stmt->execute([$nftId, intval($tid)]);
+    }
+
+    public function createTag($name) {
+        $stmt = $this->pdo->prepare("INSERT INTO tags (name) VALUES (?)");
+        $stmt->execute([trim($name)]);
+        return $this->pdo->lastInsertId();
+    }
+
+    public function updateTag($id, $name) {
+        $stmt = $this->pdo->prepare("UPDATE tags SET name = ? WHERE id = ?");
+        return $stmt->execute([trim($name), intval($id)]);
+    }
+
+    public function deleteTag($id) {
+        $id = intval($id);
+        $this->pdo->exec("DELETE FROM nft_tags WHERE tag_id = $id");
+        $stmt = $this->pdo->prepare("DELETE FROM tags WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    public function getTagsWithCount() {
+        $stmt = $this->pdo->query(
+            "SELECT t.*, COUNT(nt.nft_avatar_id) as nft_count 
+             FROM tags t LEFT JOIN nft_tags nt ON t.id = nt.tag_id 
+             GROUP BY t.id ORDER BY nft_count DESC"
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getNftWithTags($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM nft_avatars WHERE id = ?");
+        $stmt->execute([intval($id)]);
+        $nft = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($nft) $nft['tags'] = $this->getNftTags(intval($id));
+        return $nft;
+    }
+
+    public function getAllNftsAdmin($page = 1, $perPage = 20, $search = '', $tagId = 0) {
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $where = ''; $params = [];
+        if ($search) {
+            $where .= " AND (n.code LIKE ? OR n.avatar_id LIKE ?)";
+            $t = "%$search%";
+            $params = [$t, $t];
+        }
+        if ($tagId) {
+            $where .= " AND EXISTS(SELECT 1 FROM nft_tags WHERE nft_avatar_id = n.id AND tag_id = ?)";
+            $params[] = intval($tagId);
+        }
+        $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM nft_avatars n WHERE 1=1$where");
+        $countStmt->execute($params);
+        $total = $countStmt->fetchColumn();
+
+        $sql = "SELECT n.*,
+                       (SELECT COUNT(*) FROM nft_purchase_requests WHERE nft_id = n.id AND status = 'pending') as buy_count,
+                       (SELECT COUNT(*) FROM nft_sales WHERE nft_id = n.id AND status = 'active') as sale_count,
+                       (SELECT COUNT(*) FROM comments WHERE nft_id = n.id) as comment_count
+                FROM nft_avatars n WHERE 1=1$where
+                ORDER BY n.id DESC LIMIT $perPage OFFSET $offset";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return ['list' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pages' => ceil($total / $perPage)];
+    }
+}
