@@ -837,13 +837,13 @@ class NFT {
 	 */
 	public function getUserCollectionCount(int $userId): int {
 		try {
-			$sql = "SELECT COUNT(DISTINCT nft_id) 
-					FROM nft_city_user 
+			$sql = "SELECT COUNT(*)
+					FROM nft_city_user
 					WHERE user_id = ? AND is_current = 1";
-			
+
 			$stmt = $this->pdo->prepare($sql);
 			$stmt->execute([$userId]);
-			
+
 			return (int)$stmt->fetchColumn();
 		} catch (PDOException $e) {
 			error_log("获取用户NFT总数失败: " . $e->getMessage());
