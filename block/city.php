@@ -1,6 +1,7 @@
 <?php
 // city/[城市拼音].php
 require_once '../config/database.php';
+require_once '../config/block_prices.php';
 require_once 'includes/auth.php';
 require_once '../classes/City.php';
 require_once '../classes/Block.php';
@@ -1418,8 +1419,6 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 
 <?php
 // 计算区块价格的函数（使用正确的价格查找表）
-require_once __DIR__ . '/../config/block_prices.php';
-
 function calculateBlockPrice($zone, $block_id) {
     // 确保 block_id 是4位字符串格式
     $blockNo = str_pad($block_id, 4, '0', STR_PAD_LEFT);
