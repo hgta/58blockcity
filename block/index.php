@@ -1,6 +1,19 @@
 <?php
 require_once '../config/database.php';
 
+// 城市预览图映射（城市名 => 图片文件名）
+$cityPreviewImages = [
+    '北京' => 'beijing-a-preview.png',
+    '杭州' => 'hangzhou-a-preview.png',
+    '中国数藏' => 'shuzang-a-preview.png',
+    '上海' => 'shanghai-a-preview.png',
+    '深圳' => 'shenzhen-a-preview.png',
+    '广州' => 'guangzhou-a-preview.png',
+    '成都' => 'chengdu-a-preview.png',
+    '惠州' => 'huizhou-a-preview.png',
+    '海口' => 'haikou-a-preview.png',
+];
+
 // 统计数据
 $totalCities = $pdo->query("SELECT COUNT(*) FROM cities")->fetchColumn();
 $totalSold = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status='sold'")->fetchColumn();
@@ -169,9 +182,9 @@ require_once 'includes/header.php';
                 <a href="city.php?name=<?= $c['pinyin'] ?>"><?= htmlspecialchars($c['name']) ?> A区</a>
                 <span style="font-size:12px;color:#ff6b00;">#<?= $c['rank'] ?></span>
             </div>
-            <?php if ($c['pinyin'] === 'beijing'): ?>
-            <a href="city.php?name=beijing" class="block-city-preview">
-                <img src="/assets/beijing-a-preview.png" alt="北京 A区 区块实况">
+            <?php if (isset($cityPreviewImages[$c['name']])): ?>
+            <a href="city.php?name=<?= $c['pinyin'] ?>" class="block-city-preview">
+                <img src="/assets/<?= $cityPreviewImages[$c['name']] ?>" alt="<?= htmlspecialchars($c['name']) ?> A区 区块实况">
             </a>
             <?php else: ?>
             <table class="block-mini-grid">
