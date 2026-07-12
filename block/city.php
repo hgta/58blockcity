@@ -25,10 +25,6 @@ if (!$city_info) {
     exit();
 }
 
-// 旧 URL 301 跳转到规范 URL
-$canonicalUrl = SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin);
-SeoHelper::redirectIfNotCanonical($canonicalUrl);
-
 $city_id = $city_info['id'];
 $city_name = $city_info['name'];
 

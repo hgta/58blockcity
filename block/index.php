@@ -8,7 +8,7 @@ $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
 // 热门城市
 $hotCities = [];
-$stmt = $pdo->query("SELECT name, pinyin, rank, resident_count FROM cities WHERE is_hot=1 ORDER BY rank LIMIT 8");
+$stmt = $pdo->query("SELECT name, pinyin, rank, resident_count FROM cities WHERE is_hot=1 ORDER BY rank LIMIT 9");
 $hotCities = $stmt->fetchAll();
 
 // 每个热门城市的 A 区区块统计数据（取前12行12列的样本）

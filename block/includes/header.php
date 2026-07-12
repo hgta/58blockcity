@@ -17,6 +17,10 @@ $site_config['og_image']    = 'https://58.tl/assets/images/og-block.jpg';
     <meta name="description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta name="keywords" content="<?= htmlspecialchars($site_config['keywords']) ?>">
     <link rel="canonical" href="<?= htmlspecialchars($site_config['canonical_url']) ?>" />
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta property="og:title" content="BlockCity区块市场">
     <meta property="og:description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta property="og:image" content="<?= $site_config['og_image'] ?>">
@@ -56,7 +60,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 }
 
 .block-container{max-width:1200px;margin:0 auto;padding:20px}
-.block-footer{text-align:center;padding:30px 20px;color:#999;font-size:13px;border-top:1px solid #eee;margin-top:40px}
+.block-footer{background:#2d3748;color:#a0aec0;margin-top:40px}
+.block-footer-inner{max-width:1200px;margin:0 auto;padding:30px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px}
+.footer-col h4{color:#fff;font-size:14px;margin-bottom:10px;font-weight:600}
+.footer-col a{display:block;color:#a0aec0;font-size:13px;text-decoration:none;padding:3px 0;transition:color .15s}
+.footer-col a:hover{color:#ff6b00}
+.block-copyright{text-align:center;padding:16px 20px;font-size:12px;color:#718096;border-top:1px solid #4a5568}
+@media(max-width:768px){.block-footer-inner{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
