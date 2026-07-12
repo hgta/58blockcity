@@ -2,7 +2,6 @@
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/NFT.php';
-require_once '../../classes/SeoHelper.php';
 
 $nft = new NFT($pdo);
 $tag = $_GET['tag'] ?? '';
@@ -51,7 +50,7 @@ $nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, '', $tag);
         <div class="nft-grid">
             <?php foreach ($nfts as $item): ?>
                 <a href="view.php?id=<?= $item['id'] ?>" class="nft-card">
-                    <img src="<?= SeoHelper::fullUrl($item['image_url'] ?? $item['main_image'] ?? '') ?>" 
+                    <img src="../avatar/<?= htmlspecialchars($item['base_image']) ?>" 
                          alt="<?= htmlspecialchars($item['name']) ?>"
                          loading="lazy">
                     <div class="nft-info">
