@@ -1,36 +1,44 @@
 </div><!-- .block-container -->
 <footer class="block-footer">
     <div class="block-footer-inner">
-        <div class="footer-col">
-            <h4>关于58区块城市</h4>
-            <a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a>
-            <a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a>
-            <a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a>
-            <a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a>
+        <div class="footer-col footer-about">
+            <h4>关于我们</h4>
+            <p>58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，为用户提供区块浏览、认领交易的一站式体验。</p>
         </div>
         <div class="footer-col">
-            <h4>帮助中心</h4>
-            <a href="https://www.58.tl/help/help.html">新手指南</a>
-            <a href="#">元宇宙入门</a>
-            <a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a>
-            <a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a>
+            <h4>快速链接</h4>
+            <a href="https://www.58.tl/"><i class="fas fa-home"></i> 平台首页</a>
+            <a href="https://bct.58.tl/"><i class="fas fa-coins"></i> BCT 交易</a>
+            <a href="https://mall.58.tl/"><i class="fas fa-shopping-bag"></i> 人气商城</a>
+            <a href="https://v.58.tl/"><i class="fas fa-users"></i> 互访圈</a>
         </div>
         <div class="footer-col">
-            <h4>商家服务</h4>
-            <a href="https://www.58.tl/news.html">区块新闻</a>
-            <a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a>
-            <a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a>
-            <a href="http://blockcity.pub/zc/?iclc">营销推广</a>
+            <h4>帮助支持</h4>
+            <a href="https://www.blockcity.vip/pages/index/help/?iclc=1">使用指南</a>
+            <a href="https://www.blockcity.pub/?iclc">进入城市区块</a>
+            <a href="https://www.blockcity.pub/?iclc=1">加入 DAO</a>
         </div>
-        <div class="footer-col">
-            <h4>关注我们</h4>
-            <a href="#">BlockCity微信公众号</a>
-            <a href="#">BlockCity微博</a>
-            <a href="#">BlockCity小红书</a>
-            <a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">BlockCity在线客服</a>
+        <div class="footer-col footer-qr">
+            <h4>专属福利</h4>
+            <div class="qr-group">
+                <div class="qr-item">
+                    <img src="/images/qr-discount.png" alt="7.5折购地">
+                    <span>7.5折购地</span>
+                </div>
+                <div class="qr-item">
+                    <img src="/images/qr-customer-service.png" alt="客服微信">
+                    <span>客服微信</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-col footer-contact">
+            <h4>联系我们</h4>
+            <p><i class="fas fa-envelope"></i> support@58.tl</p>
+            <p><i class="fas fa-globe"></i> www.58.tl</p>
+            <p><i class="fas fa-map-marker-alt"></i> 元宇宙同城生态</p>
         </div>
     </div>
-    <div class="block-copyright">&copy; 2025 58区块城市 | BlockCity DAO | 基于元宇宙技术的区块交易平台</div>
+    <div class="block-copyright">&copy; 2026 58区块交易市场 | BlockCity DAO 版权所有</div>
 </footer>
 </body>
 </html>
