@@ -79,10 +79,10 @@ require_once '../../shared/admin/admin-header.php';
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>排名</th>
                     <th>城市名称</th>
                     <th>拼音</th>
                     <th>区域代码</th>
-                    <th>排名</th>
                     <th>居民数</th>
                     <th>区块数</th>
                     <th>人气值</th>
@@ -94,10 +94,10 @@ require_once '../../shared/admin/admin-header.php';
                 <?php foreach ($cities as $cityItem): ?>
                     <tr>
                         <td><?= $cityItem['id'] ?></td>
+                        <td><span class="admin-badge <?= $cityItem['rank'] <= 3 ? 'warning' : 'default' ?>"><?= $cityItem['rank'] ?></span></td>
                         <td><?= htmlspecialchars($cityItem['name']) ?></td>
                         <td><?= htmlspecialchars($cityItem['pinyin']) ?></td>
                         <td><?= htmlspecialchars($cityItem['area_code']) ?></td>
-                        <td><span class="admin-badge <?= $cityItem['rank'] <= 3 ? 'warning' : 'default' ?>"><?= $cityItem['rank'] ?></span></td>
                         <td><?= number_format($cityItem['resident_count']) ?></td>
                         <td><?= number_format($cityItem['activated_blocks']) ?></td>
                         <td><?= number_format($cityItem['popularity']) ?></td>

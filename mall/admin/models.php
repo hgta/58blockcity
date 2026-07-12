@@ -82,6 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'weight'    => $_POST['weight'] !== '' ? $_POST['weight'] : null,
                 'measurements' => trim($_POST['measurements'] ?? ''),
                 'hobbies'   => trim($_POST['hobbies'] ?? ''),
+                'zodiac'    => trim($_POST['zodiac'] ?? ''),
+                'follower_count' => intval($_POST['follower_count'] ?? 0),
             ];
 
             // 只有实际上传了文件才设置 avatar，避免覆盖旧头像
@@ -231,6 +233,24 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                 <div style="margin-bottom:16px;">
                     <label style="<?= $labelStyle ?>">爱好</label>
                     <textarea name="hobbies" rows="3" style="<?= $inputStyle ?>resize:vertical;"><?= htmlspecialchars($formData['hobbies'] ?? '') ?></textarea>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label style="<?= $labelStyle ?>">星座</label>
+                        <select name="zodiac" style="<?= $inputStyle ?>">
+                            <option value="">-- 选择星座 --</option>
+                            <?php 
+                            $zodiacs = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座','水瓶座','双鱼座'];
+                            foreach ($zodiacs as $z): ?>
+                            <option value="<?= $z ?>" <?= ($formData['zodiac'] ?? '') === $z ? 'selected' : '' ?>><?= $z ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="<?= $labelStyle ?>">粉丝数</label>
+                        <input type="number" name="follower_count" value="<?= htmlspecialchars($formData['follower_count'] ?? '') ?>" min="0" placeholder="粉丝数量" style="<?= $inputStyle ?>">
+                    </div>
                 </div>
 
                 <?php if ($isEdit): ?>
