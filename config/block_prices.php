@@ -8855,10 +8855,9 @@ function calculateBlockPriceNew(string $zone, string $blockNo): int {
     }
     
     // 兜底：返回区域基准价（不应到达这里）
-    $basePrices = [
-        'B' => 1690, 'C' => 2220, 'D' => 2918,
-        'E' => 3834, 'F' => 5038, 'G' => 6619,
-        'H' => 8698, 'Z' => 11429
-    ];
-    return $basePrices[$zone] ?? 1000;
+    $zoneConfig = require __DIR__ . '/zones.php';
+    if (isset($zoneConfig[$zone])) {
+        return $zoneConfig[$zone]['base_price'];
+    }
+    return 1000;
 }

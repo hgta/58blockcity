@@ -390,37 +390,27 @@ class Block {
 	
 	/**
 	 * 根据区块ID判断所属区域
+	 * 使用统一配置 config/zones.php
 	 */
 	public function determineZoneByBlockId($blockId) {
 		$blockNum = intval($blockId);
+		$zoneConfig = require __DIR__ . '/../config/zones.php';
 		
-		// 定义分区逻辑
-		$zones = [
-			'A' => ['start' => 101, 'end' => 1299],
-			'B' => ['start' => 1301, 'end' => 2499],
-			'C' => ['start' => 2501, 'end' => 3699],
-			'D' => ['start' => 3701, 'end' => 4899],
-			'E' => ['start' => 4901, 'end' => 6099],
-			'F' => ['start' => 6101, 'end' => 7299],
-			'G' => ['start' => 7301, 'end' => 8499],
-			'H' => ['start' => 8501, 'end' => 9699],
-		];
-		
-		// 检查A-H区域
-		foreach ($zones as $zone => $range) {
-			if ($blockNum >= $range['start'] && $blockNum <= $range['end']) {
-				return $zone;
+		foreach ($zoneConfig as $zone => $cfg) {
+			if ($zone === 'Z') {
+				// Z区三段式范围
+				foreach ($cfg['parts'] as $part) {
+					if ($blockNum >= $part['start'] && $blockNum <= $part['end']) {
+						return 'Z';
+					}
+				}
+			} else {
+				if ($blockNum >= $cfg['block_start'] && $blockNum <= $cfg['block_end']) {
+					return $zone;
+				}
 			}
 		}
 		
-		// 检查Z区域
-		if (($blockNum >= 9701 && $blockNum <= 9999) || 
-			($blockNum >= 1 && $blockNum <= 99) || 
-			($blockNum >= 100 && $blockNum <= 9900)) {
-			return 'Z';
-		}
-		
-		// 默认返回Z区域
 		return 'Z';
 	}
 

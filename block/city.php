@@ -31,22 +31,8 @@ $city_name = $city_info['name'];
 // 获取当前用户ID（如果已登录）
 $current_user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
 
-// 定义分区价格逻辑
-$zones = [
-    'A' => ['start' => 101, 'end' => 1299, 'base_price' => 1286],
-    'B' => ['start' => 1301, 'end' => 2499, 'base_price' => 1690],
-    'C' => ['start' => 2501, 'end' => 3699, 'base_price' => 2220],
-    'D' => ['start' => 3701, 'end' => 4899, 'base_price' => 2918],
-    'E' => ['start' => 4901, 'end' => 6099, 'base_price' => 3834],
-    'F' => ['start' => 6101, 'end' => 7299, 'base_price' => 5038],
-    'G' => ['start' => 7301, 'end' => 8499, 'base_price' => 6619],
-    'H' => ['start' => 8501, 'end' => 9699, 'base_price' => 8698],
-    'Z' => [
-        'part1' => ['start' => 9701, 'end' => 9999, 'base_price' => 11429],
-        'part2' => ['start' => 1, 'end' => 99, 'base_price' => 34101],
-        'part3' => ['start' => 100, 'end' => 9900, 'base_price' => 34020]
-    ]
-];
+// 加载统一区域配置
+$zoneConfig = require __DIR__ . '/../config/zones.php';
 
 // 视图模式：默认单区(A区)，?view=all=全景模式，?zone=X=指定区
 $current_zone = $_GET['zone'] ?? null;
@@ -63,12 +49,11 @@ if ($view_all) {
     $current_zone = 'A';
 }
 
-// 各区的列范围（用于单区网格渲染）
-$zone_col_ranges = [
-    'A' => [1, 12], 'B' => [13, 24], 'C' => [25, 36], 'D' => [37, 48],
-    'E' => [49, 60], 'F' => [61, 72], 'G' => [73, 84], 'H' => [85, 96],
-    'Z' => [97, 99],
-];
+// 各区的列范围（从统一配置生成，用于单区网格渲染）
+$zone_col_ranges = [];
+foreach ($zoneConfig as $z => $cfg) {
+    $zone_col_ranges[$z] = [$cfg['col_start'], $cfg['col_end']];
+}
 
 // 列号到区的映射（用于全景网格分区着色）
 $col_to_zone = [];
@@ -961,7 +946,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 <?php for ($col = $col_start; $col <= $col_end; $col++): ?>
                                    <?php
 										$block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
-										$block_price = calculateBlockPrice($current_zone, $block_number, $zones);
+										$block_price = calculateBlockPrice($current_zone, $block_number);
 
 										$block_status = 'available';
 										$block_owner = null;
@@ -1029,7 +1014,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     for ($row = 1; $row <= 99; $row++) {
                         for ($col = 1; $col <= 101; $col++) {
                             $bn = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
-                            $price = calculateBlockPrice($current_zone, $bn, $zones);
+                            $price = calculateBlockPrice($current_zone, $bn);
                             $status = 'available';
                             $owner = null;
                             $oname = null;
@@ -1435,7 +1420,7 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 // 计算区块价格的函数（使用正确的价格查找表）
 require_once __DIR__ . '/../config/block_prices.php';
 
-function calculateBlockPrice($zone, $block_id, $zones) {
+function calculateBlockPrice($zone, $block_id) {
     // 确保 block_id 是4位字符串格式
     $blockNo = str_pad($block_id, 4, '0', STR_PAD_LEFT);
     return calculateBlockPriceNew($zone, $blockNo);

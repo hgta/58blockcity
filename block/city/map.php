@@ -13,19 +13,9 @@ $block = new Block($pdo);
 $cityInfo = $city->getCityById($cityId);
 $blocks = $block->getBlocksByCityZone($cityId, $zone);
 
-// 计算价格系数
-$priceFactors = [
-    'A' => 1.0,
-    'B' => 1.314,
-    'C' => pow(1.314, 2),
-    'D' => pow(1.314, 3),
-    'E' => pow(1.314, 4),
-    'F' => pow(1.314, 5),
-    'G' => pow(1.314, 6),
-    'H' => pow(1.314, 7),
-    'Z' => pow(1.314, 8)
-];
-$priceFactor = $priceFactors[$zone] ?? 1.0;
+// 加载统一区域配置和价格查找表
+$zoneConfig = require __DIR__ . '/../../config/zones.php';
+require_once __DIR__ . '/../../config/block_prices.php';
 
 // 检查是否有活跃的扩容投票
 $activeVote = $block->getActiveExpansionVote($cityId, $zone);
@@ -38,7 +28,7 @@ $activeVote = $block->getActiveExpansionVote($cityId, $zone);
         <h1><?= htmlspecialchars($cityInfo['name']) ?>区块地图 <small><?= $zone ?>区</small></h1>
         
         <div class="zone-selector">
-            <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
+            <?php foreach (array_keys($zoneConfig) as $z): ?>
                 <a href="map.php?city_id=<?= $cityId ?>&zone=<?= $z ?>" 
                    class="btn <?= $z == $zone ? 'btn-primary' : 'btn-default' ?>"><?= $z ?>区</a>
             <?php endforeach; ?>
@@ -64,8 +54,12 @@ $activeVote = $block->getActiveExpansionVote($cityId, $zone);
     <div class="block-map">
         <div class="map-header">
             <div class="row-number">行号</div>
-            <?php for ($col = 1; $col <= 12; $col++): ?>
-                <div class="col-number"><?= str_pad($col, 2, '0', STR_PAD_LEFT) ?></div>
+            <?php 
+            $zoneCols = $zoneConfig[$zone]['col_end'] - $zoneConfig[$zone]['col_start'] + 1;
+            for ($c = 0; $c < $zoneCols; $c++): 
+                $colNum = $zoneConfig[$zone]['col_start'] + $c;
+            ?>
+                <div class="col-number"><?= str_pad($colNum, 2, '0', STR_PAD_LEFT) ?></div>
             <?php endfor; ?>
         </div>
         
@@ -73,9 +67,9 @@ $activeVote = $block->getActiveExpansionVote($cityId, $zone);
             <div class="map-row">
                 <div class="row-number"><?= str_pad($row, 2, '0', STR_PAD_LEFT) ?></div>
                 
-                <?php for ($col = 1; $col <= 12; $col++): ?>
+                <?php for ($c = 0; $c < $zoneCols; $c++): $colNum = $zoneConfig[$zone]['col_start'] + $c; ?>
                     <?php 
-                    $blockNumber = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                    $blockNumber = str_pad($colNum, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
                     $currentBlock = null;
                     
                     foreach ($blocks as $b) {
@@ -85,8 +79,7 @@ $activeVote = $block->getActiveExpansionVote($cityId, $zone);
                         }
                     }
                     
-                    $basePrice = 1000; // 假设A区0101价格为1000
-                    $price = $basePrice * $priceFactor;
+                    $price = calculateBlockPriceNew($zone, $blockNumber);
                     ?>
                     
                     <div class="block-cell <?= $currentBlock ? 'sold' : 'available' ?>">
