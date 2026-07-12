@@ -1432,38 +1432,12 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 </style>
 
 <?php
-// 计算区块价格的函数（按行列递减）
+// 计算区块价格的函数（使用正确的价格查找表）
+require_once __DIR__ . '/../config/block_prices.php';
+
 function calculateBlockPrice($zone, $block_id, $zones) {
-    if ($zone === 'Z') {
-        // Z区三段式价格
-        $num = intval($block_id);
-        if ($num >= 9701 && $num <= 9999) {
-            $base = 11429;
-            $col = floor($num / 100); // 97-99
-            $row = $num % 100;
-        } elseif ($num >= 1 && $num <= 99) {
-            $base = 34101;
-            $col = 0; // 前导零视为第0列
-            $row = $num;
-        } else {
-            $base = 34020;
-            $col = floor($num / 100); // 01-98
-            $row = $num % 100;
-        }
-        $price_decrease = $col + ($row - 1);
-        return max($base - $price_decrease, 1);
-    } else {
-        // A-H区处理：按行列递减
-        $col = floor($block_id / 100);
-        $row = $block_id % 100;
-
-        $base_price = $zones[$zone]['base_price'];
-
-        // 价格递减规则：每增加一行减1元，每增加一列减1元
-        $price_decrease = ($col - 1) + ($row - 1);
-        $price = $base_price - $price_decrease;
-
-        return max($price, 1); // 最低1元
-    }
+    // 确保 block_id 是4位字符串格式
+    $blockNo = str_pad($block_id, 4, '0', STR_PAD_LEFT);
+    return calculateBlockPriceNew($zone, $blockNo);
 }
 ?>

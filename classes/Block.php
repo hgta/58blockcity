@@ -293,32 +293,12 @@ class Block {
 
     /**
      * 根据区块号计算价格
+     * 使用从正确价格表提取的公式和查找表
      */
     private function calculateBlockPrice($zone, $blockNumber) {
-        // 解析区块号的行列
-        $col = intval(substr($blockNumber, 0, 2));
-        $row = intval(substr($blockNumber, 2, 2));
-        
-        // 定义各区的基准价格
-        $basePrices = [
-            'A' => 1286,
-            'B' => 1690,
-            'C' => 2220,
-            'D' => 2918,
-            'E' => 3834,
-            'F' => 5038,
-            'G' => 6619,
-            'H' => 8698,
-            'Z' => 11429
-        ];
-        
-        $basePrice = $basePrices[$zone] ?? 1000;
-        
-        // 价格递减规则：每增加一行减1元，每增加一列减1元
-        $priceDecrease = ($col - 1) + ($row - 1);
-        $price = $basePrice - $priceDecrease;
-        
-        return max($price, 1); // 最低1元
+        // 载入价格查找表
+        require_once __DIR__ . '/../config/block_prices.php';
+        return calculateBlockPriceNew($zone, $blockNumber);
     }
 
     /**
@@ -448,32 +428,9 @@ class Block {
 	 * 计算基础价格
 	 */
 	public function calculateBasePrice($blockId, $zone) {
-		$blockNum = intval($blockId);
-		
-		$zonePrices = [
-			'A' => 1286,
-			'B' => 1690,
-			'C' => 2220,
-			'D' => 2918,
-			'E' => 3834,
-			'F' => 5038,
-			'G' => 6619,
-			'H' => 8698,
-		];
-		
-		// Z区域特殊处理
-		if ($zone === 'Z') {
-			if ($blockNum >= 9701 && $blockNum <= 9999) {
-				return 11429;
-			} elseif ($blockNum >= 1 && $blockNum <= 99) {
-				return 34101;
-			} elseif ($blockNum >= 100 && $blockNum <= 9900) {
-				return 34020;
-			}
-		}
-		
-		// 返回对应区域的基础价格
-		return $zonePrices[$zone] ?? 0;
+		require_once __DIR__ . '/../config/block_prices.php';
+		$blockNo = str_pad($blockId, 4, '0', STR_PAD_LEFT);
+		return calculateBlockPriceNew($zone, $blockNo);
 	}
 
 	/**
