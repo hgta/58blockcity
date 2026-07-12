@@ -171,7 +171,7 @@ require_once 'includes/header.php';
             </div>
             <?php if ($c['pinyin'] === 'beijing'): ?>
             <a href="city.php?name=beijing" class="block-city-preview">
-                <img src="../assets/beijing-a-preview.png" alt="北京 A区 区块实况">
+                <img src="beijing-a-preview.png" alt="北京 A区 区块实况">
             </a>
             <?php else: ?>
             <table class="block-mini-grid">
