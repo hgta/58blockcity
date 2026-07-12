@@ -352,6 +352,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         .block-map {
             display: flex;
+            background: #ccc;
+            border-radius: 2px;
+            overflow: hidden;
         }
         
         .map-rows {
@@ -361,40 +364,36 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .map-row {
             display: flex;
             height: 30px;
+            gap: 1px;
         }
+        .map-row + .map-row { margin-top: 1px; }
         
         .block-cell {
             width: 30px;
             height: 30px;
-            border: 1px solid #e0e0e0;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
             position: relative;
         }
         
-        .block-cell:hover {
-            transform: scale(1.1);
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        
         .block-cell.available {
-            background-color: #e8f5e8;
-            color: #2e7d32;
+            background-color: #fff;
+            color: #999;
         }
         
         .block-cell.sold {
-            background-color: #ffebee;
-            color: #c62828;
+            background-color: #ff6b00;
+            color: #fff;
         }
         
         .block-cell.reserved {
             background-color: #fff3e0;
-            color: #ef6c00;
+            color: #e65100;
         }
         
         /* 区块详情面板 */
