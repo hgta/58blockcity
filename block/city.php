@@ -338,7 +338,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         .block-map {
             display: flex;
-            background: #ccc;
             border-radius: 2px;
             overflow: hidden;
         }
@@ -350,9 +349,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .map-row {
             display: flex;
             height: 30px;
-            gap: 1px;
         }
-        .map-row + .map-row { margin-top: 1px; }
         
         .block-cell {
             width: 30px;
