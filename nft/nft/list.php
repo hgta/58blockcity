@@ -8,7 +8,7 @@ $tag = $_GET['tag'] ?? '';
 $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 24;
 
-$nfts = $tag ? $nft->getNFTsByTag($tag, $page, $perPage) : $nft->getAllNFTs($page, $perPage);
+$nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, '', $tag);
 ?>
 <?php require_once '../includes/header.php'; ?>
 
