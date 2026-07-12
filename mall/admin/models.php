@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'measurements' => trim($_POST['measurements'] ?? ''),
                 'hobbies'   => trim($_POST['hobbies'] ?? ''),
                 'zodiac'    => trim($_POST['zodiac'] ?? ''),
-                'follower_count' => intval($_POST['follower_count'] ?? 0),
+                'follower_count' => trim($_POST['follower_count'] ?? ''),
             ];
 
             // 只有实际上传了文件才设置 avatar，避免覆盖旧头像
@@ -249,7 +249,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     </div>
                     <div>
                         <label style="<?= $labelStyle ?>">粉丝数</label>
-                        <input type="number" name="follower_count" value="<?= htmlspecialchars($formData['follower_count'] ?? '') ?>" min="0" placeholder="粉丝数量" style="<?= $inputStyle ?>">
+                        <input type="text" name="follower_count" value="<?= htmlspecialchars($formData['follower_count'] ?? '') ?>" placeholder="例：1.2万" style="<?= $inputStyle ?>">
                     </div>
                 </div>
 

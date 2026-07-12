@@ -1410,7 +1410,7 @@ CREATE TABLE IF NOT EXISTS `models` (
   `measurements` varchar(50) DEFAULT NULL COMMENT '三围',
   `hobbies` text DEFAULT NULL COMMENT '爱好',
   `zodiac` varchar(20) DEFAULT NULL COMMENT '星座',
-  `follower_count` int(11) DEFAULT 0 COMMENT '粉丝数',
+  `follower_count` varchar(20) DEFAULT NULL COMMENT '粉丝数',
   `like_count` int(11) DEFAULT 0 COMMENT '点赞数',
   `product_count` int(11) DEFAULT 0 COMMENT '关联商品数',
   `review_count` int(11) DEFAULT 0 COMMENT '关联评论数',
