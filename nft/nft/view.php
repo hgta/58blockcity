@@ -9,10 +9,10 @@ require_once '../../classes/Comment.php';
 require_once '../../classes/Block.php';
 require_once '../../classes/SeoHelper.php';
 
-checkLogin();
+$isLoggedIn = isset($_SESSION['user_id']);
+$userId = $isLoggedIn ? $_SESSION['user_id'] : 0;
 
 $nftId = $_GET['id'] ?? 0;
-$userId = $_SESSION['user_id'];
 
 $nft = new NFT($pdo);
 $transaction = new Transaction($pdo);
@@ -25,7 +25,7 @@ $block = new Block($pdo);
 $nftInfo = $nft->getNftById($nftId);
 if (!$nftInfo) {
     http_response_code(404);
-    include '../../../404.php';
+    include '../../404.php';
     exit;
 }
 
@@ -92,8 +92,8 @@ $recentActivities = $nft->getRecentActivities($nftId, 10);
 // 获取当前NFT的所有评论
 $comments = $comment->getCommentsByNft($nftId);
 
-// 处理评论提交
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
+// 处理评论提交（需登录）
+if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
     $commentText = trim($_POST['comment_text']);
     if (!empty($commentText)) {
         if ($comment->addComment($userId, $nftId, $commentText)) {
