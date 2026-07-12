@@ -14,20 +14,20 @@ $nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, '', $tag);
 
 <style>
 .container { max-width:1200px; margin:0 auto; padding:20px; }
-.page-title { font-size:24px; font-weight:bold; margin-bottom:20px; color:#333; }
-.tag-badge { display:inline-block; background:#ff6b00; color:white; padding:4px 14px; border-radius:20px; font-size:14px; margin-bottom:20px; }
-.nft-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
-.nft-card { background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.08); text-decoration:none; color:inherit; transition:all .3s; }
-.nft-card:hover { transform:translateY(-4px); box-shadow:0 8px 25px rgba(0,0,0,0.12); }
-.nft-card img { width:100%; height:200px; object-fit:cover; }
-.nft-info { padding:15px; }
-.nft-info h3 { font-size:16px; margin-bottom:8px; }
-.nft-meta { font-size:12px; color:#666; }
-.nft-price { font-size:18px; color:#ff6b00; font-weight:bold; margin-top:5px; }
+.page-title { font-size:22px; font-weight:bold; margin-bottom:16px; color:#1a1a2e; display:flex; align-items:center; gap:10px; }
+.tag-badge { display:inline-block; background:#ff6b00; color:white; padding:4px 14px; border-radius:20px; font-size:13px; margin-bottom:16px; }
+.nft-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+.nft-card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06); text-decoration:none; color:inherit; transition:all .2s; display:flex; flex-direction:column; }
+.nft-card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.1); }
+.nft-card img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#f5f5f5; }
+.nft-info { padding:10px 12px; flex:1; }
+.nft-info h3 { font-size:14px; margin-bottom:4px; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nft-meta { font-size:11px; color:#999; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nft-price { font-size:14px; color:#ff6b00; font-weight:600; margin-top:4px; }
 .empty-state { text-align:center; padding:60px; color:#999; }
-@media(max-width:992px){ .nft-grid{grid-template-columns:repeat(3,1fr)} }
-@media(max-width:768px){ .nft-grid{grid-template-columns:repeat(2,1fr)} }
-@media(max-width:480px){ .nft-grid{grid-template-columns:1fr} }
+@media(max-width:992px){ .nft-grid{grid-template-columns:repeat(4,1fr)} }
+@media(max-width:768px){ .nft-grid{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:480px){ .nft-grid{grid-template-columns:repeat(2,1fr); gap:8px } .nft-info{padding:8px 10px} .nft-info h3{font-size:12px} }
 </style>
 
 <div class="container">
@@ -54,9 +54,8 @@ $nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, '', $tag);
                          alt="<?= htmlspecialchars($item['name']) ?>"
                          loading="lazy">
                     <div class="nft-info">
-                        <h3><?= htmlspecialchars($item['name']) ?></h3>
-                        <div class="nft-meta"><?= htmlspecialchars($item['city_name'] ?? '') ?></div>
-                        <div class="nft-price">¥<?= number_format($item['price'] ?? 0, 2) ?></div>
+                        <h3><?= htmlspecialchars($item['name'] ?? $item['code'] ?? '') ?></h3>
+                        <div class="nft-meta">#<?= htmlspecialchars($item['code'] ?? '') ?></div>
                     </div>
                 </a>
             <?php endforeach; ?>
