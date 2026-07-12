@@ -93,6 +93,9 @@ require_once 'includes/header.php';
 .block-mini-grid td.sold{background:#ff6b00;color:#fff;font-weight:700}
 .block-mini-grid td.reserved{background:#fff3e0;color:#e65100}
 
+.block-city-preview{display:block;width:100%;border-radius:2px;overflow:hidden}
+.block-city-preview img{width:100%;display:block}
+
 .block-city-meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#888}
 .block-city-meta .progress{flex:1;margin:0 10px;height:4px;background:#eee;border-radius:2px;overflow:hidden}
 .block-city-meta .progress-bar{height:100%;background:linear-gradient(90deg,#ff6b00,#ff9500);border-radius:2px}
@@ -166,6 +169,11 @@ require_once 'includes/header.php';
                 <a href="city.php?name=<?= $c['pinyin'] ?>"><?= htmlspecialchars($c['name']) ?> A区</a>
                 <span style="font-size:12px;color:#ff6b00;">#<?= $c['rank'] ?></span>
             </div>
+            <?php if ($c['pinyin'] === 'beijing'): ?>
+            <a href="city.php?name=beijing" class="block-city-preview">
+                <img src="../assets/beijing-a-preview.png" alt="北京 A区 区块实况">
+            </a>
+            <?php else: ?>
             <table class="block-mini-grid">
                 <?php for ($r = 1; $r <= 12; $r++): ?>
                 <tr>
@@ -178,6 +186,7 @@ require_once 'includes/header.php';
                 </tr>
                 <?php endfor; ?>
             </table>
+            <?php endif; ?>
             <div class="block-city-meta">
                 <span>已售 <?= $c['sold_count'] ?>/<?= $c['total'] ?></span>
                 <div class="progress"><div class="progress-bar" style="width:<?= $c['percent'] ?>%"></div></div>
