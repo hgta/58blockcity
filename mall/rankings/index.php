@@ -55,44 +55,96 @@ a{text-decoration:none;color:inherit}
 .stat-ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
 .stat-num{font-size:22px;font-weight:700}
 .stat-lbl{font-size:12px;color:#999}
-.main-tabs{display:flex;background:#fff;border-radius:12px 12px 0 0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.main-tab{flex:1;padding:18px;text-align:center;font-size:16px;font-weight:600;color:#999;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+
+.main-tabs{display:flex;background:#fff;border-radius:12px 12px 0 0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch}
+.main-tab{flex:1;padding:14px 12px;text-align:center;font-size:15px;font-weight:600;color:#999;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
 .main-tab:hover{color:#ff6b00;background:#fff9f5}
 .main-tab.active{color:#ff6b00;border-bottom-color:#ff6b00;background:#fff9f5}
-.sub-tabs{display:flex;gap:10px;padding:16px 20px;background:#fff;flex-wrap:wrap}
-.sub-tab{padding:8px 18px;border-radius:20px;font-size:14px;font-weight:500;color:#666;background:#f5f5f5;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+
+.sub-tabs{display:flex;gap:8px;padding:12px 15px;background:#fff;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.sub-tabs::-webkit-scrollbar{display:none}
+.sub-tab{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;color:#666;background:#f5f5f5;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .sub-tab:hover{color:#ff6b00;background:#fff0e6}
 .sub-tab.active{color:#fff;background:linear-gradient(135deg,#ff6b00,#ff9500)}
+
 .ranking-body{background:#fff;border-radius:0 0 12px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:20px}
-.rank-item,.shop-rank-item{display:flex;align-items:center;gap:16px;padding:16px;border-radius:10px;transition:background .2s;margin-bottom:8px}
-.rank-item:hover,.shop-rank-item:hover{background:#f9f9f9}
-.rank-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;background:#f0f0f0;color:#999}
+.rank-item,.shop-rank-item{display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer}
+.rank-item:hover,.shop-rank-item:hover{background:#f9f9f9;border-color:#eee}
+.rank-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;background:#f0f0f0;color:#999}
 .rank-item:nth-child(2) .rank-num{background:linear-gradient(135deg,#ffd700,#ffa500);color:#fff}
 .rank-item:nth-child(3) .rank-num{background:linear-gradient(135deg,#c0c0c0,#a8a8a8);color:#fff}
 .rank-item:nth-child(4) .rank-num{background:linear-gradient(135deg,#cd7f32,#b87333);color:#fff}
 .shop-rank-item:nth-child(2) .rank-num{background:linear-gradient(135deg,#ffd700,#ffa500);color:#fff}
 .shop-rank-item:nth-child(3) .rank-num{background:linear-gradient(135deg,#c0c0c0,#a8a8a8);color:#fff}
 .shop-rank-item:nth-child(4) .rank-num{background:linear-gradient(135deg,#cd7f32,#b87333);color:#fff}
-.rank-img{width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f5f5f5}
-.rank-info{flex:1;min-width:0}
-.rank-name{font-size:15px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f5f5f5}
+.rank-info{flex:1;min-width:0;min-width:0}
+.rank-name{font-size:15px;font-weight:600;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 .rank-name a:hover{color:#ff6b00}
-.rank-meta{font-size:13px;color:#999;display:flex;gap:12px;flex-wrap:wrap}
-.rank-price{text-align:right;flex-shrink:0;min-width:100px}
+.rank-meta{font-size:12px;color:#999;display:flex;gap:10px;flex-wrap:wrap}
+.rank-price{text-align:right;flex-shrink:0}
 .price-val{font-size:18px;font-weight:700;color:#ff6b00}
 .price-unit{font-size:12px;color:#ff6b00}
-.rank-metric{font-size:12px;color:#999;margin-top:4px}
+.rank-metric{font-size:12px;color:#999;margin-top:3px}
 .rank-metric strong{color:#ff6b00;font-size:14px}
 .shop-logo{width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f5f5f5}
-.shop-desc{font-size:13px;color:#999;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.shop-metrics{display:flex;gap:20px;flex-shrink:0;text-align:center}
+.shop-info{flex:1;min-width:0}
+.shop-desc{font-size:12px;color:#999;margin:4px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.shop-metrics{display:flex;gap:16px;flex-shrink:0;text-align:center}
 .m-val{font-size:18px;font-weight:700;color:#333}
-.m-lbl{font-size:12px;color:#999}
+.m-lbl{font-size:11px;color:#999}
 .shop-metric.rating .m-val{color:#f39c12}
 .shop-metric.sales .m-val{color:#ff6b00}
 .empty{text-align:center;padding:60px 20px;color:#999}
 .empty i{font-size:48px;margin-bottom:15px;opacity:.4}
-@media(max-width:768px){.stats-bar{flex-direction:column}.rank-item,.shop-rank-item{flex-wrap:wrap}.rank-price{text-align:left}.shop-metrics{width:100%;justify-content:space-around}}
+
+@media(max-width:768px){
+    .container{padding:0 10px}
+    .stats-bar{flex-direction:row;flex-wrap:wrap;gap:8px;margin:12px 0}
+    .stat-box{flex:1 1 calc(50% - 4px);min-width:0;padding:12px;gap:8px;border-radius:10px}
+    .stat-ico{width:36px;height:36px;font-size:16px;border-radius:8px}
+    .stat-num{font-size:18px}
+    .stat-lbl{font-size:11px}
+
+    .main-tab{font-size:14px;padding:12px 8px}
+    
+    .sub-tabs{padding:10px 10px;gap:6px}
+    .sub-tab{padding:7px 12px;font-size:12px;border-radius:16px}
+
+    .ranking-body{padding:12px;border-radius:0 0 10px 10px}
+
+    /* 商品排行 */
+    .rank-item{gap:10px;padding:12px;border-radius:8px;flex-wrap:wrap}
+    .rank-num{width:30px;height:30px;font-size:13px}
+    .rank-img{width:52px;height:52px;border-radius:6px}
+    .rank-name{font-size:14px;-webkit-line-clamp:2}
+    .rank-meta{font-size:11px;gap:6px}
+    .rank-price{text-align:left;width:100%;display:flex;justify-content:space-between;align-items:center;padding-top:4px}
+    .price-val{font-size:16px}
+
+    /* 店铺/模特排行 */
+    .shop-rank-item{gap:10px;padding:12px;border-radius:8px;flex-wrap:wrap}
+    .shop-logo{width:48px;height:48px;border-radius:8px}
+    .shop-metrics{width:100%;justify-content:space-around;order:3;padding-top:8px;border-top:1px solid #f0f0f0;margin-top:2px}
+    .shop-desc{font-size:12px;-webkit-line-clamp:2}
+    .m-val{font-size:16px}
+    .m-lbl{font-size:11px}
+}
+
+@media(max-width:480px){
+    .stats-bar{gap:6px}
+    .stat-box{flex:1 1 calc(50% - 3px);padding:10px 8px;gap:6px}
+    .stat-ico{width:32px;height:32px;font-size:14px}
+    .stat-num{font-size:16px}
+    
+    .main-tab{font-size:13px;padding:10px 6px}
+    
+    .rank-num{width:28px;height:28px;font-size:12px}
+    .rank-img{width:44px;height:44px}
+    .rank-name{font-size:13px}
+    .price-val{font-size:15px}
+    .shop-logo{width:40px;height:40px}
+}
 </style>
 </head>
 <body>
@@ -146,11 +198,11 @@ a{text-decoration:none;color:inherit}
                     ];
                     $m = $metricLabels[$productType] ?? ['浏览',$p['view_count']];
                     ?>
-                    <div class="rank-item">
+                    <div class="rank-item" onclick="location.href='../product/detail.php?id=<?= $p['id'] ?>'" style="cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <img class="rank-img" src="../<?= htmlspecialchars($p['thumb_image']?:$p['main_image']?:'assets/images/default-product.jpg') ?>" alt="" onerror="this.src='../assets/images/default-product.jpg'">
                         <div class="rank-info">
-                            <div class="rank-name"><a href="../product/detail.php?id=<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?></a></div>
+                            <div class="rank-name"><?= htmlspecialchars($p['name']) ?></div>
                             <div class="rank-meta">
                                 <span><i class="fas fa-store"></i> <?= htmlspecialchars($p['shop_name']?:'平台自营') ?></span>
                                 <span><i class="fas fa-star" style="color:#f39c12"></i> <?= number_format($p['rating'],1) ?> (<?= $p['review_count'] ?>评)</span>
@@ -174,11 +226,11 @@ a{text-decoration:none;color:inherit}
                 <div class="empty"><i class="fas fa-store"></i><p>暂无排行数据</p></div>
             <?php else: ?>
                 <?php foreach ($shopRanking as $i => $s): ?>
-                    <div class="shop-rank-item">
+                    <div class="shop-rank-item" onclick="location.href='../shop/view.php?id=<?= $s['id'] ?>'" style="cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <img class="shop-logo" src="../<?= htmlspecialchars($s['shop_logo']?:'assets/images/default-shop.jpg') ?>" alt="" onerror="this.src='../assets/images/default-shop.jpg'">
                         <div class="shop-info">
-                            <div class="rank-name"><a href="../shop/view.php?id=<?= $s['id'] ?>"><?= htmlspecialchars($s['shop_name']) ?></a></div>
+                            <div class="rank-name"><?= htmlspecialchars($s['shop_name']) ?></div>
                             <div class="shop-desc"><?= htmlspecialchars(mb_substr($s['shop_description']?:'这家店铺还没有描述...',0,40)) ?></div>
                             <div class="rank-meta">
                                 <span><i class="fas fa-box"></i> <?= $s['active_products']??0 ?> 件商品</span>
@@ -198,14 +250,14 @@ a{text-decoration:none;color:inherit}
                 <div class="empty"><i class="fas fa-user-circle"></i><p>暂无模特排行数据</p></div>
             <?php else: ?>
                 <?php foreach ($modelRanking as $i => $m): ?>
-                    <div class="shop-rank-item">
+                    <div class="shop-rank-item" onclick="location.href='<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>'" style="cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <?php 
                         $rAvatar = $m['model_avatar'] ? '../' . $m['model_avatar'] : ($m['user_avatar'] ? (strpos($m['user_avatar'],'/')!==false ? '../'.$m['user_avatar'] : '/assets/images/'.$m['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
                         ?>
                         <img class="shop-logo" src="<?= htmlspecialchars($rAvatar) ?>" alt="">
                         <div class="shop-info">
-                            <div class="rank-name"><a href="<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>"><?= htmlspecialchars($m['nickname']) ?> @<?= htmlspecialchars($m['username']) ?></a></div>
+                            <div class="rank-name"><?= htmlspecialchars($m['nickname']) ?> @<?= htmlspecialchars($m['username']) ?></div>
                             <div class="rank-meta">
                                 <?php if ($m['gender'] !== '保密'): ?><span><?= $m['gender'] ?></span><?php endif; ?>
                                 <?php if ($m['height']): ?><span><?= $m['height'] ?>cm</span><?php endif; ?>
