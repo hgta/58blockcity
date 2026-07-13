@@ -24,18 +24,14 @@ class User {
     }
     
     public function login($username, $password) {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->execute([$username]);
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+        $stmt->execute([$username, $username]);
         $user = $stmt->fetch();
         
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-			
-			// 登录成功后更新最后登录时间
-			$updateStmt = $this->pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-			$updateStmt->execute([$user['id']]);
-			return true;
+            // 使用统一的 handleLogin() 入口（session_regenerate + remember token）
+            handleLogin($user['id'], $user['username'], $user['email'] ?? '', $user['role'] ?? 'user', true);
+            return true;
         }
         return false;
     }

@@ -1023,6 +1023,7 @@ ALTER TABLE `purchase_requests`
 ALTER TABLE `remember_tokens`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `token` (`token`),
+  ADD UNIQUE KEY `uk_user_id` (`user_id`),
   ADD KEY `idx_token` (`token`),
   ADD KEY `idx_user_id` (`user_id`);
 

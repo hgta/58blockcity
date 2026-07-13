@@ -7,26 +7,17 @@
  */
 
 require_once '../../config/database.php';
+require_once '../../includes/auth.php';
 require_once '../../classes/BCTOrder.php';
 require_once '../../classes/BCTTransaction.php';
 require_once '../../classes/UserBCTAccount.php';
 require_once '../../classes/CityBCT.php';
 
-// 启动会话
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 // 设置 JSON 响应头
 header('Content-Type: application/json; charset=utf-8');
 
-// 检查登录
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => '请先登录']);
-    exit;
-}
-
-$userId = $_SESSION['user_id'];
+// 断言登录（API 模式）
+$userId = assertLogin();
 
 // GET 请求：预览匹配
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'preview') {

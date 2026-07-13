@@ -1,18 +1,10 @@
- 
 <?php
-// 启动会话
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// 检查用户是否登录
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit();
-}
-
 require_once '../../config/database.php';
+require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
+
+// 强制登录（使用统一认证入口）
+requireLogin('../auth/login.php');
 require_once '../../classes/Category.php';
 require_once '../../classes/SeoHelper.php';
  

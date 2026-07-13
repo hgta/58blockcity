@@ -1,34 +1,44 @@
 <?php
 /**
- * 用户认证相关辅助函数
+ * 用户认证相关辅助函数 (统一认证源)
+ * 
+ * 所有子站 (bct, block, hufang, nft, mall) 共用此文件。
+ * 各子站的 includes/auth.php 为透明代理。
  */
+
+// 统一常量
+if (!defined('AUTH_COOKIE_DOMAIN')) {
+    define('AUTH_COOKIE_DOMAIN', '.58.tl');
+}
+if (!defined('AUTH_REMEMBER_DAYS')) {
+    define('AUTH_REMEMBER_DAYS', 30);
+}
+if (!defined('AUTH_REGENERATE_SECONDS')) {
+    define('AUTH_REGENERATE_SECONDS', 1800); // 30分钟
+}
+if (!defined('AUTH_IDLE_TIMEOUT')) {
+    define('AUTH_IDLE_TIMEOUT', 3600); // 1小时无操作 session 过期
+}
 
 // 启动会话并进行合理配置
 if (session_status() === PHP_SESSION_NONE) {
-    // 提取主域名，让 cookie 跨子站共享（如 .58.tl）
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $parts = explode('.', $host);
-    $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
-
-    // 设置会话参数
     session_set_cookie_params([
-        'lifetime' => 86400 * 30, // 30天
-        'path' => '/',
-        'domain' => $cookieDomain,
-        'secure' => isset($_SERVER['HTTPS']), // 仅在HTTPS下传输
-        'httponly' => true, // 防止JavaScript访问
-        'samesite' => 'Lax' // CSRF防护
+        'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
+        'path'     => '/',
+        'domain'   => AUTH_COOKIE_DOMAIN,
+        'secure'   => true,   // HTTPS only
+        'httponly' => true,   // 防止 JavaScript 访问
+        'samesite' => 'Lax',
     ]);
     
     session_start();
     
-    // 防止会话固定攻击
-    if (empty($_SESSION['created'])) {
-        $_SESSION['created'] = time();
-    } else if (time() - $_SESSION['created'] > 86400) {
-        // 每24小时重新生成会话ID（原30分钟太频繁）
+    // 防止会话固定攻击：定期重新生成 session ID
+    if (empty($_SESSION['_regenerated_at'])) {
+        $_SESSION['_regenerated_at'] = time();
+    } elseif (time() - $_SESSION['_regenerated_at'] > AUTH_REGENERATE_SECONDS) {
         session_regenerate_id(true);
-        $_SESSION['created'] = time();
+        $_SESSION['_regenerated_at'] = time();
     }
 }
 
@@ -82,16 +92,13 @@ function attemptAutoLogin($token) {
             // 更新令牌过期时间（滑动过期）
             $stmt = $pdo->prepare("
                 UPDATE remember_tokens 
-                SET expires_at = DATE_ADD(NOW(), INTERVAL 30 DAY) 
+                SET expires_at = DATE_ADD(NOW(), INTERVAL " . AUTH_REMEMBER_DAYS . " DAY) 
                 WHERE token = :token
             ");
             $stmt->execute([':token' => $token]);
             
-            // 更新cookie（domain 设为主域名，跨子站共享）
-            $host = $_SERVER['HTTP_HOST'] ?? '';
-            $parts = explode('.', $host);
-            $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
-            setcookie('remember_me', $token, time() + 86400 * 30, '/', $cookieDomain, isset($_SERVER['HTTPS']), true);
+            // 更新cookie（domain 统一，跨子站共享）
+            setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, true, true);
             
             return true;
         }
@@ -100,7 +107,7 @@ function attemptAutoLogin($token) {
     }
     
     // 清除无效的cookie
-    setcookie('remember_me', '', time() - 3600, '/');
+    setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, true, true);
     return false;
 }
 
@@ -112,13 +119,10 @@ function attemptAutoLogin($token) {
  * @return bool 是否过期
  */
 function isSessionExpired() {
-    $maxIdleTime = 86400 * 7; // 7天无操作 session 过期（有 remember_me 会自动恢复）
-    
     if (isset($_SESSION['last_activity']) && 
-        (time() - $_SESSION['last_activity']) > $maxIdleTime) {
+        (time() - $_SESSION['last_activity']) > AUTH_IDLE_TIMEOUT) {
         return true;
     }
-    
     return false;
 }
 
@@ -155,28 +159,24 @@ function createRememberMeToken($userId) {
     try {
         // 生成随机令牌
         $token = bin2hex(random_bytes(32));
-        $expires = date('Y-m-d H:i:s', time() + 86400 * 30); // 30天后过期
+        $expires = date('Y-m-d H:i:s', time() + 86400 * AUTH_REMEMBER_DAYS);
         
-        // 删除用户现有的记住我令牌
-        $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE user_id = :user_id");
-        $stmt->execute([':user_id' => $userId]);
-        
-        // 插入新令牌
+        // 使用 INSERT ... ON DUPLICATE KEY UPDATE（原子操作，无竞态）
         $stmt = $pdo->prepare("
             INSERT INTO remember_tokens (user_id, token, expires_at) 
             VALUES (:user_id, :token, :expires_at)
+            ON DUPLICATE KEY UPDATE token = :token2, expires_at = :expires_at2
         ");
         $stmt->execute([
-            ':user_id' => $userId,
-            ':token' => $token,
-            ':expires_at' => $expires
+            ':user_id'     => $userId,
+            ':token'       => $token,
+            ':expires_at'  => $expires,
+            ':token2'      => $token,
+            ':expires_at2' => $expires,
         ]);
         
-        // 设置cookie（domain 设为主域名，跨子站共享）
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $parts = explode('.', $host);
-        $cookieDomain = count($parts) >= 2 ? '.' . implode('.', array_slice($parts, -2)) : '';
-        setcookie('remember_me', $token, time() + 86400 * 30, '/', $cookieDomain, isset($_SERVER['HTTPS']), true);
+        // 设置cookie（domain 统一，跨子站共享）
+        setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, true, true);
         
     } catch (PDOException $e) {
         error_log("创建记住我令牌错误: " . $e->getMessage());
@@ -196,7 +196,7 @@ function logout() {
         } catch (PDOException $e) {
             error_log("清除记住我令牌错误: " . $e->getMessage());
         }
-        setcookie('remember_me', '', time() - 3600, '/');
+        setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, true, true);
     }
     
     // 清除会话
@@ -223,6 +223,10 @@ function logout() {
 function handleLogin($userId, $username, $email, $role, $remember = false) {
     global $pdo;
     
+    // 防止会话固定攻击：登录时强制重新生成 session ID
+    session_regenerate_id(true);
+    $_SESSION['_regenerated_at'] = time();
+    
     // 设置会话变量
     $_SESSION['user_id'] = $userId;
     $_SESSION['username'] = $username;
@@ -230,10 +234,15 @@ function handleLogin($userId, $username, $email, $role, $remember = false) {
     $_SESSION['role'] = $role;
     $_SESSION['last_activity'] = time();
     $_SESSION['login_time'] = time();
+    $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
     
     // 更新最后登录时间
-    $user = new User($pdo);
-    $user->updateLastLogin($userId);
+    if (class_exists('User')) {
+        $user = new User($pdo);
+        if (method_exists($user, 'updateLastLogin')) {
+            $user->updateLastLogin($userId);
+        }
+    }
     
     // 如果选择记住我，创建记住我令牌
     if ($remember) {
@@ -257,6 +266,35 @@ function checkAdmin() {
         header('Location: ../index.php');
         exit;
     }
+}
+
+/**
+ * 强制要求登录（API/页面通用入口）
+ * 未登录则重定向到登录页。不再依赖各处重复的 isset($_SESSION['user_id'])。
+ * 
+ * @param string $loginUrl 登录页URL，默认为项目根 auth/login.php
+ */
+function requireLogin($loginUrl = '../auth/login.php') {
+    if (!isLoggedIn()) {
+        $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+        header('Location: ' . $loginUrl);
+        exit;
+    }
+}
+
+/**
+ * 断言登录状态（API 端点使用）
+ * 返回当前用户ID，未登录则输出 JSON 错误并退出。
+ * 
+ * @return int 当前用户ID
+ */
+function assertLogin() {
+    if (!isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => '请先登录']);
+        exit;
+    }
+    return (int)$_SESSION['user_id'];
 }
 
 /**
