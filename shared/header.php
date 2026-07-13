@@ -132,15 +132,15 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
 <body>
 
 <style>
-header { background:<?= $theme ?>; color:white; padding:15px 0; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:sticky; top:0; z-index:100; }
-.header-container { max-width:1200px; margin:0 auto; padding:0 15px; display:flex; justify-content:space-between; align-items:center; }
-.logo { display:flex; align-items:center; text-decoration:none; color:white; }
-.logo-img { width:44px; height:44px; background:white; color:<?= $theme ?>; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; margin-right:12px; }
-.logo-text { line-height:1.3; }
-.logo-text strong { font-size:18px; display:block; }
-.logo-text span { font-size:11px; opacity:0.8; }
-.nav-button { padding:6px 14px; border-radius:20px; color:white; text-decoration:none; font-size:13px; margin-left:6px; transition:all .3s; display:inline-flex; align-items:center; gap:5px; }
-.nav-button:hover { background:rgba(255,255,255,0.2); color:white; text-decoration:none; }
+header { background:#fff; color:#333; border-bottom:1px solid #e8e8e8; position:sticky; top:0; z-index:100; }
+.header-container { max-width:1200px; margin:0 auto; padding:0 15px; display:flex; justify-content:space-between; align-items:center; height:56px; }
+.logo { display:flex; align-items:center; text-decoration:none; color:#333; gap:10px; }
+.logo-img { width:34px; height:34px; background:linear-gradient(135deg, #ff6b00, #e55a00); color:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; }
+.logo-text { line-height:1.1; }
+.logo-text strong { font-size:16px; color:#333; font-weight:700; display:block; }
+.logo-text span { font-size:11px; color:#999; }
+.nav-button { padding:7px 14px; border-radius:6px; color:#666; text-decoration:none; font-size:14px; transition:all .15s; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.nav-button:hover { background:#fff9f0; color:#ff6b00; text-decoration:none; }
 .nav-button i { font-size:13px; }
 .notification-badge {
     position: absolute; top: -2px; right: -2px;
@@ -158,14 +158,16 @@ header { background:<?= $theme ?>; color:white; padding:15px 0; box-shadow:0 2px
 .city-location-bar a { color:#e65100; font-weight:bold; }
 main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
 
+.header-actions { display:flex; align-items:center; gap:4px; }
+
 /* 汉堡菜单按钮 */
 .menu-toggle {
     display: none;
-    background: none; border: none; color: white; font-size: 24px;
+    background: none; border: none; color: #333; font-size: 24px;
     cursor: pointer; padding: 8px 12px; border-radius: 8px;
     line-height: 1;
 }
-.menu-toggle:hover { background: rgba(255,255,255,0.15); }
+.menu-toggle:hover { background: #f5f5f5; }
 
 @media(max-width:768px){
     .header-container{flex-wrap:wrap}
@@ -176,6 +178,9 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
         flex-direction: column;
         padding-top: 12px;
         gap: 2px;
+        position: absolute; top: 56px; left: 0; right: 0;
+        background: #fff; padding: 8px;
+        border-bottom: 1px solid #e8e8e8;
     }
     .header-actions.open { display: flex; }
     .header-actions .nav-button {
@@ -258,7 +263,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                 <a href="../auth/logout.php" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
             <?php else: ?>
                 <a href="../auth/login.php" class="nav-button"><i class="fas fa-sign-in-alt"></i> 登录</a>
-                <a href="../auth/register.php" class="nav-button"><i class="fas fa-user-plus"></i> 注册</a>
+                <a href="../auth/register.php" class="nav-button" style="background:#ff6b00;color:#fff;border-radius:6px;"><i class="fas fa-user-plus"></i> 注册</a>
             <?php endif; ?>
         </div>
     </div>
