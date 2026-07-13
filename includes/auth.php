@@ -26,8 +26,8 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
         'path'     => '/',
         'domain'   => AUTH_COOKIE_DOMAIN,
-        'secure'   => true,   // HTTPS only
-        'httponly' => true,   // 防止 JavaScript 访问
+        'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+        'httponly' => true,
         'samesite' => 'Lax',
     ]);
     
@@ -98,7 +98,7 @@ function attemptAutoLogin($token) {
             $stmt->execute([':token' => $token]);
             
             // 更新cookie（domain 统一，跨子站共享）
-            setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, true, true);
+            setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
             
             return true;
         }
@@ -107,7 +107,7 @@ function attemptAutoLogin($token) {
     }
     
     // 清除无效的cookie
-    setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, true, true);
+    setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
     return false;
 }
 
@@ -176,7 +176,7 @@ function createRememberMeToken($userId) {
         ]);
         
         // 设置cookie（domain 统一，跨子站共享）
-        setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, true, true);
+        setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
         
     } catch (PDOException $e) {
         error_log("创建记住我令牌错误: " . $e->getMessage());
@@ -196,7 +196,7 @@ function logout() {
         } catch (PDOException $e) {
             error_log("清除记住我令牌错误: " . $e->getMessage());
         }
-        setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, true, true);
+        setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
     }
     
     // 清除会话
