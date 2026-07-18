@@ -928,16 +928,18 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .zone-tag-H:hover { color: #333; }
         .zone-tag-Z { background: #f44336; }
 
-        /* 全景网格各区背景色 */
-        .pano-cell.zone-bg-A { background-color: #e8f5e9; }
-        .pano-cell.zone-bg-B { background-color: #e3f2fd; }
-        .pano-cell.zone-bg-C { background-color: #fff3e0; }
-        .pano-cell.zone-bg-D { background-color: #f3e5f5; }
-        .pano-cell.zone-bg-E { background-color: #e0f2f1; }
-        .pano-cell.zone-bg-F { background-color: #fce4ec; }
-        .pano-cell.zone-bg-G { background-color: #e8eaf6; }
-        .pano-cell.zone-bg-H { background-color: #fff8e1; }
-        .pano-cell.zone-bg-Z { background-color: #ffebee; }
+        /* 全景网格各区背景色 — 统一白底（去除彩色背景） */
+        .pano-cell.zone-bg-A,
+        .pano-cell.zone-bg-B,
+        .pano-cell.zone-bg-C,
+        .pano-cell.zone-bg-D,
+        .pano-cell.zone-bg-E,
+        .pano-cell.zone-bg-F,
+        .pano-cell.zone-bg-G,
+        .pano-cell.zone-bg-H,
+        .pano-cell.zone-bg-Z {
+            background-color: #fff;
+        }
 
         .pano-cell.sold-own { background-color: #d2ffc6 !important; }
         .pano-cell.sold-blue { background-color: #c6c9ff !important; }
