@@ -130,4 +130,27 @@ $isOwner = isLoggedIn() && $_SESSION['user_id'] == $blockInfo['owner_id'];
     </div>
 </div>
 
+
+<?php
+$cityId = $blockInfo['city_id'];
+$zone = $blockInfo['zone'] ?? 'A';
+$nearbyStmt = $pdo->prepare("SELECT b.id, b.block_number, b.zone, b.price FROM blocks b WHERE b.city_id = ? AND b.zone = ? AND b.id != ? AND b.status = 'sold' ORDER BY b.price DESC LIMIT 8");
+$nearbyStmt->execute([$cityId, $zone, $blockId]);
+$nearbyBlocks = $nearbyStmt->fetchAll();
+if ($nearbyBlocks):
+?>
+<div class="container" style="margin:30px auto;max-width:1200px;padding:0 15px;">
+    <h3 style="font-size:18px;margin-bottom:15px;color:#333;">🏘 同城市 <?= htmlspecialchars($zone) ?>区 热门区块</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+        <?php foreach ($nearbyBlocks as $nb): ?>
+        <a href="view.php?id=<?= $nb['id'] ?>" style="display:block;padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;text-decoration:none;text-align:center;transition:all .2s;" onmouseover="this.style.borderColor='#ff6b00'" onmouseout="this.style.borderColor='#eee'">
+            <div style="font-size:16px;font-weight:700;color:#333;"><?= htmlspecialchars($nb['block_number']) ?></div>
+            <div style="font-size:12px;color:#999;margin-top:4px;"><?= htmlspecialchars($nb['zone']) ?>区</div>
+            <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:4px;">¥<?= number_format($nb['price']) ?></div>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php require_once '../includes/footer.php'; ?>

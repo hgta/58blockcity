@@ -40,5 +40,12 @@
     </div>
     <div class="block-copyright">&copy; 2026 58区块交易市场 | BlockCity DAO 版权所有</div>
 </footer>
+
+<!-- 回到顶部 -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部" style="position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:#ff6b00;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer;z-index:999;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);">↑</button>
+<script>
+(function(){var b=document.getElementById('back-to-top');window.addEventListener('scroll',function(){b.style.display=window.scrollY>300?'block':'none'});})();
+</script>
+
 </body>
 </html>

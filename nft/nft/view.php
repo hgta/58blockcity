@@ -700,4 +700,28 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
     </div>
 </div>
 
+<?php
+// 同标签NFT推荐
+if (!empty($nftTags)) {
+    $tagNames = array_column($nftTags, 'name');
+    $tag = $tagNames[0] ?? '';
+    $relatedNfts = $nft->getAllNfts(6, 0, '', $tag);
+    $relatedNfts = array_filter($relatedNfts, function($r) use ($nftId) { return $r['id'] != $nftId; });
+    if ($relatedNfts):
+?>
+<div style="margin:30px auto;max-width:1200px;padding:0 15px;">
+    <h3 style="font-size:18px;margin-bottom:15px;color:#333;">🏷 同标签「<?= htmlspecialchars($tag) ?>」NFT推荐</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">
+        <?php foreach ($relatedNfts as $rn): ?>
+        <a href="view.php?id=<?= $rn['id'] ?>" style="text-align:center;text-decoration:none;">
+            <div style="width:80px;height:80px;margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #eee;">
+                <img src="../avatar/<?= htmlspecialchars($rn['base_image']) ?>" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+            </div>
+            <div style="font-size:12px;color:#333;margin-top:6px;"><?= htmlspecialchars($rn['code'] ?? $rn['name']) ?></div>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; } ?>
+
 <?php require_once '../includes/footer.php'; ?>

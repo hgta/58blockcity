@@ -68,6 +68,17 @@ if (!empty($site_config['footer_extra'])) {
 <script src="/city/city.js"></script>
 <script>getCityInfo();</script>
 
+<!-- 回到顶部 -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部" style="position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:#ff6b00;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer;z-index:999;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:opacity 0.3s;">↑</button>
+<script>
+(function(){
+    var btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', function() {
+        btn.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+})();
+</script>
+
 <script>
 (function(){
     var toggle = document.getElementById('menuToggle');

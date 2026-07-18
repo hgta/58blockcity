@@ -1126,7 +1126,28 @@ if ($reviewCount > 0) {
             </div>
         <?php endif; ?>
     </div>
-    
+
+    <?php
+    $shopOtherProducts = $product->getProductsByShopPaged($productDetail['shop_id'], 1, 4, 'newest');
+    $shopOtherProducts = array_filter($shopOtherProducts, function($p) use ($productId) { return $p['id'] != $productId; });
+    if (!empty($shopOtherProducts)):
+    ?>
+    <div style="margin-top:30px;padding:0 15px;">
+        <h3 class="section-title">🏪 本店其他商品</h3>
+        <div class="products-grid">
+            <?php foreach ($shopOtherProducts as $sp): ?>
+                <a href="detail.php?id=<?= $sp['id'] ?>" class="product-card">
+                    <img src="<?= '../' . htmlspecialchars($sp['main_image'] ?: 'assets/images/default-product.jpg') ?>" class="product-card-image" alt="" loading="lazy">
+                    <div class="product-card-info">
+                        <div class="product-card-name"><?= htmlspecialchars($sp['name']) ?></div>
+                        <div class="product-card-price">¥<?= number_format($sp['price_cny'] ?? $sp['price_bct'] ?? 0, ($sp['price_type'] ?? '') == 'bct' ? 0 : 2) ?></div>
+                    </div>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <script>
         // 切换主图
         function changeMainImage(src) {
