@@ -132,14 +132,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         } elseif ($block_number) {
             $result = $block->claimBlock($current_user_id, $city_id, $current_zone, $block_number);
             if ($result) {
-                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                if (($_POST['ajax'] ?? '') === '1') {
                     echo json_encode(['success' => true, 'message' => "成功认领区块 {$block_number}！", 'block_number' => $block_number]); exit;
                 }
                 $success_message = "成功认领区块 {$block_number}！";
-                // 百度主动推送
                 SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
-                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                if (($_POST['ajax'] ?? '') === '1') {
                     echo json_encode(['success' => false, 'message' => "认领失败，区块可能已被认领"]); exit;
                 }
                 $error_message = "认领失败，区块可能已被认领";
@@ -1342,12 +1341,12 @@ async function claimSingleBlock(blockNumber) {
     try {
         const fd = new FormData();
         fd.append('action', 'claim_block');
+        fd.append('ajax', '1');
         fd.append('block_number', blockNumber);
 
         const resp = await fetch(window.location.href, {
             method: 'POST',
-            body: fd,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            body: fd
         });
         const data = await resp.json();
 
