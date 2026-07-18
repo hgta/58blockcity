@@ -132,10 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         } elseif ($block_number) {
             $result = $block->claimBlock($current_user_id, $city_id, $current_zone, $block_number);
             if ($result) {
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                    echo json_encode(['success' => true, 'message' => "成功认领区块 {$block_number}！", 'block_number' => $block_number]); exit;
+                }
                 $success_message = "成功认领区块 {$block_number}！";
                 // 百度主动推送
                 SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                    echo json_encode(['success' => false, 'message' => "认领失败，区块可能已被认领"]); exit;
+                }
                 $error_message = "认领失败，区块可能已被认领";
             }
         }
@@ -362,6 +368,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             cursor: pointer;
             transition: all 0.15s;
             position: relative;
+            border: 1px solid #f5f5f5;
         }
         
         .block-cell.available {
@@ -377,6 +384,20 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .block-cell.reserved {
             background-color: #fff3e0;
             color: #e65100;
+        }
+        
+        .block-cell.selected {
+            outline: 3px solid #2196f3;
+            outline-offset: -2px;
+            z-index: 10;
+            box-shadow: 0 0 0 3px rgba(33,150,243,0.3);
+            transform: scale(1.12);
+        }
+        
+        .block-cell.own-block {
+            background-color: #4caf50 !important;
+            color: #fff;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
         }
         
         /* 区块详情面板 */
@@ -569,7 +590,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         /* ======== 九区全景样式 ======== */
         .pano-container {
-            max-width: 1050px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 10px 0 30px;
         }
@@ -917,7 +938,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     $col_end = $col_range[1];
     ?>
     <div class="row">
-                                <div class="col-md-9">
+                                <div class="col-md-10">
             <!-- 桌面端：网格地图 -->
             <div class="block-map-container" id="desktopMap">
                 <div class="single-zone-title">
@@ -972,6 +993,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 										$block_class = "block-cell {$block_status}";
 										if ($is_merged) {
 											$block_class .= " merged {$merged_size}";
+										}
+										if ($current_user_id && $block_owner == $current_user_id) {
+											$block_class .= " own-block";
 										}
 										?>
 										<div class="<?= $block_class ?>"
@@ -1051,7 +1075,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             </div>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="block-detail-panel">
                 <div class="block-info">
                     <h3>区块信息</h3>
@@ -1312,25 +1336,46 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
 }
 
 // 认领单个区块
-function claimSingleBlock(blockNumber) {
+async function claimSingleBlock(blockNumber) {
     if (!confirm(`确定要认领区块 ${blockNumber} 吗？`)) return;
-    
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
-    
-    const actionInput = document.createElement('input');
-    actionInput.name = 'action';
-    actionInput.value = 'claim_block';
-    form.appendChild(actionInput);
-    
-    const blockInput = document.createElement('input');
-    blockInput.name = 'block_number';
-    blockInput.value = blockNumber;
-    form.appendChild(blockInput);
-    
-    document.body.appendChild(form);
-    form.submit();
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'claim_block');
+        fd.append('block_number', blockNumber);
+
+        const resp = await fetch(window.location.href, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            // 局部更新DOM
+            const cell = document.querySelector(`[data-block-number="${blockNumber}"]`);
+            if (cell) {
+                cell.classList.remove('available', 'reserved');
+                cell.classList.add('sold', 'own-block');
+                cell.setAttribute('data-status', 'sold');
+                cell.setAttribute('data-owner', '<?= $current_user_id ?>');
+                cell.setAttribute('data-owner-name', '<?= htmlspecialchars($_SESSION['username'] ?? '') ?>');
+                // 更新选中面板
+                if (cell.classList.contains('selected')) {
+                    updateDetailPanel(blockNumber, 'sold', '<?= $current_user_id ?>');
+                }
+            }
+            alert(data.message);
+        } else {
+            alert(data.message || '认领失败');
+        }
+    } catch (e) {
+        // fallback: 表单提交
+        const form = document.createElement('form');
+        form.method = 'POST'; form.style.display = 'none';
+        form.innerHTML = '<input name="action" value="claim_block"><input name="block_number" value="'+blockNumber+'">';
+        document.body.appendChild(form); form.submit();
+    }
 }
 
 // 认领多个区块
