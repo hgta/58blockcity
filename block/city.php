@@ -359,7 +359,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         .map-row {
             display: flex;
-            height: 30px;
+            position: relative;
         }
         
         .block-cell {
@@ -977,32 +977,55 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 											}
 										}
 
-										foreach ($merged_blocks as $merged) {
-											if (in_array($block_number, explode(',', $merged['merged_blocks']))) {
-												$is_merged = true;
-												$merged_size = $merged['merge_size'];
-												break;
+									$merged_size = '1x1';
+									$is_merged_first = false;
+									$merged_cell_style = '';
+									foreach ($merged_blocks as $merged) {
+										$mergedNums = explode(',', $merged['merged_blocks']);
+										if (in_array($block_number, $mergedNums)) {
+											$is_merged = true;
+											$merged_size = $merged['merge_size'];
+											// 检查此格是否是合并块中行+列最小（即左上角）
+											$minR = 999; $minC = 999; $maxR = 0; $maxC = 0;
+											foreach ($mergedNums as $mn) {
+												$mr = intval(substr($mn, 2, 2));
+												$mc = intval(substr($mn, 0, 2));
+												if ($mr < $minR) $minR = $mr;
+												if ($mc < $minC) $minC = $mc;
+												if ($mr > $maxR) $maxR = $mr;
+												if ($mc > $maxC) $maxC = $mc;
 											}
+											if ($row == $minR && $col == $minC) {
+												$is_merged_first = true;
+												$w = ($maxC - $minC + 1) * 30 + ($maxC - $minC);
+												$h = ($maxR - $minR + 1) * 30 + ($maxR - $minR);
+												$merged_cell_style = "width:{$w}px;height:{$h}px;";
+											}
+											break;
 										}
+									}
 
-										$block_class = "block-cell {$block_status}";
-										if ($is_merged) {
-											$block_class .= " merged {$merged_size}";
-										}
-										if ($current_user_id && $block_owner == $current_user_id) {
-											$block_class .= " own-block";
-										}
-										?>
-										<div class="<?= $block_class ?>"
-											 data-block-id="<?= $block_number ?>"
-											 data-block-number="<?= $block_number ?>"
-											 data-price="<?= $block_price ?>"
-											 data-status="<?= $block_status ?>"
-											 data-owner="<?= $block_owner ?>"
-											 data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
-											 data-row="<?= $row ?>"
-											 data-col="<?= $col ?>"
-									 title="区块 <?= $block_number ?> - 价格: <?= $block_price ?>元">
+									if ($is_merged && !$is_merged_first) continue; // 非首格隐藏
+
+									$block_class = "block-cell {$block_status}";
+									if ($is_merged) {
+										$block_class .= " merged {$merged_size}";
+									}
+									if ($current_user_id && $block_owner == $current_user_id) {
+										$block_class .= " own-block";
+									}
+									?>
+									<div class="<?= $block_class ?>"
+										<?php if ($is_merged_first): ?>style="<?= $merged_cell_style ?>"<?php endif; ?>
+										 data-block-id="<?= $block_number ?>"
+										 data-block-number="<?= $block_number ?>"
+										 data-price="<?= $block_price ?>"
+										 data-status="<?= $block_status ?>"
+										 data-owner="<?= $block_owner ?>"
+										 data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
+										 data-row="<?= $row ?>"
+										 data-col="<?= $col ?>"
+									 title="合并区块 <?= htmlspecialchars($merged_size) ?> - 价格: <?= $block_price ?>元">
 										<?php if ($is_merged): ?>
 											<?= $merged_size ?>
 										<?php else: ?>
@@ -1502,8 +1525,9 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 <style>
 /* 合并区块样式 */
 .block-cell.merged {
-    position: absolute;
+    position: relative;
     z-index: 5;
+    flex-shrink: 0;
     background: rgba(25,118,210,0.15) !important;
     border: 2px solid #1976d2 !important;
     display: flex !important;
@@ -1512,7 +1536,7 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
     font-size: 14px;
     font-weight: 700;
     color: #1565c0;
-    pointer-events: auto;
+    border-radius: 4px;
 }
 
 .block-cell.merged.2x1, .block-cell.merged.1x2 {
