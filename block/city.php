@@ -123,10 +123,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
         if (!empty($selected_blocks)) {
             $result = $block->claimMultipleBlocks($current_user_id, $city_id, $current_zone, $selected_blocks);
             if ($result) {
+                if (($_POST['ajax'] ?? '') === '1') {
+                    $claimedNumbers = array_map(function($bn) { return str_pad($bn, 4, '0', STR_PAD_LEFT); }, $selected_blocks);
+                    echo json_encode(['success' => true, 'message' => "成功认领 " . count($selected_blocks) . " 个区块！", 'block_numbers' => $claimedNumbers]); exit;
+                }
                 $success_message = "成功认领 " . count($selected_blocks) . " 个区块！";
-                // 百度主动推送
                 SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
+                if (($_POST['ajax'] ?? '') === '1') {
+                    echo json_encode(['success' => false, 'message' => "认领失败，请重试"]); exit;
+                }
                 $error_message = "认领失败，请重试";
             }
         } elseif ($block_number) {
@@ -1378,30 +1384,47 @@ async function claimSingleBlock(blockNumber) {
 }
 
 // 认领多个区块
-document.getElementById('claim-multiple-button').addEventListener('click', function() {
+document.getElementById('claim-multiple-button').addEventListener('click', async function() {
     if (selectedBlocks.length === 0) return;
-    
+
     const blockNumbers = selectedBlocks.map(block => block.number).join(', ');
     if (!confirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}`)) return;
-    
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
-    
-    const actionInput = document.createElement('input');
-    actionInput.name = 'action';
-    actionInput.value = 'claim_block';
-    form.appendChild(actionInput);
-    
-    selectedBlocks.forEach((block, index) => {
-        const blockInput = document.createElement('input');
-        blockInput.name = `selected_blocks[${index}]`;
-        blockInput.value = block.number;
-        form.appendChild(blockInput);
-    });
-    
-    document.body.appendChild(form);
-    form.submit();
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'claim_block');
+        fd.append('ajax', '1');
+        selectedBlocks.forEach((block, index) => {
+            fd.append(`selected_blocks[${index}]`, block.number);
+        });
+
+        const resp = await fetch(window.location.href, {
+            method: 'POST',
+            body: fd
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            // 局部更新所有认领的区块
+            (data.block_numbers || selectedBlocks.map(b => b.number)).forEach(function(bn) {
+                const cell = document.querySelector(`[data-block-number="${bn}"]`);
+                if (cell) {
+                    cell.classList.remove('available', 'reserved', 'selected');
+                    cell.classList.add('sold', 'own-block');
+                    cell.setAttribute('data-status', 'sold');
+                }
+            });
+            selectedBlocks = [];
+            const btn = document.getElementById('claim-multiple-button');
+            if (btn) { btn.textContent = '认领选中区块'; btn.disabled = true; }
+            alert(data.message);
+        } else {
+            alert(data.message || '认领失败');
+        }
+    } catch (e) {
+        // fallback
+        location.reload();
+    }
 });
 
 // 区块悬停效果
