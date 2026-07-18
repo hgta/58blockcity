@@ -533,44 +533,44 @@ $itemListJsonLd = SeoHelper::itemListSchema($itemListData, $categoryName);
                     </div>
                 <?php else: ?>
                     <div class="products-grid">
-                        <?php foreach ($products as $product): ?>
+                        <?php foreach ($products as $pItem): ?>
                             <div class="product-card">
-                                <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>">
-                                    <img src="<?php echo '/' . ltrim($product['thumb_image'] ?: $product['image_url'] ?: 'assets/images/default-product.jpg', '/'); ?>" 
-                                         alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                                <a href="<?php echo SeoHelper::productUrl($pItem['id'], $pItem['name']); ?>">
+                                    <img src="<?php echo '/' . ltrim($pItem['thumb_image'] ?: $pItem['image_url'] ?: 'assets/images/default-product.jpg', '/'); ?>" 
+                                         alt="<?php echo htmlspecialchars($pItem['name']); ?>" 
                                          class="product-image" onerror="this.src='/assets/images/default-product.jpg'">
                                 </a>
                                 
                                 <div class="product-info">
                                     <h3 class="product-name">
-                                        <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>" 
+                                        <a href="<?php echo SeoHelper::productUrl($pItem['id'], $pItem['name']); ?>" 
                                            style="color: inherit; text-decoration: none;">
-                                            <?php echo htmlspecialchars($product['name']); ?>
+                                            <?php echo htmlspecialchars($pItem['name']); ?>
                                         </a>
                                     </h3>
                                     
                                     <div class="product-price">
-                                        <?php if ($product['price_bct'] > 0): ?>
-                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;"><?php echo number_format($product['price_bct'], 0); ?> BCT</span>
-                                            <?php if ($product['price_cny'] > 0): ?>
-                                                <span style="color: #999; font-size: 12px; margin-left: 5px;">≈ ¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                        <?php if ($pItem['price_bct'] > 0): ?>
+                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;"><?php echo number_format($pItem['price_bct'], 0); ?> BCT</span>
+                                            <?php if ($pItem['price_cny'] > 0): ?>
+                                                <span style="color: #999; font-size: 12px; margin-left: 5px;">≈ ¥<?php echo number_format($pItem['price_cny'], 2); ?></span>
                                             <?php endif; ?>
-                                        <?php elseif ($product['price_cny'] > 0): ?>
-                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;">¥<?php echo number_format($product['price_cny'], 2); ?></span>
+                                        <?php elseif ($pItem['price_cny'] > 0): ?>
+                                            <span style="color: #e74c3c; font-size: 16px; font-weight: bold;">¥<?php echo number_format($pItem['price_cny'], 2); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     
                                     <div class="product-shop">
                                         <i class="fas fa-store"></i>
-                                        <?php echo htmlspecialchars($product['shop_name'] ?: '平台自营'); ?>
+                                        <?php echo htmlspecialchars($pItem['shop_name'] ?: '平台自营'); ?>
                                     </div>
                                     
                                     <div class="product-actions">
-                                        <a href="<?php echo SeoHelper::productUrl($product['id'], $product['name']); ?>" class="btn btn-detail">
+                                        <a href="<?php echo SeoHelper::productUrl($pItem['id'], $pItem['name']); ?>" class="btn btn-detail">
                                             <i class="fas fa-eye"></i> 查看详情
                                         </a>
                                         <?php if (isset($_SESSION['user_id'])): ?>
-                                            <button class="btn btn-cart" onclick="addToCart(<?php echo $product['id']; ?>, this)">
+                                            <button class="btn btn-cart" onclick="addToCart(<?php echo $pItem['id']; ?>, this)">
                                                 <i class="fas fa-cart-plus"></i> 加购物车
                                             </button>
                                         <?php else: ?>

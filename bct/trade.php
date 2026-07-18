@@ -1,11 +1,12 @@
 <?php
 require_once '../config/database.php';
 require_once 'includes/auth.php';
+
+// 检查登录（必须在header之前）
+checkLogin();
+
 require_once 'includes/header.php';
 require_once '../classes/UserBCTAccount.php';
-
-// 检查登录
-checkLogin();
 
 $account = new UserBCTAccount($pdo);
 

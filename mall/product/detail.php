@@ -1134,8 +1134,9 @@ if ($reviewCount > 0) {
     </div>
 
     <?php
-    $shopOtherProducts = $product->getProductsByShopPaged($productDetail['shop_id'], 1, 4, 'newest');
-    $shopOtherProducts = array_filter($shopOtherProducts, function($p) use ($productId) { return $p['id'] != $productId; });
+    $shopOtherProducts = $product->getProductsByShopPaged($productDetail['shop_id'], 1, 8, 'newest');
+    $shopOtherProducts = array_values(array_filter($shopOtherProducts, function($p) use ($productId) { return $p['id'] != $productId; }));
+    if (count($shopOtherProducts) > 4) $shopOtherProducts = array_slice($shopOtherProducts, 0, 4);
     if (!empty($shopOtherProducts)):
     ?>
     <div style="margin-top:30px;padding:0 15px;">
