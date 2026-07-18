@@ -884,9 +884,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         .panorama-map {
             display: grid;
-            gap: 0;
-            background: transparent;
-            padding: 0;
+            gap: 1px;
+            background: #f2f2f2;
+            padding: 1px;
             border-radius: 2px;
             grid-auto-rows: 10px;
             /* grid-template-columns: repeat(101, 10px); set inline */
@@ -1095,7 +1095,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $bc = "block-cell pano-cell";
                             if ($bz) $bc .= " zone-bg-{$bz}";
                             $bc .= " {$cell_class}";
-                            $is_boundary = in_array($col, [12,13,24,25,36,37,48,49,60,61,72,73,84,85,96,97]);
+                            $is_boundary = in_array($col, [12,24,36,48,60,72,84,96]);
                             if ($is_boundary) $bc .= " zone-boundary";
                         ?>
                         <div class="<?= $bc ?>"
