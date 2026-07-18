@@ -357,19 +357,17 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             justify-content: center;
             cursor: pointer;
             transition: all 0.15s;
-            overflow: hidden;
             flex-shrink: 0;
         }
         
-        /* 原版颜色 (从内联样式提取):
-           可用: background:rgb(255,255,255); color:rgb(0,0,0)
-           已售: background:rgb(255,213,213); color:rgb(255,96,96)
-           自己: background:rgb(198,201,255); color:rgb(51,123,230)
-           预留: background:rgb(210,255,198); color:rgb(53,204,45) */
+        /* 原版颜色 (从 beijing.html 内联样式统计提取):
+           可用: background:rgb(198,201,255)=#c6c9ff  (406次,最多)
+           已售: background:rgb(255,213,213)=#ffd5d5  (358次)
+           预留: background:rgb(210,255,198)=#d2ffc6  (366次)
+           空白: background:rgb(255,255,255)=#fff      (121次) */
         .block-item.available {
-            background: #fff;
+            background: #c6c9ff;
             color: #337be6;
-            border: 1px solid #e8e8e8;
         }
         
         .block-item.sold {
@@ -378,8 +376,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         .block-item.own-block {
-            background: #c6c9ff;
-            color: #337be6;
+            background: #ffd5d5;
+            color: #ff6060;
+            outline: 2px solid #337be6;
+            outline-offset: -2px;
         }
         
         .block-item.reserved {
@@ -398,12 +398,13 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             font-weight: 700;
         }
         
-        /* 原版: .blockNo { font-size:22px; color:#337be6; font-family:PingFangSC-Regular } */
+        /* 原版: .blockNo { color:#999; font-size:14px; line-height:44px } 
+           (最后一条CSS覆盖了前面的 color:#337be6;font-size:22px) */
         .block-no {
-            font-size: 11px;
-            color: inherit;
+            font-size: 14px;
+            color: #999;
             font-family: PingFangSC-Regular, 'Microsoft YaHei', sans-serif;
-            line-height: 1.2;
+            line-height: 44px;
             pointer-events: none;
         }
         
@@ -421,9 +422,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         /* 合并块状态色（和 .block-item 一致） */
-        .block-content.available { background: #fff; color: #337be6; border: 1px solid #e8e8e8; }
+        .block-content.available { background: #c6c9ff; color: #337be6; }
         .block-content.sold { background: #ffd5d5; color: #ff6060; }
-        .block-content.own-block { background: #c6c9ff; color: #337be6; }
+        .block-content.own-block { background: #ffd5d5; color: #ff6060; outline: 2px solid #337be6; outline-offset: -2px; }
         .block-content.reserved { background: #d2ffc6; color: #35cc2d; }
         .block-content.merged { border: 2px solid #337be6; font-weight: 700; }
         
