@@ -1624,11 +1624,15 @@ async function claimSingleBlock(blockNumber) {
         if (data && data.success) {
             const cell = document.querySelector(`[data-block-number="${blockNumber}"]`);
         if (cell) {
-            cell.classList.remove('available', 'reserved', 'sold-blue', 'sold-red');
+            cell.classList.remove('available', 'reserved', 'sold-blue', 'sold-red', 'selected');
             cell.classList.add('sold-own');
             cell.setAttribute('data-status', 'sold');
             cell.setAttribute('data-owner', '<?= $current_user_id ?>');
         }
+            // 认领成功后清除选择状态，避免已认领区块仍占用选中态，
+            // 否则再点其他区块会因“相邻”校验失败而无法选中
+            clearSelection();
+            updateMultiSelectUI();
             if (data.message) alert(data.message);
         } else {
             // 非 JSON 响应说明成功（页面正常渲染了）
