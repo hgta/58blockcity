@@ -1114,18 +1114,22 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 <?php
 // ========== 该城市热门区块 ==========
 if ($view_mode === 'zone' && !empty($current_zone)):
-    $hotBlocksStmt = $pdo->prepare("SELECT block_number, zone, price FROM blocks WHERE city_id = ? AND zone = ? AND status = 'sold' ORDER BY price DESC LIMIT 8");
+    $hotBlocksStmt = $pdo->prepare("SELECT block_number, zone, status, owner_id FROM blocks WHERE city_id = ? AND zone = ? ORDER BY status = 'sold' DESC, block_number ASC LIMIT 12");
     $hotBlocksStmt->execute([$city_id, $current_zone]);
     $hotBlocks = $hotBlocksStmt->fetchAll();
     if (!empty($hotBlocks)):
 ?>
-<div style="max-width:1200px;margin:40px auto 10px;padding:0 15px;">
+<div style="max-width:1200px;margin:30px auto 10px;padding:0 15px;">
     <h3 style="font-size:20px;font-weight:bold;color:#333;margin-bottom:16px;">🏘 <?= htmlspecialchars($city_name) ?> <?= htmlspecialchars($current_zone) ?>区 热门区块</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
-        <?php foreach ($hotBlocks as $hb): ?>
+        <?php foreach ($hotBlocks as $hb): 
+            $hbPrice = calculateBlockPriceNew($current_zone, $hb['block_number']);
+            $hbStatus = $hb['status'] === 'sold' ? ($hb['owner_id'] == $current_user_id ? '已认领(我)' : '已售') : '可认领';
+        ?>
         <a href="city.php?name=<?= urlencode($city_pinyin) ?>&zone=<?= $current_zone ?>" style="display:block;padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;text-decoration:none;text-align:center;transition:all .2s;" onmouseover="this.style.borderColor='#ff6b00'" onmouseout="this.style.borderColor='#eee'">
             <div style="font-size:16px;font-weight:700;color:#333;"><?= htmlspecialchars($hb['block_number']) ?></div>
-            <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:6px;">¥<?= number_format($hb['price']) ?></div>
+            <div style="font-size:12px;color:<?= $hbStatus === '可认领' ? '#27ae60' : '#999' ?>;margin-top:2px;"><?= $hbStatus ?></div>
+            <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:4px;">¥<?= number_format($hbPrice) ?></div>
         </a>
         <?php endforeach; ?>
     </div>

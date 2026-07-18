@@ -133,8 +133,9 @@ $isOwner = isLoggedIn() && $_SESSION['user_id'] == $blockInfo['owner_id'];
 
 <?php
 $cityId = $blockInfo['city_id'];
+<?php require_once __DIR__ . '/../../config/block_prices.php'; ?>
 $zone = $blockInfo['zone'] ?? 'A';
-$nearbyStmt = $pdo->prepare("SELECT b.id, b.block_number, b.zone, b.price FROM blocks b WHERE b.city_id = ? AND b.zone = ? AND b.id != ? AND b.status = 'sold' ORDER BY b.price DESC LIMIT 8");
+$nearbyStmt = $pdo->prepare("SELECT b.id, b.block_number, b.zone FROM blocks b WHERE b.city_id = ? AND b.zone = ? AND b.id != ? AND b.status = 'sold' ORDER BY RAND() LIMIT 8");
 $nearbyStmt->execute([$cityId, $zone, $blockId]);
 $nearbyBlocks = $nearbyStmt->fetchAll();
 if ($nearbyBlocks):
@@ -146,7 +147,7 @@ if ($nearbyBlocks):
         <a href="view.php?id=<?= $nb['id'] ?>" style="display:block;padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;text-decoration:none;text-align:center;transition:all .2s;" onmouseover="this.style.borderColor='#ff6b00'" onmouseout="this.style.borderColor='#eee'">
             <div style="font-size:16px;font-weight:700;color:#333;"><?= htmlspecialchars($nb['block_number']) ?></div>
             <div style="font-size:12px;color:#999;margin-top:4px;"><?= htmlspecialchars($nb['zone']) ?>区</div>
-            <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:4px;">¥<?= number_format($nb['price']) ?></div>
+            <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:4px;">¥<?= number_format(calculateBlockPriceNew($zone, $nb['block_number'])) ?></div>
         </a>
         <?php endforeach; ?>
     </div>
