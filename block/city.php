@@ -1002,10 +1002,12 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 											 data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
 											 data-row="<?= $row ?>"
 											 data-col="<?= $col ?>"
-											 title="区块 <?= $block_number ?> - 价格: <?= $block_price ?>元">
-											<?php if (!$is_merged): ?>
-												<?= $block_number ?>
-											<?php endif; ?>
+									 title="区块 <?= $block_number ?> - 价格: <?= $block_price ?>元">
+										<?php if ($is_merged): ?>
+											<?= $merged_size ?>
+										<?php else: ?>
+											<?= $block_number ?>
+										<?php endif; ?>
 										</div>
                                 <?php endfor; ?>
                             </div>
@@ -1209,17 +1211,10 @@ document.querySelectorAll('.block-cell').forEach(cell => {
         const blockNumber = this.getAttribute('data-block-number');
         const blockStatus = this.getAttribute('data-status');
         const blockOwner = this.getAttribute('data-owner');
+        const row = parseInt(this.getAttribute('data-row'));
+        const col = parseInt(this.getAttribute('data-col'));
 
-        // 如果已选中且是唯一选中，取消选中
-        if (this.classList.contains('selected') && selectedBlocks.length <= 1) {
-            this.classList.remove('selected');
-            selectedBlocks = [];
-            document.getElementById('single-block-actions').style.display = 'none';
-            document.getElementById('multiple-block-actions').style.display = 'none';
-            return;
-        }
-
-        // 如果已选中（多选列表里），取消选中
+        // 已选中：取消
         const idx = selectedBlocks.findIndex(b => b.number === blockNumber);
         if (idx >= 0) {
             selectedBlocks.splice(idx, 1);
@@ -1228,12 +1223,48 @@ document.querySelectorAll('.block-cell').forEach(cell => {
             return;
         }
 
-        // 选中并加入列表
+        // 只能选可用的
+        if (blockStatus !== 'available') {
+            alert('该区块不可用');
+            return;
+        }
+
+        // 相邻检查（首个区块无限制）
+        if (selectedBlocks.length > 0) {
+            var adj = selectedBlocks.some(function(b) {
+                var dr = Math.abs(b.row - row), dc = Math.abs(b.col - col);
+                return dr <= 1 && dc <= 1 && (dr + dc) > 0;
+            });
+            if (!adj) { alert('只能选择相邻区块'); return; }
+
+            // 矩形检查：新加入后是否仍形成矩形
+            var minRow = row, maxRow = row, minCol = col, maxCol = col;
+            var allBlocks = selectedBlocks.concat([{row:row, col:col}]);
+            allBlocks.forEach(function(b) {
+                if (b.row < minRow) minRow = b.row;
+                if (b.row > maxRow) maxRow = b.row;
+                if (b.col < minCol) minCol = b.col;
+                if (b.col > maxCol) maxCol = b.col;
+            });
+            var rectW = maxCol - minCol + 1, rectH = maxRow - minRow + 1;
+
+            // 矩形内每格都必须被选中
+            var rectSet = {};
+            allBlocks.forEach(function(b) { rectSet[b.row + ',' + b.col] = true; });
+            var isRect = true;
+            for (var rr = minRow; rr <= maxRow && isRect; rr++)
+                for (var cc = minCol; cc <= maxCol && isRect; cc++)
+                    if (!rectSet[rr + ',' + cc]) isRect = false;
+
+            if (!isRect) { alert('选中的区块必须形成矩形（如 1x2、2x3 等）'); return; }
+            if (rectW > 4 || rectH > 4) { alert('最大支持 4×4 区块'); return; }
+        }
+
         this.classList.add('selected');
-        selectedBlocks.push({ number: blockNumber, row: parseInt(this.getAttribute('data-row')), col: parseInt(this.getAttribute('data-col')) });
+        selectedBlocks.push({ number: blockNumber, row: row, col: col });
         updateMultiSelectUI();
-        
-        // 显示详情
+
+        // 更新详情面板
         updateBlockDetail(blockNumber, blockStatus, blockOwner);
     });
 });
@@ -1471,22 +1502,35 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 <style>
 /* 合并区块样式 */
 .block-cell.merged {
-    background-color: #e3f2fd !important;
-    border: 2px solid #2196f3 !important;
-    font-weight: bold;
+    position: absolute;
+    z-index: 5;
+    background: rgba(25,118,210,0.15) !important;
+    border: 2px solid #1976d2 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1565c0;
+    pointer-events: auto;
 }
 
 .block-cell.merged.2x1, .block-cell.merged.1x2 {
-    background-color: #bbdefb !important;
+    background: rgba(25,118,210,0.18) !important;
+    font-size: 16px;
 }
 
 .block-cell.merged.2x2 {
-    background-color: #90caf9 !important;
+    background: rgba(25,118,210,0.22) !important;
+    font-size: 20px;
 }
 
-.block-cell.merged.3x3, .block-cell.merged.4x4 {
-    background-color: #64b5f6 !important;
-    color: white !important;
+.block-cell.merged.3x3, .block-cell.merged.4x4, .block-cell.merged.3x2, .block-cell.merged.2x3,
+.block-cell.merged.4x2, .block-cell.merged.2x4, .block-cell.merged.3x4, .block-cell.merged.4x3 {
+    background: rgba(25,118,210,0.28) !important;
+    color: #fff !important;
+    font-size: 24px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 /* 多选相关样式 */
