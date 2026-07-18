@@ -701,6 +701,12 @@ if ($reviewCount > 0) {
         height: 150px;
     }
 }
+@media (max-width: 480px) {
+    .product-gallery img, .detail-image-gallery img { width: 100%; height: auto; }
+    .btn-buy, .btn-cart { width: 100%; padding: 14px; font-size: 16px; }
+    .product-info h1 { font-size: 18px; }
+    .price-current { font-size: 22px; }
+}
     </style>
     <!-- 51.LA 统计 -->
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>

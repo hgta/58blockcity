@@ -419,6 +419,10 @@ $statusClassMap = [
                 justify-content: center;
             }
         }
+        @media (max-width: 480px) {
+            .order-item { padding: 12px; }
+            .order-product { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>

@@ -527,6 +527,10 @@ require_once '../includes/header.php';
     .dashboard-stats-row { grid-template-columns: repeat(2, 1fr); }
     .welcome-banner { flex-direction: column; text-align: center; gap: 10px; }
 }
+@media (max-width: 480px) {
+    .dashboard-stats-row { grid-template-columns: 1fr; }
+    .stat-card { padding: 12px; }
+}
 </style>
 
 <?php require_once '../includes/footer.php'; ?>

@@ -101,7 +101,7 @@ require_once 'includes/header.php';
 .block-city-name a:hover{color:#ff6b00}
 
 .block-mini-grid{width:100%;border-spacing:1px;background:#ccc;border-radius:2px;overflow:hidden}
-.block-mini-grid td{padding:4px 2px;text-align:center;font-size:9px;color:#999;border-radius:1px;line-height:1.1;height:26px;width:8.3%}
+.block-mini-grid td{padding:4px 2px;text-align:center;font-size:11px;color:#999;border-radius:1px;line-height:1.1;height:26px;width:8.3%}
 .block-mini-grid td.available{background:#fff}
 .block-mini-grid td.sold{background:#ff6b00;color:#fff;font-weight:700}
 .block-mini-grid td.reserved{background:#fff3e0;color:#e65100}

@@ -652,6 +652,11 @@ if (isset($_SESSION['error'])) {
         margin-bottom: 10px;
     }
 }
+@media (max-width: 480px) {
+    .city-selector { grid-template-columns: repeat(2, 1fr); }
+    button[type="submit"] { width: 100%; padding: 14px; font-size: 16px; }
+    input, select, textarea { font-size: 16px; }
+}
 </style>
 
 <!-- 引入Select2 JS -->

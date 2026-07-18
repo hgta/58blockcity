@@ -463,7 +463,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             .block-cell {
                 width: 25px;
                 height: 25px;
-                font-size: 8px;
+                font-size: 10px;
             }
             
             .row-number, .col-number {
@@ -480,7 +480,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             .block-cell {
                 width: 20px;
                 height: 20px;
-                font-size: 7px;
+                font-size: 9px;
             }
             
             .row-number, .col-number {
@@ -715,17 +715,17 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             padding: 16px;
         }
         .panorama-map {
-            min-width: 800px;
+            min-width: 600px;
         }
         .panorama-map .block-cell {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border: none;
             font-size: 0;
             margin: 0;
         }
         .panorama-map .map-row {
-            height: 8px;
+            height: 10px;
         }
         .pano-zone-bar {
             display: flex;
@@ -785,11 +785,11 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         /* 全景响应式 */
         @media (max-width: 768px) {
             .panorama-map .block-cell {
-                width: 6px;
-                height: 6px;
+                width: 8px;
+                height: 8px;
             }
             .panorama-map .map-row {
-                height: 6px;
+                height: 8px;
             }
             .pano-zone-bar {
                 gap: 4px;

@@ -565,26 +565,21 @@ try {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-    .stat-card {
-        flex-direction: column;
-        text-align: center;
-        padding: 15px;
-    }
-    
-    .stat-icon {
-        margin-right: 0;
-        margin-bottom: 10px;
-        width: 40px;
-        height: 40px;
-    }
-    
-    .stat-icon i {
-        font-size: 18px;
-    }
-    
-    .stat-number {
-        font-size: 18px;
-    }
+    .stat-card { flex-direction: column; text-align: center; padding: 15px; }
+    .stat-icon { margin-right: 0; margin-bottom: 10px; width: 40px; height: 40px; }
+    .stat-icon i { font-size: 18px; }
+    .stat-number { font-size: 18px; }
+    .row.mb-3 > [class*="col-"] { margin-bottom: 8px; }
+    .row.mb-3 select, .row.mb-3 button { width: 100%; }
+    .table { font-size: 13px; }
+    .table th, .table td { padding: 8px 6px; white-space: nowrap; }
+    .table td:nth-child(5) { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+    .btn-sm { padding: 8px 12px; font-size: 13px; }
+}
+@media (max-width: 480px) {
+    .stat-card { padding: 10px; }
+    .stat-number { font-size: 16px; }
+    .table { font-size: 12px; }
 }
 </style>
 
