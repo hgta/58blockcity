@@ -953,8 +953,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .special-section {
             margin-top: 18px;
             padding: 14px 16px;
-            background: #fffdf8;
-            border: 1px solid #ffe2b0;
+            background: #fff;
+            border: 1px solid #eee;
             border-radius: 10px;
         }
         .special-title {
@@ -979,6 +979,24 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .special-strip .block-item {
             margin: 1px;
             flex-shrink: 0;
+        }
+        /* 特殊区块统一白色，与其他区样式一致（不按状态上色） */
+        .special-strip .block-item,
+        .special-strip .block-item.available,
+        .special-strip .block-item.sold-own,
+        .special-strip .block-item.sold-blue,
+        .special-strip .block-item.sold-red,
+        .special-strip .block-item.reserved {
+            background: #fff;
+            color: #999;
+            border: 1px solid #e3e3e3;
+        }
+        .special-strip .block-item .block-no {
+            color: #999;
+        }
+        .special-strip .block-item.selected {
+            outline: 2px solid #2196f3;
+            outline-offset: -1px;
         }
 
         /* 全景响应式 */
