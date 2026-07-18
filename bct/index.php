@@ -780,4 +780,23 @@ function filterOrders() {
 }
 </script>
 
+
+<?php
+$recentTrades = $pdo->query("SELECT o.city, o.amount, o.price, u.username, o.created_at FROM bct_orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.status = 'completed' ORDER BY o.updated_at DESC LIMIT 6")->fetchAll();
+if ($recentTrades):
+?>
+<div class="container" style="max-width:1200px;margin:30px auto;padding:0 15px;">
+    <h3 style="font-size:18px;margin-bottom:15px;color:#333;">📊 最新成交动态</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+        <?php foreach ($recentTrades as $rt): ?>
+        <div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;">
+            <div style="font-size:13px;color:#333;font-weight:600;"><?= htmlspecialchars($rt['city']) ?></div>
+            <div style="font-size:12px;color:#999;margin-top:4px;"><?= number_format($rt['amount']) ?> BCT · ¥<?= number_format($rt['price'], 2) ?></div>
+            <div style="font-size:11px;color:#bbb;margin-top:4px;"><?= htmlspecialchars($rt['username'] ?? '匿名') ?> · <?= date('m-d H:i', strtotime($rt['created_at'])) ?></div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php require_once 'includes/footer.php'; ?>

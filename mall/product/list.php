@@ -675,7 +675,27 @@ $itemListJsonLd = SeoHelper::itemListSchema($itemListData, $categoryName);
         }
 
     </script>
-    
+
+    <?php
+    $popularProducts = $product->getPopularProducts(8);
+    if (!empty($popularProducts)):
+    ?>
+    <div style="margin:30px auto;max-width:1200px;padding:0 15px;">
+        <h3 style="font-size:18px;margin-bottom:15px;color:#333;">🔥 热门推荐</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+            <?php foreach ($popularProducts as $pp): ?>
+            <a href="detail.php?id=<?= $pp['id'] ?>" style="display:block;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);text-decoration:none;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                <img src="<?= htmlspecialchars($pp['main_image'] ?: 'assets/images/default-product.jpg') ?>" style="width:100%;aspect-ratio:1;object-fit:cover;" loading="lazy">
+                <div style="padding:10px;">
+                    <div style="font-size:13px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($pp['name']) ?></div>
+                    <div style="font-size:14px;color:#ff6b00;font-weight:600;margin-top:4px;">¥<?= number_format($pp['price_cny'] ?? $pp['price_bct'] ?? 0, ($pp['price_type'] ?? '') == 'bct' ? 0 : 2) ?></div>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php include '../includes/footer.php'; ?>
 </body>
 </html> 

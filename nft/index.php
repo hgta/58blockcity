@@ -784,6 +784,23 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
         </div>
     <?php endif; ?>
 	
+	<!-- 为你推荐 -->
+    <?php $recommendNfts = $nft->getAllNfts(8, rand(0, 50), '', ''); if ($recommendNfts): ?>
+    <div style="max-width:1200px;margin:30px auto;padding:0 15px;">
+        <h3 style="font-size:20px;margin-bottom:15px;color:#333;">🎯 为你推荐</h3>
+        <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;">
+            <?php foreach ($recommendNfts as $rn): ?>
+            <a href="nft/view.php?id=<?= $rn['id'] ?>" style="flex-shrink:0;width:100px;text-align:center;text-decoration:none;">
+                <div style="width:80px;height:80px;margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #eee;">
+                    <img src="../avatar/<?= htmlspecialchars($rn['base_image']) ?>" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+                </div>
+                <div style="font-size:12px;color:#333;margin-top:6px;"><?= htmlspecialchars($rn['code'] ?? $rn['name'] ?? '') ?></div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
 	<!-- 排名标准说明 -->
     <div class="ranking-criteria">
         <h3>📊 NFT头像综合排行榜计算标准</h3>
