@@ -20,12 +20,11 @@ if (!$modelInfo || $modelInfo['status'] !== 'active') {
     exit;
 }
 
-// 旧 URL 301 跳转到规范 URL
+// 旧 URL 301 跳转到规范 URL（仅无分页参数时跳转）
 $canonicalUrl = SeoHelper::modelUrl($modelId, $modelInfo['nickname'] ?? '');
-// 分享用 URL，中文编码防止微信等截断
-$shareUrl = 'https://mall.58.tl/model/' . $modelId . '-' . rawurlencode(SeoHelper::slug($modelInfo['nickname'] ?? '')) . '.html';
-$shareUrl = rtrim($shareUrl, '-.html') . '.html';
-SeoHelper::redirectIfNotCanonical($canonicalUrl);
+if (empty($_GET['page'])) {
+    SeoHelper::redirectIfNotCanonical($canonicalUrl);
+}
 
 // 分页参数
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;

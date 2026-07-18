@@ -38,9 +38,11 @@ if (!$shopInfo) {
     exit;
 }
 
-// 旧 URL 301 跳转到规范 URL
-$canonicalUrl = SeoHelper::shopUrl($shopId, $shopInfo['shop_name'] ?? '');
-SeoHelper::redirectIfNotCanonical($canonicalUrl);
+// 旧 URL 301 跳转到规范 URL（仅无分页/排序参数时跳转）
+if (empty($_GET['page']) && empty($_GET['sort'])) {
+    $canonicalUrl = SeoHelper::shopUrl($shopId, $shopInfo['shop_name'] ?? '');
+    SeoHelper::redirectIfNotCanonical($canonicalUrl);
+}
 
 // 检查店铺状态
 if ($shopInfo['status'] !== 'active') {
