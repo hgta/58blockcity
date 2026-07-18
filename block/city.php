@@ -948,7 +948,39 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             border-radius: 8px;
             display: inline-block;
         }
-        
+
+        /* Z区特殊区块（顶层/左侧边框区块） */
+        .special-section {
+            margin-top: 18px;
+            padding: 14px 16px;
+            background: #fffdf8;
+            border: 1px solid #ffe2b0;
+            border-radius: 10px;
+        }
+        .special-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #b3700a;
+            margin: 0 0 10px;
+        }
+        .special-subtitle {
+            font-size: 13px;
+            color: #999;
+            margin: 10px 0 4px;
+        }
+        .special-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .special-strip .block-item {
+            margin: 1px;
+            flex-shrink: 0;
+        }
+
         /* 全景响应式 */
         @media (max-width: 768px) {
             .panorama-map .block-cell {
@@ -1011,7 +1043,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     <div class="pano-container">
         <div class="pano-header">
             <h2 class="pano-title"><?= htmlspecialchars($city_name) ?> · 九区全景</h2>
-            <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 89,991 个区块</span>
+            <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 9999 个区块</span>
             <span class="pano-total">我拥有: <strong><?= number_format($user_total_owned) ?></strong> 个区块</span>
         </div>
         
@@ -1197,6 +1229,62 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 </div>
             </div>
 
+            <?php if ($current_zone === 'Z'): ?>
+            <?php
+            // Z区特殊区块：顶层 row0(col1-99)=0100-9900，左侧 col0(row1-99)=0001-0099
+            $z_special_top = [];
+            $z_special_left = [];
+            foreach ($zone_blocks as $zb) {
+                $bn = (string)$zb['block_number'];
+                $c = intval(substr($bn, 0, 2));
+                $r = intval(substr($bn, 2, 2));
+                if ($r === 0 && $c >= 1) $z_special_top[] = $zb;
+                elseif ($c === 0 && $r >= 1) $z_special_left[] = $zb;
+            }
+            ?>
+            <?php if (!empty($z_special_top) || !empty($z_special_left)): ?>
+            <div class="special-section">
+                <h4 class="special-title">Z区 · 特殊区块（顶层 0100–9900 / 左侧 0001–0099）</h4>
+                <?php if (!empty($z_special_top)): ?>
+                <div class="special-subtitle">顶层（整行）</div>
+                <div class="block-list special-strip">
+                    <?php foreach ($z_special_top as $zb):
+                        $bn = $zb['block_number'];
+                        $c = intval(substr($bn, 0, 2)); $r = intval(substr($bn, 2, 2));
+                        $st = $zb['status'];
+                        if ($st === 'sold') {
+                            $cls = ($current_user_id && $zb['owner_id'] && (int)$zb['owner_id'] === (int)$current_user_id) ? 'sold-own' : ((crc32($bn) % 2 === 0) ? 'sold-blue' : 'sold-red');
+                        } else { $cls = $st; }
+                        $oname = $zb['owner_id'] ? ($owners_map[$zb['owner_id']] ?? '用户'.$zb['owner_id']) : '';
+                    ?>
+                    <div class="block-item <?= $cls ?>" data-block-number="<?= $bn ?>" data-price="<?= $zb['price'] ?>" data-status="<?= $st ?>" data-owner="<?= $zb['owner_id'] ?? '' ?>" data-owner-name="<?= htmlspecialchars($oname) ?>" data-row="<?= $r ?>" data-col="<?= $c ?>" title="区块 <?= $bn ?> - 价格: <?= number_format($zb['price']) ?>元">
+                        <span class="block-no"><?= $bn ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($z_special_left)): ?>
+                <div class="special-subtitle">左侧（整列）</div>
+                <div class="block-list special-strip">
+                    <?php foreach ($z_special_left as $zb):
+                        $bn = $zb['block_number'];
+                        $c = intval(substr($bn, 0, 2)); $r = intval(substr($bn, 2, 2));
+                        $st = $zb['status'];
+                        if ($st === 'sold') {
+                            $cls = ($current_user_id && $zb['owner_id'] && (int)$zb['owner_id'] === (int)$current_user_id) ? 'sold-own' : ((crc32($bn) % 2 === 0) ? 'sold-blue' : 'sold-red');
+                        } else { $cls = $st; }
+                        $oname = $zb['owner_id'] ? ($owners_map[$zb['owner_id']] ?? '用户'.$zb['owner_id']) : '';
+                    ?>
+                    <div class="block-item <?= $cls ?>" data-block-number="<?= $bn ?>" data-price="<?= $zb['price'] ?>" data-status="<?= $st ?>" data-owner="<?= $zb['owner_id'] ?? '' ?>" data-owner-name="<?= htmlspecialchars($oname) ?>" data-row="<?= $r ?>" data-col="<?= $c ?>" title="区块 <?= $bn ?> - 价格: <?= number_format($zb['price']) ?>元">
+                        <span class="block-no"><?= $bn ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
+
             <!-- 区块颜色说明 -->
             <div class="block-legend">
                 <span class="legend-item"><span class="legend-dot lg-available"></span> 未认领</span>
@@ -1243,6 +1331,16 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $listBlocks[] = ['n'=>$bn,'s'=>$status,'p'=>$price,'o'=>$oname,'m'=>$isMerged,'r'=>$row,'c'=>$col];
                         }
                     }
+                    <?php if ($current_zone === 'Z'):
+                        foreach ($zone_blocks as $zb) {
+                            $zbn = (string)$zb['block_number'];
+                            $zc = intval(substr($zbn, 0, 2)); $zr = intval(substr($zbn, 2, 2));
+                            if (($zr === 0 && $zc >= 1) || ($zc === 0 && $zr >= 1)) {
+                                $zon = $zb['owner_id'] ? ($owners_map[$zb['owner_id']] ?? '用户'.$zb['owner_id']) : null;
+                                $listBlocks[] = ['n'=>$zbn,'s'=>$zb['status'],'p'=>$zb['price'],'o'=>$zon,'m'=>false,'r'=>$zr,'c'=>$zc];
+                            }
+                        }
+                    endif; ?>
                     foreach ($listBlocks as $lb):
                     ?>
                     <div class="mobile-list-item" data-status="<?= $lb['s'] ?>" data-block="<?= $lb['n'] ?>">
