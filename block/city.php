@@ -950,13 +950,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     <i class="fas fa-map-marked-alt"></i> <?= $current_zone ?>区区块地图
                 </div>
                 <div class="map-controls">
-                    <div class="form-group">
-                        <label>选择模式:</label>
-                        <select id="selection-mode">
-                            <option value="single">单个区块</option>
-                            <option value="multiple">相邻多区块</option>
-                        </select>
-                    </div>
                     <div id="multiple-selection-info" style="display: none;">
                         <span>已选择 <span id="selected-count">0</span> 个区块</span>
                         <button id="clear-selection" class="btn btn-sm btn-default">清空选择</button>
@@ -1171,24 +1164,35 @@ if (!empty($crossCities)):
 <script>
 // 选中的区块数组
 let selectedBlocks = [];
-let selectionMode = 'single';
-
-// 切换选择模式
-document.getElementById('selection-mode').addEventListener('change', function() {
-    selectionMode = this.value;
-    const multipleInfo = document.getElementById('multiple-selection-info');
-    
-    if (selectionMode === 'multiple') {
-        multipleInfo.style.display = 'block';
-        clearSelection();
-    } else {
-        multipleInfo.style.display = 'none';
-        clearSelection();
-    }
-});
 
 // 清空选择
 document.getElementById('clear-selection').addEventListener('click', clearSelection);
+
+function updateMultiSelectUI() {
+    var count = selectedBlocks.length;
+    var multiInfo = document.getElementById('multiple-selection-info');
+    var singleActions = document.getElementById('single-block-actions');
+    var multiActions = document.getElementById('multiple-block-actions');
+    var btnMulti = document.getElementById('claim-multiple-button');
+
+    if (count === 0) {
+        if (multiInfo) multiInfo.style.display = 'none';
+        if (singleActions) singleActions.style.display = 'none';
+        if (multiActions) multiActions.style.display = 'none';
+    } else if (count === 1) {
+        if (multiInfo) multiInfo.style.display = 'none';
+        if (singleActions) singleActions.style.display = 'block';
+        if (multiActions) multiActions.style.display = 'none';
+    } else {
+        if (multiInfo) {
+            multiInfo.style.display = 'block';
+            multiInfo.textContent = '已选择 ' + count + ' 个区块';
+        }
+        if (singleActions) singleActions.style.display = 'none';
+        if (multiActions) multiActions.style.display = 'block';
+        if (btnMulti) { btnMulti.textContent = '认领选中区块 (' + count + ')'; btnMulti.disabled = false; }
+    }
+}
 
 function clearSelection() {
     selectedBlocks = [];
@@ -1204,14 +1208,32 @@ document.querySelectorAll('.block-cell').forEach(cell => {
         const blockNumber = this.getAttribute('data-block-number');
         const blockStatus = this.getAttribute('data-status');
         const blockOwner = this.getAttribute('data-owner');
-        const row = parseInt(this.getAttribute('data-row'));
-        const col = parseInt(this.getAttribute('data-col'));
-        
-        if (selectionMode === 'single') {
-            handleSingleSelection(this, blockNumber, blockStatus, blockOwner);
-        } else {
-            handleMultipleSelection(this, blockNumber, blockStatus, row, col);
+
+        // 如果已选中且是唯一选中，取消选中
+        if (this.classList.contains('selected') && selectedBlocks.length <= 1) {
+            this.classList.remove('selected');
+            selectedBlocks = [];
+            document.getElementById('single-block-actions').style.display = 'none';
+            document.getElementById('multiple-block-actions').style.display = 'none';
+            return;
         }
+
+        // 如果已选中（多选列表里），取消选中
+        const idx = selectedBlocks.findIndex(b => b.number === blockNumber);
+        if (idx >= 0) {
+            selectedBlocks.splice(idx, 1);
+            this.classList.remove('selected');
+            updateMultiSelectUI();
+            return;
+        }
+
+        // 选中并加入列表
+        this.classList.add('selected');
+        selectedBlocks.push({ number: blockNumber, row: parseInt(this.getAttribute('data-row')), col: parseInt(this.getAttribute('data-col')) });
+        updateMultiSelectUI();
+        
+        // 显示详情
+        updateBlockDetail(blockNumber, blockStatus, blockOwner);
     });
 });
 
