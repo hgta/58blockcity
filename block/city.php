@@ -884,9 +884,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         .panorama-map {
             display: grid;
-            gap: 1px;
-            background: #ddd;
-            padding: 1px;
+            gap: 0;
+            background: transparent;
+            padding: 0;
             border-radius: 2px;
             grid-auto-rows: 10px;
             /* grid-template-columns: repeat(101, 10px); set inline */
@@ -945,7 +945,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .pano-cell.sold-blue { background-color: #c6c9ff !important; }
         .pano-cell.sold-red { background-color: #ffd5d5 !important; }
         .pano-cell.reserved { background-color: #d2ffc6 !important; }
-        .pano-cell.zone-boundary { border-right: 1px solid rgba(0,0,0,0.25) !important; }
+        .pano-cell.zone-boundary { border-right: 1px solid rgba(0,0,0,0.10) !important; }
 
         /* 单区网格优化 */
         .single-zone-title {
