@@ -320,7 +320,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             box-shadow: 0 4px 15px rgba(255,107,0,0.3);
         }
         
-        /* ======== 区块地图 — 照搬 beijing.html 原版 table 布局 ======== */
+        /* ======== 区块地图 — 完全照搬 beijing.html 原版 flex 布局 ======== */
         .block-map-container {
             background-color: white;
             border-radius: 8px;
@@ -330,108 +330,107 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             overflow: auto;
         }
         
-        .block-table {
-            width: 100%;
-            background: #eee;
-            border-spacing: 1px 1px;
-            border-collapse: separate;
-            table-layout: auto;
-        }
-        
-        .block-table td {
-            padding: 3px;
-            background: #fff;
-            text-align: center;
-            vertical-align: middle;
-            word-wrap: break-word;
-            word-break: break-all;
-        }
-        
-        .itemBox00 {
+        /* 原版: .list { display:flex; flex-direction:column; position:relative } */
+        .block-list {
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
         
-        .item00 {
+        /* 原版: .row { width:100%; display:flex } */
+        .block-row {
+            width: 100%;
+            display: flex;
+        }
+        
+        /* 原版: .item { width:44px; height:44px; margin-left:1px; margin-top:1px; border-radius:2px; background:#fff; display:block; text-align:center } */
+        .block-item {
+            position: relative;
             width: 44px;
             height: 44px;
-            margin: 0 auto;
-            border: #ccc solid 1px;
-            text-align: center;
+            margin-left: 1px;
+            margin-top: 1px;
+            border-radius: 2px;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.15s;
-        }
-        
-        .item00.available {
-            background-color: #fff;
-        }
-        
-        .item00.sold {
-            background-color: #ff6b00;
-        }
-        
-        .item00.reserved {
-            background-color: #fff3e0;
-        }
-        
-        .item00.selected {
-            outline: 3px solid #2196f3;
-            outline-offset: -2px;
-            box-shadow: 0 0 0 3px rgba(33,150,243,0.3);
-        }
-        
-        .item00.own-block {
-            background-color: #4caf50 !important;
-            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
-        }
-        
-        .item00.merged {
-            background: rgba(25,118,210,0.12) !important;
-            box-shadow: inset 0 0 0 2px #1976d2 !important;
-            border-color: #1976d2 !important;
-        }
-        
-        .item00.merged.sold {
-            background: #1565c0 !important;
-            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25) !important;
-        }
-
-        .blockItem {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
             overflow: hidden;
+            flex-shrink: 0;
         }
         
-        .blockNo {
-            font-size: 14px;
+        /* 原版颜色 (从内联样式提取):
+           可用: background:rgb(255,255,255); color:rgb(0,0,0)
+           已售: background:rgb(255,213,213); color:rgb(255,96,96)
+           自己: background:rgb(198,201,255); color:rgb(51,123,230)
+           预留: background:rgb(210,255,198); color:rgb(53,204,45) */
+        .block-item.available {
+            background: #fff;
             color: #337be6;
-            font-family: PingFangSC-Regular, 'Microsoft YaHei', sans-serif;
-            line-height: 1.2;
+            border: 1px solid #e8e8e8;
         }
         
-        .item00.sold .blockNo {
-            color: #fff;
+        .block-item.sold {
+            background: #ffd5d5;
+            color: #ff6060;
         }
         
-        .item00.own-block .blockNo {
-            color: #fff;
+        .block-item.own-block {
+            background: #c6c9ff;
+            color: #337be6;
         }
         
-        .item00.merged .blockNo {
-            color: #1565c0;
+        .block-item.reserved {
+            background: #d2ffc6;
+            color: #35cc2d;
+        }
+        
+        .block-item.selected {
+            outline: 2px solid #2196f3;
+            outline-offset: -1px;
+            z-index: 10;
+        }
+        
+        .block-item.merged {
+            border: 2px solid #337be6;
             font-weight: 700;
         }
         
-        .item00.merged.sold .blockNo {
-            color: #fff;
+        /* 原版: .blockNo { font-size:22px; color:#337be6; font-family:PingFangSC-Regular } */
+        .block-no {
+            font-size: 11px;
+            color: inherit;
+            font-family: PingFangSC-Regular, 'Microsoft YaHei', sans-serif;
+            line-height: 1.2;
+            pointer-events: none;
         }
         
-        .blockName {
-            font-size: 11px;
-            color: #999;
+        /* 合并块的内容层 — 绝对定位覆盖相邻格（原版 blockItem 用内联 width/height 溢出） */
+        .block-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        /* 合并块状态色（和 .block-item 一致） */
+        .block-content.available { background: #fff; color: #337be6; border: 1px solid #e8e8e8; }
+        .block-content.sold { background: #ffd5d5; color: #ff6060; }
+        .block-content.own-block { background: #c6c9ff; color: #337be6; }
+        .block-content.reserved { background: #d2ffc6; color: #35cc2d; }
+        .block-content.merged { border: 2px solid #337be6; font-weight: 700; }
+        
+        /* 合并块的非首格占位 — 透明 */
+        .block-item.merged-placeholder {
+            background: transparent;
+            cursor: default;
         }
         
         /* 区块详情面板 */
@@ -979,10 +978,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     </div>
                 </div>
 
-                <table class="block-table">
-                    <tbody>
+                <div class="block-list">
                     <?php for ($row = 1; $row <= 99; $row++): ?>
-                        <tr>
+                    <div class="block-row">
                         <?php for ($col = $col_start; $col <= $col_end; $col++):
                             $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
                             $block_price = calculateBlockPrice($current_zone, $block_number);
@@ -1009,7 +1007,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 if (in_array($block_number, $mergedNums)) {
                                     $is_merged = true;
                                     $merged_size = $merged['merge_size'];
-                                    // 找到左上角（最小行列）
                                     $minR = 999; $minC = 999;
                                     foreach ($mergedNums as $mn) {
                                         $mr = intval(substr($mn, 2, 2));
@@ -1027,39 +1024,48 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 }
                             }
 
-                            // 非首格跳过，由首格的 colspan/rowspan 覆盖
-                            if ($is_merged && !$is_merged_first) continue;
+                            // 每个格子都渲染（保持 flex 布局正确），合并块用绝对定位覆盖
+                            if ($is_merged && !$is_merged_first) {
+                                // 合并块的非首格：透明占位
+                                echo '<div class="block-item merged-placeholder"></div>';
+                                continue;
+                            }
 
-                            $cell_class = "item00 {$block_status}";
-                            if ($is_merged) $cell_class .= " merged {$merged_size}";
+                            $cell_class = "block-item {$block_status}";
+                            if ($is_merged_first) $cell_class .= " merged";
                             if ($current_user_id && $block_owner == $current_user_id) $cell_class .= " own-block";
 
-                            $td_attrs = '';
-                            if ($colSpan > 1) $td_attrs .= " colspan=\"{$colSpan}\"";
-                            if ($rowSpan > 1) $td_attrs .= " rowspan=\"{$rowSpan}\"";
+                            // 合并首格：计算 block-content 尺寸（原版用内联 width/height）
+                            $content_style = '';
+                            $content_class = '';
+                            if ($is_merged_first) {
+                                $w = $colSpan * 44 + ($colSpan - 1);
+                                $h = $rowSpan * 44 + ($rowSpan - 1);
+                                $content_style = "width:{$w}px;height:{$h}px;";
+                                $content_class = " {$block_status}" . ($current_user_id && $block_owner == $current_user_id ? " own-block" : "") . " merged";
+                            }
                         ?>
-                        <td<?= $td_attrs ?>>
-                            <div class="itemBox00">
-                                <div class="<?= $cell_class ?>"
-                                     data-block-number="<?= $block_number ?>"
-                                     data-price="<?= $block_price ?>"
-                                     data-status="<?= $block_status ?>"
-                                     data-owner="<?= $block_owner ?>"
-                                     data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
-                                     data-row="<?= $row ?>"
-                                     data-col="<?= $col ?>"
-                                     title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
-                                    <div class="blockItem">
-                                        <span class="blockNo"><?= $is_merged ? $merged_size : $block_number ?></span>
-                                    </div>
-                                </div>
+                        <div class="<?= $cell_class ?>"
+                             data-block-number="<?= $block_number ?>"
+                             data-price="<?= $block_price ?>"
+                             data-status="<?= $block_status ?>"
+                             data-owner="<?= $block_owner ?>"
+                             data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
+                             data-row="<?= $row ?>"
+                             data-col="<?= $col ?>"
+                             title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
+                            <?php if ($is_merged_first): ?>
+                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>">
+                                <span class="block-no"><?= $merged_size ?></span>
                             </div>
-                        </td>
+                            <?php else: ?>
+                            <span class="block-no"><?= $block_number ?></span>
+                            <?php endif; ?>
+                        </div>
                         <?php endfor; ?>
-                        </tr>
+                    </div>
                     <?php endfor; ?>
-                    </tbody>
-                </table>
+                </div>
             </div>
 
             <!-- 移动端：列表视图 -->
@@ -1247,13 +1253,13 @@ function updateMultiSelectUI() {
 function clearSelection() {
     selectedBlocks = [];
     updateSelectionDisplay();
-    document.querySelectorAll('.item00.selected').forEach(cell => {
+    document.querySelectorAll('.block-item.selected').forEach(cell => {
         cell.classList.remove('selected');
     });
 }
 
 // 区块点击事件
-document.querySelectorAll('.item00').forEach(cell => {
+document.querySelectorAll('.block-item').forEach(cell => {
     cell.addEventListener('click', function() {
         const blockNumber = this.getAttribute('data-block-number');
         const blockStatus = this.getAttribute('data-status');
@@ -1328,7 +1334,7 @@ document.querySelectorAll('.item00').forEach(cell => {
 // 单个区块选择处理
 function handleSingleSelection(cell, blockNumber, blockStatus, blockOwner) {
     // 移除之前选中的样式
-    document.querySelectorAll('.item00.selected').forEach(el => {
+    document.querySelectorAll('.block-item.selected').forEach(el => {
         el.classList.remove('selected');
     });
     
@@ -1569,7 +1575,7 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
 });
 
 // 区块悬停效果
-document.querySelectorAll('.item00').forEach(cell => {
+document.querySelectorAll('.block-item').forEach(cell => {
     cell.addEventListener('mouseenter', function() {
         this.style.zIndex = '100';
     });
