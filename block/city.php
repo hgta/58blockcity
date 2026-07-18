@@ -438,7 +438,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .block-content.sold-blue { background: #c6c9ff; color: #337be6; }
         .block-content.sold-red { background: #ffd5d5; color: #ff6060; }
         .block-content.reserved { background: #d2ffc6; color: #35cc2d; }
-        .block-content.merged { border: 1px solid #337be6; }
+        .block-content.merged { border: none; }
         
         /* 合并块的非首格占位 — 透明 */
         .block-item.merged-placeholder {
