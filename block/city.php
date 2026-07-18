@@ -418,9 +418,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             border: 1px solid #eee;
         }
         .lg-available { background: #fff; }
-        .lg-sold-own { background: #d2ffc6; }
-        .lg-sold-blue { background: #c6c9ff; }
-        .lg-sold-red { background: #ffd5d5; }
+        .lg-sold-own { background: #fff; }
+        .lg-sold-blue { background: #fff; }
+        .lg-sold-red { background: #fff; }
         
         /* 原版: .list { display:flex; flex-direction:column; position:relative } */
         .block-list {
@@ -463,23 +463,23 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         .block-item.sold-own {
-            background: #d2ffc6;
-            color: #35cc2d;
+            background: #fff;
+            color: #999;
         }
         
         .block-item.sold-blue {
-            background: #c6c9ff;
-            color: #337be6;
+            background: #fff;
+            color: #999;
         }
         
         .block-item.sold-red {
-            background: #ffd5d5;
-            color: #ff6060;
+            background: #fff;
+            color: #999;
         }
         
         .block-item.reserved {
-            background: #d2ffc6;
-            color: #35cc2d;
+            background: #fff;
+            color: #999;
         }
         
         .block-item.selected {
@@ -506,10 +506,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         .block-item.available .block-no { color: #999; }
-        .block-item.sold-own .block-no { color: #35cc2d; }
-        .block-item.sold-blue .block-no { color: #337be6; }
-        .block-item.sold-red .block-no { color: #ff6060; }
-        .block-item.reserved .block-no { color: #35cc2d; }
+        .block-item.sold-own .block-no { color: #999; }
+        .block-item.sold-blue .block-no { color: #999; }
+        .block-item.sold-red .block-no { color: #999; }
+        .block-item.reserved .block-no { color: #999; }
         
         /* 合并块的内容层 — 绝对定位覆盖相邻格（原版 blockItem 用内联 width/height 溢出） */
         .block-content {
@@ -524,12 +524,12 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             overflow: hidden;
         }
         
-        /* 合并块状态色（和 .block-item 一致） */
+        /* 合并块状态色（和 .block-item 一致，均为白底） */
         .block-content.available { background: #fff; color: #999; }
-        .block-content.sold-own { background: #d2ffc6; color: #35cc2d; }
-        .block-content.sold-blue { background: #c6c9ff; color: #337be6; }
-        .block-content.sold-red { background: #ffd5d5; color: #ff6060; }
-        .block-content.reserved { background: #d2ffc6; color: #35cc2d; }
+        .block-content.sold-own { background: #fff; color: #999; }
+        .block-content.sold-blue { background: #fff; color: #999; }
+        .block-content.sold-red { background: #fff; color: #999; }
+        .block-content.reserved { background: #fff; color: #999; }
         .block-content.merged { border: none; }
         
         /* 合并块的非首格占位 — 透明 */
