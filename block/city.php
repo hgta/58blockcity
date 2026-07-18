@@ -330,6 +330,57 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             overflow: auto;
         }
 
+        /* 自定义确认弹窗 */
+        .confirm-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .confirm-mask.show { display: flex; }
+        .confirm-box {
+            background: #fff;
+            width: 320px;
+            max-width: 86vw;
+            border-radius: 12px;
+            padding: 20px 20px 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            font-size: 14px;
+            color: #333;
+        }
+        .confirm-msg {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin-bottom: 12px;
+        }
+        .confirm-remember {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .confirm-actions button {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .confirm-cancel { background: #f0f0f0; color: #555; }
+        .confirm-ok { background: #337be6; color: #fff; }
+
         /* 区块颜色说明 */
         .block-legend {
             display: flex;
@@ -1217,6 +1268,20 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     </div>
     <!-- ========== /单区详细模式 ========== -->
     <?php endif; ?>
+
+    <!-- 自定义确认弹窗（替代原生 confirm，避免被浏览器“阻止对话框”静默取消） -->
+    <div class="confirm-mask" id="confirmMask">
+        <div class="confirm-box">
+            <div class="confirm-msg" id="confirmMsg"></div>
+            <label class="confirm-remember">
+                <input type="checkbox" id="confirmRemember"> 不再提醒
+            </label>
+            <div class="confirm-actions">
+                <button class="confirm-cancel" id="confirmCancel">取消</button>
+                <button class="confirm-ok" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?php
@@ -1274,8 +1339,40 @@ if (!empty($crossCities)):
 // 选中的区块数组
 let selectedBlocks = [];
 
+// 自定义确认弹窗（替代原生 confirm，避免被浏览器“阻止对话框”静默取消）
+// key: localStorage 中记录“不再提醒”的键名
+function showConfirm(message, key, onYes) {
+    const SKIP_KEY = 'skipConfirm_' + key;
+    if (localStorage.getItem(SKIP_KEY) === '1') {
+        onYes();
+        return;
+    }
+    const mask = document.getElementById('confirmMask');
+    const msgEl = document.getElementById('confirmMsg');
+    const rememberEl = document.getElementById('confirmRemember');
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+    msgEl.textContent = message;
+    rememberEl.checked = false;
+    mask.classList.add('show');
+    function cleanup() {
+        mask.classList.remove('show');
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+    }
+    function onOk() {
+        if (rememberEl.checked) localStorage.setItem(SKIP_KEY, '1');
+        cleanup();
+        onYes();
+    }
+    function onCancel() { cleanup(); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+}
+
 // 清空选择
 document.getElementById('clear-selection').addEventListener('click', clearSelection);
+
 
 function updateMultiSelectUI() {
     var count = selectedBlocks.length;
@@ -1511,7 +1608,7 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
 
 // 认领单个区块
 async function claimSingleBlock(blockNumber) {
-    if (!confirm(`确定要认领区块 ${blockNumber} 吗？`)) return;
+    showConfirm(`确定要认领区块 ${blockNumber} 吗？`, 'claim', function() {
 
     const fd = new FormData();
     fd.append('action', 'claim_block');
@@ -1541,6 +1638,7 @@ async function claimSingleBlock(blockNumber) {
     } catch (e) {
         location.reload();
     }
+    });
 }
 
 // 取消认领单个区块
@@ -1551,7 +1649,8 @@ async function unclaimSingleBlock(blockNumber) {
     if (isMerged) {
         msg = `该区块属于合并区块组，取消认领将同时释放改组内所有区块。\n确定要取消认领 ${blockNumber} 吗？`;
     }
-    if (!confirm(msg)) return;
+    showConfirm(msg, 'unclaim', function() {
+
 
     const fd = new FormData();
     fd.append('action', 'unclaim_block');
@@ -1571,6 +1670,7 @@ async function unclaimSingleBlock(blockNumber) {
     } catch (e) {
         location.reload();
     }
+    });
 }
 
 // 认领多个区块
@@ -1593,7 +1693,8 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
     }
 
     const blockNumbers = selectedBlocks.map(block => block.number).join(', ');
-    if (!confirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}`)) return;
+    showConfirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}`, 'claim', async function() {
+
 
     try {
         const fd = new FormData();
@@ -1630,7 +1731,9 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
         // fallback
         location.reload();
     }
+    });
 });
+
 
 // 区块悬停效果
 document.querySelectorAll('.block-item').forEach(cell => {
