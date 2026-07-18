@@ -6,7 +6,34 @@
 $footerName = $site_config['footer_name'] ?? '58 BlockCity';
 ?>
 </main>
-    
+
+<!-- 跨子站引流 -->
+<div class="cross-site-links" style="max-width:1200px;margin:30px auto 0;padding:0 15px;">
+    <h3 style="font-size:18px;color:#333;margin-bottom:15px;text-align:center;">🌐 探索更多 58 生态</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+        <a href="https://block.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fff9f0,#fff3e0);border-radius:10px;text-decoration:none;border:1px solid #ffe0b2;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🏘</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">区块交易</div><div style="font-size:11px;color:#999;">认领你的虚拟地块</div></div>
+        </a>
+        <a href="https://bct.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#f0f8ff,#e3f2fd);border-radius:10px;text-decoration:none;border:1px solid #bbdefb;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">💹</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">BCT 交易</div><div style="font-size:11px;color:#999;">人气值自由买卖</div></div>
+        </a>
+        <a href="https://mall.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#f5fff5,#e8f5e9);border-radius:10px;text-decoration:none;border:1px solid #c8e6c9;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🛍</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">人气商城</div><div style="font-size:11px;color:#999;">BCT支付购物</div></div>
+        </a>
+        <a href="https://nft.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fdf0ff,#f3e5f5);border-radius:10px;text-decoration:none;border:1px solid #e1bee7;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🎨</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">NFT 头像</div><div style="font-size:11px;color:#999;">数字收藏头像</div></div>
+        </a>
+        <a href="https://v.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fff8f0,#fce4ec);border-radius:10px;text-decoration:none;border:1px solid #f8bbd0;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🤝</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">互访圈</div><div style="font-size:11px;color:#999;">同城社交互访</div></div>
+        </a>
+    </div>
+</div>
+
 <footer class="site-footer">
     <div class="container">
         <div class="footer-grid">

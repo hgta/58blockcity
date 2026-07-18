@@ -29,6 +29,12 @@ if (!$productId) {
 // 获取商品详情
 $productDetail = $product->getProductById($productId);
 
+// 记录浏览历史
+if (!isset($_SESSION['recent_products'])) $_SESSION['recent_products'] = [];
+$_SESSION['recent_products'] = array_values(array_diff($_SESSION['recent_products'], [$productId]));
+array_unshift($_SESSION['recent_products'], $productId);
+$_SESSION['recent_products'] = array_slice($_SESSION['recent_products'], 0, 8);
+
 if (!$productDetail) {
     http_response_code(404);
     include '../../404.php';
@@ -1133,6 +1139,32 @@ if ($reviewCount > 0) {
     if (!empty($shopOtherProducts)):
     ?>
     <div style="margin-top:30px;padding:0 15px;">
+    <?php
+    // 最近看过
+    $recentIds = array_values(array_diff($_SESSION['recent_products'] ?? [], [$productId]));
+    if (count($recentIds) >= 2):
+        $placeholders = implode(',', array_fill(0, count($recentIds), '?'));
+        $recentStmt = $pdo->prepare("SELECT id, name, main_image, thumb_image, price_cny, price_bct, price_type FROM products WHERE id IN ($placeholders) LIMIT 6");
+        $recentStmt->execute($recentIds);
+        $recentProducts = $recentStmt->fetchAll();
+        if ($recentProducts):
+    ?>
+    <div style="margin-top:30px;padding:0 15px;">
+        <h3 class="section-title">👀 最近看过</h3>
+        <div class="products-grid">
+            <?php foreach ($recentProducts as $rp): ?>
+                <a href="detail.php?id=<?= $rp['id'] ?>" class="product-card">
+                    <img src="<?= '../' . htmlspecialchars($rp['thumb_image'] ?: $rp['main_image'] ?: 'assets/images/default-product.jpg') ?>" class="product-card-image" alt="" loading="lazy">
+                    <div class="product-card-info">
+                        <div class="product-card-name"><?= htmlspecialchars($rp['name']) ?></div>
+                        <div class="product-card-price">¥<?= number_format($rp['price_cny'] ?? $rp['price_bct'] ?? 0, ($rp['price_type'] ?? '') == 'bct' ? 0 : 2) ?></div>
+                    </div>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; endif; ?>
+
         <h3 class="section-title">🏪 本店其他商品</h3>
         <div class="products-grid">
             <?php foreach ($shopOtherProducts as $sp): ?>
