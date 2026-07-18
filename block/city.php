@@ -1331,7 +1331,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $listBlocks[] = ['n'=>$bn,'s'=>$status,'p'=>$price,'o'=>$oname,'m'=>$isMerged,'r'=>$row,'c'=>$col];
                         }
                     }
-                    <?php if ($current_zone === 'Z'):
+                    if ($current_zone === 'Z'):
                         foreach ($zone_blocks as $zb) {
                             $zbn = (string)$zb['block_number'];
                             $zc = intval(substr($zbn, 0, 2)); $zr = intval(substr($zbn, 2, 2));
@@ -1340,7 +1340,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 $listBlocks[] = ['n'=>$zbn,'s'=>$zb['status'],'p'=>$zb['price'],'o'=>$zon,'m'=>false,'r'=>$zr,'c'=>$zc];
                             }
                         }
-                    endif; ?>
+                    endif;
                     foreach ($listBlocks as $lb):
                     ?>
                     <div class="mobile-list-item" data-status="<?= $lb['s'] ?>" data-block="<?= $lb['n'] ?>">
