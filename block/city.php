@@ -849,6 +849,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             border-radius: 4px;
             margin-right: 6px;
             vertical-align: middle;
+            border: 1px solid #ddd;
         }
         .legend-dot.avail { background: #e8f5e8; border: 1px solid #c8e6c9; }
         .legend-dot.sold { background: #ff6b00; }
@@ -930,8 +931,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .pano-cell.zone-bg-H { background-color: #fff8e1; }
         .pano-cell.zone-bg-Z { background-color: #ffebee; }
 
-        .pano-cell.sold { background-color: #ff6b00 !important; }
-        .pano-cell.reserved { background-color: #ffca28 !important; }
+        .pano-cell.sold-own { background-color: #d2ffc6 !important; }
+        .pano-cell.sold-blue { background-color: #c6c9ff !important; }
+        .pano-cell.sold-red { background-color: #ffd5d5 !important; }
+        .pano-cell.reserved { background-color: #d2ffc6 !important; }
         .pano-cell.zone-boundary { border-right: 1px solid rgba(0,0,0,0.25) !important; }
 
         /* 单区网格优化 */
@@ -1017,7 +1020,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         $all_blocks_map = [];
         foreach ($all_zones_data as $z => $zd) {
             foreach ($zd['blocks'] as $b) {
-                $all_blocks_map[$b['block_number']] = ['status' => $b['status'], 'zone' => $z];
+                $all_blocks_map[$b['block_number']] = ['status' => $b['status'], 'zone' => $z, 'owner' => $b['owner_id'] ?? null];
             }
         }
         ?>
@@ -1033,12 +1036,23 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
                             $bz = $col_to_zone[$col] ?? null;
                             $bs = 'available';
+                            $owner = null;
                             if (isset($all_blocks_map[$block_number])) {
                                 $bs = $all_blocks_map[$block_number]['status'];
+                                $owner = $all_blocks_map[$block_number]['owner'];
+                            }
+                            // 与单区保持一致的状态类：自己认领=绿，别人认领=蓝/红，未认领=白
+                            $cell_class = $bs;
+                            if ($bs === 'sold') {
+                                if ($current_user_id && $owner && (int)$owner === (int)$current_user_id) {
+                                    $cell_class = 'sold-own';
+                                } else {
+                                    $cell_class = (crc32($block_number) % 2 === 0) ? 'sold-blue' : 'sold-red';
+                                }
                             }
                             $bc = "block-cell pano-cell";
                             if ($bz) $bc .= " zone-bg-{$bz}";
-                            $bc .= " {$bs}";
+                            $bc .= " {$cell_class}";
                             $is_boundary = in_array($col, [12,13,24,25,36,37,48,49,60,61,72,73,84,85,96,97]);
                             if ($is_boundary) $bc .= " zone-boundary";
                         ?>
@@ -1054,10 +1068,11 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         </div>
         
         <div class="pano-legend">
-            <span><span class="legend-dot avail"></span> 可认领</span>
-            <span><span class="legend-dot sold"></span> 已认领</span>
-            <span><span class="legend-dot reserved"></span> 已预订</span>
-            <span>—— 各区域以不同底色区分，点击上方区标签可进入单区</span>
+            <span><span class="legend-dot lg-available"></span> 未认领</span>
+            <span><span class="legend-dot lg-sold-own"></span> 自己认领</span>
+            <span><span class="legend-dot lg-sold-blue"></span> 别人认领</span>
+            <span><span class="legend-dot lg-sold-red"></span> 别人认领</span>
+            <span>—— 点击上方区标签可进入单区</span>
         </div>
         <div class="pano-cross-hint">
             <i class="fas fa-lightbulb"></i> <strong>跨区合并提示：</strong>相邻区域的边界区块可以跨区合并认领，打造横跨多区的大区块！
