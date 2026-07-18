@@ -302,6 +302,64 @@ class Block {
     }
 
     /**
+     * 取消认领单个区块（仅限区块拥有者操作）
+     */
+    public function unclaimBlock($userId, $cityId, $zone, $blockNumber) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // 检查区块是否存在且属于当前用户
+            $stmt = $this->pdo->prepare("SELECT id, status, owner_id FROM blocks WHERE city_id = ? AND zone = ? AND block_number = ?");
+            $stmt->execute([$cityId, $zone, $blockNumber]);
+            $block = $stmt->fetch();
+
+            if (!$block || $block['status'] !== 'sold' || $block['owner_id'] != $userId) {
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            // 检查是否属于某个合并区块组
+            $stmt = $this->pdo->prepare("SELECT id, merged_blocks FROM merged_blocks WHERE city_id = ? AND zone = ? AND owner_id = ?");
+            $stmt->execute([$cityId, $zone, $userId]);
+            $mergedRecord = $stmt->fetch();
+
+            if ($mergedRecord) {
+                $mergedNums = explode(',', $mergedRecord['merged_blocks']);
+                if (in_array($blockNumber, $mergedNums)) {
+                    // 该区块属于合并组，删除整个合并记录
+                    $stmt = $this->pdo->prepare("DELETE FROM merged_blocks WHERE id = ?");
+                    $stmt->execute([$mergedRecord['id']]);
+
+                    // 将该合并组所有区块都恢复为 available
+                    foreach ($mergedNums as $mn) {
+                        $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE city_id = ? AND zone = ? AND block_number = ?");
+                        $stmt->execute([$cityId, $zone, $mn]);
+                    }
+                } else {
+                    // 单区块：恢复为 available
+                    $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$block['id']]);
+                }
+            } else {
+                // 单区块：恢复为 available
+                $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE id = ?");
+                $stmt->execute([$block['id']]);
+            }
+
+            // 更新城市统计数据
+            $this->updateCityStats($cityId);
+
+            $this->pdo->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            error_log("取消认领区块失败: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 更新城市统计数据
      */
     private function updateCityStats($cityId) {

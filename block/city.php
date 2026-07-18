@@ -151,6 +151,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
             }
         }
     }
+    
+    if ($action === 'unclaim_block') {
+        $block_number = $_POST['block_number'] ?? '';
+        if ($block_number) {
+            $result = $block->unclaimBlock($current_user_id, $city_id, $current_zone, $block_number);
+            if ($result) {
+                if (($_POST['ajax'] ?? '') === '1') {
+                    echo json_encode(['success' => true, 'message' => "已取消认领区块 {$block_number}", 'block_number' => $block_number]); exit;
+                }
+                $success_message = "已取消认领区块 {$block_number}";
+            } else {
+                if (($_POST['ajax'] ?? '') === '1') {
+                    echo json_encode(['success' => false, 'message' => "取消认领失败，请确认该区块属于你"]); exit;
+                }
+                $error_message = "取消认领失败，请确认该区块属于你";
+            }
+        }
+    }
 }
 ?>
 
@@ -302,7 +320,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             box-shadow: 0 4px 15px rgba(255,107,0,0.3);
         }
         
-        /* 区块地图容器 */
+        /* ======== 区块地图 — 照搬 beijing.html 原版 table 布局 ======== */
         .block-map-container {
             background-color: white;
             border-radius: 8px;
@@ -312,61 +330,108 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             overflow: auto;
         }
         
-        .block-map {
-            display: grid;
-            gap: 1px;
-            background: #ddd;
-            padding: 1px;
-            border-radius: 2px;
-            grid-auto-rows: 30px;
-            /* grid-template-columns 由 PHP 内联设置 */
+        .block-table {
+            width: 100%;
+            background: #eee;
+            border-spacing: 1px 1px;
+            border-collapse: separate;
+            table-layout: auto;
         }
         
-        .block-cell {
+        .block-table td {
+            padding: 3px;
+            background: #fff;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        
+        .itemBox00 {
+            position: relative;
+        }
+        
+        .item00 {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto;
+            border: #ccc solid 1px;
+            text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            font-weight: 600;
             cursor: pointer;
             transition: all 0.15s;
-            position: relative;
-            border: none;
-            border-radius: 1px;
-            background-color: #fff;
-            color: #337be6;
-            font-family: 'Courier New', monospace;
-            letter-spacing: -0.5px;
-            /* 宽高由 grid-template-columns / grid-auto-rows 控制，
-               合并区块通过 grid-column/row span 自动获得正确尺寸 */
-        
-        .block-cell.available {
-            background-color: #fff;
-            color: #337be6;
         }
         
-        .block-cell.sold {
+        .item00.available {
+            background-color: #fff;
+        }
+        
+        .item00.sold {
             background-color: #ff6b00;
-            color: #fff;
         }
         
-        .block-cell.reserved {
+        .item00.reserved {
             background-color: #fff3e0;
-            color: #e65100;
         }
         
-        .block-cell.selected {
+        .item00.selected {
             outline: 3px solid #2196f3;
             outline-offset: -2px;
-            z-index: 10;
             box-shadow: 0 0 0 3px rgba(33,150,243,0.3);
-            transform: scale(1.08);
         }
         
-        .block-cell.own-block {
+        .item00.own-block {
             background-color: #4caf50 !important;
-            color: #fff;
             box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
+        }
+        
+        .item00.merged {
+            background: rgba(25,118,210,0.12) !important;
+            box-shadow: inset 0 0 0 2px #1976d2 !important;
+            border-color: #1976d2 !important;
+        }
+        
+        .item00.merged.sold {
+            background: #1565c0 !important;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25) !important;
+        }
+
+        .blockItem {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .blockNo {
+            font-size: 14px;
+            color: #337be6;
+            font-family: PingFangSC-Regular, 'Microsoft YaHei', sans-serif;
+            line-height: 1.2;
+        }
+        
+        .item00.sold .blockNo {
+            color: #fff;
+        }
+        
+        .item00.own-block .blockNo {
+            color: #fff;
+        }
+        
+        .item00.merged .blockNo {
+            color: #1565c0;
+            font-weight: 700;
+        }
+        
+        .item00.merged.sold .blockNo {
+            color: #fff;
+        }
+        
+        .blockName {
+            font-size: 11px;
+            color: #999;
         }
         
         /* 区块详情面板 */
@@ -446,6 +511,30 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             background: #e0e0e0;
             cursor: not-allowed;
             box-shadow: none;
+        }
+
+        .btn-unclaim {
+            display: block;
+            width: 100%;
+            background: #fff;
+            color: #e53935;
+            border: 2px solid #e53935;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .btn-unclaim:hover:not(:disabled) {
+            background: #e53935;
+            color: #fff;
+        }
+
+        .btn-unclaim:disabled {
+            display: none;
         }
         
         /* 响应式设计 */
@@ -890,9 +979,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     </div>
                 </div>
 
-                <?php $zoneColCount = $col_end - $col_start + 1; ?>
-                <div class="block-map" style="grid-template-columns: repeat(<?= $zoneColCount ?>, 30px);">
+                <table class="block-table">
+                    <tbody>
                     <?php for ($row = 1; $row <= 99; $row++): ?>
+                        <tr>
                         <?php for ($col = $col_start; $col <= $col_end; $col++):
                             $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
                             $block_price = calculateBlockPrice($current_zone, $block_number);
@@ -903,7 +993,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $is_merged = false;
                             $merged_size = '1x1';
                             $is_merged_first = false;
-                            $merged_grid_style = '';
+                            $colSpan = 1; $rowSpan = 1;
 
                             foreach ($zone_blocks as $zone_block) {
                                 if ($zone_block['block_number'] == $block_number) {
@@ -919,7 +1009,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 if (in_array($block_number, $mergedNums)) {
                                     $is_merged = true;
                                     $merged_size = $merged['merge_size'];
-                                    // 找到左上角格子（最小行+最小列）
+                                    // 找到左上角（最小行列）
                                     $minR = 999; $minC = 999;
                                     foreach ($mergedNums as $mn) {
                                         $mr = intval(substr($mn, 2, 2));
@@ -929,43 +1019,47 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                     }
                                     if ($row == $minR && $col == $minC) {
                                         $is_merged_first = true;
-                                        // 用 merge_size 解析跨度，如 "2x3" → colSpan=2, rowSpan=3
                                         $parts = explode('x', $merged['merge_size']);
                                         $colSpan = intval($parts[0]);
                                         $rowSpan = intval($parts[1]);
-                                        $merged_grid_style = "grid-column: span {$colSpan}; grid-row: span {$rowSpan};";
                                     }
                                     break;
                                 }
                             }
 
-                            // CSS Grid: 非首格不渲染，由首格的 span 覆盖其位置
+                            // 非首格跳过，由首格的 colspan/rowspan 覆盖
                             if ($is_merged && !$is_merged_first) continue;
 
-                            $block_class = "block-cell {$block_status}";
-                            if ($is_merged) {
-                                $block_class .= " merged {$merged_size}";
-                            }
-                            if ($current_user_id && $block_owner == $current_user_id) {
-                                $block_class .= " own-block";
-                            }
+                            $cell_class = "item00 {$block_status}";
+                            if ($is_merged) $cell_class .= " merged {$merged_size}";
+                            if ($current_user_id && $block_owner == $current_user_id) $cell_class .= " own-block";
+
+                            $td_attrs = '';
+                            if ($colSpan > 1) $td_attrs .= " colspan=\"{$colSpan}\"";
+                            if ($rowSpan > 1) $td_attrs .= " rowspan=\"{$rowSpan}\"";
                         ?>
-                        <div class="<?= $block_class ?>"
-                            <?php if ($is_merged_first): ?>style="<?= $merged_grid_style ?>"<?php endif; ?>
-                             data-block-id="<?= $block_number ?>"
-                             data-block-number="<?= $block_number ?>"
-                             data-price="<?= $block_price ?>"
-                             data-status="<?= $block_status ?>"
-                             data-owner="<?= $block_owner ?>"
-                             data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
-                             data-row="<?= $row ?>"
-                             data-col="<?= $col ?>"
-                             title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
-                            <?= $is_merged ? $merged_size : $block_number ?>
-                        </div>
+                        <td<?= $td_attrs ?>>
+                            <div class="itemBox00">
+                                <div class="<?= $cell_class ?>"
+                                     data-block-number="<?= $block_number ?>"
+                                     data-price="<?= $block_price ?>"
+                                     data-status="<?= $block_status ?>"
+                                     data-owner="<?= $block_owner ?>"
+                                     data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
+                                     data-row="<?= $row ?>"
+                                     data-col="<?= $col ?>"
+                                     title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
+                                    <div class="blockItem">
+                                        <span class="blockNo"><?= $is_merged ? $merged_size : $block_number ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                         <?php endfor; ?>
+                        </tr>
                     <?php endfor; ?>
-                </div>
+                    </tbody>
+                </table>
             </div>
 
             <!-- 移动端：列表视图 -->
@@ -1052,6 +1146,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     </div>
                     <div class="block-actions" id="single-block-actions">
                         <button class="btn-buy" id="buy-button" disabled>选择区块查看详情</button>
+                        <button class="btn-unclaim" id="unclaim-button" style="display:none;" disabled>取消认领</button>
                     </div>
                     <div class="block-actions" id="multiple-block-actions" style="display: none;">
                         <div class="selected-blocks-list" id="selected-blocks-list"></div>
@@ -1152,13 +1247,13 @@ function updateMultiSelectUI() {
 function clearSelection() {
     selectedBlocks = [];
     updateSelectionDisplay();
-    document.querySelectorAll('.block-cell.selected').forEach(cell => {
+    document.querySelectorAll('.item00.selected').forEach(cell => {
         cell.classList.remove('selected');
     });
 }
 
 // 区块点击事件
-document.querySelectorAll('.block-cell').forEach(cell => {
+document.querySelectorAll('.item00').forEach(cell => {
     cell.addEventListener('click', function() {
         const blockNumber = this.getAttribute('data-block-number');
         const blockStatus = this.getAttribute('data-status');
@@ -1175,9 +1270,18 @@ document.querySelectorAll('.block-cell').forEach(cell => {
             return;
         }
 
-        // 只能选可用的
+        // 非 available 区块：只有自己已认领的允许点击查看/取消认领
         if (blockStatus !== 'available') {
-            alert('该区块不可用');
+            var curUid = <?= json_encode($current_user_id) ?>;
+            if (blockStatus === 'sold' && blockOwner && curUid && String(blockOwner) === String(curUid)) {
+                // 清空当前选择，切换到单区块模式
+                clearSelection();
+                updateBlockDetail(blockNumber, blockStatus, blockOwner);
+                document.getElementById('single-block-actions').style.display = 'block';
+                document.getElementById('multiple-block-actions').style.display = 'none';
+            } else {
+                alert('该区块不可用');
+            }
             return;
         }
 
@@ -1224,7 +1328,7 @@ document.querySelectorAll('.block-cell').forEach(cell => {
 // 单个区块选择处理
 function handleSingleSelection(cell, blockNumber, blockStatus, blockOwner) {
     // 移除之前选中的样式
-    document.querySelectorAll('.block-cell.selected').forEach(el => {
+    document.querySelectorAll('.item00.selected').forEach(el => {
         el.classList.remove('selected');
     });
     
@@ -1331,18 +1435,28 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
         ownerInfo.style.display = 'none';
     }
     
-    // 更新购买按钮
+    // 更新购买按钮和取消认领按钮
     const buyButton = document.getElementById('buy-button');
+    const unclaimButton = document.getElementById('unclaim-button');
+    const currentUserId = <?= json_encode($current_user_id) ?>;
+
     if (blockStatus === 'available') {
         buyButton.textContent = '立即认领';
         buyButton.disabled = false;
-        buyButton.onclick = function() {
-            claimSingleBlock(blockNumber);
-        };
+        buyButton.onclick = function() { claimSingleBlock(blockNumber); };
+        unclaimButton.style.display = 'none';
+    } else if (blockStatus === 'sold' && blockOwner && currentUserId && String(blockOwner) === String(currentUserId)) {
+        // 当前用户是该区块的拥有者，显示取消认领
+        buyButton.style.display = 'none';
+        unclaimButton.style.display = 'block';
+        unclaimButton.disabled = false;
+        unclaimButton.onclick = function() { unclaimSingleBlock(blockNumber); };
     } else {
         buyButton.textContent = '不可认领';
         buyButton.disabled = true;
         buyButton.onclick = null;
+        buyButton.style.display = 'block';
+        unclaimButton.style.display = 'none';
     }
 }
 
@@ -1374,6 +1488,36 @@ async function claimSingleBlock(blockNumber) {
             // 非 JSON 响应说明成功（页面正常渲染了）
             alert('认领成功！');
             location.reload();
+        }
+    } catch (e) {
+        location.reload();
+    }
+}
+
+// 取消认领单个区块
+async function unclaimSingleBlock(blockNumber) {
+    const cell = document.querySelector(`[data-block-number="${blockNumber}"]`);
+    const isMerged = cell && cell.classList.contains('merged');
+    let msg = `确定要取消认领区块 ${blockNumber} 吗？\n取消后该区块将恢复为可认领状态。`;
+    if (isMerged) {
+        msg = `该区块属于合并区块组，取消认领将同时释放改组内所有区块。\n确定要取消认领 ${blockNumber} 吗？`;
+    }
+    if (!confirm(msg)) return;
+
+    const fd = new FormData();
+    fd.append('action', 'unclaim_block');
+    fd.append('ajax', '1');
+    fd.append('block_number', blockNumber);
+
+    try {
+        const resp = await fetch(window.location.href, { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (data.success) {
+            alert(data.message || '取消认领成功！');
+            location.reload();
+        } else {
+            alert(data.message || '取消认领失败，请重试');
         }
     } catch (e) {
         location.reload();
@@ -1425,7 +1569,7 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
 });
 
 // 区块悬停效果
-document.querySelectorAll('.block-cell').forEach(cell => {
+document.querySelectorAll('.item00').forEach(cell => {
     cell.addEventListener('mouseenter', function() {
         this.style.zIndex = '100';
     });
@@ -1452,23 +1596,6 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 <?php endif; ?>
 
 <style>
-/* 合并区块样式 — CSS Grid span 处理，单元格与普通格等大 */
-.block-cell.merged {
-    z-index: 5;
-    background: rgba(25,118,210,0.12) !important;
-    color: #1565c0 !important;
-    font-weight: 700;
-    font-size: 11px;
-    border-radius: 3px;
-    box-shadow: inset 0 0 0 1px #1976d2;
-}
-
-.block-cell.merged.sold {
-    background: #1565c0 !important;
-    color: #fff !important;
-    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25);
-}
-
 /* 多选相关样式 */
 .map-controls {
     margin-bottom: 15px;
