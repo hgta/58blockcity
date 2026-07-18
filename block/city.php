@@ -329,6 +329,31 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             margin-bottom: 16px;
             overflow: auto;
         }
+
+        /* 区块颜色说明 */
+        .block-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 12px 4px 4px;
+            font-size: 13px;
+            color: #666;
+        }
+        .block-legend .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .block-legend .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            border: 1px solid #eee;
+        }
+        .lg-available { background: #fff; }
+        .lg-sold-own { background: #d2ffc6; }
+        .lg-sold-blue { background: #c6c9ff; }
+        .lg-sold-red { background: #ffd5d5; }
         
         /* 原版: .list { display:flex; flex-direction:column; position:relative } */
         .block-list {
@@ -1086,6 +1111,14 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     </div>
                     <?php endfor; ?>
                 </div>
+            </div>
+
+            <!-- 区块颜色说明 -->
+            <div class="block-legend">
+                <span class="legend-item"><span class="legend-dot lg-available"></span> 未认领</span>
+                <span class="legend-item"><span class="legend-dot lg-sold-own"></span> 自己认领</span>
+                <span class="legend-item"><span class="legend-dot lg-sold-blue"></span> 别人认领</span>
+                <span class="legend-item"><span class="legend-dot lg-sold-red"></span> 别人认领</span>
             </div>
 
             <!-- 移动端：列表视图 -->
