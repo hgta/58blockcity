@@ -1352,7 +1352,7 @@ document.querySelectorAll('.block-item').forEach(cell => {
             });
             if (!adj) { alert('只能选择相邻区块'); return; }
 
-            // 矩形检查：新加入后是否仍形成矩形
+            // 仅在范围内限制（相邻已校验）；矩形完整性在认领时校验
             var minRow = row, maxRow = row, minCol = col, maxCol = col;
             var allBlocks = selectedBlocks.concat([{row:row, col:col}]);
             allBlocks.forEach(function(b) {
@@ -1362,16 +1362,6 @@ document.querySelectorAll('.block-item').forEach(cell => {
                 if (b.col > maxCol) maxCol = b.col;
             });
             var rectW = maxCol - minCol + 1, rectH = maxRow - minRow + 1;
-
-            // 矩形内每格都必须被选中
-            var rectSet = {};
-            allBlocks.forEach(function(b) { rectSet[b.row + ',' + b.col] = true; });
-            var isRect = true;
-            for (var rr = minRow; rr <= maxRow && isRect; rr++)
-                for (var cc = minCol; cc <= maxCol && isRect; cc++)
-                    if (!rectSet[rr + ',' + cc]) isRect = false;
-
-            if (!isRect) { alert('选中的区块必须形成矩形（如 1x2、2x3 等）'); return; }
             if (rectW > 4 || rectH > 4) { alert('最大支持 4×4 区块'); return; }
         }
 
@@ -1586,6 +1576,21 @@ async function unclaimSingleBlock(blockNumber) {
 // 认领多个区块
 document.getElementById('claim-multiple-button').addEventListener('click', async function() {
     if (selectedBlocks.length === 0) return;
+
+    // 认领前校验：选中区块必须形成一个完整矩形
+    if (selectedBlocks.length > 1) {
+        var minRow = Infinity, maxRow = -Infinity, minCol = Infinity, maxCol = -Infinity;
+        selectedBlocks.forEach(function(b) {
+            if (b.row < minRow) minRow = b.row;
+            if (b.row > maxRow) maxRow = b.row;
+            if (b.col < minCol) minCol = b.col;
+            if (b.col > maxCol) maxCol = b.col;
+        });
+        var rectW = maxCol - minCol + 1, rectH = maxRow - minRow + 1;
+        if (rectW * rectH !== selectedBlocks.length) {
+            alert('选中的区块必须形成矩形（如 1x2、2x2、2x3 等）'); return;
+        }
+    }
 
     const blockNumbers = selectedBlocks.map(block => block.number).join(', ');
     if (!confirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}`)) return;
