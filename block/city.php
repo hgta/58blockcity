@@ -366,20 +366,23 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
            预留: background:rgb(210,255,198)=#d2ffc6  (366次)
            空白: background:rgb(255,255,255)=#fff      (121次) */
         .block-item.available {
+            background: #fff;
+            color: #999;
+        }
+        
+        .block-item.sold-own {
+            background: #d2ffc6;
+            color: #35cc2d;
+        }
+        
+        .block-item.sold-blue {
             background: #c6c9ff;
             color: #337be6;
         }
         
-        .block-item.sold {
+        .block-item.sold-red {
             background: #ffd5d5;
             color: #ff6060;
-        }
-        
-        .block-item.own-block {
-            background: #ffd5d5;
-            color: #ff6060;
-            outline: 2px solid #337be6;
-            outline-offset: -2px;
         }
         
         .block-item.reserved {
@@ -393,20 +396,28 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             z-index: 10;
         }
         
+        .block-row .block-item:first-child {
+            margin-left: 0;
+        }
+        
+        /* 合并块边框由 .block-content 统一绘制，避免首格双边框 */
         .block-item.merged {
-            border: 2px solid #337be6;
-            font-weight: 700;
         }
         
         /* 原版: .blockNo { color:#999; font-size:14px; line-height:44px } 
            (最后一条CSS覆盖了前面的 color:#337be6;font-size:22px) */
         .block-no {
             font-size: 14px;
-            color: #999;
             font-family: PingFangSC-Regular, 'Microsoft YaHei', sans-serif;
             line-height: 44px;
             pointer-events: none;
         }
+        
+        .block-item.available .block-no { color: #999; }
+        .block-item.sold-own .block-no { color: #35cc2d; }
+        .block-item.sold-blue .block-no { color: #337be6; }
+        .block-item.sold-red .block-no { color: #ff6060; }
+        .block-item.reserved .block-no { color: #35cc2d; }
         
         /* 合并块的内容层 — 绝对定位覆盖相邻格（原版 blockItem 用内联 width/height 溢出） */
         .block-content {
@@ -422,11 +433,12 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         /* 合并块状态色（和 .block-item 一致） */
-        .block-content.available { background: #c6c9ff; color: #337be6; }
-        .block-content.sold { background: #ffd5d5; color: #ff6060; }
-        .block-content.own-block { background: #ffd5d5; color: #ff6060; outline: 2px solid #337be6; outline-offset: -2px; }
+        .block-content.available { background: #fff; color: #999; }
+        .block-content.sold-own { background: #d2ffc6; color: #35cc2d; }
+        .block-content.sold-blue { background: #c6c9ff; color: #337be6; }
+        .block-content.sold-red { background: #ffd5d5; color: #ff6060; }
         .block-content.reserved { background: #d2ffc6; color: #35cc2d; }
-        .block-content.merged { border: 2px solid #337be6; font-weight: 700; }
+        .block-content.merged { border: 1px solid #337be6; }
         
         /* 合并块的非首格占位 — 透明 */
         .block-item.merged-placeholder {
@@ -1032,9 +1044,18 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 continue;
                             }
 
-                            $cell_class = "block-item {$block_status}";
+                            // 根据拥有者映射为新的状态类
+                            $cell_status_class = $block_status;
+                            if ($block_status === 'sold') {
+                                if ($current_user_id && $block_owner == $current_user_id) {
+                                    $cell_status_class = 'sold-own';
+                                } else {
+                                    $cell_status_class = (crc32($block_number) % 2 === 0) ? 'sold-blue' : 'sold-red';
+                                }
+                            }
+
+                            $cell_class = "block-item {$cell_status_class}";
                             if ($is_merged_first) $cell_class .= " merged";
-                            if ($current_user_id && $block_owner == $current_user_id) $cell_class .= " own-block";
 
                             // 合并首格：计算 block-content 尺寸（原版用内联 width/height）
                             $content_style = '';
@@ -1043,7 +1064,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 $w = $colSpan * 44 + ($colSpan - 1);
                                 $h = $rowSpan * 44 + ($rowSpan - 1);
                                 $content_style = "width:{$w}px;height:{$h}px;";
-                                $content_class = " {$block_status}" . ($current_user_id && $block_owner == $current_user_id ? " own-block" : "") . " merged";
+                                $content_class = " {$cell_status_class} merged";
                             }
                         ?>
                         <div class="<?= $cell_class ?>"
@@ -1056,9 +1077,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                              data-col="<?= $col ?>"
                              title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
                             <?php if ($is_merged_first): ?>
-                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>">
-                                <span class="block-no"><?= $merged_size ?></span>
-                            </div>
+                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>"></div>
                             <?php else: ?>
                             <span class="block-no"><?= $block_number ?></span>
                             <?php endif; ?>
@@ -1484,12 +1503,12 @@ async function claimSingleBlock(blockNumber) {
 
         if (data && data.success) {
             const cell = document.querySelector(`[data-block-number="${blockNumber}"]`);
-            if (cell) {
-                cell.classList.remove('available', 'reserved');
-                cell.classList.add('sold', 'own-block');
-                cell.setAttribute('data-status', 'sold');
-                cell.setAttribute('data-owner', '<?= $current_user_id ?>');
-            }
+        if (cell) {
+            cell.classList.remove('available', 'reserved', 'sold-blue', 'sold-red');
+            cell.classList.add('sold-own');
+            cell.setAttribute('data-status', 'sold');
+            cell.setAttribute('data-owner', '<?= $current_user_id ?>');
+        }
             if (data.message) alert(data.message);
         } else {
             // 非 JSON 响应说明成功（页面正常渲染了）
@@ -1557,8 +1576,8 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
             (data.block_numbers || selectedBlocks.map(b => b.number)).forEach(function(bn) {
                 const cell = document.querySelector(`[data-block-number="${bn}"]`);
                 if (cell) {
-                    cell.classList.remove('available', 'reserved', 'selected');
-                    cell.classList.add('sold', 'own-block');
+                    cell.classList.remove('available', 'reserved', 'selected', 'sold-blue', 'sold-red');
+                    cell.classList.add('sold-own');
                     cell.setAttribute('data-status', 'sold');
                 }
             });
