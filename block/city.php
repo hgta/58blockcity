@@ -1608,7 +1608,7 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
 
 // 认领单个区块
 async function claimSingleBlock(blockNumber) {
-    showConfirm(`确定要认领区块 ${blockNumber} 吗？`, 'claim', function() {
+    showConfirm(`确定要认领区块 ${blockNumber} 吗？`, 'claim', async function() {
 
     const fd = new FormData();
     fd.append('action', 'claim_block');
@@ -1649,7 +1649,7 @@ async function unclaimSingleBlock(blockNumber) {
     if (isMerged) {
         msg = `该区块属于合并区块组，取消认领将同时释放改组内所有区块。\n确定要取消认领 ${blockNumber} 吗？`;
     }
-    showConfirm(msg, 'unclaim', function() {
+    showConfirm(msg, 'unclaim', async function() {
 
 
     const fd = new FormData();
