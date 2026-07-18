@@ -312,59 +312,17 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             overflow: auto;
         }
         
-        .map-header {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        
-        .row-numbers {
-            width: 40px;
-        }
-        
-        .row-number {
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #666;
-            border: 1px solid #eee;
-        }
-        
-        .col-numbers {
-            display: flex;
-            margin-left: 40px;
-        }
-        
-        .col-number {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #666;
-            border: 1px solid #eee;
-        }
-        
         .block-map {
-            display: flex;
+            display: grid;
+            gap: 1px;
+            background: #ddd;
+            padding: 1px;
             border-radius: 2px;
-            overflow: hidden;
-        }
-        
-        .map-rows {
-            flex: 1;
-        }
-        
-        .map-row {
-            display: flex;
-            position: relative;
+            grid-auto-rows: 30px;
+            /* grid-template-columns 由 PHP 内联设置 */
         }
         
         .block-cell {
-            width: 30px;
-            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -373,12 +331,18 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             cursor: pointer;
             transition: all 0.15s;
             position: relative;
-            border: 1px solid #f5f5f5;
-        }
+            border: none;
+            border-radius: 1px;
+            background-color: #fff;
+            color: #337be6;
+            font-family: 'Courier New', monospace;
+            letter-spacing: -0.5px;
+            /* 宽高由 grid-template-columns / grid-auto-rows 控制，
+               合并区块通过 grid-column/row span 自动获得正确尺寸 */
         
         .block-cell.available {
             background-color: #fff;
-            color: #999;
+            color: #337be6;
         }
         
         .block-cell.sold {
@@ -396,7 +360,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             outline-offset: -2px;
             z-index: 10;
             box-shadow: 0 0 0 3px rgba(33,150,243,0.3);
-            transform: scale(1.12);
+            transform: scale(1.08);
         }
         
         .block-cell.own-block {
@@ -485,33 +449,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
         
         /* 响应式设计 */
-        @media (max-width: 1200px) {
-            .block-cell {
-                width: 25px;
-                height: 25px;
-                font-size: 10px;
-            }
-            
-            .row-number, .col-number {
-                height: 25px;
-                font-size: 10px;
-            }
-        }
-        
         @media (max-width: 992px) {
             .block-map-container {
                 overflow-x: auto;
-            }
-            
-            .block-cell {
-                width: 20px;
-                height: 20px;
-                font-size: 9px;
-            }
-            
-            .row-number, .col-number {
-                height: 20px;
-                font-size: 9px;
             }
         }
         
@@ -741,7 +681,14 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             padding: 16px;
         }
         .panorama-map {
-            min-width: 600px;
+            display: grid;
+            gap: 1px;
+            background: #ddd;
+            padding: 1px;
+            border-radius: 2px;
+            grid-auto-rows: 10px;
+            /* grid-template-columns: repeat(101, 10px); set inline */
+            min-width: fit-content;
         }
         .panorama-map .block-cell {
             width: 10px;
@@ -749,9 +696,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             border: none;
             font-size: 0;
             margin: 0;
-        }
-        .panorama-map .map-row {
-            height: 10px;
+            border-radius: 0;
         }
         .pano-zone-bar {
             display: flex;
@@ -812,9 +757,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         @media (max-width: 768px) {
             .panorama-map .block-cell {
                 width: 8px;
-                height: 8px;
-            }
-            .panorama-map .map-row {
                 height: 8px;
             }
             .pano-zone-bar {
@@ -891,34 +833,29 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     <a href="?name=<?= $city_pinyin ?>&zone=<?= $z ?>" class="pano-zone-tag zone-tag-<?= $z ?>"><?= $z ?>区</a>
                 <?php endforeach; ?>
             </div>
-            <div class="block-map panorama-map">
-                <div class="map-rows">
+            <div class="block-map panorama-map" style="grid-template-columns: repeat(101, 10px);">
                     <?php for ($row = 1; $row <= 99; $row++): ?>
-                        <div class="map-row">
-                            <?php for ($col = 1; $col <= 101; $col++): ?>
-                                <?php
-                                $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
-                                $bz = $col_to_zone[$col] ?? null;
-                                $bs = 'available';
-                                if (isset($all_blocks_map[$block_number])) {
-                                    $bs = $all_blocks_map[$block_number]['status'];
-                                }
-                                $bc = "block-cell pano-cell";
-                                if ($bz) $bc .= " zone-bg-{$bz}";
-                                $bc .= " {$bs}";
-                                $is_boundary = in_array($col, [12,13,24,25,36,37,48,49,60,61,72,73,84,85,96,97]);
-                                if ($is_boundary) $bc .= " zone-boundary";
-                                ?>
-                                <div class="<?= $bc ?>"
-                                     data-block-number="<?= $block_number ?>"
-                                     data-zone="<?= $bz ?>"
-                                     data-status="<?= $bs ?>"
-                                     title="<?= $bz ? $bz.'区 ' : '' ?><?= $block_number ?>">
-                                </div>
-                            <?php endfor; ?>
+                        <?php for ($col = 1; $col <= 101; $col++):
+                            $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                            $bz = $col_to_zone[$col] ?? null;
+                            $bs = 'available';
+                            if (isset($all_blocks_map[$block_number])) {
+                                $bs = $all_blocks_map[$block_number]['status'];
+                            }
+                            $bc = "block-cell pano-cell";
+                            if ($bz) $bc .= " zone-bg-{$bz}";
+                            $bc .= " {$bs}";
+                            $is_boundary = in_array($col, [12,13,24,25,36,37,48,49,60,61,72,73,84,85,96,97]);
+                            if ($is_boundary) $bc .= " zone-boundary";
+                        ?>
+                        <div class="<?= $bc ?>"
+                             data-block-number="<?= $block_number ?>"
+                             data-zone="<?= $bz ?>"
+                             data-status="<?= $bs ?>"
+                             title="<?= $bz ? $bz.'区 ' : '' ?><?= $block_number ?>">
                         </div>
+                        <?php endfor; ?>
                     <?php endfor; ?>
-                </div>
             </div>
         </div>
         
@@ -953,89 +890,81 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                     </div>
                 </div>
 
-                <div class="block-map">
-                    <div class="map-rows">
-                        <?php for ($row = 1; $row <= 99; $row++): ?>
-                            <div class="map-row">
-                                <?php for ($col = $col_start; $col <= $col_end; $col++): ?>
-                                   <?php
-										$block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
-										$block_price = calculateBlockPrice($current_zone, $block_number);
+                <?php $zoneColCount = $col_end - $col_start + 1; ?>
+                <div class="block-map" style="grid-template-columns: repeat(<?= $zoneColCount ?>, 30px);">
+                    <?php for ($row = 1; $row <= 99; $row++): ?>
+                        <?php for ($col = $col_start; $col <= $col_end; $col++):
+                            $block_number = str_pad($col, 2, '0', STR_PAD_LEFT) . str_pad($row, 2, '0', STR_PAD_LEFT);
+                            $block_price = calculateBlockPrice($current_zone, $block_number);
 
-										$block_status = 'available';
-										$block_owner = null;
-										$owner_name = null;
-										$is_merged = false;
-										$merged_size = '1x1';
+                            $block_status = 'available';
+                            $block_owner = null;
+                            $owner_name = null;
+                            $is_merged = false;
+                            $merged_size = '1x1';
+                            $is_merged_first = false;
+                            $merged_grid_style = '';
 
-										foreach ($zone_blocks as $zone_block) {
-											if ($zone_block['block_number'] == $block_number) {
-												$block_status = $zone_block['status'];
-												$block_owner = $zone_block['owner_id'];
-												$owner_name = $block_owner ? ($owners_map[$block_owner] ?? '用户'.$block_owner) : null;
-												break;
-											}
-										}
+                            foreach ($zone_blocks as $zone_block) {
+                                if ($zone_block['block_number'] == $block_number) {
+                                    $block_status = $zone_block['status'];
+                                    $block_owner = $zone_block['owner_id'];
+                                    $owner_name = $block_owner ? ($owners_map[$block_owner] ?? '用户'.$block_owner) : null;
+                                    break;
+                                }
+                            }
 
-									$merged_size = '1x1';
-									$is_merged_first = false;
-									$merged_cell_style = '';
-									foreach ($merged_blocks as $merged) {
-										$mergedNums = explode(',', $merged['merged_blocks']);
-										if (in_array($block_number, $mergedNums)) {
-											$is_merged = true;
-											$merged_size = $merged['merge_size'];
-											// 检查此格是否是合并块中行+列最小（即左上角）
-											$minR = 999; $minC = 999; $maxR = 0; $maxC = 0;
-											foreach ($mergedNums as $mn) {
-												$mr = intval(substr($mn, 2, 2));
-												$mc = intval(substr($mn, 0, 2));
-												if ($mr < $minR) $minR = $mr;
-												if ($mc < $minC) $minC = $mc;
-												if ($mr > $maxR) $maxR = $mr;
-												if ($mc > $maxC) $maxC = $mc;
-											}
-											if ($row == $minR && $col == $minC) {
-												$is_merged_first = true;
-												$w = ($maxC - $minC + 1) * 30 + ($maxC - $minC);
-												$h = ($maxR - $minR + 1) * 30 + ($maxR - $minR);
-												$merged_cell_style = "width:{$w}px;height:{$h}px;";
-											}
-											break;
-										}
-									}
+                            foreach ($merged_blocks as $merged) {
+                                $mergedNums = explode(',', $merged['merged_blocks']);
+                                if (in_array($block_number, $mergedNums)) {
+                                    $is_merged = true;
+                                    $merged_size = $merged['merge_size'];
+                                    // 找到左上角格子（最小行+最小列）
+                                    $minR = 999; $minC = 999;
+                                    foreach ($mergedNums as $mn) {
+                                        $mr = intval(substr($mn, 2, 2));
+                                        $mc = intval(substr($mn, 0, 2));
+                                        if ($mr < $minR) $minR = $mr;
+                                        if ($mc < $minC) $minC = $mc;
+                                    }
+                                    if ($row == $minR && $col == $minC) {
+                                        $is_merged_first = true;
+                                        // 用 merge_size 解析跨度，如 "2x3" → colSpan=2, rowSpan=3
+                                        $parts = explode('x', $merged['merge_size']);
+                                        $colSpan = intval($parts[0]);
+                                        $rowSpan = intval($parts[1]);
+                                        $merged_grid_style = "grid-column: span {$colSpan}; grid-row: span {$rowSpan};";
+                                    }
+                                    break;
+                                }
+                            }
 
-									if ($is_merged && !$is_merged_first) continue; // 非首格隐藏
+                            // CSS Grid: 非首格不渲染，由首格的 span 覆盖其位置
+                            if ($is_merged && !$is_merged_first) continue;
 
-									$block_class = "block-cell {$block_status}";
-									if ($is_merged) {
-										$block_class .= " merged {$merged_size}";
-									}
-									if ($current_user_id && $block_owner == $current_user_id) {
-										$block_class .= " own-block";
-									}
-									?>
-									<div class="<?= $block_class ?>"
-										<?php if ($is_merged_first): ?>style="<?= $merged_cell_style ?>"<?php endif; ?>
-										 data-block-id="<?= $block_number ?>"
-										 data-block-number="<?= $block_number ?>"
-										 data-price="<?= $block_price ?>"
-										 data-status="<?= $block_status ?>"
-										 data-owner="<?= $block_owner ?>"
-										 data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
-										 data-row="<?= $row ?>"
-										 data-col="<?= $col ?>"
-									 title="合并区块 <?= htmlspecialchars($merged_size) ?> - 价格: <?= $block_price ?>元">
-										<?php if ($is_merged): ?>
-											<?= $merged_size ?>
-										<?php else: ?>
-											<?= $block_number ?>
-										<?php endif; ?>
-										</div>
-                                <?php endfor; ?>
-                            </div>
+                            $block_class = "block-cell {$block_status}";
+                            if ($is_merged) {
+                                $block_class .= " merged {$merged_size}";
+                            }
+                            if ($current_user_id && $block_owner == $current_user_id) {
+                                $block_class .= " own-block";
+                            }
+                        ?>
+                        <div class="<?= $block_class ?>"
+                            <?php if ($is_merged_first): ?>style="<?= $merged_grid_style ?>"<?php endif; ?>
+                             data-block-id="<?= $block_number ?>"
+                             data-block-number="<?= $block_number ?>"
+                             data-price="<?= $block_price ?>"
+                             data-status="<?= $block_status ?>"
+                             data-owner="<?= $block_owner ?>"
+                             data-owner-name="<?= htmlspecialchars($owner_name ?? '') ?>"
+                             data-row="<?= $row ?>"
+                             data-col="<?= $col ?>"
+                             title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
+                            <?= $is_merged ? $merged_size : $block_number ?>
+                        </div>
                         <?php endfor; ?>
-                    </div>
+                    <?php endfor; ?>
                 </div>
             </div>
 
@@ -1523,38 +1452,21 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 <?php endif; ?>
 
 <style>
-/* 合并区块样式 */
+/* 合并区块样式 — CSS Grid span 处理，单元格与普通格等大 */
 .block-cell.merged {
-    position: relative;
     z-index: 5;
-    flex-shrink: 0;
-    background: rgba(25,118,210,0.15) !important;
-    border: 2px solid #1976d2 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
+    background: rgba(25,118,210,0.12) !important;
+    color: #1565c0 !important;
     font-weight: 700;
-    color: #1565c0;
-    border-radius: 4px;
+    font-size: 11px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px #1976d2;
 }
 
-.block-cell.merged.2x1, .block-cell.merged.1x2 {
-    background: rgba(25,118,210,0.18) !important;
-    font-size: 16px;
-}
-
-.block-cell.merged.2x2 {
-    background: rgba(25,118,210,0.22) !important;
-    font-size: 20px;
-}
-
-.block-cell.merged.3x3, .block-cell.merged.4x4, .block-cell.merged.3x2, .block-cell.merged.2x3,
-.block-cell.merged.4x2, .block-cell.merged.2x4, .block-cell.merged.3x4, .block-cell.merged.4x3 {
-    background: rgba(25,118,210,0.28) !important;
+.block-cell.merged.sold {
+    background: #1565c0 !important;
     color: #fff !important;
-    font-size: 24px;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25);
 }
 
 /* 多选相关样式 */
