@@ -77,7 +77,7 @@ class Model
     {
         $sets = [];
         $values = [];
-        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'zodiac', 'follower_count', 'status'];
+        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'zodiac', 'follower_count', 'status', 'daily_photos'];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $data)) {
                 $sets[] = "$f = ?";

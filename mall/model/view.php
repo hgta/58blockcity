@@ -36,8 +36,8 @@ $products = $model->getModelProducts($modelId, $page, $perPage);
 $totalProducts = $model->getProductCount($modelId);
 $totalPages = ceil($totalProducts / $perPage);
 
-// 获取图集
-$galleryImages = $model->getModelProductImages($modelId, 24);
+// 获取图集（取更多商品图片，前端懒加载）
+$galleryImages = $model->getModelProductImages($modelId, 100);
 
 // 点赞处理
 $isLiked = false;
@@ -253,18 +253,89 @@ require_once '../includes/header.php';
 
     <!-- 作品图集 -->
     <?php if (!empty($galleryImages)): ?>
+    <?php $totalGallery = count($galleryImages); ?>
     <div style="margin-bottom:30px;">
-        <h3 style="font-size:20px;margin-bottom:15px;">📸 作品图集 <small style="color:#999;font-size:13px;">(点击查看大图)</small></h3>
+        <h3 style="font-size:20px;margin-bottom:15px;">📸 作品图集 <small style="color:#999;font-size:13px;">(共<?= $totalGallery ?>张，点击查看大图)</small></h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;" id="gallery-grid">
             <?php foreach ($galleryImages as $i => $img): ?>
             <div class="gallery-item" data-index="<?= $i ?>" data-src="../<?= htmlspecialchars($img) ?>"
-                 style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#f5f5f5;cursor:pointer;transition:transform 0.2s;"
+                 style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#f5f5f5;cursor:pointer;transition:transform 0.2s;<?= $i >= 12 ? 'display:none' : '' ?>"
                  onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
                 <img src="../<?= htmlspecialchars($img) ?>" alt="作品图片" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
             </div>
             <?php endforeach; ?>
         </div>
+        <?php if ($totalGallery > 12): ?>
+        <div style="text-align:center;margin-top:12px;">
+            <button onclick="loadMoreGallery()" id="gallery-load-btn"
+                    style="padding:8px 30px;border:1px solid #ff6b00;background:#fff;color:#ff6b00;border-radius:20px;font-size:14px;cursor:pointer;">
+                加载更多（剩余 <span id="gallery-remain"><?= $totalGallery - 12 ?></span> 张）
+            </button>
+        </div>
+        <?php endif; ?>
     </div>
+    <?php endif; ?>
+
+    <!-- 日常照片 -->
+    <?php 
+    $dailyPhotos = [];
+    if (!empty($modelInfo['daily_photos'])) {
+        $dailyPhotos = json_decode($modelInfo['daily_photos'], true);
+        if (!is_array($dailyPhotos)) $dailyPhotos = [];
+    }
+    ?>
+    <?php if (!empty($dailyPhotos)): ?>
+    <div style="margin-bottom:30px;">
+        <h3 style="font-size:20px;margin-bottom:15px;">📷 日常照片 <small style="color:#999;font-size:13px;">(点击查看大图)</small></h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;">
+            <?php 
+            $dailyJsArr = [];
+            foreach ($dailyPhotos as $dp): 
+                $dailyJsArr[] = "'../" . addslashes($dp) . "'";
+            ?>
+            <div style="aspect-ratio:1;overflow:hidden;border-radius:6px;cursor:pointer;" onclick="openDailyLightbox(<?= count($dailyJsArr) - 1 ?>)">
+                <img src="../<?= htmlspecialchars($dp) ?>" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <script>
+    var dailyImages = [<?= implode(',', $dailyJsArr) ?>];
+    var dailyIdx = 0;
+    function openDailyLightbox(idx) {
+        dailyIdx = idx;
+        showDailyLightbox();
+    }
+    function showDailyLightbox() {
+        var lb = document.getElementById('daily-lightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'daily-lightbox';
+            lb.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            lb.onclick = function(e){ if(e.target===lb) closeDailyLightbox(); };
+            document.body.appendChild(lb);
+        }
+        lb.innerHTML = '<img src="' + dailyImages[dailyIdx] + '" style="max-width:90%;max-height:90%;border-radius:8px;">' +
+            (dailyImages.length>1?'<div style="position:absolute;top:50%;left:10px;transform:translateY(-50%);font-size:36px;color:#fff;cursor:pointer;padding:10px;" onclick="event.stopPropagation();dailyIdx=(dailyIdx-1+dailyImages.length)%'+dailyImages.length+';showDailyLightbox()">‹</div>':'') +
+            (dailyImages.length>1?'<div style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:36px;color:#fff;cursor:pointer;padding:10px;" onclick="event.stopPropagation();dailyIdx=(dailyIdx+1)%'+dailyImages.length+';showDailyLightbox()">›</div>':'') +
+            '<div style="position:absolute;top:15px;right:20px;font-size:28px;color:#fff;cursor:pointer;" onclick="event.stopPropagation();closeDailyLightbox()">✕</div>' +
+            (dailyImages.length>1?'<div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,0.5);padding:4px 14px;border-radius:12px;">'+(dailyIdx+1)+' / '+dailyImages.length+'</div>':'');
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeDailyLightbox() {
+        var lb = document.getElementById('daily-lightbox');
+        if (lb) { lb.style.display = 'none'; document.body.style.overflow = ''; }
+    }
+    document.addEventListener('keydown', function(e) {
+        var lb = document.getElementById('daily-lightbox');
+        if (lb && lb.style.display === 'flex') {
+            if (e.key === 'ArrowLeft') { dailyIdx = (dailyIdx-1+dailyImages.length)%dailyImages.length; showDailyLightbox(); }
+            if (e.key === 'ArrowRight') { dailyIdx = (dailyIdx+1)%dailyImages.length; showDailyLightbox(); }
+            if (e.key === 'Escape') closeDailyLightbox();
+        }
+    });
+    </script>
     <?php endif; ?>
 
     <!-- 关联商品列表 -->
@@ -352,6 +423,32 @@ document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = ''; }
     }
 });
+
+// 图集懒加载
+var galleryPage = 0, galleryPerPage = 12;
+function loadMoreGallery() {
+    var items = document.querySelectorAll('#gallery-grid .gallery-item');
+    var start = galleryPage * galleryPerPage;
+    var end = start + galleryPerPage;
+    var shown = 0;
+    for (var i = start; i < Math.min(end, items.length); i++) {
+        if (items[i].style.display === 'none') {
+            items[i].style.display = '';
+            shown++;
+        }
+    }
+    galleryPage++;
+    var remain = 0;
+    for (var j = end; j < items.length; j++) {
+        if (items[j].style.display === 'none') remain++;
+    }
+    var remainEl = document.getElementById('gallery-remain');
+    if (remainEl) remainEl.textContent = remain;
+    if (remain === 0) {
+        var btn = document.getElementById('gallery-load-btn');
+        if (btn) { btn.textContent = '已加载全部'; btn.disabled = true; btn.style.opacity = '0.5'; }
+    }
+}
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

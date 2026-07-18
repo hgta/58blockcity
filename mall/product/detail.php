@@ -931,10 +931,10 @@ if ($reviewCount > 0) {
                         <h4 style="font-size: 16px; color: #333; margin-bottom: 15px;"><i class="fas fa-images"></i> 商品图集</h4>
                         <div class="detail-image-gallery">
                             <?php if (!empty($productDetail['main_image'])): ?>
-                                <img src="<?php echo '../' . htmlspecialchars($productDetail['main_image']); ?>" alt="商品主图" onclick="showImageModal(this.src)">
+                                <img src="<?php echo '../' . htmlspecialchars($productDetail['main_image']); ?>" alt="商品主图" onclick="openLightbox(productImages, 0)">
                             <?php endif; ?>
-                            <?php foreach ($extraImages as $img): ?>
-                                <img src="<?php echo '../' . htmlspecialchars($img); ?>" alt="商品图片" onclick="showImageModal(this.src)">
+                            <?php $imgIdx = 0; foreach ($extraImages as $img): $imgIdx++; ?>
+                                <img src="<?php echo '../' . htmlspecialchars($img); ?>" alt="商品图片" onclick="openLightbox(productImages, <?= $imgIdx ?>)">
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -1017,8 +1017,8 @@ if ($reviewCount > 0) {
                                 if (is_array($reviewImages) && !empty($reviewImages)): 
                             ?>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                    <?php foreach ($reviewImages as $img): ?>
-                                        <img src="<?php echo '../' . htmlspecialchars($img); ?>" alt="评价图片" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showImageModal(this.src)">
+                                    <?php foreach ($reviewImages as $rimg): ?>
+                                        <img src="<?php echo '../' . htmlspecialchars($rimg); ?>" alt="评价图片" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="openLightbox(['../<?= htmlspecialchars($rimg) ?>'], 0)">
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; endif; ?>
@@ -1240,14 +1240,73 @@ if ($reviewCount > 0) {
         }
 
 
-        // 图片放大查看
-        function showImageModal(src) {
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-            modal.innerHTML = '<img src="' + src + '" style="max-width:90%;max-height:90%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">';
-            modal.onclick = function() { modal.remove(); };
-            document.body.appendChild(modal);
+        // 图集数据
+        var productImages = [
+            <?php if (!empty($productDetail['main_image'])): ?>
+            '../<?= htmlspecialchars($productDetail['main_image']) ?>',
+            <?php endif; ?>
+            <?php foreach ($extraImages as $img): ?>
+            '../<?= htmlspecialchars($img) ?>',
+            <?php endforeach; ?>
+        ];
+        var reviewImages = [
+            <?php foreach ($reviews as $rv): ?>
+            <?php if (!empty($rv['images'])): ?>
+            <?php $rvImgs = is_array($rv['images']) ? $rv['images'] : json_decode($rv['images'], true); ?>
+            <?php foreach ((array)$rvImgs as $rvi): ?>
+            '../<?= htmlspecialchars($rvi) ?>',
+            <?php endforeach; ?>
+            <?php endif; ?>
+            <?php endforeach; ?>
+        ];
+        
+        // 当前灯箱图片集
+        var currentLightboxImages = [];
+        var currentLightboxIndex = 0;
+
+        function openLightbox(images, index) {
+            currentLightboxImages = images;
+            currentLightboxIndex = index;
+            showLightboxImage();
         }
+        function showLightboxImage() {
+            var existing = document.getElementById('lightbox');
+            if (!existing) {
+                existing = document.createElement('div');
+                existing.id = 'lightbox';
+                existing.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                existing.onclick = function(e) { if (e.target === existing) closeLightbox(); };
+                document.body.appendChild(existing);
+            }
+            existing.innerHTML = 
+                '<img src="' + currentLightboxImages[currentLightboxIndex] + '" style="max-width:90%;max-height:90%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+                (currentLightboxImages.length > 1 ? '<div style="position:absolute;top:50%;left:15px;transform:translateY(-50%);font-size:36px;color:#fff;cursor:pointer;user-select:none;padding:10px;" onclick="event.stopPropagation();lightboxPrev()">‹</div>' : '') +
+                (currentLightboxImages.length > 1 ? '<div style="position:absolute;top:50%;right:15px;transform:translateY(-50%);font-size:36px;color:#fff;cursor:pointer;user-select:none;padding:10px;" onclick="event.stopPropagation();lightboxNext()">›</div>' : '') +
+                '<div style="position:absolute;top:15px;right:20px;font-size:28px;color:#fff;cursor:pointer;" onclick="event.stopPropagation();closeLightbox()">✕</div>' +
+                (currentLightboxImages.length > 1 ? '<div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,0.5);padding:4px 14px;border-radius:12px;">' + (currentLightboxIndex + 1) + ' / ' + currentLightboxImages.length + '</div>' : '');
+            existing.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function lightboxPrev() {
+            currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
+            showLightboxImage();
+        }
+        function lightboxNext() {
+            currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
+            showLightboxImage();
+        }
+        function closeLightbox() {
+            var lb = document.getElementById('lightbox');
+            if (lb) { lb.style.display = 'none'; document.body.style.overflow = ''; }
+        }
+        document.addEventListener('keydown', function(e) {
+            var lb = document.getElementById('lightbox');
+            if (lb && lb.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') lightboxPrev();
+                if (e.key === 'ArrowRight') lightboxNext();
+                if (e.key === 'Escape') closeLightbox();
+            }
+        });
     </script>
     
     <script>

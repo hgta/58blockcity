@@ -204,10 +204,10 @@ require_once '../includes/header.php';
         <div class="products-toolbar">
             <h4 class="toolbar-title">店铺商品 <span class="text-muted">(<?= number_format($totalProducts) ?>)</span></h4>
             <div class="shop-sort-bar">
-                <a href="?id=<?= $shopId ?>&page=1&sort=newest" class="btn btn-sm <?= $currentSort=='newest'?'btn-primary':'btn-outline-secondary' ?>">最新</a>
-                <a href="?id=<?= $shopId ?>&page=1&sort=price_asc" class="btn btn-sm <?= $currentSort=='price_asc'?'btn-primary':'btn-outline-secondary' ?>">价格↑</a>
-                <a href="?id=<?= $shopId ?>&page=1&sort=price_desc" class="btn btn-sm <?= $currentSort=='price_desc'?'btn-primary':'btn-outline-secondary' ?>">价格↓</a>
-                <a href="?id=<?= $shopId ?>&page=1&sort=sales" class="btn btn-sm <?= $currentSort=='sales'?'btn-primary':'btn-outline-secondary' ?>">销量</a>
+                <a href="?id=<?= $shopId ?>&page=<?= $page ?>&sort=newest" class="btn btn-sm <?= $currentSort=='newest'?'btn-primary':'btn-outline-secondary' ?>">最新</a>
+                <a href="?id=<?= $shopId ?>&page=<?= $page ?>&sort=price_asc" class="btn btn-sm <?= $currentSort=='price_asc'?'btn-primary':'btn-outline-secondary' ?>">价格↑</a>
+                <a href="?id=<?= $shopId ?>&page=<?= $page ?>&sort=price_desc" class="btn btn-sm <?= $currentSort=='price_desc'?'btn-primary':'btn-outline-secondary' ?>">价格↓</a>
+                <a href="?id=<?= $shopId ?>&page=<?= $page ?>&sort=sales" class="btn btn-sm <?= $currentSort=='sales'?'btn-primary':'btn-outline-secondary' ?>">销量</a>
             </div>
         </div>
 

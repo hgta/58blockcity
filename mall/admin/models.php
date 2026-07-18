@@ -91,6 +91,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data['avatar'] = $avatarPath;
             }
 
+            // 处理日常照片上传
+            $dailyPhotos = $_POST['existing_daily_photos'] ?? '[]';
+            $existingPhotos = json_decode($dailyPhotos, true) ?: [];
+            if (!empty($_FILES['daily_photos']['name'][0])) {
+                foreach ($_FILES['daily_photos']['tmp_name'] as $i => $tmp) {
+                    if ($_FILES['daily_photos']['error'][$i] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($_FILES['daily_photos']['name'][$i], PATHINFO_EXTENSION);
+                        $fname = 'dp_' . uniqid() . '.' . strtolower($ext);
+                        $subDir = date('Ym') . '/';
+                        $dir = __DIR__ . '/../assets/uploads/models/' . $subDir;
+                        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+                        if (move_uploaded_file($tmp, $dir . $fname)) {
+                            $existingPhotos[] = 'assets/uploads/models/' . $subDir . $fname;
+                        }
+                    }
+                }
+            }
+            // 处理删除已有照片
+            if (!empty($_POST['delete_daily_photos'])) {
+                $toDelete = explode(',', $_POST['delete_daily_photos']);
+                $existingPhotos = array_values(array_diff($existingPhotos, $toDelete));
+            }
+            $data['daily_photos'] = json_encode($existingPhotos, JSON_UNESCAPED_SLASHES);
+
             if ($modelId > 0) {
                 $data['status'] = $_POST['status'] ?? 'active';
                 if ($model->update($modelId, $data)) {
@@ -262,6 +286,35 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     </select>
                 </div>
                 <?php endif; ?>
+
+                <!-- 日常照片上传 -->
+                <div style="margin-top:15px;">
+                    <label style="<?= $labelStyle ?>;margin-bottom:6px;">日常照片</label>
+                    <?php if ($isEdit && !empty($formData['daily_photos'])): ?>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;" id="daily-photos-preview">
+                        <?php $dailyPhotos = json_decode($formData['daily_photos'], true) ?: []; ?>
+                        <?php foreach ($dailyPhotos as $dp): ?>
+                        <div style="position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;">
+                            <img src="../<?= htmlspecialchars($dp) ?>" style="width:100%;height:100%;object-fit:cover;">
+                            <button type="button" onclick="deleteDailyPhoto(this, '<?= htmlspecialchars($dp) ?>')" style="position:absolute;top:2px;right:2px;background:rgba(255,0,0,0.7);color:#fff;border:none;border-radius:3px;width:18px;height:18px;cursor:pointer;font-size:12px;line-height:1;">✕</button>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <input type="hidden" name="existing_daily_photos" id="existing-daily-photos" value='<?= htmlspecialchars($formData['daily_photos'] ?? '[]') ?>'>
+                    <input type="hidden" name="delete_daily_photos" id="delete-daily-photos" value="">
+                    <?php endif; ?>
+                    <input type="file" name="daily_photos[]" accept="image/*" multiple style="font-size:12px;color:#94a3b8;max-width:300px;">
+                    <small style="display:block;color:#64748b;margin-top:4px;">支持多选，单张不超过5MB</small>
+                </div>
+                <script>
+                function deleteDailyPhoto(btn, path) {
+                    btn.parentElement.remove();
+                    var del = document.getElementById('delete-daily-photos');
+                    var cur = del.value ? del.value.split(',') : [];
+                    cur.push(path);
+                    del.value = cur.join(',');
+                }
+                </script>
 
                 <div style="display:flex;gap:10px;margin-top:20px;">
                     <button type="submit" class="admin-btn admin-btn-primary"><?= $isEdit ? '更新' : '创建' ?></button>
