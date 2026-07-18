@@ -214,8 +214,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .city-header {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: white;
-            padding: 40px 0 32px;
-            margin-bottom: 24px;
+            padding: 20px 0 16px;
+            margin-bottom: 16px;
             position: relative;
             overflow: hidden;
         }
@@ -231,17 +231,17 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
 
         .city-title {
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 800;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             position: relative;
             letter-spacing: -0.5px;
         }
 
         .city-stats {
             display: flex;
-            gap: 28px;
-            font-size: 14px;
+            gap: 20px;
+            font-size: 13px;
             position: relative;
         }
 
@@ -259,10 +259,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         /* 区域选择器 */
         .zone-selector {
             background-color: white;
-            padding: 18px 20px;
-            border-radius: 16px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             border: 1px solid #f0f0f0;
         }
 
@@ -937,7 +937,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     $col_end = $col_range[1];
     ?>
     <div class="row">
-                                <div class="col-md-10">
+                                <div class="col-md-9">
             <!-- 桌面端：网格地图 -->
             <div class="block-map-container" id="desktopMap">
                 <div class="single-zone-title">
@@ -1074,7 +1074,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             </div>
         </div>
         
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="block-detail-panel">
                 <div class="block-info">
                     <h3>区块信息</h3>
