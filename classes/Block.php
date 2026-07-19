@@ -318,27 +318,20 @@ class Block {
                 return false;
             }
 
-            // 检查是否属于某个合并区块组
-            $stmt = $this->pdo->prepare("SELECT id, merged_blocks FROM merged_blocks WHERE city_id = ? AND zone = ? AND owner_id = ?");
-            $stmt->execute([$cityId, $zone, $userId]);
+            // 精确查找包含该区块的合并记录（避免误匹配同用户同区的其它合并组）
+            $stmt = $this->pdo->prepare("SELECT id, merged_blocks FROM merged_blocks WHERE city_id = ? AND zone = ? AND owner_id = ? AND merged_blocks LIKE ?");
+            $stmt->execute([$cityId, $zone, $userId, "%{$blockNumber}%"]);
             $mergedRecord = $stmt->fetch();
 
             if ($mergedRecord) {
                 $mergedNums = explode(',', $mergedRecord['merged_blocks']);
-                if (in_array($blockNumber, $mergedNums)) {
-                    // 该区块属于合并组，删除整个合并记录
-                    $stmt = $this->pdo->prepare("DELETE FROM merged_blocks WHERE id = ?");
-                    $stmt->execute([$mergedRecord['id']]);
+                // 该区块属于合并组，删除整个合并记录并释放组内所有区块
+                $stmt = $this->pdo->prepare("DELETE FROM merged_blocks WHERE id = ?");
+                $stmt->execute([$mergedRecord['id']]);
 
-                    // 将该合并组所有区块都恢复为 available
-                    foreach ($mergedNums as $mn) {
-                        $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE city_id = ? AND zone = ? AND block_number = ?");
-                        $stmt->execute([$cityId, $zone, $mn]);
-                    }
-                } else {
-                    // 单区块：恢复为 available
-                    $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE id = ?");
-                    $stmt->execute([$block['id']]);
+                foreach ($mergedNums as $mn) {
+                    $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = NULL, status = 'available', updated_at = NOW() WHERE city_id = ? AND zone = ? AND block_number = ?");
+                    $stmt->execute([$cityId, $zone, $mn]);
                 }
             } else {
                 // 单区块：恢复为 available

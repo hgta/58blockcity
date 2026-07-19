@@ -522,6 +522,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             justify-content: center;
             border-radius: 2px;
             overflow: hidden;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
         }
         
         /* 合并块状态色（和 .block-item 一致） */
@@ -648,6 +652,22 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .btn-unclaim:disabled {
             display: none;
         }
+
+        /* 价格 + 操作按钮组合行（桌面端：价格在上、按钮在下；移动端：两者同行） */
+        .block-buy-row {
+            margin-top: 20px;
+        }
+        .block-buy-row .block-price {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .block-buy-row .block-price .meta-label {
+            font-weight: 600;
+            color: #888;
+            font-size: 13px;
+        }
         
         /* 响应式设计 */
         @media (max-width: 992px) {
@@ -726,7 +746,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 z-index: 200;
                 border-radius: 14px 14px 0 0;
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.10);
-                padding: 6px 12px 8px;
+                padding: 4px 12px 6px;
                 max-height: none;
                 overflow-y: auto;
             }
@@ -735,13 +755,50 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             .block-detail-panel .block-meta {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 2px 14px;
-                margin-bottom: 6px;
+                gap: 1px 12px;
+                margin-bottom: 2px;
             }
-            .block-detail-panel .meta-item { margin-bottom: 0; font-size: 12px; }
-            .block-detail-panel .meta-label { font-size: 12px; color: #999; }
-            .block-detail-panel .meta-value { font-size: 13px; }
-            /* 操作按钮压小，不再占满整行 */
+            .block-detail-panel .meta-item { margin-bottom: 0; font-size: 11px; }
+            .block-detail-panel .meta-label { font-size: 11px; color: #999; }
+            .block-detail-panel .meta-value { font-size: 12px; }
+
+            /* 价格与“立即领取”按钮放在同一行，并进一步压低高度 */
+            .block-detail-panel .block-buy-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 2px;
+            }
+            .block-detail-panel .block-buy-row .block-price {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            .block-detail-panel .block-buy-row .block-price .price-highlight {
+                font-size: 16px;
+            }
+            .block-detail-panel .block-buy-row .block-actions {
+                display: flex;
+                flex: 1;
+                gap: 8px;
+                margin-top: 0;
+                justify-content: flex-end;
+            }
+            .block-detail-panel .block-buy-row .block-actions .btn-buy {
+                flex: 1;
+                width: auto;
+                padding: 8px 10px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            .block-detail-panel .block-buy-row .block-actions .btn-unclaim {
+                flex: 1;
+                margin-top: 0;
+                padding: 8px 10px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            /* 操作按钮压小，不再占满整行（多选认领场景） */
             .block-detail-panel .block-actions { display: flex; flex-wrap: wrap; gap: 8px; }
             .block-detail-panel .btn-buy {
                 width: auto;
@@ -749,7 +806,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 font-size: 14px;
                 border-radius: 8px;
             }
-            body { padding-bottom: 84px; }
+            body { padding-bottom: 76px; }
         }
 
         /* 移动端区块列表样式 */
@@ -1397,6 +1454,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $is_merged = false;
                             $merged_size = '1x1';
                             $is_merged_first = false;
+                            $merged_min_number = '';
                             $colSpan = 1; $rowSpan = 1;
 
                             foreach ($zone_blocks as $zone_block) {
@@ -1413,6 +1471,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 if (in_array($block_number, $mergedNums)) {
                                     $is_merged = true;
                                     $merged_size = $merged['merge_size'];
+                                    // 合并块编号统一取组内最小编号
+                                    $merged_min_number = min($mergedNums);
                                     $minR = 999; $minC = 999;
                                     foreach ($mergedNums as $mn) {
                                         $mr = intval(substr($mn, 2, 2));
@@ -1470,7 +1530,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                              data-col="<?= $cell_col ?>"
                              title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
                             <?php if ($is_merged_first): ?>
-                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>"></div>
+                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>"><?= $merged_min_number ?></div>
                             <?php else: ?>
                             <span class="block-no"><?= $block_number ?></span>
                             <?php endif; ?>
@@ -1572,18 +1632,20 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             <span class="meta-label">状态:</span>
                             <span class="meta-value" id="detail-block-status">--</span>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">价格:</span>
-                            <span class="meta-value price-highlight" id="detail-block-price">--</span>
-                        </div>
                         <div class="meta-item" id="owner-info" style="display: none;">
                             <span class="meta-label">拥有者:</span>
                             <span class="meta-value" id="detail-block-owner">--</span>
                         </div>
                     </div>
-                    <div class="block-actions" id="single-block-actions">
-                        <button class="btn-buy" id="buy-button" disabled>选择区块查看详情</button>
-                        <button class="btn-unclaim" id="unclaim-button" style="display:none;" disabled>取消认领</button>
+                    <div class="block-buy-row">
+                        <div class="block-price">
+                            <span class="meta-label">价格:</span>
+                            <span class="price-highlight" id="detail-block-price">--</span>
+                        </div>
+                        <div class="block-actions" id="single-block-actions">
+                            <button class="btn-buy" id="buy-button" disabled>选择区块查看详情</button>
+                            <button class="btn-unclaim" id="unclaim-button" style="display:none;" disabled>取消认领</button>
+                        </div>
                     </div>
                     <div class="block-actions" id="multiple-block-actions" style="display: none;">
                         <div class="selected-blocks-list" id="selected-blocks-list"></div>
@@ -2055,19 +2117,10 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
         const data = await resp.json();
 
         if (data.success) {
-            // 局部更新所有认领的区块
-            (data.block_numbers || selectedBlocks.map(b => b.number)).forEach(function(bn) {
-                const cell = document.querySelector(`[data-block-number="${bn}"]`);
-                if (cell) {
-                    cell.classList.remove('available', 'reserved', 'selected', 'sold-blue', 'sold-red');
-                    cell.classList.add('sold-own');
-                    cell.setAttribute('data-status', 'sold');
-                }
-            });
-            selectedBlocks = [];
-            const btn = document.getElementById('claim-multiple-button');
-            if (btn) { btn.textContent = '认领选中区块'; btn.disabled = true; }
-            alert(data.message);
+            // 合并领取后需整体重渲染（合并块编号、覆盖层、可取消状态等都依赖服务端渲染），
+            // 直接刷新页面可保证与数据库一致，避免“取消时只释放单块/另一块点不中”等问题
+            alert(data.message || '认领成功！');
+            location.reload();
         } else {
             alert(data.message || '认领失败');
         }
