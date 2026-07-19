@@ -46,7 +46,7 @@ if ($myMode && $currentUserId) {
 } else {
     // 主排序映射
     $sortMap = [
-        'activated' => 'c.activated_blocks DESC, c.rank ASC',
+        'activated' => 'c.rank ASC',
         'resident'  => 'c.resident_count DESC',
         'popularity'=> 'c.popularity DESC',
         'claimed'   => 'claimed_count DESC',
