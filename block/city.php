@@ -669,18 +669,20 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             /* 移动端：显示真实网格（可缩放），隐藏扁平列表 */
             #desktopMap { display: block !important; }
             #mobileList { display: none !important; }
+            /* 区块选择区尽量占满屏幕宽度，仅留极小边距 */
+            .container { padding-left: 8px; padding-right: 8px; }
             .block-map-container {
                 overflow: hidden;
-                padding: 8px;
+                padding: 2px 0;
             }
             /* 单区网格在移动端按内容真实宽度排布，便于缩放计算 */
             .block-list { width: max-content; }
 
-            /* 缩放视口：手势完全接管（pan / pinch） */
+            /* 缩放视口：手势完全接管（pan / pinch），尽量放大可操作空间 */
             .zoom-viewport {
                 position: relative;
                 width: 100%;
-                height: 68vh;
+                height: 78vh;
                 overflow: hidden;
                 touch-action: none;
                 -webkit-overflow-scrolling: touch;
@@ -695,7 +697,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             .zoom-controls {
                 position: fixed;
                 right: 12px;
-                bottom: calc(45vh + 16px);
+                bottom: calc(44vh + 12px);
                 z-index: 210;
                 display: flex;
                 flex-direction: column;
@@ -715,6 +717,21 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             }
 
             /* 详情面板 → 底部吸底操作条（点选/多选/认领都在此） */
+            .panel-toggle {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 16px;
+                margin-bottom: 6px;
+                cursor: pointer;
+            }
+            .panel-toggle span {
+                width: 40px;
+                height: 4px;
+                border-radius: 2px;
+                background: #d8d8d8;
+            }
             .block-detail-panel {
                 position: fixed;
                 left: 0;
@@ -722,13 +739,19 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 bottom: 0;
                 top: auto;
                 z-index: 200;
-                border-radius: 16px 16px 0 0;
+                border-radius: 14px 14px 0 0;
                 box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-                padding: 14px 16px;
-                max-height: 45vh;
+                padding: 6px 14px 10px;
+                max-height: 42vh;
                 overflow-y: auto;
             }
-            body { padding-bottom: 170px; }
+            /* 收起后只保留操作按钮，进一步节省空间 */
+            .block-detail-panel.collapsed .block-info h3,
+            .block-detail-panel.collapsed .block-meta {
+                display: none;
+            }
+            .block-detail-panel.collapsed { max-height: none; }
+            body { padding-bottom: 92px; }
         }
 
         /* 移动端区块列表样式 */
@@ -1530,7 +1553,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         </div>
         
         <div class="col-md-3">
-            <div class="block-detail-panel">
+            <div class="block-detail-panel" id="blockDetailPanel">
+                <div class="panel-toggle" id="panelToggle" aria-label="收起/展开"><span></span></div>
                 <div class="block-info">
                     <h3>区块信息</h3>
                     <div class="block-meta">
@@ -1619,14 +1643,14 @@ if (!empty($crossCities)):
     <h3 style="font-size:20px;font-weight:bold;color:#333;margin-bottom:16px;">🔥 探索更多城市</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
         <?php foreach ($crossCities as $c): ?>
-        <a href="<?= SeoHelper::cityUrl($c['pinyin']) ?>" 
+        <a href="city.php?name=<?= urlencode($c['pinyin']) ?>" 
            style="display:block;padding:10px 14px;background:#f8f8f8;border-radius:6px;text-decoration:none;color:#333;font-size:14px;text-align:center;transition:all 0.2s;"
            onmouseover="this.style.background='#ff6b00';this.style.color='#fff'"
            onmouseout="this.style.background='#f8f8f8';this.style.color='#333'">
             <?= htmlspecialchars($c['name']) ?>
         </a>
         <?php endforeach; ?>
-        <a href="../all-cities.php" style="display:block;padding:10px 14px;background:#ff6b00;border-radius:6px;text-decoration:none;color:#fff;font-size:14px;text-align:center;font-weight:bold;">
+        <a href="top200city.php" style="display:block;padding:10px 14px;background:#ff6b00;border-radius:6px;text-decoration:none;color:#fff;font-size:14px;text-align:center;font-weight:bold;">
             更多城市 →
         </a>
     </div>
@@ -2067,6 +2091,15 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 
 // 移动端：将真实网格接入缩放/平移/多点选择
 initPinchZoom('#desktopMap', '.block-list');
+
+// 移动端：点击底部把手折叠/展开详情面板
+var panelToggle = document.getElementById('panelToggle');
+if (panelToggle) {
+    panelToggle.addEventListener('click', function () {
+        var p = document.getElementById('blockDetailPanel');
+        if (p) p.classList.toggle('collapsed');
+    });
+}
 </script>
 <?php endif; ?>
 
