@@ -83,7 +83,37 @@ class BlockListing {
                 $row['is_merged'] = true;
             }
         }
+        // 合并块挂牌：l.block_id 为 NULL，上面的 JOIN 取不到皮肤字段，
+        // 这里用合并组首格（代表区块）的皮肤补全，确保图片能显示
+        $this->fillMergedSkin($row);
         return $row;
+    }
+
+    /**
+     * 为合并块挂牌补全代表区块的皮肤字段
+     * 合并块挂牌的 block_id 为 NULL，原 JOIN（blocks b ON l.block_id = b.id）
+     * 取不到 display_type/image/text/color，导致售卖页/列表页图片全都不显示。
+     * 代表区块 = 合并组内第一个编号对应的 blocks 记录（与管理页 repId 一致）。
+     */
+    public function fillMergedSkin(array &$row) {
+        if (empty($row['merged_block_id'])) return;
+        $m = $this->pdo->prepare("SELECT city_id, zone, merged_blocks FROM merged_blocks WHERE id = ?");
+        $m->execute([$row['merged_block_id']]);
+        $meta = $m->fetch(PDO::FETCH_ASSOC);
+        if (!$meta) return;
+        $nums = array_map('trim', explode(',', $meta['merged_blocks']));
+        if (empty($nums)) return;
+        $firstNum = $nums[0];
+        $b = $this->pdo->prepare("SELECT display_type, display_image, display_text, display_color
+                                       FROM blocks WHERE city_id = ? AND zone = ? AND block_number = ? LIMIT 1");
+        $b->execute([$meta['city_id'], $meta['zone'], $firstNum]);
+        $blk = $b->fetch(PDO::FETCH_ASSOC);
+        if ($blk) {
+            $row['display_type']  = $blk['display_type'];
+            $row['display_image'] = $blk['display_image'];
+            $row['display_text']  = $blk['display_text'];
+            $row['display_color'] = $blk['display_color'];
+        }
     }
 
     /**
@@ -99,7 +129,10 @@ class BlockListing {
             WHERE l.city_id = ? AND l.status = ?
             ORDER BY l.created_at DESC");
         $stmt->execute([$cityId, $status]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$r) { $this->fillMergedSkin($r); }
+        unset($r);
+        return $rows;
     }
 
     /**
@@ -113,7 +146,10 @@ class BlockListing {
             WHERE l.seller_id = ? AND l.status IN ('listed','pending')
             ORDER BY l.created_at DESC");
         $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$r) { $this->fillMergedSkin($r); }
+        unset($r);
+        return $rows;
     }
 
     /**

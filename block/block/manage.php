@@ -253,7 +253,7 @@ $skinColors = [
     </div>
 
     <!-- 挂牌上架 -->
-    <div class="manage-card">
+    <div class="manage-card" id="sell">
         <h2><i class="fas fa-tag"></i> 挂牌出售</h2>
         <?php if ($current): ?>
             <div class="info-row">

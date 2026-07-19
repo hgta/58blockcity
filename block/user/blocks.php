@@ -13,8 +13,32 @@ foreach ($userBlocks as &$b) {
 }
 unset($b);
 
+// 拉取用户参与的合并块（owner_id = 当前用户），分组展示，避免把合并块拆散成子块
+$mergedStmt = $pdo->prepare("SELECT * FROM merged_blocks WHERE owner_id = ?");
+$mergedStmt->execute([$userId]);
+$userMerged = $mergedStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$mergedNumSet = [];   // key: city_id|zone|block_number
+$mergedByCity = [];  // city_id => [ merged group ... ]
+foreach ($userMerged as $mg) {
+    $nums = array_map('trim', explode(',', $mg['merged_blocks']));
+    $mergedByCity[$mg['city_id']][] = $mg;
+    foreach ($nums as $n) {
+        $mergedNumSet[$mg['city_id'] . '|' . $mg['zone'] . '|' . $n] = true;
+    }
+}
+
+// 总价值：普通区块 + 合并组（合并组的子块不再单独计入，避免重复）
 $totalValue = 0;
-foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
+foreach ($userBlocks as $b) {
+    if (isset($mergedNumSet[$b['city_id'] . '|' . $b['zone'] . '|' . $b['block_number']])) continue;
+    $totalValue += $b['calc_price'] ?? 0;
+}
+foreach ($userMerged as $mg) {
+    foreach (explode(',', $mg['merged_blocks']) as $mn) {
+        $totalValue += calculateBlockPriceNew((string)$mg['zone'], (string)trim($mn));
+    }
+}
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -44,6 +68,7 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
 .actions a { display:inline-block; padding:5px 12px; border-radius:4px; font-size:12px; text-decoration:none; margin-right:6px; }
 .btn-view { background:#3498db; color:white; }
 .btn-sell { background:#e74c3c; color:white; }
+.merged-card { background:#f5f9ff; border-left:4px solid #1976d2; }
 
 @media(max-width:768px){ .city-block-grid { grid-template-columns:repeat(2,1fr); } }
 @media(max-width:480px){ .city-block-grid { grid-template-columns:1fr; } }
@@ -62,6 +87,8 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
         // 按城市分组
         $grouped = [];
         foreach ($userBlocks as $b) {
+            // 合并块的子块已在下方合并组卡片中展示，这里跳过避免拆散
+            if (isset($mergedNumSet[$b['city_id'] . '|' . $b['zone'] . '|' . $b['block_number']])) continue;
             $cityId = $b['city_id'] ?? 0;
             $cityName = $b['city_name'] ?? '未知城市';
             $cityPinyin = $b['city_pinyin'] ?? '';
@@ -78,7 +105,12 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
         }
     ?>
         <div class="summary">
-            <span>共 <?= count($userBlocks) ?> 个区块，覆盖 <?= count($grouped) ?> 个城市</span>
+            <?php
+            $normalBlockCount = 0;
+            foreach ($grouped as $c) { $normalBlockCount += count($c['blocks']); }
+            $mergedGroupCount = count($userMerged);
+            ?>
+            <span>共 <?= $normalBlockCount ?> 个区块 + <?= $mergedGroupCount ?> 个合并组，覆盖 <?= count($grouped) ?> 个城市</span>
             <span class="total">总价值 ¥<?= number_format($totalValue, 2) ?></span>
         </div>
 
@@ -92,7 +124,8 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
                         <?= htmlspecialchars($city['name']) ?>
                     <?php endif; ?>
                 </div>
-                <div class="city-stat"><?= count($city['blocks']) ?> 个区块，合计 <strong>¥<?= number_format($city['total'], 2) ?></strong></div>
+                <?php $mgInCity = $mergedByCity[$cityId] ?? []; ?>
+                <div class="city-stat"><?= count($city['blocks']) ?> 个区块<?= $mgInCity ? ' + ' . count($mgInCity) . ' 个合并组' : '' ?>，合计 <strong>¥<?= number_format($city['total'], 2) ?></strong></div>
             </div>
             <div class="city-block-grid">
                 <?php foreach ($city['blocks'] as $b): ?>
@@ -107,6 +140,24 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
                         </div>
                     </a>
                 <?php endforeach; ?>
+                <?php if (!empty($mgInCity)): ?>
+                    <?php foreach ($mgInCity as $mg):
+                        $mgNums = array_map('trim', explode(',', $mg['merged_blocks']));
+                        $mgPrice = 0;
+                        foreach ($mgNums as $mn) { $mgPrice += calculateBlockPriceNew((string)$mg['zone'], (string)$mn); }
+                    ?>
+                        <a href="../block/manage.php?merged_id=<?= $mg['id'] ?>" class="block-card merged-card">
+                            <h3>
+                                <span class="zone-tag">合并 <?= htmlspecialchars($mg['merge_size']) ?></span>
+                                <span class="block-num">#<?= htmlspecialchars(min($mgNums)) ?></span>
+                            </h3>
+                            <div class="price">¥<?= number_format($mgPrice, 2) ?></div>
+                            <div class="actions">
+                                <span class="btn-view">管理 / 售卖</span>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </section>
         <?php endforeach; ?>

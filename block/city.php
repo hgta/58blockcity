@@ -678,6 +678,39 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             display: none;
         }
 
+        /* 自己区块：直接管理与售卖 */
+        .btn-manage {
+            display: none;
+            width: 100%;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        .btn-manage:hover { background: #2980b9; }
+        .btn-sell {
+            display: none;
+            width: 100%;
+            background: linear-gradient(135deg, #ff6b00, #ff9500);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,107,0,0.25);
+            margin-top: 8px;
+        }
+        .btn-sell:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,107,0,0.35); }
+
         /* 价格 + 操作按钮组合行（桌面端：价格在上、按钮在下；移动端：两者同行） */
         .block-buy-row {
             margin-top: 20px;
@@ -1570,11 +1603,14 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $is_merged_first = false;
                             $merged_min_number = '';
                             $colSpan = 1; $rowSpan = 1;
+                            $block_id = 0;
+                            $merged_id = 0;
 
                             foreach ($zone_blocks as $zone_block) {
                                 if ($zone_block['block_number'] == $block_number) {
                                     $block_status = $zone_block['status'];
                                     $block_owner = $zone_block['owner_id'];
+                                    $block_id = $zone_block['id'];
                                     $owner_name = $block_owner ? ($owners_map[$block_owner] ?? '用户'.$block_owner) : null;
                                     break;
                                 }
@@ -1584,6 +1620,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 $mergedNums = explode(',', $merged['merged_blocks']);
                                 if (in_array($block_number, $mergedNums)) {
                                     $is_merged = true;
+                                    $merged_id = $merged['id'];
                                     $merged_size = $merged['merge_size'];
                                     // 合并块编号统一取组内最小编号
                                     $merged_min_number = min($mergedNums);
@@ -1643,6 +1680,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                         ?>
                         <div class="<?= $cell_class ?>" style="<?= $cell_skin_style ?>"
                              data-block-number="<?= $block_number ?>"
+                             data-block-id="<?= $block_id ?>"
+                             data-merged-id="<?= $merged_id ?>"
                              data-price="<?= $block_price ?>"
                              data-status="<?= $block_status ?>"
                              data-owner="<?= $block_owner ?>"
@@ -1766,6 +1805,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                         <div class="block-actions" id="single-block-actions">
                             <button class="btn-buy" id="buy-button" disabled>选择区块查看详情</button>
                             <button class="btn-unclaim" id="unclaim-button" style="display:none;" disabled>取消认领</button>
+                            <button class="btn-manage" id="manage-button" style="display:none;">管理区块</button>
+                            <button class="btn-sell" id="sell-button" style="display:none;">立即售卖</button>
                         </div>
                     </div>
                     <div class="block-actions" id="multiple-block-actions" style="display: none;">
@@ -2096,7 +2137,15 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
     // 更新购买按钮和取消认领按钮
     const buyButton = document.getElementById('buy-button');
     const unclaimButton = document.getElementById('unclaim-button');
+    const manageButton = document.getElementById('manage-button');
+    const sellButton = document.getElementById('sell-button');
     const currentUserId = <?= json_encode($current_user_id) ?>;
+
+    // 默认隐藏“管理 / 售卖”（仅自己已认领的区块才显示）
+    manageButton.style.display = 'none';
+    sellButton.style.display = 'none';
+    manageButton.onclick = null;
+    sellButton.onclick = null;
 
     if (blockStatus === 'available') {
         buyButton.textContent = '立即认领';
@@ -2104,11 +2153,21 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
         buyButton.onclick = function() { claimSingleBlock(blockNumber); };
         unclaimButton.style.display = 'none';
     } else if (blockStatus === 'sold' && blockOwner && currentUserId && String(blockOwner) === String(currentUserId)) {
-        // 当前用户是该区块的拥有者，显示取消认领
+        // 当前用户是该区块的拥有者，显示取消认领 + 直接管理/售卖
         buyButton.style.display = 'none';
         unclaimButton.style.display = 'block';
         unclaimButton.disabled = false;
         unclaimButton.onclick = function() { unclaimSingleBlock(blockNumber); };
+
+        // 直接跳转到管理/售卖（合并块用 merged_id，单块用 id）
+        const blockId = blockCell ? blockCell.getAttribute('data-block-id') : '0';
+        const mergedVal = blockCell ? blockCell.getAttribute('data-merged-id') : '0';
+        const isMerged = mergedVal && mergedVal !== '0';
+        const baseUrl = 'block/manage.php?' + (isMerged ? 'merged_id=' + mergedVal : 'id=' + blockId);
+        manageButton.onclick = function() { window.location.href = baseUrl; };
+        sellButton.onclick = function() { window.location.href = baseUrl + '#sell'; };
+        manageButton.style.display = 'block';
+        sellButton.style.display = 'block';
     } else {
         buyButton.textContent = '不可认领';
         buyButton.disabled = true;

@@ -63,6 +63,9 @@ $stmt->bindValue(count($params) + 1, (int)$perPage, PDO::PARAM_INT);
 $stmt->bindValue(count($params) + 2, (int)$offset, PDO::PARAM_INT);
 $stmt->execute();
 $listings = $stmt->fetchAll();
+// 合并块挂牌的 block_id 为 NULL，需补全代表区块皮肤字段，否则图片不显示
+foreach ($listings as &$l) { $listing->fillMergedSkin($l); }
+unset($l);
 
 $countSql = "SELECT COUNT(*) FROM block_listings l LEFT JOIN cities c ON l.city_id = c.id LEFT JOIN blocks b ON l.block_id = b.id LEFT JOIN merged_blocks mb ON l.merged_block_id = mb.id WHERE $whereSql";
 $countStmt = $pdo->prepare($countSql);
