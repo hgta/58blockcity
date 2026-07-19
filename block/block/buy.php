@@ -75,7 +75,7 @@ $detail['is_merged'] = !empty($detail['merged_block_id']);
 .buy-wrap { max-width:640px; margin:30px auto; padding:0 15px; }
 .buy-card { background:#fff; border-radius:12px; padding:28px; box-shadow:0 4px 20px rgba(0,0,0,.08); }
 .buy-card h2 { font-size:20px; margin-bottom:18px; color:#222; }
-.buy-skin { aspect-ratio:1 / 1; height:auto; border-radius:10px; overflow:hidden; background:#f3f4f6; display:flex; align-items:center; justify-content:center; margin-bottom:18px; color:#bbb; font-size:30px; }
+.buy-skin { aspect-ratio:1 / 1; height:auto; width:220px; max-width:100%; margin:0 auto 18px; border-radius:10px; overflow:hidden; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:30px; }
 .buy-skin img { width:100%; height:100%; object-fit:cover; display:block; }
 .buy-skin.txt { color:#fff; font-weight:bold; font-size:20px; text-align:center; padding:10px; }
 .info-row { display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid #f2f2f2; font-size:14px; }
