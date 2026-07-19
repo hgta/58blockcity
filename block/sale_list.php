@@ -185,8 +185,9 @@ function listingTitle($l) {
 </div>
 
 <style>
-.card-skin { height:90px; border-radius:8px 8px 0 0; overflow:hidden; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:24px; }
-.card-skin img { width:100%; height:100%; object-fit:cover; }
+/* 缩略图改为正方形，与区块本身的比例一致 */
+.card-skin { aspect-ratio:1 / 1; height:auto; border-radius:8px 8px 0 0; overflow:hidden; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:24px; }
+.card-skin img { width:100%; height:100%; object-fit:cover; display:block; }
 .card-skin-default { background:linear-gradient(135deg,#eef1f5,#dfe4ea); }
 </style>
 
