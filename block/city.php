@@ -1636,6 +1636,11 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                         $parts = explode('x', $merged['merge_size']);
                                         $colSpan = intval($parts[0]);
                                         $rowSpan = intval($parts[1]);
+                                        // 合并块价值 = 所有子块价格之和
+                                        $block_price = 0;
+                                        foreach ($mergedNums as $mn) {
+                                            $block_price += calculateBlockPrice($current_zone, trim($mn));
+                                        }
                                     }
                                     break;
                                 }

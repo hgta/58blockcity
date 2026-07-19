@@ -38,6 +38,11 @@ $skinPreview = $blockInfo; // 默认单块皮肤
 if ($mergedInfo) {
     $mergedNums = array_map('trim', explode(',', $mergedInfo['merged_blocks']));
     $mergeTitle = $mergedInfo['merge_size'] . ' 合并组（' . min($mergedNums) . '~' . max($mergedNums) . '）';
+    // 合并块价值 = 所有子块价格之和
+    $realPrice = 0;
+    foreach ($mergedNums as $mn) {
+        $realPrice += calculateBlockPriceNew((string)$mergedInfo['zone'], (string)$mn);
+    }
     if ($isOwner) $manageParam = 'merged_id=' . $mergedInfo['id'];
     // 合并组的皮肤在代表区块（取首格）
     $repIds = $block->getMergedBlockIds($mergedInfo['id']);

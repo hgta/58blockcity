@@ -44,6 +44,17 @@ if ($isMerged) {
     $cityId = $blockInfo['city_id'];
 }
 
+// 动态计算真实价值（合并块 = 所有子块之和）
+if ($isMerged) {
+    $displayPrice = 0;
+    $nums = array_map('trim', explode(',', $target['merged_blocks']));
+    foreach ($nums as $mn) {
+        $displayPrice += calculateBlockPriceNew((string)$target['zone'], (string)$mn);
+    }
+} else {
+    $displayPrice = calculateBlockPriceNew((string)$blockInfo['zone'], (string)$blockInfo['block_number']);
+}
+
 $msg = '';
 $err = '';
 
@@ -209,7 +220,7 @@ $skinColors = [
         <h2><i class="fas fa-cog"></i> 区块管理</h2>
         <div class="manage-sub"><?= htmlspecialchars($title) ?></div>
         <div class="info-row"><span class="info-label">城市</span><span><?= htmlspecialchars($blockInfo['city_name'] ?? '') ?></span></div>
-        <div class="info-row"><span class="info-label">当前价值</span><span>¥<?= number_format($blockInfo['price'] ?? 0, 2) ?></span></div>
+        <div class="info-row"><span class="info-label">当前价值</span><span>¥<?= number_format($displayPrice, 2) ?></span></div>
         <div class="info-row"><span class="info-label">我的该城人气值</span><span><?= $buyerPop ?> Ⓟ</span></div>
     </div>
 
