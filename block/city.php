@@ -666,9 +666,69 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 justify-content: center;
             }
 
-            /* 移动端隐藏桌面地图，显示列表 */
-            #desktopMap { display: none !important; }
-            #mobileList { display: block !important; }
+            /* 移动端：显示真实网格（可缩放），隐藏扁平列表 */
+            #desktopMap { display: block !important; }
+            #mobileList { display: none !important; }
+            .block-map-container {
+                overflow: hidden;
+                padding: 8px;
+            }
+            /* 单区网格在移动端按内容真实宽度排布，便于缩放计算 */
+            .block-list { width: max-content; }
+
+            /* 缩放视口：手势完全接管（pan / pinch） */
+            .zoom-viewport {
+                position: relative;
+                width: 100%;
+                height: 68vh;
+                overflow: hidden;
+                touch-action: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .zoom-scaler { position: relative; }
+            .zoom-content {
+                transform-origin: 0 0;
+                will-change: transform;
+            }
+
+            /* 缩放按钮（仅移动端显示） */
+            .zoom-controls {
+                position: fixed;
+                right: 12px;
+                bottom: calc(45vh + 16px);
+                z-index: 210;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .zoom-controls button {
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                border: 1px solid #ddd;
+                background: #fff;
+                color: #333;
+                font-size: 22px;
+                line-height: 1;
+                box-shadow: 0 2px 8px rgba(0,0,0,.15);
+                cursor: pointer;
+            }
+
+            /* 详情面板 → 底部吸底操作条（点选/多选/认领都在此） */
+            .block-detail-panel {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                top: auto;
+                z-index: 200;
+                border-radius: 16px 16px 0 0;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+                padding: 14px 16px;
+                max-height: 45vh;
+                overflow-y: auto;
+            }
+            body { padding-bottom: 170px; }
         }
 
         /* 移动端区块列表样式 */
@@ -1048,6 +1108,139 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         </div>
     </div>
     
+    <!-- 移动端缩放通用逻辑（双指缩放 / 单指平移 / 缩放按钮）；桌面端不生效 -->
+    <script>
+    window.initPinchZoom = function(containerSel, contentSel) {
+        if (!window.matchMedia('(max-width: 768px)').matches) return;
+        var container = document.querySelector(containerSel);
+        if (!container) return;
+        var content = container.querySelector(contentSel);
+        if (!content) return;
+        if (container.dataset.zoomReady) return;
+        container.dataset.zoomReady = '1';
+
+        var viewport = document.createElement('div');
+        viewport.className = 'zoom-viewport';
+        var scaler = document.createElement('div');
+        scaler.className = 'zoom-scaler';
+
+        container.insertBefore(viewport, content);
+        viewport.appendChild(scaler);
+        scaler.appendChild(content);
+        content.classList.add('zoom-content');
+
+        var baseW = content.offsetWidth;
+        var baseH = content.offsetHeight;
+        var scale = 1, tx = 0, ty = 0;
+        var MIN = 0.2, MAX = 4;
+
+        function clamp() {
+            var vw = viewport.clientWidth, vh = viewport.clientHeight;
+            var sw = baseW * scale, sh = baseH * scale;
+            tx = (sw <= vw) ? (vw - sw) / 2 : Math.max(vw - sw, Math.min(0, tx));
+            ty = (sh <= vh) ? (vh - sh) / 2 : Math.max(vh - sh, Math.min(0, ty));
+        }
+        function apply() {
+            scaler.style.width = (baseW * scale) + 'px';
+            scaler.style.height = (baseH * scale) + 'px';
+            content.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+        }
+        function zoomTo(ns, cx, cy) {
+            ns = Math.max(MIN, Math.min(MAX, ns));
+            var px = (cx - tx) / scale;
+            var py = (cy - ty) / scale;
+            scale = ns;
+            tx = cx - px * scale;
+            ty = cy - py * scale;
+            clamp(); apply();
+        }
+
+        // 初始：宽度自适应铺满，便于“一屏看全”
+        scale = Math.min(1, (viewport.clientWidth / baseW)) || 1;
+        clamp(); apply();
+
+        // 缩放按钮
+        var ctr = document.createElement('div');
+        ctr.className = 'zoom-controls';
+        ctr.innerHTML = '<button type="button" data-z="in" aria-label="放大">+</button>' +
+                        '<button type="button" data-z="out" aria-label="缩小">−</button>' +
+                        '<button type="button" data-z="reset" aria-label="复位">⟲</button>';
+        container.appendChild(ctr);
+        ctr.querySelector('[data-z="in"]').addEventListener('click', function () {
+            zoomTo(scale * 1.3, viewport.clientWidth / 2, viewport.clientHeight / 2);
+        });
+        ctr.querySelector('[data-z="out"]').addEventListener('click', function () {
+            zoomTo(scale / 1.3, viewport.clientWidth / 2, viewport.clientHeight / 2);
+        });
+        ctr.querySelector('[data-z="reset"]').addEventListener('click', function () {
+            scale = Math.min(1, (viewport.clientWidth / baseW)) || 1;
+            clamp(); apply();
+        });
+
+        // 手势处理
+        var mode = 0, lastX = 0, lastY = 0, moved = false;
+        var startDist = 0, startScale = 1, startMidX = 0, startMidY = 0, startTx = 0, startTy = 0;
+        var suppressClick = false;
+
+        // 拖拽后抑制误触发的点击事件（避免平移后误选区块）
+        viewport.addEventListener('click', function (e) {
+            if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+        }, true);
+
+        viewport.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 1) {
+                mode = 1; moved = false;
+                lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                mode = 2; moved = true;
+                var a = e.touches[0], b = e.touches[1];
+                startDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+                startScale = scale;
+                var r = viewport.getBoundingClientRect();
+                startMidX = (a.clientX + b.clientX) / 2 - r.left;
+                startMidY = (a.clientY + b.clientY) / 2 - r.top;
+                startTx = tx; startTy = ty;
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchmove', function (e) {
+            if (mode === 1 && e.touches.length === 1) {
+                var dx = e.touches[0].clientX - lastX;
+                var dy = e.touches[0].clientY - lastY;
+                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+                tx += dx; ty += dy;
+                lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+                clamp(); apply();
+                e.preventDefault();
+            } else if (mode === 2 && e.touches.length === 2) {
+                var a = e.touches[0], b = e.touches[1];
+                var dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1;
+                var r = viewport.getBoundingClientRect();
+                var midX = (a.clientX + b.clientX) / 2 - r.left;
+                var midY = (a.clientY + b.clientY) / 2 - r.top;
+                var px = (startMidX - startTx) / startScale;
+                var py = (startMidY - startTy) / startScale;
+                scale = Math.max(MIN, Math.min(MAX, startScale * (dist / startDist)));
+                tx = midX - px * scale;
+                ty = midY - py * scale;
+                clamp(); apply();
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchend', function (e) {
+            if (e.touches.length === 0) {
+                mode = 0;
+                suppressClick = moved;   // 平移/缩放后吞掉随后的 click
+            } else if (e.touches.length === 1) {
+                mode = 1; moved = true;
+                lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+    };
+    </script>
+
     <?php if ($view_mode === 'panorama'): ?>
     <!-- ========== 九区全景模式 ========== -->
     <div class="pano-container">
@@ -1122,7 +1315,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         </div>
     </div>
     <!-- ========== /九区全景模式 ========== -->
-    
+
+    <script>initPinchZoom('.panorama-map-container', '.panorama-map');</script>
+
     <?php else: ?>
     <!-- ========== 单区详细模式 ========== -->
     <?php
@@ -1869,6 +2064,9 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
         });
     });
 });
+
+// 移动端：将真实网格接入缩放/平移/多点选择
+initPinchZoom('#desktopMap', '.block-list');
 </script>
 <?php endif; ?>
 
