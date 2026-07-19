@@ -77,16 +77,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
                 $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
-                // 统一使用项目既有的可写上传目录，避免新建目录无写权限
-                $destDir = __DIR__ . '/../../assets/uploads/block_skins';
-                if (!is_dir($destDir)) {
-                    @mkdir($destDir, 0777, true);
+
+                // 依次尝试可写目录，优先项目内既有 assets/uploads
+                $candidates = [
+                    ['dir' => __DIR__ . '/../../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
+                    ['dir' => __DIR__ . '/../uploads',                          'rel' => 'block/uploads/'],
+                ];
+                $destDir = null;
+                $destRel = '';
+                foreach ($candidates as $c) {
+                    if (!is_dir($c['dir'])) {
+                        @mkdir($c['dir'], 0777, true);
+                        if (is_dir($c['dir'])) @chmod($c['dir'], 0777);
+                    }
+                    if (is_dir($c['dir']) && is_writable($c['dir'])) {
+                        $destDir = $c['dir'];
+                        $destRel = $c['rel'];
+                        break;
+                    }
                 }
+                if ($destDir === null) {
+                    // 给出可在服务器执行的修复命令，避免裸 PHP 警告
+                    $hint = __DIR__ . '/../uploads';
+                    throw new Exception('上传目录无写权限，请在服务器执行：chmod -R 777 ' . $hint);
+                }
+
                 $dest = $destDir . '/' . $fname;
-                if (!move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
-                    throw new Exception('图片上传失败，请检查目录写权限');
+                if (!is_writable($destDir) || !move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
+                    throw new Exception('图片保存失败，目录不可写（chmod -R 777 ' . $destDir . '）');
                 }
-                $displayImage = 'assets/uploads/block_skins/' . $fname;
+                $displayImage = $destRel . $fname;
             } elseif ($displayType === 'image') {
                 // 未上传新图时保留原图
                 $displayImage = $blockInfo['display_image'];
