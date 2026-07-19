@@ -49,6 +49,16 @@ if (isLoggedIn()) {
     exit;
 }
 
+// 支持通过 ?redirect= 指定登录后回跳地址（仅允许本站相对路径或本域名，防止开放重定向）
+if (isset($_GET['redirect']) && is_string($_GET['redirect'])) {
+    $rd = $_GET['redirect'];
+    $host = parse_url($rd, PHP_URL_HOST);
+    $isSafe = ($host === null) || ($host === 'block.58.tl') || ($host === 'www.58.tl') || ($host === '58.tl');
+    if ($isSafe && !preg_match('#^javascript:#i', $rd)) {
+        $_SESSION['redirect_url'] = $rd;
+    }
+}
+
 // 处理登录
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);

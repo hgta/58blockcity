@@ -717,21 +717,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             }
 
             /* 详情面板 → 底部吸底操作条（点选/多选/认领都在此） */
-            .panel-toggle {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 100%;
-                height: 16px;
-                margin-bottom: 6px;
-                cursor: pointer;
-            }
-            .panel-toggle span {
-                width: 40px;
-                height: 4px;
-                border-radius: 2px;
-                background: #d8d8d8;
-            }
             .block-detail-panel {
                 position: fixed;
                 left: 0;
@@ -741,7 +726,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 z-index: 200;
                 border-radius: 14px 14px 0 0;
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.10);
-                padding: 4px 12px 8px;
+                padding: 6px 12px 8px;
                 max-height: none;
                 overflow-y: auto;
             }
@@ -756,10 +741,15 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             .block-detail-panel .meta-item { margin-bottom: 0; font-size: 12px; }
             .block-detail-panel .meta-label { font-size: 12px; color: #999; }
             .block-detail-panel .meta-value { font-size: 13px; }
-            /* 收起后只保留操作按钮，进一步节省空间 */
-            .block-detail-panel.collapsed .block-meta { display: none; }
-            .block-detail-panel.collapsed { max-height: none; }
-            body { padding-bottom: 88px; }
+            /* 操作按钮压小，不再占满整行 */
+            .block-detail-panel .block-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+            .block-detail-panel .btn-buy {
+                width: auto;
+                padding: 9px 18px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            body { padding-bottom: 84px; }
         }
 
         /* 移动端区块列表样式 */
@@ -1213,6 +1203,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         var mode = 0, lastX = 0, lastY = 0, moved = false;
         var startDist = 0, startScale = 1, startMidX = 0, startMidY = 0, startTx = 0, startTy = 0;
         var suppressClick = false;
+        var startPX = 0, startPY = 0;
 
         // 拖拽后抑制误触发的点击事件（避免平移后误选区块）
         viewport.addEventListener('click', function (e) {
@@ -1220,9 +1211,11 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }, true);
 
         viewport.addEventListener('touchstart', function (e) {
+            suppressClick = false;   // 新的一次触摸：先解除上一次可能残留的抑制，避免“整屏点不了”
             if (e.touches.length === 1) {
                 mode = 1; moved = false;
                 lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+                startPX = e.touches[0].clientX; startPY = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
                 mode = 2; moved = true;
                 var a = e.touches[0], b = e.touches[1];
@@ -1240,7 +1233,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             if (mode === 1 && e.touches.length === 1) {
                 var dx = e.touches[0].clientX - lastX;
                 var dy = e.touches[0].clientY - lastY;
-                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+                // 仅当位移明显（>8px）才视为平移，避免手指抖动误判成拖动
+                if (Math.hypot(e.touches[0].clientX - startPX, e.touches[0].clientY - startPY) > 8) moved = true;
                 tx += dx; ty += dy;
                 lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
                 clamp(); apply();
@@ -1264,7 +1258,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         viewport.addEventListener('touchend', function (e) {
             if (e.touches.length === 0) {
                 mode = 0;
-                suppressClick = moved;   // 平移/缩放后吞掉随后的 click
+                suppressClick = moved;   // 仅真正平移/缩放后才吞掉随后的 click
             } else if (e.touches.length === 1) {
                 mode = 1; moved = true;
                 lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
@@ -1563,7 +1557,6 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         <div class="col-md-3">
             <div class="block-detail-panel" id="blockDetailPanel">
-                <div class="panel-toggle" id="panelToggle" aria-label="收起/展开"><span></span></div>
                 <div class="block-info">
                     <h3>区块信息</h3>
                     <div class="block-meta">
@@ -1672,6 +1665,8 @@ if (!empty($crossCities)):
 <script>
 // 选中的区块数组
 let selectedBlocks = [];
+// 当前登录用户 ID（未登录为 null），供认领前做登录校验
+const currentUserId = <?= json_encode($current_user_id) ?>;
 
 // 自定义确认弹窗（替代原生 confirm，避免被浏览器“阻止对话框”静默取消）
 // key: localStorage 中记录“不再提醒”的键名
@@ -1942,6 +1937,12 @@ function updateBlockDetail(blockNumber, blockStatus, blockOwner) {
 
 // 认领单个区块
 async function claimSingleBlock(blockNumber) {
+    // 未登录：直接提示并跳登录，避免“假成功”
+    if (!currentUserId) {
+        alert('请先登录后再认领区块');
+        window.location.href = 'auth/login.php?redirect=' + encodeURIComponent(window.location.href);
+        return;
+    }
     showConfirm(`确定要认领区块 ${blockNumber} 吗？`, 'claim', async function() {
 
     const fd = new FormData();
@@ -1969,12 +1970,11 @@ async function claimSingleBlock(blockNumber) {
             updateMultiSelectUI();
             if (data.message) alert(data.message);
         } else {
-            // 非 JSON 响应说明成功（页面正常渲染了）
-            alert('认领成功！');
-            location.reload();
+            // 服务端返回失败或非预期响应：必须如实告知，不能谎报成功
+            alert((data && data.message) ? data.message : '认领失败，请重试');
         }
     } catch (e) {
-        location.reload();
+        alert('认领失败，请重试');
     }
     });
 }
@@ -2014,6 +2014,12 @@ async function unclaimSingleBlock(blockNumber) {
 // 认领多个区块
 document.getElementById('claim-multiple-button').addEventListener('click', async function() {
     if (selectedBlocks.length === 0) return;
+    // 未登录：直接提示并跳登录，避免“假成功”
+    if (!currentUserId) {
+        alert('请先登录后再认领区块');
+        window.location.href = 'auth/login.php?redirect=' + encodeURIComponent(window.location.href);
+        return;
+    }
 
     // 认领前校验：选中区块必须形成一个完整矩形
     if (selectedBlocks.length > 1) {
@@ -2100,15 +2106,6 @@ document.querySelectorAll('.mobile-filter-btn').forEach(btn => {
 
 // 移动端：将真实网格接入缩放/平移/多点选择
 initPinchZoom('#desktopMap', '.block-list');
-
-// 移动端：点击底部把手折叠/展开详情面板
-var panelToggle = document.getElementById('panelToggle');
-if (panelToggle) {
-    panelToggle.addEventListener('click', function () {
-        var p = document.getElementById('blockDetailPanel');
-        if (p) p.classList.toggle('collapsed');
-    });
-}
 </script>
 <?php endif; ?>
 
