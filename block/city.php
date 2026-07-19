@@ -1038,7 +1038,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             margin: 0;
             border-radius: 0;
         }
-        /* 全景合并块：跨格合并为一个整体大块，标出最小编号 */
+        /* 全景合并块：跨格合并为一个整体大块，显示最小编号（与单区 A 区一致，无额外边框） */
         .pano-cell.merged {
             width: auto !important;
             height: auto !important;
@@ -1046,18 +1046,23 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.30);
             z-index: 2;
         }
         .pano-cell.merged .pano-merge-no {
             font-size: 6px;
             line-height: 1;
-            color: #333;
+            font-weight: 600;
             pointer-events: none;
             white-space: nowrap;
             overflow: hidden;
             max-width: 100%;
         }
+        /* 编号颜色与 A 区 .block-content 状态色保持一致 */
+        .pano-cell.available.merged .pano-merge-no { color: #999; }
+        .pano-cell.sold-own.merged .pano-merge-no { color: #35cc2d; }
+        .pano-cell.sold-blue.merged .pano-merge-no { color: #337be6; }
+        .pano-cell.sold-red.merged .pano-merge-no { color: #ff6060; }
+        .pano-cell.reserved.merged .pano-merge-no { color: #35cc2d; }
         .pano-zone-bar {
             display: flex;
             justify-content: center;
