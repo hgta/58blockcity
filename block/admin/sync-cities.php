@@ -23,6 +23,34 @@ require_once '../../shared/admin/admin-header.php';
 $msg = '';
 $err = '';
 
+/**
+ * 确保 $pdo 连接可用，避免「MySQL server has gone away」。
+ * 场景：持久连接(PDO::ATTR_PERSISTENT)被 MySQL wait_timeout 关闭后被下次请求复用，
+ *       或本页长时间 curl 远程接口后连接已被服务器端断开。
+ * 处理：先用 SELECT 1 探活，失败则用 DB_* 常量重建连接。
+ */
+function bc_ensure_pdo($pdo) {
+    try {
+        $pdo->query('SELECT 1');
+        return $pdo;
+    } catch (PDOException $e) {
+        if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
+            return new PDO(
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
+                [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
+                ]
+            );
+        }
+        throw $e;
+    }
+}
+$pdo = bc_ensure_pdo($pdo);
+
 // token 持久化（存数据库 settings 表，避免在 web 目录写文件导致权限/泄露问题）
 $settingKey = 'blockcity_api_token';
 function bc_load_token($pdo, $key) {
@@ -155,6 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($cities)) {
                 $err = '自动同步未取到数据：token 可能已失效，或接口返回结构变化。请改用「手动粘贴 JSON」。';
             } else {
+                // 远程 curl 可能耗时较久，写库前重新确认连接可用
+                $pdo = bc_ensure_pdo($pdo);
                 $updated = 0;
                 $pdo->beginTransaction();
                 try {
