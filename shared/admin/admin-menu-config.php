@@ -49,6 +49,8 @@ $ADMIN_MENUS = [
     'block' => [
         ['icon' => 'fa-home',        'text' => '管理看板', 'url' => 'dashboard.php'],
         ['icon' => 'fa-th',          'text' => '区块管理', 'url' => 'blocks.php'],
+        ['icon' => 'fa-city',        'text' => '城市管理', 'url' => 'cities.php'],
+        ['icon' => 'fa-sync',        'text' => '同步数据', 'url' => 'sync-cities.php'],
     ],
     'mall' => [
         ['icon' => 'fa-home',        'text' => '商城看板', 'url' => 'dashboard.php'],
