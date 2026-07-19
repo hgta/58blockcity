@@ -7,12 +7,42 @@ require_once '../../includes/auth.php';
 require_once '../../classes/User.php';
 
 $user = new User($pdo);
+$currentAdminId = intval($_SESSION['user_id'] ?? 0);
 
 // 搜索 & 分页
 $search = $_GET['search'] ?? '';
 $page   = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $perPage = 20;
 $offset  = ($page - 1) * $perPage;
+
+// 操作处理：停用 / 激活 / 删除（与互访圈后台一致）
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $targetId = intval($_POST['user_id']);
+    if ($targetId === 1 || $targetId === $currentAdminId) {
+        $_SESSION['admin_err'] = '不能对自己或超级管理员(id=1)执行该操作';
+    } else {
+        switch ($_POST['action']) {
+            case 'activate':
+                $user->updateUserStatus($targetId, 'active');
+                $_SESSION['admin_msg'] = '用户已激活';
+                break;
+            case 'deactivate':
+                $user->updateUserStatus($targetId, 'inactive');
+                $_SESSION['admin_msg'] = '用户已停用';
+                break;
+            case 'delete':
+                $user->deleteUser($targetId);
+                $_SESSION['admin_msg'] = '用户已删除';
+                break;
+        }
+    }
+    // 重定向避免刷新重复提交，并保留筛选/分页
+    $rq = [];
+    if ($search !== '') $rq['search'] = $search;
+    if ($page > 1) $rq['page'] = $page;
+    header('Location: users.php' . ($rq ? '?' . http_build_query($rq) : ''));
+    exit;
+}
 
 $where   = "1=1";
 $params  = [];
@@ -40,6 +70,15 @@ $admin_site_config = [
 require_once '../../shared/admin/admin-header.php';
 ?>
 
+<?php if (!empty($_SESSION['admin_msg'])): ?>
+    <div class="admin-alert success"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['admin_msg']) ?></div>
+    <?php unset($_SESSION['admin_msg']); ?>
+<?php endif; ?>
+<?php if (!empty($_SESSION['admin_err'])): ?>
+    <div class="admin-alert danger"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['admin_err']) ?></div>
+    <?php unset($_SESSION['admin_err']); ?>
+<?php endif; ?>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <span class="admin-card-title"><i class="fas fa-users" style="margin-right:8px;color:var(--admin-accent);"></i>用户列表</span>
@@ -64,11 +103,12 @@ require_once '../../shared/admin/admin-header.php';
                     <th>状态</th>
                     <th>注册时间</th>
                     <th>最后登录</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($users)): ?>
-                <tr><td colspan="9" style="text-align:center;color:#999;padding:40px;">暂无用户数据</td></tr>
+                <tr><td colspan="10" style="text-align:center;color:#999;padding:40px;">暂无用户数据</td></tr>
                 <?php else: ?>
                 <?php foreach ($users as $u): ?>
                 <tr>
@@ -89,6 +129,32 @@ require_once '../../shared/admin/admin-header.php';
                     </td>
                     <td><?= date('Y-m-d', strtotime($u['created_at'])) ?></td>
                     <td><?= $u['last_login'] ? date('Y-m-d H:i', strtotime($u['last_login'])) : '-' ?></td>
+                    <td>
+                        <?php if ($u['id'] != 1 && $u['id'] != $currentAdminId): ?>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <?php if ($u['status'] === 'active'): ?>
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                <input type="hidden" name="action" value="deactivate">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-secondary" title="停用" onclick="return confirm('确定要停用该用户吗？')"><i class="fas fa-ban"></i> 停用</button>
+                            </form>
+                            <?php else: ?>
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                <input type="hidden" name="action" value="activate">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-secondary" title="激活" onclick="return confirm('确定要激活该用户吗？')"><i class="fas fa-check"></i> 激活</button>
+                            </form>
+                            <?php endif; ?>
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                <input type="hidden" name="action" value="delete">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger" title="删除" onclick="return confirm('确定要删除该用户吗？此操作不可恢复！')"><i class="fas fa-trash"></i> 删除</button>
+                            </form>
+                        </div>
+                        <?php else: ?>
+                        <span class="admin-text-muted">保护中</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
                 <?php endif; ?>
