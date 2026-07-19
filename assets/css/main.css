@@ -3604,7 +3604,11 @@ header {
 .result-count { font-size: 13px; color: #999; margin-bottom: 15px; }
 
 /* 卡片网格 */
-.block-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.block-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
+@media (max-width: 1100px) { .block-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 880px)  { .block-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .block-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px)  { .block-grid { grid-template-columns: 1fr; } }
 .block-grid.compact { gap: 12px; }
 .block-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-decoration: none; color: inherit; transition: all .3s; display: block; }
 .block-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.12); text-decoration: none; color: inherit; }
@@ -3676,7 +3680,7 @@ header {
 @media (max-width: 768px) {
     .page-container { padding: 15px; }
     .page-title { font-size: 20px; }
-    .block-grid { grid-template-columns: 1fr; }
+    .block-grid { grid-template-columns: repeat(2, 1fr); }
     .filter-bar { flex-direction: column; align-items: stretch; }
     .filter-group select, .filter-group input { width: 100%; }
     .filter-actions { justify-content: flex-end; }
