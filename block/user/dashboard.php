@@ -5,6 +5,7 @@ require_once '../../classes/User.php';
 require_once '../../classes/Block.php';
 require_once '../../classes/Transaction.php';
 require_once '../../classes/BlockListing.php';
+require_once '../../config/block_prices.php';
 
 // Check if user is logged in
 checkLogin();
@@ -26,12 +27,16 @@ $userInfo = $user->getUserById($userId);
 
 // Get user's blocks
 $userBlocks = $block->getUserBlocks($userId);
+foreach ($userBlocks as &$ub) {
+    $ub['calc_price'] = calculateBlockPriceNew((string)($ub['zone'] ?? 'A'), (string)($ub['block_number'] ?? '0101'));
+}
+unset($ub);
 $blockCount = count($userBlocks);
 
 // Calculate total value of blocks
 $totalValue = 0;
 foreach ($userBlocks as $b) {
-    $totalValue += $b['price'];
+    $totalValue += $b['calc_price'];
 }
 
 // Get recent transactions
@@ -49,6 +54,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
 <div class="container dashboard-container">
     <div class="row">
         <div class="col-md-3">
+         <div class="sidebar-sticky">
             <!-- User Profile Sidebar -->
             <div class="panel panel-default profile-card">
                 <div class="panel-body text-center">
@@ -92,6 +98,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                     <a href="purchase_requests.php" class="btn btn-warning btn-block">我的求购</a>
                 </div>
             </div>
+         </div>
         </div>
         
         <div class="col-md-9">
@@ -153,7 +160,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                             <?= $b['block_number'] ?>
                                         </div>
                                         <div class="block-price">
-                                            <?= number_format($b['price'], 2) ?> 元
+                                            <?= number_format($b['calc_price'], 2) ?> 元
                                         </div>
                                         <div class="block-actions">
                                             <a href="../block/view.php?id=<?= $b['id'] ?>" 

@@ -3,6 +3,7 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/User.php';
 require_once '../../classes/Block.php';
+require_once '../../config/block_prices.php';
 
 checkLogin();
 $userId = $_SESSION['user_id'];
@@ -11,9 +12,13 @@ $block = new Block($pdo);
 
 $userInfo = $user->getUserById($userId);
 $userBlocks = $block->getUserBlocks($userId);
+foreach ($userBlocks as &$b) {
+    $b['calc_price'] = calculateBlockPriceNew((string)($b['zone'] ?? 'A'), (string)($b['block_number'] ?? '0101'));
+}
+unset($b);
 $blockCount = count($userBlocks);
 $totalValue = 0;
-foreach ($userBlocks as $b) { $totalValue += $b['price'] ?? 0; }
+foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
 ?>
 <?php require_once '../includes/header.php'; ?>
 

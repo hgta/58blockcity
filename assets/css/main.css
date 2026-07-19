@@ -1391,9 +1391,14 @@ header {
     padding: 30px 0;
 }
 
-.profile-card {
+/* 侧边栏整体吸顶，避免子面板相互重叠 */
+.sidebar-sticky {
     position: sticky;
     top: 20px;
+    z-index: 1;
+}
+
+.profile-card {
     margin-bottom: 20px;
 }
 
@@ -1493,6 +1498,10 @@ header {
     .profile-card {
         position: static;
         margin-bottom: 30px;
+    }
+    
+    .sidebar-sticky {
+        position: static;
     }
     
     .stat-card {
@@ -1735,9 +1744,14 @@ header {
     padding: 30px 0;
 }
 
-.profile-card {
+/* 侧边栏整体吸顶，避免子面板相互重叠 */
+.sidebar-sticky {
     position: sticky;
     top: 20px;
+    z-index: 1;
+}
+
+.profile-card {
     margin-bottom: 20px;
 }
 
@@ -1923,6 +1937,10 @@ header {
     .profile-card {
         position: static;
         margin-bottom: 30px;
+    }
+    
+    .sidebar-sticky {
+        position: static;
     }
     
     .blocks-grid {

@@ -2,14 +2,19 @@
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Block.php';
+require_once '../../config/block_prices.php';
 checkLogin();
 
 $block = new Block($pdo);
 $userId = $_SESSION['user_id'];
 $userBlocks = $block->getUserBlocks($userId);
+foreach ($userBlocks as &$b) {
+    $b['calc_price'] = calculateBlockPriceNew((string)($b['zone'] ?? 'A'), (string)($b['block_number'] ?? '0101'));
+}
+unset($b);
 
 $totalValue = 0;
-foreach ($userBlocks as $b) { $totalValue += $b['price'] ?? 0; }
+foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -21,8 +26,8 @@ foreach ($userBlocks as $b) { $totalValue += $b['price'] ?? 0; }
 .empty-state { text-align:center; padding:60px; color:#999; }
 
 /* 城市分组 */
-.city-group { margin-bottom:28px; }
-.city-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:0 4px; }
+.city-group { margin-bottom:28px; background:#fff; border-radius:10px; padding:18px 18px 8px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #ff6b00; }
+.city-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding:0 4px 10px; border-bottom:1px solid #f0f0f0; }
 .city-name { font-size:18px; font-weight:700; color:#1a1a2e; }
 .city-name a { color:#1a1a2e; text-decoration:none; }
 .city-name a:hover { color:#ff6b00; }
@@ -69,7 +74,7 @@ foreach ($userBlocks as $b) { $totalValue += $b['price'] ?? 0; }
                 ];
             }
             $grouped[$cityId]['blocks'][] = $b;
-            $grouped[$cityId]['total']   += $b['price'] ?? 0;
+            $grouped[$cityId]['total']   += $b['calc_price'] ?? 0;
         }
     ?>
         <div class="summary">
@@ -96,7 +101,7 @@ foreach ($userBlocks as $b) { $totalValue += $b['price'] ?? 0; }
                             <span class="zone-tag"><?= $b['zone'] ?>区</span>
                             <span class="block-num">#<?= $b['block_number'] ?></span>
                         </h3>
-                        <div class="price">¥<?= number_format($b['price'] ?? 0, 2) ?></div>
+                        <div class="price">¥<?= number_format($b['calc_price'] ?? 0, 2) ?></div>
                         <div class="actions">
                             <span class="btn-view">查看详情</span>
                         </div>
