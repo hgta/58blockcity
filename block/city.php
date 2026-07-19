@@ -1651,7 +1651,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                              data-col="<?= $cell_col ?>"
                              title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
                             <?php if ($is_merged_first): ?>
-                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?><?= $content_skin_style ?>"><?= $skinR['isImage'] ? '' : $block_no_text ?: $merged_min_number ?></div>
+                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?><?= $content_skin_style ?>"><?= $skinR['isImage'] ? '' : ($block_no_text ?: $merged_min_number) ?></div>
                             <?php else: ?>
                             <span class="block-no" <?= $skinR['isImage'] ? 'style="display:none"' : '' ?>><?= $block_no_text ?></span>
                             <?php endif; ?>
