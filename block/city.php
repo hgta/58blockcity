@@ -1038,6 +1038,26 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             margin: 0;
             border-radius: 0;
         }
+        /* 全景合并块：跨格合并为一个整体大块，标出最小编号 */
+        .pano-cell.merged {
+            width: auto !important;
+            height: auto !important;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.30);
+            z-index: 2;
+        }
+        .pano-cell.merged .pano-merge-no {
+            font-size: 6px;
+            line-height: 1;
+            color: #333;
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
+        }
         .pano-zone-bar {
             display: flex;
             justify-content: center;
@@ -1342,6 +1362,37 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             }
         }
         ?>
+        <?php
+        // 构建全景合并块映射：区块号 => [是否首格, 最小编号, 跨列数, 跨行数]
+        $pano_merged_map = [];
+        foreach ($all_zones_data as $z => $zd) {
+            foreach ($zd['merged'] as $m) {
+                $nums = array_map('trim', explode(',', $m['merged_blocks']));
+                if (empty($nums)) continue;
+                $minNumber = min($nums);
+                $parts = explode('x', $m['merge_size']);
+                $colSpan = (int)($parts[0] ?? 1);
+                $rowSpan = (int)($parts[1] ?? 1);
+                // 首格 = 行号最小，同行取列号最小（左上角）
+                $minC = 999; $minR = 999;
+                foreach ($nums as $mn) {
+                    $mc = (int)substr($mn, 0, 2);
+                    $mr = (int)substr($mn, 2, 2);
+                    if ($mr < $minR || ($mr === $minR && $mc < $minC)) { $minR = $mr; $minC = $mc; }
+                }
+                foreach ($nums as $mn) {
+                    $mc = (int)substr($mn, 0, 2);
+                    $mr = (int)substr($mn, 2, 2);
+                    $pano_merged_map[$mn] = [
+                        'is_first' => ($mc === $minC && $mr === $minR),
+                        'min' => $minNumber,
+                        'cols' => $colSpan,
+                        'rows' => $rowSpan,
+                    ];
+                }
+            }
+        }
+        ?>
         <div class="block-map-container panorama-map-container">
             <div class="pano-zone-bar">
                 <?php foreach (['A','B','C','D','E','F','G','H','Z'] as $z): ?>
@@ -1359,6 +1410,13 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 $bs = $all_blocks_map[$block_number]['status'];
                                 $owner = $all_blocks_map[$block_number]['owner'];
                             }
+
+                            // 合并块：非首格跳过渲染（首格的跨格 span 已占据对应网格位置）
+                            $merged_info = $pano_merged_map[$block_number] ?? null;
+                            if ($merged_info && !$merged_info['is_first']) {
+                                continue;
+                            }
+
                             // 与单区保持一致的状态类：自己认领=绿，别人认领=蓝/红，未认领=白
                             $cell_class = $bs;
                             if ($bs === 'sold') {
@@ -1371,14 +1429,30 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             $bc = "block-cell pano-cell";
                             if ($bz) $bc .= " zone-bg-{$bz}";
                             $bc .= " {$cell_class}";
-                            $is_boundary = in_array($col, [12,24,36,48,60,72,84,96]);
-                            if ($is_boundary) $bc .= " zone-boundary";
+
+                            $span_style = '';
+                            if ($merged_info && $merged_info['is_first']) {
+                                // 合并首格：跨列/跨行合并显示为一个整体大块
+                                $bc .= " merged";
+                                $span_style = "grid-column: span {$merged_info['cols']}; grid-row: span {$merged_info['rows']};";
+                            } else {
+                                $is_boundary = in_array($col, [12,24,36,48,60,72,84,96]);
+                                if ($is_boundary) $bc .= " zone-boundary";
+                            }
+
+                            $title_text = $bz ? $bz.'区 ' : '';
+                            if ($merged_info) {
+                                $title_text .= "合并区块 {$merged_info['cols']}x{$merged_info['rows']} (编号 {$merged_info['min']})";
+                            } else {
+                                $title_text .= $block_number;
+                            }
                         ?>
-                        <div class="<?= $bc ?>"
+                        <div class="<?= $bc ?>" style="<?= $span_style ?>"
                              data-block-number="<?= $block_number ?>"
                              data-zone="<?= $bz ?>"
                              data-status="<?= $bs ?>"
-                             title="<?= $bz ? $bz.'区 ' : '' ?><?= $block_number ?>">
+                             title="<?= $title_text ?>">
+                            <?php if ($merged_info && $merged_info['is_first']): ?><span class="pano-merge-no"><?= $merged_info['min'] ?></span><?php endif; ?>
                         </div>
                         <?php endfor; ?>
                     <?php endfor; ?>
