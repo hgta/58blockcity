@@ -77,7 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
                 $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
-                $dest = __DIR__ . '/../uploads/' . $fname;
+                $destDir = __DIR__ . '/../uploads';
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                $dest = $destDir . '/' . $fname;
                 if (!move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
                     throw new Exception('图片上传失败');
                 }
