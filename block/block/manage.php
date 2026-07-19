@@ -78,10 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
                 $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
 
-                // 依次尝试可写目录，优先项目内既有 assets/uploads
+                // 依次尝试可写目录；注意 block.58.tl 的网站根目录是 block/，
+                // 所以上传目标必须在 block/ 之内，否则 URL(/xxx) 无法访问导致 404
                 $candidates = [
-                    ['dir' => __DIR__ . '/../../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
-                    ['dir' => __DIR__ . '/../uploads',                          'rel' => 'block/uploads/'],
+                    ['dir' => __DIR__ . '/../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
+                    ['dir' => __DIR__ . '/../uploads',                     'rel' => 'uploads/'],
                 ];
                 $destDir = null;
                 $destRel = '';
@@ -98,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if ($destDir === null) {
                     // 给出可在服务器执行的修复命令，避免裸 PHP 警告
-                    $hint = __DIR__ . '/../uploads';
+                    $hint = __DIR__ . '/../assets/uploads/block_skins';
                     throw new Exception('上传目录无写权限，请在服务器执行：chmod -R 777 ' . $hint);
                 }
 
