@@ -44,3 +44,6 @@ index_old.php
 header-new.php
 header_v1.php
 auth_v2.php
+
+# blockcity.vip sync token (runtime, server-only)
+block/admin/.blockcity_token.php
