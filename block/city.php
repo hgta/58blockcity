@@ -670,7 +670,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             #desktopMap { display: block !important; }
             #mobileList { display: none !important; }
             /* 区块选择区尽量占满屏幕宽度，仅留极小边距 */
-            .container { padding-left: 8px; padding-right: 8px; }
+            .container { padding-left: 2px; padding-right: 2px; }
             .block-map-container {
                 overflow: hidden;
                 padding: 2px 0;
@@ -740,18 +740,26 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 top: auto;
                 z-index: 200;
                 border-radius: 14px 14px 0 0;
-                box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-                padding: 6px 14px 10px;
-                max-height: 42vh;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.10);
+                padding: 4px 12px 8px;
+                max-height: none;
                 overflow-y: auto;
             }
-            /* 收起后只保留操作按钮，进一步节省空间 */
-            .block-detail-panel.collapsed .block-info h3,
-            .block-detail-panel.collapsed .block-meta {
-                display: none;
+            /* 移动端默认就紧凑：去掉大标题，元信息压成一行小字 */
+            .block-detail-panel .block-info h3 { display: none; }
+            .block-detail-panel .block-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2px 14px;
+                margin-bottom: 6px;
             }
+            .block-detail-panel .meta-item { margin-bottom: 0; font-size: 12px; }
+            .block-detail-panel .meta-label { font-size: 12px; color: #999; }
+            .block-detail-panel .meta-value { font-size: 13px; }
+            /* 收起后只保留操作按钮，进一步节省空间 */
+            .block-detail-panel.collapsed .block-meta { display: none; }
             .block-detail-panel.collapsed { max-height: none; }
-            body { padding-bottom: 92px; }
+            body { padding-bottom: 88px; }
         }
 
         /* 移动端区块列表样式 */
@@ -1163,9 +1171,10 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             tx = (sw <= vw) ? (vw - sw) / 2 : Math.max(vw - sw, Math.min(0, tx));
             ty = (sh <= vh) ? (vh - sh) / 2 : Math.max(vh - sh, Math.min(0, ty));
         }
+        // 仅在初始化时设定一次 scaler 尺寸，后续每帧只改 transform，避免重排导致的卡顿
+        scaler.style.width = baseW + 'px';
+        scaler.style.height = baseH + 'px';
         function apply() {
-            scaler.style.width = (baseW * scale) + 'px';
-            scaler.style.height = (baseH * scale) + 'px';
             content.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
         }
         function zoomTo(ns, cx, cy) {
