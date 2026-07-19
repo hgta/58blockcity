@@ -355,7 +355,7 @@ class Block {
     /**
      * 更新城市统计数据
      */
-    private function updateCityStats($cityId) {
+    public function updateCityStats($cityId) {
         try {
             // 计算已激活区块数量
             $stmt = $this->pdo->prepare("SELECT COUNT(*) as activated_count FROM blocks WHERE city_id = ? AND status = 'sold'");
@@ -474,19 +474,78 @@ class Block {
 		return calculateBlockPriceNew($zone, $blockNo);
 	}
 
-	/**
-	 * 创建新区块（更新后的方法）
-	 */
-	public function createBlock($cityId, $zone, $blockNumber, $ownerId, $basePrice = null) {
-		// 如果没有提供价格，则计算价格
-		if ($basePrice === null) {
-			$basePrice = $this->calculateBasePrice($blockNumber, $zone);
-		}
-		
-		$sql = "INSERT INTO blocks (city_id, zone, block_number, price, owner_id, status, created_at, updated_at) 
-				VALUES (?, ?, ?, ?, ?, 'sold', NOW(), NOW())";
-		$stmt = $this->pdo->prepare($sql);
-		return $stmt->execute([$cityId, $zone, $blockNumber, $basePrice, $ownerId]);
-	}
+    /**
+     * 创建新区块（更新后的方法）
+     */
+    public function createBlock($cityId, $zone, $blockNumber, $ownerId, $basePrice = null) {
+        // 如果没有提供价格，则计算价格
+        if ($basePrice === null) {
+            $basePrice = $this->calculateBasePrice($blockNumber, $zone);
+        }
+        
+        $sql = "INSERT INTO blocks (city_id, zone, block_number, price, owner_id, status, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, 'sold', NOW(), NOW())";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([$cityId, $zone, $blockNumber, $basePrice, $ownerId]);
+    }
+
+    /**
+     * 保存区块皮肤（展示配置）
+     * 同时支持单块与合并块（传入组内所有 block id）
+     * @param array  $blockIds      区块 blocks.id 列表（合并块为整组）
+     * @param int    $userId        拥有者（仅更新其拥有的区块）
+     * @param string $displayType   none|image|text
+     * @param string $displayImage  图片路径（image 模式）
+     * @param string $displayText   文字内容（text 模式）
+     * @param string $displayColor  red|green|blue（text 模式）
+     */
+    public function saveBlockSkin($blockIds, $userId, $displayType, $displayImage, $displayText, $displayColor) {
+        if (empty($blockIds) || !is_array($blockIds)) return false;
+        $ids = array_map('intval', $blockIds);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        // 校验这些区块确实属于该用户
+        $check = $this->pdo->prepare("SELECT COUNT(*) FROM blocks WHERE id IN ($placeholders) AND owner_id = ?");
+        $check->execute(array_merge($ids, [$userId]));
+        if ((int)$check->fetchColumn() !== count($ids)) {
+            return false;
+        }
+
+        // 仅当选择对应模式时才写入图片/文字/颜色，否则清空
+        $image  = $displayType === 'image' ? $displayImage : null;
+        $text   = $displayType === 'text'  ? $displayText  : null;
+        $color  = $displayType === 'text'  ? $displayColor : null;
+
+        $stmt = $this->pdo->prepare("UPDATE blocks
+            SET display_type = ?, display_image = ?, display_text = ?, display_color = ?, updated_at = NOW()
+            WHERE id IN ($placeholders) AND owner_id = ?");
+        return $stmt->execute(array_merge([$displayType, $image, $text, $color], $ids, [$userId]));
+    }
+
+    /**
+     * 根据合并块 id 获取组内所有区块的 blocks.id
+     */
+    public function getMergedBlockIds($mergedBlockId) {
+        $stmt = $this->pdo->prepare("SELECT merged_blocks FROM merged_blocks WHERE id = ?");
+        $stmt->execute([$mergedBlockId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return [];
+        $nums = explode(',', $row['merged_blocks']);
+        $zone = null;
+        $cityId = null;
+        $mstmt = $this->pdo->prepare("SELECT city_id, zone FROM merged_blocks WHERE id = ?");
+        $mstmt->execute([$mergedBlockId]);
+        $meta = $mstmt->fetch(PDO::FETCH_ASSOC);
+        if ($meta) { $cityId = $meta['city_id']; $zone = $meta['zone']; }
+        if ($cityId === null || $zone === null) return [];
+        $ids = [];
+        foreach ($nums as $bn) {
+            $bstmt = $this->pdo->prepare("SELECT id FROM blocks WHERE city_id = ? AND zone = ? AND block_number = ?");
+            $bstmt->execute([$cityId, $zone, $bn]);
+            $b = $bstmt->fetch(PDO::FETCH_ASSOC);
+            if ($b) $ids[] = $b['id'];
+        }
+        return $ids;
+    }
 }
 ?>

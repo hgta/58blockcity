@@ -18,6 +18,14 @@ if (!$blockInfo) {
 }
 
 $isOwner = isLoggedIn() && $_SESSION['user_id'] == $blockInfo['owner_id'];
+
+// 非拥有者：查找当前在售挂牌，便于跳转购买
+$activeListing = null;
+if (!$isOwner) {
+    $lstmt = $pdo->prepare("SELECT id FROM block_listings WHERE block_id = ? AND merged_block_id IS NULL AND status IN ('listed','pending') ORDER BY id DESC LIMIT 1");
+    $lstmt->execute([$blockInfo['id']]);
+    $activeListing = $lstmt->fetch(PDO::FETCH_ASSOC);
+}
 ?>
 
 <?php require_once '../includes/header.php'; ?>
@@ -85,8 +93,7 @@ $isOwner = isLoggedIn() && $_SESSION['user_id'] == $blockInfo['owner_id'];
                             <h3 class="panel-title">区块管理</h3>
                         </div>
                         <div class="panel-body">
-                            <a href="edit.php?id=<?= $blockInfo['id'] ?>" class="btn btn-default btn-block">编辑区块信息</a>
-                            <a href="sell.php?id=<?= $blockInfo['id'] ?>" class="btn btn-warning btn-block">出售此区块</a>
+                            <a href="manage.php?id=<?= $blockInfo['id'] ?>" class="btn btn-default btn-block">管理区块（展示/出售）</a>
                         </div>
                     </div>
                 <?php elseif (isLoggedIn() && $blockInfo['status'] == 'available'): ?>
@@ -112,6 +119,9 @@ $isOwner = isLoggedIn() && $_SESSION['user_id'] == $blockInfo['owner_id'];
                         </div>
                         <div class="panel-body">
                             <p>此区块已有拥有者，您可以联系他们协商购买。</p>
+                            <?php if ($activeListing): ?>
+                                <a href="buy.php?listing=<?= $activeListing['id'] ?>" class="btn btn-success btn-block">前往购买</a>
+                            <?php endif; ?>
                             <a href="../messages/new.php?to=<?= $ownerInfo['id'] ?>" class="btn btn-primary btn-block">发送消息</a>
                         </div>
                     </div>

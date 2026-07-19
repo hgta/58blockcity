@@ -29,6 +29,31 @@ if (!$city_info) {
 $city_id = $city_info['id'];
 $city_name = $city_info['name'];
 
+// 区块皮肤映射：zone|block_number => 展示配置（仅已配置皮肤的区块）
+$skinMap = [];
+try {
+    $skStmt = $pdo->prepare("SELECT zone, block_number, display_type, display_image, display_text, display_color
+                             FROM blocks WHERE city_id = ? AND display_type IS NOT NULL AND display_type != 'none'");
+    $skStmt->execute([$city_id]);
+    foreach ($skStmt->fetchAll(PDO::FETCH_ASSOC) as $sk) {
+        $skinMap[$sk['zone'] . '|' . $sk['block_number']] = $sk;
+    }
+} catch (Exception $e) {
+    $skinMap = [];
+}
+$skinColorHex = ['red' => '#ff6060', 'green' => '#35cc2d', 'blue' => '#337be6'];
+function skinInlineStyle($skin, $skinColorHex) {
+    if (!$skin) return ['style' => '', 'text' => null, 'isImage' => false];
+    if ($skin['display_type'] === 'image' && !empty($skin['display_image'])) {
+        return ['style' => "background-image:url('/" . htmlspecialchars($skin['display_image']) . "');background-size:cover;background-position:center;background-color:transparent;", 'text' => null, 'isImage' => true];
+    }
+    if ($skin['display_type'] === 'text' && !empty($skin['display_text'])) {
+        $c = $skinColorHex[$skin['display_color'] ?? 'blue'] ?? '#337be6';
+        return ['style' => "background-color:{$c};", 'text' => htmlspecialchars($skin['display_text']), 'isImage' => false];
+    }
+    return ['style' => '', 'text' => null, 'isImage' => false];
+}
+
 // 获取当前用户ID（如果已登录）
 $current_user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
 
@@ -1451,13 +1476,23 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                             } else {
                                 $title_text .= $block_number;
                             }
+
+                            $skin = $skinMap[($bz ?? '') . '|' . $block_number] ?? null;
+                            $skinR = skinInlineStyle($skin, $skinColorHex);
+                            $skinStyle = $span_style . $skinR['style'];
                         ?>
-                        <div class="<?= $bc ?>" style="<?= $span_style ?>"
+                        <div class="<?= $bc ?>" style="<?= $skinStyle ?>"
                              data-block-number="<?= $block_number ?>"
                              data-zone="<?= $bz ?>"
                              data-status="<?= $bs ?>"
                              title="<?= $title_text ?>">
-                            <?php if ($merged_info && $merged_info['is_first']): ?><span class="pano-merge-no"><?= $merged_info['min'] ?></span><?php endif; ?>
+                            <?php if ($skinR['isImage']): ?>
+                                <?php // 图片皮肤：仅显示背景，不显示编号 ?>
+                            <?php elseif ($skinR['text'] !== null): ?>
+                                <span class="pano-merge-no" style="color:#fff;font-weight:bold;"><?= $skinR['text'] ?></span>
+                            <?php elseif ($merged_info && $merged_info['is_first']): ?>
+                                <span class="pano-merge-no"><?= $merged_info['min'] ?></span>
+                            <?php endif; ?>
                         </div>
                         <?php endfor; ?>
                     <?php endfor; ?>
@@ -1598,8 +1633,15 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                                 $content_style = "width:{$w}px;height:{$h}px;";
                                 $content_class = " {$cell_status_class} merged";
                             }
+
+                            // 区块皮肤
+                            $skin = $skinMap[($current_zone ?? '') . '|' . $block_number] ?? null;
+                            $skinR = skinInlineStyle($skin, $skinColorHex);
+                            $cell_skin_style = $is_merged_first ? '' : $skinR['style'];
+                            $content_skin_style = $is_merged_first ? $skinR['style'] : '';
+                            $block_no_text = $skinR['text'] !== null ? $skinR['text'] : $block_number;
                         ?>
-                        <div class="<?= $cell_class ?>"
+                        <div class="<?= $cell_class ?>" style="<?= $cell_skin_style ?>"
                              data-block-number="<?= $block_number ?>"
                              data-price="<?= $block_price ?>"
                              data-status="<?= $block_status ?>"
@@ -1609,9 +1651,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                              data-col="<?= $cell_col ?>"
                              title="<?= $is_merged ? "合并区块 {$merged_size}" : "区块 {$block_number}" ?> - 价格: <?= $block_price ?>元">
                             <?php if ($is_merged_first): ?>
-                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?>"><?= $merged_min_number ?></div>
+                            <div class="block-content<?= $content_class ?>" style="<?= $content_style ?><?= $content_skin_style ?>"><?= $skinR['isImage'] ? '' : $block_no_text ?: $merged_min_number ?></div>
                             <?php else: ?>
-                            <span class="block-no"><?= $block_number ?></span>
+                            <span class="block-no" <?= $skinR['isImage'] ? 'style="display:none"' : '' ?>><?= $block_no_text ?></span>
                             <?php endif; ?>
                         </div>
                         <?php endforeach; ?>

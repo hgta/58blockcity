@@ -4,6 +4,7 @@ require_once '../includes/auth.php';
 require_once '../../classes/User.php';
 require_once '../../classes/Block.php';
 require_once '../../classes/Transaction.php';
+require_once '../../classes/BlockListing.php';
 
 // Check if user is logged in
 checkLogin();
@@ -14,6 +15,11 @@ $userId = $_SESSION['user_id'];
 $user = new User($pdo);
 $block = new Block($pdo);
 $transaction = new Transaction($pdo);
+$listing = new BlockListing($pdo);
+
+// 待确认交易：我作为卖家的待确认订单 + 我作为买家的待付款订单
+$myPendingSales = $listing->getUserListings($userId);     // 含 listed + pending（卖家视角）
+$myPendingBuys  = $listing->getBuyerPending($userId);     // 买家已下单待卖家确认
 
 // Get user information
 $userInfo = $user->getUserById($userId);
@@ -152,8 +158,8 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                         <div class="block-actions">
                                             <a href="../block/view.php?id=<?= $b['id'] ?>" 
                                                class="btn btn-xs btn-default">查看</a>
-                                            <a href="../block/sell.php?id=<?= $b['id'] ?>" 
-                                               class="btn btn-xs btn-warning">出售</a>
+                                            <a href="../block/manage.php?id=<?= $b['id'] ?>" 
+                                               class="btn btn-xs btn-warning">管理/出售</a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -230,6 +236,77 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                         <?php endif; ?>
                     </div>
                     
+                    <!-- Pending Block Sales / Purchases Section -->
+                    <?php if (!empty($myPendingSales) || !empty($myPendingBuys)): ?>
+                        <div class="dashboard-section">
+                            <h4><i class="fa fa-handshake"></i> 区块交易（待处理）</h4>
+                            <?php if (!empty($myPendingSales)): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-striped requests-table">
+                                        <thead>
+                                            <tr><th>区块</th><th>价格</th><th>状态</th><th>操作</th></tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($myPendingSales as $pl): ?>
+                                            <?php
+                                                $plTitle = ($pl['zone'] ?? '') . '区 #' . ($pl['block_number'] ?? '');
+                                                if (!empty($pl['merged_block_id'])) {
+                                                    $mz = $pdo->prepare("SELECT merged_blocks, merge_size FROM merged_blocks WHERE id = ?");
+                                                    $mz->execute([$pl['merged_block_id']]);
+                                                    $mzr = $mz->fetch(PDO::FETCH_ASSOC);
+                                                    if ($mzr) $plTitle = ($pl['zone'] ?? '') . '区 · ' . $mzr['merge_size'] . ' 合并区块';
+                                                }
+                                                $plCur = $pl['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ';
+                                            ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($plTitle) ?></td>
+                                                <td><?= $plCur ?><?= number_format($pl['price'], 2) ?></td>
+                                                <td>
+                                                    <?php if ($pl['status'] === 'pending'): ?>
+                                                        <span class="label label-info">待确认收款</span>
+                                                    <?php else: ?>
+                                                        <span class="label label-primary">售卖中</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if ($pl['status'] === 'pending'): ?>
+                                                        <a href="../block/confirm_sale.php?listing=<?= $pl['id'] ?>" class="btn btn-xs btn-success">去确认</a>
+                                                    <?php else: ?>
+                                                        <a href="../block/manage.php?id=<?= $pl['block_id'] ?>" class="btn btn-xs btn-default">管理</a>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($myPendingBuys)): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-striped requests-table">
+                                        <thead>
+                                            <tr><th>区块</th><th>价格</th><th>状态</th><th>操作</th></tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($myPendingBuys as $pb): ?>
+                                            <?php
+                                                $pbTitle = ($pb['zone'] ?? '') . '区 #' . ($pb['block_number'] ?? '');
+                                                $pbCur = $pb['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ';
+                                            ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($pbTitle) ?></td>
+                                                <td><?= $pbCur ?><?= number_format($pb['price'], 2) ?></td>
+                                                <td><span class="label label-warning">待付款/确认</span></td>
+                                                <td><a href="../block/buy.php?listing=<?= $pb['id'] ?>" class="btn btn-xs btn-primary">去处理</a></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Purchase Requests Section -->
                     <?php if (!empty($purchaseRequests)): ?>
                         <div class="dashboard-section">
