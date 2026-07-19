@@ -77,15 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
                 $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
-                $destDir = __DIR__ . '/../uploads';
+                // 统一使用项目既有的可写上传目录，避免新建目录无写权限
+                $destDir = __DIR__ . '/../../assets/uploads/block_skins';
                 if (!is_dir($destDir)) {
-                    mkdir($destDir, 0755, true);
+                    @mkdir($destDir, 0777, true);
                 }
                 $dest = $destDir . '/' . $fname;
                 if (!move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
-                    throw new Exception('图片上传失败');
+                    throw new Exception('图片上传失败，请检查目录写权限');
                 }
-                $displayImage = 'block/uploads/' . $fname;
+                $displayImage = 'assets/uploads/block_skins/' . $fname;
             } elseif ($displayType === 'image') {
                 // 未上传新图时保留原图
                 $displayImage = $blockInfo['display_image'];
