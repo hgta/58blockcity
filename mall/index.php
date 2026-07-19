@@ -14,6 +14,8 @@ require_once '../classes/Product.php';
 require_once '../classes/Shop.php';
 require_once '../classes/Category.php';
 require_once '../classes/MallRanking.php';
+require_once '../classes/Model.php';
+require_once '../classes/SeoHelper.php';
 
 $product = new Product($pdo);
 $shop = new Shop($pdo);
@@ -30,6 +32,21 @@ $categories = $category->getPopularCategories(8);
 // 排行榜预览数据
 $topViewedProducts = $mallRanking->getProductRanking('popular', 5);
 $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
+
+// 人气模特（首页导流）
+$modelObj = new Model($pdo);
+$topModels = $modelObj->getFilteredList(['sort' => 'follower'], 1, 10)['list'];
+$topModelIds = array_column($topModels, 'id');
+$topModelStrips = $modelObj->getModelImageStrips($topModelIds, 4);
+$userId = $_SESSION['user_id'] ?? 0;
+$topModelFollowed = [];
+if ($userId && $topModelIds) {
+    $ph = implode(',', array_map('intval', $topModelIds));
+    $stmt = $pdo->prepare("SELECT model_id FROM model_follows WHERE user_id = ? AND model_id IN ($ph)");
+    $stmt->execute([$userId]);
+    $topModelFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+require_once 'model/card.php';
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -397,6 +414,16 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+        
+        /* 人气模特横滑 */
+        .model-strip {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .model-strip .model-card { flex: 0 0 200px; }
+        .model-strip .mc-thumbs { display: none; }
     </style>
 </head>
 <body>
@@ -572,6 +599,21 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
             </div>
         </div>
         
+        <!-- 人气模特 -->
+        <?php if (!empty($topModels)): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>📸 人气模特</h2>
+                <a href="model/list.php" class="more-link">查看模特库 &gt;</a>
+            </div>
+            <div class="model-strip">
+                <?php foreach ($topModels as $m): ?>
+                    <?= renderModelCard($m, $topModelStrips[$m['id']] ?? [], isset($topModelFollowed[$m['id']]), $userId) ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <!-- 热门店铺 -->
         <div class="section">
             <div class="section-header">
@@ -657,5 +699,6 @@ $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
     </div>
     
     <?php include 'includes/footer.php'; ?>
+    <script src="model/follow.js"></script>
 </body>
 </html> 

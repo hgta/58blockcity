@@ -1479,6 +1479,21 @@ CREATE TABLE IF NOT EXISTS `model_messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
+-- 模特关注
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `model_follows` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `model_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `model_user` (`model_id`, `user_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_model_id` (`model_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 -- 统一站内信
 -- --------------------------------------------------------
 

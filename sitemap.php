@@ -39,6 +39,7 @@ urlNode('https://bct.58.tl/market.php', '0.8', 'hourly', $now);
 urlNode('https://mall.58.tl/', '0.9', 'daily', $now);
 urlNode('https://mall.58.tl/product/list.php', '0.8', 'daily', $now);
 urlNode('https://mall.58.tl/shop/list.php', '0.8', 'weekly', $now);
+urlNode('https://mall.58.tl/model/list.php', '0.8', 'daily', $now);
 urlNode('https://nft.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/circles/all.php', '0.8', 'weekly', $now);

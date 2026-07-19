@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Model.php';
 require_once '../../classes/Message.php';
 require_once '../../classes/SeoHelper.php';
+require_once './card.php';
 
 $modelId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($modelId <= 0) {
@@ -40,9 +41,11 @@ $galleryImages = $model->getModelProductImages($modelId, 100);
 
 // 点赞处理
 $isLiked = false;
+$isFollowedModel = false;
 $userId = $_SESSION['user_id'] ?? 0;
 if ($userId) {
     $isLiked = $model->isLiked($modelId, $userId);
+    $isFollowedModel = $model->isFollowed($modelId, $userId);
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['like']) && $userId) {
     $model->like($modelId, $userId);
@@ -165,6 +168,11 @@ require_once '../includes/header.php';
                         <?= $isLiked ? '❤️ 已赞' : '🤍 点赞' ?>
                     </button>
                 </form>
+                <button class="model-follow-btn <?= $isFollowedModel ? 'followed' : '' ?>" style="margin-left:10px;"
+                        data-model-id="<?= $modelId ?>" data-logged-in="1"
+                        data-login-url="../auth/login.php?redirect=<?= urlencode($canonicalUrl) ?>">
+                    <?= $isFollowedModel ? '已关注' : '+ 关注' ?>
+                </button>
                 <?php endif; ?>
             </div>
             <!-- 分享按钮 -->
@@ -449,5 +457,31 @@ function loadMoreGallery() {
     }
 }
 </script>
+
+<?php
+// 相关模特（同 城市+星座+性别 加权）
+$relatedModels = $model->getRelated($modelId, 6);
+if (!empty($relatedModels)):
+    $relIds = array_column($relatedModels, 'id');
+    $relFollowed = [];
+    if ($userId && $relIds) {
+        $ph = implode(',', array_map('intval', $relIds));
+        $stmt = $pdo->prepare("SELECT model_id FROM model_follows WHERE user_id = ? AND model_id IN ($ph)");
+        $stmt->execute([$userId]);
+        $relFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+?>
+<link rel="stylesheet" href="style.css">
+<div style="margin-top:30px;">
+    <h3 style="font-size:20px;margin-bottom:15px;">💡 相关模特</h3>
+    <div class="model-grid">
+        <?php foreach ($relatedModels as $rm): ?>
+            <?= renderModelCard($rm, [], isset($relFollowed[$rm['id']]), $userId) ?>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<script src="follow.js"></script>
 
 <?php require_once '../includes/footer.php'; ?>

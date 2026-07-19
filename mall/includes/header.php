@@ -11,6 +11,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../index.php','icon'=>'home','text'=>'首页'],
     ['url'=>'../product/list.php','icon'=>'shopping-bag','text'=>'商品浏览'],
     ['url'=>'../rankings/','icon'=>'trophy','text'=>'排行榜'],
+    ['url'=>'../model/list.php','icon'=>'camera','text'=>'模特库'],
     ['url'=>'../shop/list.php','icon'=>'store','text'=>'店铺列表'],
     ['url'=>'../cart/index.php','icon'=>'shopping-cart','text'=>'购物车'],
     ['url'=>'../user/orders.php','icon'=>'clipboard-list','text'=>'我的订单'],

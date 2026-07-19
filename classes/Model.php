@@ -312,4 +312,224 @@ class Model
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * 关注 / 取消关注（事务维护 follower_count）
+     * @return string 'followed' | 'unfollowed'
+     */
+    public function follow($modelId, $userId)
+    {
+        $modelId = intval($modelId);
+        $userId = intval($userId);
+
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM model_follows WHERE model_id = ? AND user_id = ?"
+            );
+            $stmt->execute([$modelId, $userId]);
+
+            if ($stmt->fetch()) {
+                $this->pdo->prepare(
+                    "DELETE FROM model_follows WHERE model_id = ? AND user_id = ?"
+                )->execute([$modelId, $userId]);
+                $this->pdo->prepare(
+                    "UPDATE models SET follower_count = GREATEST(follower_count - 1, 0) WHERE id = ?"
+                )->execute([$modelId]);
+                $action = 'unfollowed';
+            } else {
+                $this->pdo->prepare(
+                    "INSERT INTO model_follows (model_id, user_id) VALUES (?, ?)"
+                )->execute([$modelId, $userId]);
+                $this->pdo->prepare(
+                    "UPDATE models SET follower_count = follower_count + 1 WHERE id = ?"
+                )->execute([$modelId]);
+                $action = 'followed';
+            }
+            $this->pdo->commit();
+            return $action;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 是否已关注
+     */
+    public function isFollowed($modelId, $userId)
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM model_follows WHERE model_id = ? AND user_id = ?"
+        );
+        $stmt->execute([intval($modelId), intval($userId)]);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * 用户关注的模特列表（用户中心「我的关注」）
+     */
+    public function getFollowedModels($userId, $page = 1, $perPage = 24)
+    {
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $stmt = $this->pdo->prepare(
+            "SELECT m.*, u.username, u.avatar as user_avatar
+             FROM model_follows f
+             LEFT JOIN models m ON f.model_id = m.id
+             LEFT JOIN users u ON m.user_id = u.id
+             WHERE f.user_id = ? AND m.status = 'active'
+             ORDER BY f.created_at DESC
+             LIMIT {$perPage} OFFSET {$offset}"
+        );
+        $stmt->execute([intval($userId)]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 发现页叠加筛选 + 排序
+     * @return array ['list'=>..., 'total'=>..., 'pages'=>...]
+     */
+    public function getFilteredList($filters = [], $page = 1, $perPage = 24)
+    {
+        $where = ["m.status = 'active'"];
+        $params = [];
+        if (!empty($filters['gender']) && in_array($filters['gender'], ['男', '女', '保密'], true)) {
+            $where[] = "m.gender = ?";
+            $params[] = $filters['gender'];
+        }
+        if (!empty($filters['zodiac'])) {
+            $where[] = "m.zodiac = ?";
+            $params[] = $filters['zodiac'];
+        }
+        if (!empty($filters['city'])) {
+            $where[] = "m.city = ?";
+            $params[] = $filters['city'];
+        }
+        if (!empty($filters['q'])) {
+            $where[] = "m.nickname LIKE ?";
+            $params[] = "%" . $filters['q'] . "%";
+        }
+
+        $sortMap = [
+            'follower' => 'm.follower_count DESC',
+            'like'     => 'm.like_count DESC',
+            'product'  => 'm.product_count DESC',
+            'new'      => 'm.created_at DESC',
+        ];
+        $orderBy = $sortMap[$filters['sort'] ?? 'follower'] ?? $sortMap['follower'];
+
+        $whereSql = implode(' AND ', $where);
+        $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM models m WHERE " . $whereSql);
+        $countStmt->execute($params);
+        $total = intval($countStmt->fetchColumn());
+        $pages = $total > 0 ? ceil($total / $perPage) : 0;
+
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $stmt = $this->pdo->prepare(
+            "SELECT m.*, u.username, u.avatar as user_avatar
+             FROM models m LEFT JOIN users u ON m.user_id = u.id
+             WHERE {$whereSql}
+             ORDER BY {$orderBy}
+             LIMIT {$perPage} OFFSET {$offset}"
+        );
+        $stmt->execute($params);
+
+        return [
+            'list'  => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+            'pages' => $pages,
+        ];
+    }
+
+    /**
+     * 城市 / 星座 维度去重计数（喂筛选 chips）
+     */
+    public function getFacets()
+    {
+        $cities = $this->pdo->query(
+            "SELECT city, COUNT(*) AS c FROM models
+             WHERE status = 'active' AND city IS NOT NULL AND city <> ''
+             GROUP BY city ORDER BY c DESC, city ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $zodiacs = $this->pdo->query(
+            "SELECT zodiac, COUNT(*) AS c FROM models
+             WHERE status = 'active' AND zodiac IS NOT NULL AND zodiac <> ''
+             GROUP BY zodiac ORDER BY c DESC, zodiac ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['cities' => $cities, 'zodiacs' => $zodiacs];
+    }
+
+    /**
+     * 详情页「相关模特」：同 城市+星座+性别 加权推荐
+     */
+    public function getRelated($modelId, $limit = 6)
+    {
+        $m = $this->getById($modelId);
+        if (!$m) {
+            return [];
+        }
+        $gender = $m['gender'] ?? '';
+        $city = $m['city'] ?? '';
+        $zodiac = $m['zodiac'] ?? '';
+
+        $sql = "SELECT m.id, m.nickname, m.gender, m.city, m.zodiac, m.avatar,
+                       m.follower_count, m.like_count, m.product_count,
+                       u.avatar as user_avatar
+                FROM models m LEFT JOIN users u ON m.user_id = u.id
+                WHERE m.status = 'active' AND m.id <> ?
+                  AND (m.gender = ? OR m.city = ? OR m.zodiac = ?)
+                ORDER BY ((m.city = ?) + (m.zodiac = ?) + (m.gender = ?)) DESC,
+                         m.follower_count DESC
+                LIMIT " . intval($limit);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([intval($modelId), $gender, $city, $zodiac, $city, $zodiac, $gender]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 批量获取多个模特的图集缩略（避免 N+1），每张卡最多 $perModel 张
+     * 来源：关联商品 main_image + images JSON；不含日常照片（避免重复）
+     * @return array [model_id => [img1, img2, ...]]
+     */
+    public function getModelImageStrips($modelIds, $perModel = 4)
+    {
+        $ids = array_filter(array_map('intval', (array)$modelIds));
+        if (empty($ids)) {
+            return [];
+        }
+        $placeholders = implode(',', $ids);
+        $stmt = $this->pdo->prepare(
+            "SELECT model_id, main_image, images FROM products
+             WHERE model_id IN ({$placeholders}) AND status = 'active'
+             ORDER BY created_at DESC"
+        );
+        $stmt->execute();
+        $map = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $mid = $row['model_id'];
+            if (!isset($map[$mid])) {
+                $map[$mid] = [];
+            }
+            if (count($map[$mid]) >= $perModel) {
+                continue;
+            }
+            if (!empty($row['main_image'])) {
+                $map[$mid][] = $row['main_image'];
+            }
+            if (count($map[$mid]) < $perModel && !empty($row['images'])) {
+                $dec = json_decode($row['images'], true);
+                if (is_array($dec)) {
+                    foreach ($dec as $img) {
+                        if (count($map[$mid]) >= $perModel) {
+                            break;
+                        }
+                        $map[$mid][] = $img;
+                    }
+                }
+            }
+        }
+        return $map;
+    }
+
 }
