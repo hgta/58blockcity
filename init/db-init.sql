@@ -1513,6 +1513,19 @@ ALTER TABLE `products`
   ADD COLUMN `model_id` int(11) DEFAULT NULL AFTER `shop_id`,
   ADD KEY `idx_model_id` (`model_id`);
 
+-- --------------------------------------------------------
+-- 通用配置（键值对，存放 token 等敏感配置，避免写入 web 目录）
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(64) NOT NULL,
+  `setting_value` text,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_key` (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

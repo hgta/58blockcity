@@ -23,12 +23,24 @@ require_once '../../shared/admin/admin-header.php';
 $msg = '';
 $err = '';
 
-// token 持久化文件（仅存于服务器）
-$tokenFile = __DIR__ . '/.blockcity_token.php';
-$savedToken = '';
-if (file_exists($tokenFile)) {
-    $savedToken = trim(@file_get_contents($tokenFile));
+// token 持久化（存数据库 settings 表，避免在 web 目录写文件导致权限/泄露问题）
+$settingKey = 'blockcity_api_token';
+function bc_load_token($pdo, $key) {
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+    $stmt->execute([$key]);
+    $v = $stmt->fetchColumn();
+    return $v === false ? '' : (string)$v;
 }
+function bc_save_token($pdo, $key, $val) {
+    $pdo->prepare(
+        "INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW())
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()"
+    )->execute([$key, $val]);
+}
+function bc_clear_token($pdo, $key) {
+    $pdo->prepare("DELETE FROM settings WHERE setting_key = ?")->execute([$key]);
+}
+$savedToken = bc_load_token($pdo, $settingKey);
 
 // ---------- 签名算法（与 blockcity.vip 前端一致）----------
 function bc_rand_chars($n) {
@@ -113,13 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['action'] ?? '') === 'save_token') {
         $tk = trim($_POST['token'] ?? '');
         if ($tk === '') {
-            @unlink($tokenFile);
+            bc_clear_token($pdo, $settingKey);
             $savedToken = '';
             $msg = '已清除 token';
         } else {
-            file_put_contents($tokenFile, $tk, LOCK_EX);
+            bc_save_token($pdo, $settingKey, $tk);
             $savedToken = $tk;
-            $msg = 'token 已保存（仅存于服务器，不会外泄）';
+            $msg = 'token 已保存（存于数据库，不会外泄到 web 目录）';
         }
     }
 
