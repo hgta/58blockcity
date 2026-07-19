@@ -6,6 +6,7 @@ checkLogin();
 require_once '../../classes/Block.php';
 require_once '../../classes/BlockListing.php';
 require_once '../../classes/UserPopularity.php';
+require_once '../../config/block_prices.php';
 
 $block = new Block($pdo);
 $listing = new BlockListing($pdo);
