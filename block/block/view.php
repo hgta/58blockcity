@@ -143,7 +143,7 @@ if (!$isOwner) {
 
 <?php
 $cityId = $blockInfo['city_id'];
-<?php require_once __DIR__ . '/../../config/block_prices.php'; ?>
+require_once __DIR__ . '/../../config/block_prices.php';
 $zone = $blockInfo['zone'] ?? 'A';
 $nearbyStmt = $pdo->prepare("SELECT b.id, b.block_number, b.zone FROM blocks b WHERE b.city_id = ? AND b.zone = ? AND b.id != ? AND b.status = 'sold' ORDER BY RAND() LIMIT 8");
 $nearbyStmt->execute([$cityId, $zone, $blockId]);
