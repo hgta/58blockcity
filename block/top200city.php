@@ -4,7 +4,7 @@ require_once 'includes/auth.php';
 require_once '../config/block_prices.php';
 
 $sort = $_GET['sort'] ?? 'activated';
-$allowed = ['activated', 'resident', 'popularity', 'claimed', 'sale', 'purchase', 'my_blocks'];
+$allowed = ['activated', 'resident', 'popularity', 'sale', 'purchase', 'my_blocks'];
 if (!in_array($sort, $allowed)) $sort = 'activated';
 
 $currentUserId = isLoggedIn() ? $_SESSION['user_id'] : null;
@@ -46,10 +46,9 @@ if ($myMode && $currentUserId) {
 } else {
     // 主排序映射
     $sortMap = [
-        'activated' => 'c.rank ASC',
+        'activated' => 'claimed_count DESC',
         'resident'  => 'c.resident_count DESC',
         'popularity'=> 'c.popularity DESC',
-        'claimed'   => 'claimed_count DESC',
         'sale'      => 'sale_count DESC',
         'purchase'  => 'purchase_count DESC',
     ];
@@ -76,7 +75,6 @@ $tabs = [
     'activated' => ['label' => '开启区块', 'icon' => 'fa-cubes'],
     'resident'  => ['label' => '人口',     'icon' => 'fa-users'],
     'popularity'=> ['label' => '人气值',   'icon' => 'fa-fire'],
-    'claimed'   => ['label' => '认领数',   'icon' => 'fa-check-circle'],
     'sale'      => ['label' => '售卖',     'icon' => 'fa-tag'],
     'purchase'  => ['label' => '求购',     'icon' => 'fa-search-dollar'],
 ];
@@ -136,8 +134,6 @@ if ($currentUserId) {
 .empty-state i { font-size:40px; display:block; margin-bottom:12px; }
 
 @media(max-width:768px) {
-    .rank-table th:nth-child(5),
-    .rank-table td:nth-child(5),
     .rank-table th:nth-child(6),
     .rank-table td:nth-child(6),
     .rank-table th:nth-child(7),
@@ -219,7 +215,6 @@ if ($currentUserId) {
                     <th class="<?= $sort==='activated'?'sort-active':'' ?>">开启区块</th>
                     <th class="<?= $sort==='resident'?'sort-active':'' ?>">人口</th>
                     <th class="<?= $sort==='popularity'?'sort-active':'' ?>">人气值</th>
-                    <th class="<?= $sort==='claimed'?'sort-active':'' ?>">认领数</th>
                     <th class="<?= $sort==='sale'?'sort-active':'' ?>">售卖</th>
                     <th class="<?= $sort==='purchase'?'sort-active':'' ?>">求购</th>
                 </tr>
@@ -239,10 +234,9 @@ if ($currentUserId) {
                             </span>
                         </a>
                     </td>
-                    <td><span class="rank-val <?= $sort==='activated'?'highlight':'' ?>"><?= number_format($c['activated_blocks']) ?></span></td>
+                    <td><span class="rank-val <?= $sort==='activated'?'highlight':'' ?>"><?= number_format($c['claimed_count']) ?></span></td>
                     <td><span class="rank-val <?= $sort==='resident'?'highlight':'' ?>"><?= number_format($c['resident_count']) ?></span></td>
                     <td><span class="rank-val <?= $sort==='popularity'?'highlight':'' ?>"><?= number_format($c['popularity']) ?></span></td>
-                    <td><span class="rank-val <?= $sort==='claimed'?'highlight':'' ?>"><?= number_format($c['claimed_count']) ?></span></td>
                     <td><span class="rank-val <?= $sort==='sale'?'highlight':'' ?>"><?= number_format($c['sale_count']) ?></span></td>
                     <td><span class="rank-val <?= $sort==='purchase'?'highlight':'' ?>"><?= number_format($c['purchase_count']) ?></span></td>
                 </tr>
