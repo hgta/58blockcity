@@ -89,7 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
         <button class="block-mobile-toggle" onclick="document.querySelector('.block-nav').classList.toggle('open')">☰</button>
         <nav class="block-nav">
             <a href="/"><i class="fas fa-home"></i>首页</a>
-            <a href="/sale_list.php"><i class="fas fa-tag"></i>已售区块</a>
+            <a href="/sale_list.php"><i class="fas fa-tag"></i>售卖</a>
             <a href="/purchase_list.php"><i class="fas fa-hand-holding-usd"></i>求购</a>
             <a href="/claim_list.php"><i class="fas fa-hand-holding-heart"></i>认领</a>
             <a href="/top200city.php"><i class="fas fa-trophy"></i>排行</a>
