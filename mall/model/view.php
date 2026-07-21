@@ -154,7 +154,7 @@ require_once '../includes/header.php';
                 <?php if ($modelInfo['qq']): ?><span style="padding:4px 10px;background:#12b7f5;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-qq"></i> QQ: <?= htmlspecialchars($modelInfo['qq']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['weixin']): ?><span style="padding:4px 10px;background:#07c160;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-weixin"></i> 微信: <?= htmlspecialchars($modelInfo['weixin']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['weibo']): ?><span style="padding:4px 10px;background:#e6162d;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-weibo"></i> <?= htmlspecialchars($modelInfo['weibo']) ?></span><?php endif; ?>
-                <?php if ($modelInfo['xiaohongshu']): ?><a href="<?= htmlspecialchars(Model::xiaohongshuUrl($modelInfo['xiaohongshu'])) ?>" target="_blank" rel="noopener" style="padding:4px 10px;background:#ff2442;color:#fff;border-radius:4px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">📕 小红书: <?= htmlspecialchars($modelInfo['xiaohongshu']) ?></a><?php endif; ?>
+                <?php if ($modelInfo['xiaohongshu']): ?><span style="padding:4px 10px;background:#ff2442;color:#fff;border-radius:4px;font-size:13px;">📕 <?= htmlspecialchars($modelInfo['xiaohongshu']) ?></span><?php endif; ?>
             </div>
             <!-- 统计数据 + 点赞 -->
             <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">

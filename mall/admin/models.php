@@ -266,7 +266,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     <div><label style="<?= $labelStyle ?>">QQ</label><input type="text" name="qq" value="<?= htmlspecialchars($formData['qq'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
                     <div><label style="<?= $labelStyle ?>">微信</label><input type="text" name="weixin" value="<?= htmlspecialchars($formData['weixin'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
                     <div><label style="<?= $labelStyle ?>">微博</label><input type="text" name="weibo" value="<?= htmlspecialchars($formData['weibo'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
-                    <div><label style="<?= $labelStyle ?>">小红书</label><input type="text" name="xiaohongshu" value="<?= htmlspecialchars($formData['xiaohongshu'] ?? '') ?>" placeholder="小红书用户ID，如 5fxxxx（前台点击跳转主页）" style="<?= $inputStyle ?>"></div>
+                    <div><label style="<?= $labelStyle ?>">小红书</label><input type="text" name="xiaohongshu" value="<?= htmlspecialchars($formData['xiaohongshu'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
                 </div>
 
                 <div style="margin-bottom:16px;">
