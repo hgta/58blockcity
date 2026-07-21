@@ -12,6 +12,21 @@ class Model
     }
 
     /**
+     * 粉丝数展示格式化：整数 → "5.4万"（1万以下原样显示）
+     * 库中存整数（如 54000），展示时统一走此方法。
+     */
+    public static function formatFollower($n)
+    {
+        $n = intval($n);
+        if ($n >= 10000) {
+            $s = number_format($n / 10000, 1, '.', ''); // 保留一位小数
+            $s = rtrim(rtrim($s, '0'), '.');            // 去掉末尾 .0
+            return $s . '万';
+        }
+        return (string) $n;
+    }
+
+    /**
      * 根据 ID 获取模特（JOIN users 取 username/avatar）
      */
     public function getById($id)

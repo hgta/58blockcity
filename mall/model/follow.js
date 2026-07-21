@@ -1,3 +1,13 @@
+// 粉丝数格式化：整数 → "5.4万"（与后端 Model::formatFollower 保持一致）
+function formatFollower(n) {
+    n = parseInt(n, 10) || 0;
+    if (n >= 10000) {
+        var s = (n / 10000).toFixed(1).replace(/\.0$/, '');
+        return s + '万';
+    }
+    return String(n);
+}
+
 // 模特关注按钮（列表卡片 / 详情页 / 我的关注 复用）
 function bindFollowButtons(root) {
     var scope = root || document;
@@ -31,7 +41,7 @@ function bindFollowButtons(root) {
                 var cnt = btn.closest('.model-card, .model-detail-head');
                 if (cnt) {
                     var fc = cnt.querySelector('.follower-count');
-                    if (fc && typeof res.follower_count !== 'undefined') fc.textContent = res.follower_count;
+                    if (fc && typeof res.follower_count !== 'undefined') fc.textContent = formatFollower(res.follower_count);
                 }
             })
             .catch(function () { alert('操作失败，请重试'); });

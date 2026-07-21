@@ -288,7 +288,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     </div>
                     <div>
                         <label style="<?= $labelStyle ?>">粉丝数</label>
-                        <input type="text" name="follower_count" value="<?= htmlspecialchars($formData['follower_count'] ?? '') ?>" placeholder="例：1.2万" style="<?= $inputStyle ?>">
+                        <input type="text" name="follower_count" value="<?= htmlspecialchars(isset($formData['follower_count']) && $formData['follower_count'] !== '' ? Model::formatFollower($formData['follower_count']) : '') ?>" placeholder="例：1.2万" style="<?= $inputStyle ?>">
                     </div>
                 </div>
 

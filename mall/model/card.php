@@ -76,7 +76,7 @@ if (!function_exists('renderModelCard')) {
                 <?php if ($metaStr): ?><div class="mc-meta"><?= $metaStr ?></div><?php endif; ?>
                 <div class="mc-stats">
                     <span>❤ <b class="like-count"><?= $like ?></b></span>
-                    <span>👥 <b class="follower-count"><?= $follower ?></b></span>
+                    <span>👥 <b class="follower-count"><?= Model::formatFollower($follower) ?></b></span>
                     <span>📦 <b><?= $productStr ?></b></span>
                 </div>
                 <?= $btn ?>
