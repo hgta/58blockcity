@@ -27,6 +27,21 @@ class Model
     }
 
     /**
+     * 构造小红书用户主页链接。
+     * 兼容两种录入：纯用户ID（5fxxxx）→ https://www.xiaohongshu.com/user/profile/ID
+     *              完整链接（http...）→ 直接使用
+     */
+    public static function xiaohongshuUrl($raw)
+    {
+        $s = trim((string)($raw ?? ''));
+        if ($s === '') return '';
+        if (preg_match('#^https?://#i', $s)) {
+            return $s;
+        }
+        return 'https://www.xiaohongshu.com/user/profile/' . urlencode($s);
+    }
+
+    /**
      * 根据 ID 获取模特（JOIN users 取 username/avatar）
      */
     public function getById($id)
