@@ -15,6 +15,21 @@ $user = new User($pdo);
 $city = new City($pdo);
 $allCities = $city->getAllCities();
 
+// 粉丝数规范化：兼容 "5.4万" / "1.2w" / "1k" / "5,400" 等写法，统一转为整数
+// （follower_count 列已由 varchar 迁移为 int，直接写入非数值字符串会触发 1265 Data truncated）
+function normalizeFollowerCount($raw) {
+    $s = trim((string)($raw ?? ''));
+    if ($s === '') return 0;
+    $s = str_replace([',', '，', ' ', '+'], '', $s); // 去千分位/空白/加号
+    if (preg_match('/^([0-9]*\.?[0-9]+)\s*(万|w|W)$/u', $s, $m)) {
+        return (int) round(floatval($m[1]) * 10000);
+    }
+    if (preg_match('/^([0-9]*\.?[0-9]+)\s*(k|K|千)$/u', $s, $m)) {
+        return (int) round(floatval($m[1]) * 1000);
+    }
+    return (int) round(floatval($s));
+}
+
 // 头像上传处理
 function uploadModelAvatar($file) {
     if (!$file || $file['error'] !== UPLOAD_ERR_OK || $file['size'] === 0) return null;
@@ -83,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'measurements' => trim($_POST['measurements'] ?? ''),
                 'hobbies'   => trim($_POST['hobbies'] ?? ''),
                 'zodiac'    => trim($_POST['zodiac'] ?? ''),
-                'follower_count' => trim($_POST['follower_count'] ?? ''),
+                'follower_count' => normalizeFollowerCount($_POST['follower_count'] ?? ''),
             ];
 
             // 只有实际上传了文件才设置 avatar，避免覆盖旧头像
