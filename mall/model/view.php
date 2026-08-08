@@ -464,7 +464,7 @@ function loadMoreGallery() {
 
 <?php
 // 相关模特（同 城市+星座+性别 加权）
-$relatedModels = $model->getRelated($modelId, 6);
+$relatedModels = $model->getRelated($modelId, 5);
 if (!empty($relatedModels)):
     $relIds = array_column($relatedModels, 'id');
     $relFollowed = [];
