@@ -302,21 +302,24 @@ document.getElementById('display_image_input').addEventListener('change', functi
                 </label>
                 <div id="existing-images-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px;">
                     <?php
-                    $skinDir = __DIR__ . '/../assets/uploads/block_skins';
-                    $skinRel = 'assets/uploads/block_skins/';
                     $userPrefix = 'u' . $userId . '_';
                     $existingImages = [];
-                    if (is_dir($skinDir)) {
-                        foreach (scandir($skinDir) as $f) {
+                    // 扫描两个上传目录：block_skins 和 uploads
+                    $scanDirs = [
+                        ['dir' => __DIR__ . '/../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
+                        ['dir' => __DIR__ . '/../uploads',                     'rel' => 'uploads/'],
+                    ];
+                    foreach ($scanDirs as $sd) {
+                        if (!is_dir($sd['dir'])) continue;
+                        foreach (scandir($sd['dir']) as $f) {
                             $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
                             if (!in_array($ext, ['jpg','jpeg','png','gif','webp'])) continue;
-                            // 新格式：u{userId}_xxx，或旧格式 block_{id}_xxx（兼容历史图片）
                             if (strpos($f, $userPrefix) === 0 || strpos($f, 'block_') === 0) {
-                                $existingImages[] = $skinRel . $f;
+                                $existingImages[] = $sd['rel'] . $f;
                             }
                         }
-                        rsort($existingImages); // 新的在前
                     }
+                    rsort($existingImages); // 新的在前
                     ?>
                     <?php if (empty($existingImages)): ?>
                         <div style="color:#999;font-size:13px;grid-column:1/-1;">暂无已上传图片，上传第一张后可复用</div>
