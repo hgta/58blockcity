@@ -25,10 +25,6 @@ if (!$circleInfo) {
     exit;
 }
 
-// 旧 URL 301 跳转到规范 URL
-$canonicalUrl = SeoHelper::circleUrl($circleId, $circleInfo['name'] ?? '');
-SeoHelper::redirectIfNotCanonical($canonicalUrl);
-
 $ownerInfo = $user->getUserById($circleInfo['user_id']);
 $visits = $visit->getCircleVisitsById($circleId);
 $canRequest = false;

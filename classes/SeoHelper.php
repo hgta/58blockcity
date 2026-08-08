@@ -82,7 +82,7 @@ class SeoHelper
 
     public static function circleUrl($id, $name)
     {
-        return 'https://v.58.tl/circle/' . intval($id) . '-' . self::slug($name) . '.html';
+        return 'https://v.58.tl/hufang/circles/view.php?id=' . intval($id);
     }
 
     public static function nftUrl($id, $name)
