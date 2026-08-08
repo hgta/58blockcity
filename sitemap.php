@@ -92,3 +92,9 @@ try {
 }
 
 echo '</urlset>', "\n";
+
+// 主动通知百度 sitemap 已更新（PHP 请求结束时异步执行，不影响响应速度）
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+}
+SeoHelper::pingSitemap('https://www.58.tl/sitemap.xml');

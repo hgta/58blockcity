@@ -19,9 +19,12 @@ RewriteRule ^circle/([0-9]+)-.*\.html$ hufang/circles/view.php?id=$1 [L,QSA]
 # NFT 伪静态
 RewriteRule ^nft/([0-9]+)-.*\.html$ nft/nft/view.php?id=$1 [L,QSA]
 
-# 强制 HTTPS（如服务器已配置 SSL 可取消注释）
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
+# 模特伪静态
+RewriteRule ^mall/model/([0-9]+)-.*\.html$ mall/model/view.php?id=$1 [L,QSA]
+
+# 强制 HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
 # 规范化 www 与非 www（请按实际主域名选择其一）
 # 选项 A：强制 www

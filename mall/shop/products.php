@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     $success = '商品添加成功！';
                     // 百度主动推送
                     if (class_exists('SeoHelper')) {
-                        SeoHelper::baiduPush(SeoHelper::productUrl($productId, $productData['name'] ?? ''));
+                        SeoHelper::pushContentUrl(SeoHelper::productUrl($productId, $productData['name'] ?? ''));
                     }
                     // 重定向到商品列表
                     header('Location: products.php?id=' . $shopId . '&success=' . urlencode($success));
@@ -383,7 +383,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     $success = '商品更新成功！';
                     // 百度主动推送
                     if (class_exists('SeoHelper')) {
-                        SeoHelper::baiduPush(SeoHelper::productUrl($productId, $updateData['name'] ?? ''));
+                        SeoHelper::pushContentUrl(SeoHelper::productUrl($productId, $updateData['name'] ?? ''));
                     }
                     // 重定向到商品列表
                     header('Location: products.php?id=' . $shopId . '&success=' . urlencode($success));

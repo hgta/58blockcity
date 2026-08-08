@@ -49,9 +49,10 @@ unset($circleItem);
             </thead>
             <tbody>
                 <?php foreach ($circles as $circle): ?>
-                <tr onclick="window.location='view.php?id=<?= $circle['id'] ?>'" style="cursor:pointer;">
+                <?php $circleUrl = SeoHelper::circleUrl($circle['id'], $circle['name'] ?? ''); ?>
+                <tr style="cursor:pointer;">
                     <td><?= htmlspecialchars($circle['city']) ?></td>
-                    <td class="font-weight-medium" style="padding:0.6rem 0.5rem"><?= htmlspecialchars($circle['name']) ?></td>
+                    <td class="font-weight-medium" style="padding:0.6rem 0.5rem"><a href="<?= htmlspecialchars($circleUrl) ?>" style="color:inherit;text-decoration:none;"><?= htmlspecialchars($circle['name']) ?></a></td>
                     <td class="text-end"><?= $circle['block_count'] ?></td>
                     <td class="text-end"><?= $circle['completed_visits'] ?? 0 ?></td>
                 </tr>

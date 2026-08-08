@@ -10,5 +10,8 @@ RewriteRule ^shop/([0-9]+)-.*\.html$ shop/view.php?id=$1 [L,QSA]
 # 商品列表分类页（可选）
 RewriteRule ^product/category/([0-9]+)-.*\.html$ product/list.php?category=$1 [L,QSA]
 
+# 模特详情伪静态
+RewriteRule ^model/([0-9]+)-.*\.html$ model/view.php?id=$1 [L,QSA]
+
 # 自定义 404
 ErrorDocument 404 /404.php

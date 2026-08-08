@@ -200,7 +200,7 @@ a{text-decoration:none;color:inherit}
                     ];
                     $m = $metricLabels[$productType] ?? ['浏览',$p['view_count']];
                     ?>
-                    <div class="rank-item" onclick="location.href='../product/detail.php?id=<?= $p['id'] ?>'" style="cursor:pointer">
+                    <a href="../product/detail.php?id=<?= $p['id'] ?>" class="rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <img class="rank-img" src="../<?= htmlspecialchars($p['thumb_image']?:$p['main_image']?:'assets/images/default-product.jpg') ?>" alt="" onerror="this.src='../assets/images/default-product.jpg'">
                         <div class="rank-info">
@@ -220,7 +220,7 @@ a{text-decoration:none;color:inherit}
                             <?php endif; ?>
                             <div class="rank-metric"><?= $m[0] ?> <strong><?= $m[1] ?></strong></div>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             <?php endif; ?>
         <?php elseif ($mainTab === 'shop'): ?>
@@ -228,7 +228,7 @@ a{text-decoration:none;color:inherit}
                 <div class="empty"><i class="fas fa-store"></i><p>暂无排行数据</p></div>
             <?php else: ?>
                 <?php foreach ($shopRanking as $i => $s): ?>
-                    <div class="shop-rank-item" onclick="location.href='../shop/view.php?id=<?= $s['id'] ?>'" style="cursor:pointer">
+                    <a href="../shop/view.php?id=<?= $s['id'] ?>" class="shop-rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <img class="shop-logo" src="../<?= htmlspecialchars($s['shop_logo']?:'assets/images/default-shop.jpg') ?>" alt="" onerror="this.src='../assets/images/default-shop.jpg'">
                         <div class="shop-info">
@@ -244,7 +244,7 @@ a{text-decoration:none;color:inherit}
                             <div class="shop-metric rating"><div class="m-val"><?= number_format($s['rating'],1) ?></div><div class="m-lbl">评分</div></div>
                             <div class="shop-metric"><div class="m-val"><?= $s['review_count']??0 ?></div><div class="m-lbl">评价数</div></div>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             <?php endif; ?>
         <?php else: ?>
@@ -252,7 +252,7 @@ a{text-decoration:none;color:inherit}
                 <div class="empty"><i class="fas fa-user-circle"></i><p>暂无模特排行数据</p></div>
             <?php else: ?>
                 <?php foreach ($modelRanking as $i => $m): ?>
-                    <div class="shop-rank-item" onclick="location.href='<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>'" style="cursor:pointer">
+                    <a href="<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>" class="shop-rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <?php 
                         $rAvatar = $m['model_avatar'] ? '../' . $m['model_avatar'] : ($m['user_avatar'] ? (strpos($m['user_avatar'],'/')!==false ? '../'.$m['user_avatar'] : '/assets/images/'.$m['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
@@ -281,7 +281,7 @@ a{text-decoration:none;color:inherit}
                             <div class="shop-metric rating"><div class="m-val"><?= number_format($m['like_count']) ?></div><div class="m-lbl">点赞</div></div>
                             <div class="shop-metric"><div class="m-val"><?= $m['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             <?php endif; ?>
         <?php endif; ?>

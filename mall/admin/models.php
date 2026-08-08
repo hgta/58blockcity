@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Model.php';
 require_once '../../classes/User.php';
 require_once '../../classes/City.php';
+require_once '../../classes/SeoHelper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: ../auth/login.php');
@@ -134,12 +135,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data['status'] = $_POST['status'] ?? 'active';
                 if ($model->update($modelId, $data)) {
                     $actionMsg = '<div class="admin-alert admin-alert-success">模特信息已更新</div>';
+                    // 推送更新后的模特页 URL 给百度
+                    SeoHelper::pushContentUrl(SeoHelper::modelUrl($modelId, $data['nickname'] ?? ''));
                 }
             } else {
                 if (empty($data['nickname'])) {
                     $actionMsg = '<div class="admin-alert admin-alert-error">昵称为必填项</div>';
                 } elseif ($model->create($data)) {
                     $actionMsg = '<div class="admin-alert admin-alert-success">模特创建成功</div>';
+                    $newId = $pdo->lastInsertId();
+                    SeoHelper::pushContentUrl(SeoHelper::modelUrl($newId, $data['nickname'] ?? ''));
                 } else {
                     $actionMsg = '<div class="admin-alert admin-alert-error">创建失败</div>';
                 }

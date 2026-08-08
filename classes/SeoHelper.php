@@ -197,6 +197,35 @@ class SeoHelper
     }
 
     /**
+     * 发布内容时自动推送 URL 到百度
+     * 读取 config/seo.php 的 auto_push_enabled，仅当开启且 token 非占位值时执行
+     */
+    public static function pushContentUrl($url)
+    {
+        $configFile = __DIR__ . '/../config/seo.php';
+        if (!file_exists($configFile)) return;
+        $config = require $configFile;
+        if (empty($config['auto_push_enabled'])) return;
+        if (empty($config['baidu_token']) || $config['baidu_token'] === 'YOUR_BAIDU_TOKEN') return;
+        self::baiduPush($url);
+    }
+
+    /**
+     * 通知百度 sitemap 已更新（主动 ping）
+     * 可在 sitemap.php 结尾或 cron 中调用
+     */
+    public static function pingSitemap($sitemapUrl)
+    {
+        // 百度
+        $baiduPing = 'http://data.zz.baidu.com/urls?site=' . urlencode($sitemapUrl) . '&type=sitemap';
+        @file_get_contents($baiduPing);
+
+        // Google（如果有）
+        $googlePing = 'https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl);
+        @file_get_contents($googlePing);
+    }
+
+    /**
      * 如果当前 URL 不是规范 URL，执行 301 跳转
      */
     public static function redirectIfNotCanonical($canonicalUrl)
