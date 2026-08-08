@@ -82,47 +82,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($displayColor !== null && !in_array($displayColor, ['red', 'green', 'blue'])) $displayColor = null;
             $displayImage = null;
 
-            if ($displayType === 'image' && isset($_FILES['display_image']) && $_FILES['display_image']['error'] === UPLOAD_ERR_OK) {
-                $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                if (!in_array($_FILES['display_image']['type'], $allowed)) {
-                    throw new Exception('仅支持 jpg/png/gif/webp 图片');
-                }
-                $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
-                $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
-
-                // 依次尝试可写目录；注意 block.58.tl 的网站根目录是 block/，
-                // 所以上传目标必须在 block/ 之内，否则 URL(/xxx) 无法访问导致 404
-                $candidates = [
-                    ['dir' => __DIR__ . '/../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
-                    ['dir' => __DIR__ . '/../uploads',                     'rel' => 'uploads/'],
-                ];
-                $destDir = null;
-                $destRel = '';
-                foreach ($candidates as $c) {
-                    if (!is_dir($c['dir'])) {
-                        @mkdir($c['dir'], 0777, true);
-                        if (is_dir($c['dir'])) @chmod($c['dir'], 0777);
+            if ($displayType === 'image') {
+                // 优先使用"已有图片"选择
+                $existingImage = trim($_POST['existing_image'] ?? '');
+                if ($existingImage !== '') {
+                    $displayImage = $existingImage;
+                } elseif (isset($_FILES['display_image']) && $_FILES['display_image']['error'] === UPLOAD_ERR_OK) {
+                    $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!in_array($_FILES['display_image']['type'], $allowed)) {
+                        throw new Exception('仅支持 jpg/png/gif/webp 图片');
                     }
-                    if (is_dir($c['dir']) && is_writable($c['dir'])) {
-                        $destDir = $c['dir'];
-                        $destRel = $c['rel'];
-                        break;
-                    }
-                }
-                if ($destDir === null) {
-                    // 给出可在服务器执行的修复命令，避免裸 PHP 警告
-                    $hint = __DIR__ . '/../assets/uploads/block_skins';
-                    throw new Exception('上传目录无写权限，请在服务器执行：chmod -R 777 ' . $hint);
-                }
+                    $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
+                    $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
 
-                $dest = $destDir . '/' . $fname;
-                if (!is_writable($destDir) || !move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
-                    throw new Exception('图片保存失败，目录不可写（chmod -R 777 ' . $destDir . '）');
+                    // 依次尝试可写目录；注意 block.58.tl 的网站根目录是 block/，
+                    // 所以上传目标必须在 block/ 之内，否则 URL(/xxx) 无法访问导致 404
+                    $candidates = [
+                        ['dir' => __DIR__ . '/../assets/uploads/block_skins', 'rel' => 'assets/uploads/block_skins/'],
+                        ['dir' => __DIR__ . '/../uploads',                     'rel' => 'uploads/'],
+                    ];
+                    $destDir = null;
+                    $destRel = '';
+                    foreach ($candidates as $c) {
+                        if (!is_dir($c['dir'])) {
+                            @mkdir($c['dir'], 0777, true);
+                            if (is_dir($c['dir'])) @chmod($c['dir'], 0777);
+                        }
+                        if (is_dir($c['dir']) && is_writable($c['dir'])) {
+                            $destDir = $c['dir'];
+                            $destRel = $c['rel'];
+                            break;
+                        }
+                    }
+                    if ($destDir === null) {
+                        // 给出可在服务器执行的修复命令，避免裸 PHP 警告
+                        $hint = __DIR__ . '/../assets/uploads/block_skins';
+                        throw new Exception('上传目录无写权限，请在服务器执行：chmod -R 777 ' . $hint);
+                    }
+
+                    $dest = $destDir . '/' . $fname;
+                    if (!is_writable($destDir) || !move_uploaded_file($_FILES['display_image']['tmp_name'], $dest)) {
+                        throw new Exception('图片保存失败，目录不可写（chmod -R 777 ' . $destDir . '）');
+                    }
+                    $displayImage = $destRel . $fname;
+                } else {
+                    // 既没选已有图片也没上传新图时保留原图
+                    $displayImage = $blockInfo['display_image'];
                 }
-                $displayImage = $destRel . $fname;
-            } elseif ($displayType === 'image') {
-                // 未上传新图时保留原图
-                $displayImage = $blockInfo['display_image'];
             }
 
             if ($block->saveBlockSkin($blockIds, $userId, $displayType, $displayImage, $displayText, $displayColor)) {
@@ -216,6 +222,47 @@ $skinColors = [
 .st-pending { background:#fff3e0; color:#ff6b00; }
 </style>
 
+<script>
+// 展开/收起已有图片面板
+document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('existing-toggle');
+    var grid = document.getElementById('existing-images-grid');
+    if (toggle && grid) {
+        toggle.addEventListener('click', function() {
+            if (grid.style.display === 'none') {
+                grid.style.display = 'grid';
+                toggle.textContent = '收起 ▲';
+            } else {
+                grid.style.display = 'none';
+                toggle.textContent = '展开 ▼';
+            }
+        });
+    }
+});
+
+// 选中已有图片
+function selectExistingImage(el, src) {
+    // 高亮选中项
+    document.querySelectorAll('.existing-img-item').forEach(function(item) {
+        item.style.borderColor = 'transparent';
+    });
+    el.style.borderColor = '#ff6b00';
+
+    // 记录选中路径
+    document.getElementById('existing_image').value = src;
+    // 清除上传文件选择（二选一）
+    document.getElementById('display_image_input').value = '';
+}
+
+// 上传新图片时清除已有图片选择
+document.getElementById('display_image_input').addEventListener('change', function() {
+    document.getElementById('existing_image').value = '';
+    document.querySelectorAll('.existing-img-item').forEach(function(item) {
+        item.style.borderColor = 'transparent';
+    });
+});
+</script>
+
 <div class="manage-wrap">
     <div class="manage-card">
         <h2><i class="fas fa-cog"></i> 区块管理</h2>
@@ -243,11 +290,44 @@ $skinColors = [
             </div>
             <div class="form-group">
                 <label class="form-label">图片（图片模式）</label>
-                <input type="file" name="display_image" accept="image/*" class="form-input">
+                <input type="file" name="display_image" accept="image/*" class="form-input" id="display_image_input">
                 <?php if (!empty($blockInfo['display_image'])): ?>
                     <img class="skin-img-prev" src="/<?= htmlspecialchars($blockInfo['display_image']) ?>" alt="当前皮肤">
                 <?php endif; ?>
             </div>
+            <div class="form-group" id="existing-images-section">
+                <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+                    从已有图片中选择
+                    <span id="existing-toggle" style="color:#ff6b00;cursor:pointer;font-size:13px;font-weight:normal;">展开 ▼</span>
+                </label>
+                <div id="existing-images-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px;">
+                    <?php
+                    $skinDir = __DIR__ . '/../assets/uploads/block_skins';
+                    $skinRel = 'assets/uploads/block_skins/';
+                    $existingImages = [];
+                    if (is_dir($skinDir)) {
+                        foreach (scandir($skinDir) as $f) {
+                            if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp'])) {
+                                $existingImages[] = $skinRel . $f;
+                            }
+                        }
+                        sort($existingImages);
+                    }
+                    ?>
+                    <?php if (empty($existingImages)): ?>
+                        <div style="color:#999;font-size:13px;grid-column:1/-1;">暂无已上传图片，上传第一张后可复用</div>
+                    <?php else: ?>
+                        <?php foreach ($existingImages as $img): ?>
+                        <div class="existing-img-item" data-src="<?= htmlspecialchars($img) ?>" style="aspect-ratio:1;overflow:hidden;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s;"
+                             onclick="selectExistingImage(this, '<?= htmlspecialchars($img) ?>')">
+                            <img src="/<?= htmlspecialchars($img) ?>" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentElement.style.display='none'">
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <!-- 隐藏字段：记录选中的已有图片路径，优先级高于上传文件 -->
+            <input type="hidden" name="existing_image" id="existing_image" value="">
             <div class="form-group">
                 <label class="form-label">文字内容（文字模式，≤50字）</label>
                 <input type="text" name="display_text" class="form-input" maxlength="50" value="<?= htmlspecialchars($blockInfo['display_text'] ?? '') ?>" placeholder="如：我的咖啡馆">
