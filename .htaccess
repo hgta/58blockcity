@@ -8,19 +8,19 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^city/([a-z]+)\.html$ city.php?pinyin=$1 [L,QSA]
 
 # 商城商品伪静态
-RewriteRule ^mall/product/([0-9]+)-.*\.html$ mall/product/detail.php?id=$1 [L,QSA]
+RewriteRule ^mall/product/([0-9]+)-.*\.html$ mall/product/detail.php?id=$1 [B,L,QSA]
 
 # 商城店铺伪静态
-RewriteRule ^mall/shop/([0-9]+)-.*\.html$ mall/shop/view.php?id=$1 [L,QSA]
+RewriteRule ^mall/shop/([0-9]+)-.*\.html$ mall/shop/view.php?id=$1 [B,L,QSA]
 
 # 互访圈伪静态
-RewriteRule ^circle/([0-9]+)-.*\.html$ hufang/circles/view.php?id=$1 [L,QSA]
+RewriteRule ^circle/([0-9]+)-.*\.html$ hufang/circles/view.php?id=$1 [B,L,QSA]
 
 # NFT 伪静态
-RewriteRule ^nft/([0-9]+)-.*\.html$ nft/nft/view.php?id=$1 [L,QSA]
+RewriteRule ^nft/([0-9]+)-.*\.html$ nft/nft/view.php?id=$1 [B,L,QSA]
 
 # 模特伪静态
-RewriteRule ^mall/model/([0-9]+)-.*\.html$ mall/model/view.php?id=$1 [L,QSA]
+RewriteRule ^mall/model/([0-9]+)-.*\.html$ mall/model/view.php?id=$1 [B,L,QSA]
 
 # 强制 HTTPS
 RewriteCond %{HTTPS} off
