@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new Exception('仅支持 jpg/png/gif/webp 图片');
                     }
                     $ext = pathinfo($_FILES['display_image']['name'], PATHINFO_EXTENSION);
-                    $fname = 'block_' . $repId . '_' . time() . '.' . $ext;
+                    $fname = 'u' . $userId . '_' . time() . '.' . $ext;
 
                     // 依次尝试可写目录；注意 block.58.tl 的网站根目录是 block/，
                     // 所以上传目标必须在 block/ 之内，否则 URL(/xxx) 无法访问导致 404
@@ -304,14 +304,16 @@ document.getElementById('display_image_input').addEventListener('change', functi
                     <?php
                     $skinDir = __DIR__ . '/../assets/uploads/block_skins';
                     $skinRel = 'assets/uploads/block_skins/';
+                    $userPrefix = 'u' . $userId . '_';
                     $existingImages = [];
                     if (is_dir($skinDir)) {
                         foreach (scandir($skinDir) as $f) {
-                            if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp'])) {
+                            if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp'])
+                                && strpos($f, $userPrefix) === 0) {
                                 $existingImages[] = $skinRel . $f;
                             }
                         }
-                        sort($existingImages);
+                        rsort($existingImages); // 新的在前
                     }
                     ?>
                     <?php if (empty($existingImages)): ?>
