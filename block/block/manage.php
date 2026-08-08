@@ -308,8 +308,10 @@ document.getElementById('display_image_input').addEventListener('change', functi
                     $existingImages = [];
                     if (is_dir($skinDir)) {
                         foreach (scandir($skinDir) as $f) {
-                            if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp'])
-                                && strpos($f, $userPrefix) === 0) {
+                            $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+                            if (!in_array($ext, ['jpg','jpeg','png','gif','webp'])) continue;
+                            // 新格式：u{userId}_xxx，或旧格式 block_{id}_xxx（兼容历史图片）
+                            if (strpos($f, $userPrefix) === 0 || strpos($f, 'block_') === 0) {
                                 $existingImages[] = $skinRel . $f;
                             }
                         }
