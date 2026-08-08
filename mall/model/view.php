@@ -148,7 +148,7 @@ require_once '../includes/header.php';
                 <?php if ($modelInfo['measurements']): ?><span><i class="fas fa-ruler-combined"></i> <?= htmlspecialchars($modelInfo['measurements']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['zodiac']): ?><span><i class="fas fa-star"></i> <?= htmlspecialchars($modelInfo['zodiac']) ?></span><?php endif; ?>
                 <?php if ($modelInfo['follower_count']): ?><span><i class="fas fa-users"></i> <b class="follower-count"><?= Model::formatFollower($modelInfo['follower_count']) ?></b>粉丝</span><?php endif; ?>
-                <?php if ($modelInfo['view_count']): ?><span><i class="fas fa-eye"></i> <?= number_format($modelInfo['view_count'] + 1) ?>次访问</span><?php endif; ?>
+                <span><i class="fas fa-eye"></i> <?= number_format(($modelInfo['view_count'] ?? 0) + 1) ?>次访问</span>
             </div>
             <?php if ($modelInfo['hobbies']): ?>
             <div style="margin-bottom:10px;"><strong>爱好：</strong><?= nl2br(htmlspecialchars($modelInfo['hobbies'])) ?></div>
