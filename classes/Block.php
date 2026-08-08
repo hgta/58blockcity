@@ -353,26 +353,17 @@ class Block {
     }
 
     /**
-     * 更新城市统计数据
+     * 更新城市统计（仅更新 updated_at，不覆盖 activated_blocks/resident_count）
+     *
+     * activated_blocks 和 resident_count 由后台 sync-cities.php 或手动维护，
+     * 不应被认领/取消认领/交易等用户操作覆盖为本站 blocks 表的实时统计。
      */
     public function updateCityStats($cityId) {
         try {
-            // 计算已激活区块数量
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) as activated_count FROM blocks WHERE city_id = ? AND status = 'sold'");
+            $stmt = $this->pdo->prepare("UPDATE cities SET updated_at = NOW() WHERE id = ?");
             $stmt->execute([$cityId]);
-            $activatedCount = $stmt->fetchColumn();
-            
-            // 计算居民数量（去重的区块拥有者）
-            $stmt = $this->pdo->prepare("SELECT COUNT(DISTINCT owner_id) as resident_count FROM blocks WHERE city_id = ? AND status = 'sold'");
-            $stmt->execute([$cityId]);
-            $residentCount = $stmt->fetchColumn();
-            
-            // 更新城市表
-            $stmt = $this->pdo->prepare("UPDATE cities SET activated_blocks = ?, resident_count = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$activatedCount, $residentCount, $cityId]);
-            
         } catch (PDOException $e) {
-            error_log("更新城市统计数据失败: " . $e->getMessage());
+            error_log("更新城市时间戳失败: " . $e->getMessage());
         }
     }
 
