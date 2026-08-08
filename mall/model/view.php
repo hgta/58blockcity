@@ -21,6 +21,9 @@ if (!$modelInfo || $modelInfo['status'] !== 'active') {
     exit;
 }
 
+// 记录浏览（轻量累加，不做去重）
+$model->recordView($modelId);
+
 // 旧 URL 301 跳转到规范 URL（仅无分页参数时跳转）
 $canonicalUrl = SeoHelper::modelUrl($modelId, $modelInfo['nickname'] ?? '');
 if (empty($_GET['page'])) {

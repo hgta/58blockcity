@@ -88,11 +88,12 @@ class MallRanking {
      */
     public function getModelRanking($type = 'product_count', $limit = 20)
     {
-        $allowed = ['product_count', 'like_count', 'review_count'];
+        $allowed = ['product_count', 'like_count', 'review_count', 'follower_count', 'view_count'];
         if (!in_array($type, $allowed)) $type = 'product_count';
 
         $sql = "SELECT m.id, m.nickname, m.gender, m.height, m.avatar as model_avatar,
-                       m.product_count, m.like_count, m.review_count, m.{$type} as sort_value, 
+                       m.product_count, m.like_count, m.review_count,
+                       m.follower_count, m.view_count, m.{$type} as sort_value, 
                        u.username, u.avatar as user_avatar
                 FROM models m
                 LEFT JOIN users u ON m.user_id = u.id

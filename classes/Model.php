@@ -547,4 +547,13 @@ class Model
         return $map;
     }
 
+    /**
+     * 记录模特个人页访问（view_count +1，轻量累加不做去重）
+     */
+    public function recordView($modelId)
+    {
+        $this->pdo->prepare("UPDATE models SET view_count = view_count + 1 WHERE id = ?")
+                  ->execute([intval($modelId)]);
+    }
+
 }

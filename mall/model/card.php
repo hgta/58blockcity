@@ -72,14 +72,16 @@ if (!function_exists('renderModelCard')) {
             </div>
             <?php endif; ?>
             <div class="mc-body">
-                <a class="mc-name" href="<?= htmlspecialchars($url) ?>"><?= $nickname ?></a>
+                <div class="mc-name-row">
+                    <a class="mc-name" href="<?= htmlspecialchars($url) ?>"><?= $nickname ?></a>
+                    <?= $btn ?>
+                </div>
                 <?php if ($metaStr): ?><div class="mc-meta"><?= $metaStr ?></div><?php endif; ?>
                 <div class="mc-stats">
                     <span>❤ <b class="like-count"><?= $like ?></b></span>
                     <span>👥 <b class="follower-count"><?= Model::formatFollower($follower) ?></b></span>
                     <span>📦 <b><?= $productStr ?></b></span>
                 </div>
-                <?= $btn ?>
             </div>
         </div>
         <?php

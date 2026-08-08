@@ -33,11 +33,10 @@ $categories = $category->getPopularCategories(8);
 $topViewedProducts = $mallRanking->getProductRanking('popular', 5);
 $topSoldProducts = $mallRanking->getProductRanking('sales', 5);
 
-// 人气模特（首页导流）
+// 人气模特（首页导流，一行5个紧凑展示）
 $modelObj = new Model($pdo);
-$topModels = $modelObj->getFilteredList(['sort' => 'follower'], 1, 10)['list'];
+$topModels = $modelObj->getFilteredList(['sort' => 'follower'], 1, 5)['list'];
 $topModelIds = array_column($topModels, 'id');
-$topModelStrips = $modelObj->getModelImageStrips($topModelIds, 4);
 $userId = $_SESSION['user_id'] ?? 0;
 $topModelFollowed = [];
 if ($userId && $topModelIds) {
@@ -415,15 +414,26 @@ require_once 'model/card.php';
             }
         }
         
-        /* 人气模特横滑 */
-        .model-strip {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            padding-bottom: 10px;
+        /* 人气模特紧凑网格（一行5个，响应式收窄） */
+        .model-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
         }
-        .model-strip .model-card { flex: 0 0 200px; }
-        .model-strip .mc-thumbs { display: none; }
+        .model-mini-grid .model-card { border-radius: 10px; }
+        .model-mini-grid .mc-avatar { aspect-ratio: 1 / 1; max-height: 140px; }
+        .model-mini-grid .mc-thumbs { display: none; }
+        .model-mini-grid .mc-body { padding: 8px 10px 10px; }
+        .model-mini-grid .mc-name { font-size: 13px; }
+        .model-mini-grid .mc-meta { font-size: 11px; margin: 2px 0; }
+        .model-mini-grid .mc-stats { font-size: 11px; gap: 6px; padding-top: 6px; }
+        .model-mini-grid .model-follow-btn { font-size: 12px; padding: 4px 10px; }
+        @media (max-width: 1024px) {
+            .model-mini-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .model-mini-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -606,9 +616,9 @@ require_once 'model/card.php';
                 <h2>📸 人气模特</h2>
                 <a href="model/list.php" class="more-link">查看模特库 &gt;</a>
             </div>
-            <div class="model-strip">
+            <div class="model-mini-grid">
                 <?php foreach ($topModels as $m): ?>
-                    <?= renderModelCard($m, $topModelStrips[$m['id']] ?? [], isset($topModelFollowed[$m['id']]), $userId) ?>
+                    <?= renderModelCard($m, [], isset($topModelFollowed[$m['id']]), $userId) ?>
                 <?php endforeach; ?>
             </div>
         </div>

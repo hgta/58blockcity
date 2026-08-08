@@ -12,7 +12,7 @@ $stats = $ranking->getRankingStats();
 $mainTab = $_GET['tab'] ?? 'product';
 $productType = $_GET['type'] ?? 'popular';
 $shopType = $_GET['type'] ?? 'sales';
-$modelType = $_GET['type'] ?? 'product_count';
+$modelType = $_GET['type'] ?? 'follower_count';
 
 $productTypes = [
     'popular' => ['name'=>'人气榜','icon'=>'fire','desc'=>'最多人浏览的商品'],
@@ -27,8 +27,10 @@ $shopTypes = [
 ];
 
 $modelTypes = [
-    'product_count' => ['name'=>'关联商品','icon'=>'box','desc'=>'关联商品数最多'],
+    'follower_count' => ['name'=>'粉丝榜','icon'=>'users','desc'=>'粉丝数最多的模特'],
+    'view_count'     => ['name'=>'访问榜','icon'=>'eye','desc'=>'个人主页访问量最高'],
     'like_count'    => ['name'=>'点赞榜','icon'=>'heart','desc'=>'点赞数最高'],
+    'product_count' => ['name'=>'关联商品','icon'=>'box','desc'=>'关联商品数最多'],
     'review_count'  => ['name'=>'口碑榜','icon'=>'comments','desc'=>'评论数最多'],
 ];
 
@@ -161,7 +163,7 @@ a{text-decoration:none;color:inherit}
     <div class="main-tabs">
         <div class="main-tab <?= $mainTab==='product'?'active':'' ?>" onclick="location.href='?tab=product&type=<?= $productType ?>'"><i class="fas fa-trophy"></i> 商品排行</div>
         <div class="main-tab <?= $mainTab==='shop'?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $shopType ?>'"><i class="fas fa-store"></i> 店铺排行</div>
-        <div class="main-tab <?= $mainTab==='model'?'active':'' ?>" onclick="location.href='?tab=model&type=product_count'"><i class="fas fa-user-circle"></i> 模特排行</div>
+        <div class="main-tab <?= $mainTab==='model'?'active':'' ?>" onclick="location.href='?tab=model&type=follower_count'"><i class="fas fa-user-circle"></i> 模特排行</div>
     </div>
 
     <div class="sub-tabs">
@@ -264,9 +266,20 @@ a{text-decoration:none;color:inherit}
                             </div>
                         </div>
                         <div class="shop-metrics">
-                            <div class="shop-metric sales"><div class="m-val"><?= $m['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
-                            <div class="shop-metric rating"><div class="m-val"><?= $m['like_count'] ?></div><div class="m-lbl">点赞数</div></div>
-                            <div class="shop-metric"><div class="m-val"><?= $m['review_count'] ?></div><div class="m-lbl">评论数</div></div>
+                            <?php
+                            // 按当前排行维度动态展示主指标
+                            $metricLabel = $currentTypes[$modelType]['name'] ?? '粉丝';
+                            $metricVal = $m['sort_value'] ?? $m[$modelType] ?? 0;
+                            if ($modelType === 'follower_count' || $modelType === 'view_count') {
+                                // 粉丝/访问数用万格式化
+                                $formattedVal = $metricVal >= 10000 ? rtrim(rtrim(number_format($metricVal/10000,1,'.',''),'0'),'.').'万' : number_format($metricVal);
+                            } else {
+                                $formattedVal = number_format($metricVal);
+                            }
+                            ?>
+                            <div class="shop-metric sales"><div class="m-val"><?= $formattedVal ?></div><div class="m-lbl"><?= $metricLabel ?></div></div>
+                            <div class="shop-metric rating"><div class="m-val"><?= number_format($m['like_count']) ?></div><div class="m-lbl">点赞</div></div>
+                            <div class="shop-metric"><div class="m-val"><?= $m['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
                         </div>
                     </div>
                 <?php endforeach; ?>

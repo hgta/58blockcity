@@ -103,19 +103,39 @@
 .mc-meta { font-size: 12px; color: #999; margin: 4px 0; line-height: 1.5; }
 .mc-stats { font-size: 12px; color: #777; display: flex; gap: 10px; margin-top: auto; padding-top: 8px; }
 .mc-stats b { color: #ff6b00; }
+
+/* 昵称 + 关注按钮同行 */
+.mc-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.mc-name-row .mc-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .model-follow-btn {
-    margin-top: 10px;
-    width: 100%;
-    padding: 7px 0;
+    flex-shrink: 0;
+    padding: 5px 14px;
     border-radius: 20px;
     border: 1px solid #ff6b00;
     background: #fff;
     color: #ff6b00;
     font-size: 13px;
     cursor: pointer;
+    white-space: nowrap;
     transition: all .15s;
+    min-height: 32px;
+    line-height: 1.4;
 }
-.model-follow-btn.followed { background: #ff6b00; color: #fff; }
+.model-follow-btn:hover { background: #fff5f0; border-color: #e55a00; color: #e55a00; }
+.model-follow-btn.followed { background: #ff6b00; color: #fff; border-color: #ff6b00; }
+.model-follow-btn.followed:hover { background: #e55a00; border-color: #e55a00; }
 .model-load-more {
     display: block;
     margin: 24px auto;
