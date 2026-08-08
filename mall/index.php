@@ -45,7 +45,6 @@ if ($userId && $topModelIds) {
     $stmt->execute([$userId]);
     $topModelFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
 }
-require_once 'model/card.php';
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -414,25 +413,65 @@ require_once 'model/card.php';
             }
         }
         
-        /* 人气模特紧凑网格（一行5个，响应式收窄） */
+        /* 人气模特紧凑网格 */
         .model-mini-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 12px;
         }
-        .model-mini-grid .model-card { border-radius: 10px; }
-        .model-mini-grid .mc-avatar { aspect-ratio: 1 / 1; max-height: 140px; }
-        .model-mini-grid .mc-thumbs { display: none; }
-        .model-mini-grid .mc-body { padding: 8px 10px 10px; }
-        .model-mini-grid .mc-name { font-size: 13px; }
-        .model-mini-grid .mc-meta { font-size: 11px; margin: 2px 0; }
-        .model-mini-grid .mc-stats { font-size: 11px; gap: 6px; padding-top: 6px; }
-        .model-mini-grid .model-follow-btn { font-size: 12px; padding: 4px 10px; }
+        .mini-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 8px 12px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+        .mini-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: block;
+            flex-shrink: 0;
+            border: 2px solid #ff6b00;
+        }
+        .mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .mini-avatar-placeholder {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            color: #ccc; font-size: 26px; background: #f5f5f5;
+        }
+        .mini-name {
+            font-size: 13px; font-weight: 600; color: #222;
+            text-decoration: none;
+            max-width: 100%;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .mini-name:hover { color: #ff6b00; }
+        .mini-meta { font-size: 11px; color: #999; }
+        .model-mini-grid .model-follow-btn {
+            font-size: 12px; padding: 4px 12px;
+            border-radius: 14px; border: 1px solid #ff6b00;
+            background: #fff; color: #ff6b00;
+            cursor: pointer; white-space: nowrap;
+            text-decoration: none; display: inline-block;
+            min-height: 28px; line-height: 1.3;
+        }
+        .model-mini-grid .model-follow-btn:hover { background: #fff5f0; }
+        .model-mini-grid .model-follow-btn.followed { background: #ff6b00; color: #fff; }
+        .model-mini-grid .model-follow-btn.followed:hover { background: #e55a00; }
         @media (max-width: 1024px) {
             .model-mini-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 480px) {
             .model-mini-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .mini-avatar { width: 50px; height: 50px; }
+            .mini-name { font-size: 12px; }
         }
     </style>
 </head>
@@ -617,8 +656,37 @@ require_once 'model/card.php';
                 <a href="model/list.php" class="more-link">查看模特库 &gt;</a>
             </div>
             <div class="model-mini-grid">
-                <?php foreach ($topModels as $m): ?>
-                    <?= renderModelCard($m, [], isset($topModelFollowed[$m['id']]), $userId) ?>
+                <?php foreach ($topModels as $m): 
+                    $mId = intval($m['id']);
+                    $mUrl = SeoHelper::modelUrl($mId, $m['nickname'] ?? '');
+                    $mAvatar = '';
+                    if (!empty($m['avatar'])) {
+                        $mAvatar = '../' . $m['avatar'];
+                    } elseif (!empty($m['user_avatar'])) {
+                        $ua = $m['user_avatar'];
+                        $mAvatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+                    }
+                    $mFollowed = isset($topModelFollowed[$mId]);
+                ?>
+                <div class="mini-card">
+                    <a class="mini-avatar" href="<?= htmlspecialchars($mUrl) ?>">
+                        <?php if ($mAvatar): ?>
+                            <img src="<?= htmlspecialchars($mAvatar) ?>" alt="<?= htmlspecialchars($m['nickname']) ?>" loading="lazy">
+                        <?php else: ?>
+                            <div class="mini-avatar-placeholder"><i class="fas fa-user"></i></div>
+                        <?php endif; ?>
+                    </a>
+                    <a class="mini-name" href="<?= htmlspecialchars($mUrl) ?>"><?= htmlspecialchars($m['nickname']) ?></a>
+                    <div class="mini-meta"><?= Model::formatFollower(intval($m['follower_count'] ?? 0)) ?> 粉丝</div>
+                    <?php if ($userId): ?>
+                    <button class="model-follow-btn <?= $mFollowed ? 'followed' : '' ?>" data-model-id="<?= $mId ?>"
+                            data-logged-in="1" data-login-url="auth/login.php?redirect=<?= urlencode($mUrl) ?>">
+                        <?= $mFollowed ? '已关注' : '+ 关注' ?>
+                    </button>
+                    <?php else: ?>
+                    <a class="model-follow-btn" href="auth/login.php?redirect=<?= urlencode($mUrl) ?>">+ 关注</a>
+                    <?php endif; ?>
+                </div>
                 <?php endforeach; ?>
             </div>
         </div>
