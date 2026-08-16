@@ -67,11 +67,11 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                 <h4>专属福利</h4>
                 <div class="qr-group">
                     <div class="qr-item">
-                        <img src="/images/qr-discount.png" alt="7.5折购地">
+                        <img src="https://www.58.tl/images/qr-discount.png" alt="7.5折购地">
                         <span>7.5折购地</span>
                     </div>
                     <div class="qr-item">
-                        <img src="/images/qr-customer-service.png" alt="客服微信">
+                        <img src="https://www.58.tl/images/qr-customer-service.png" alt="客服微信">
                         <span>客服微信</span>
                     </div>
                 </div>
