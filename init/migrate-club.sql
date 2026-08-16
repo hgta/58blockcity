@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `title` varchar(100) DEFAULT NULL COMMENT '标题(moment 可为空)',
   `content` text NOT NULL COMMENT '正文/心情内容',
   `images` text COMMENT '配图 JSON 数组',
-  `topic` varchar(30) DEFAULT NULL COMMENT '话题: block/nft/bct/city',
+  `topic` varchar(30) DEFAULT NULL COMMENT '话题: block/nft/bct(城市是板块,非话题)',
   `like_count` int(11) NOT NULL DEFAULT '0',
   `comment_count` int(11) NOT NULL DEFAULT '0',
   `status` enum('active','hidden') NOT NULL DEFAULT 'active',

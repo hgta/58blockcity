@@ -138,7 +138,6 @@ require_once 'includes/header.php';
                     <option value="block">聊区块</option>
                     <option value="nft">聊头像</option>
                     <option value="bct">聊人气值</option>
-                    <option value="city">聊城市</option>
                 </select>
             </div>
 

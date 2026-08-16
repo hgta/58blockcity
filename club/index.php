@@ -26,23 +26,29 @@ if ($userId) {
     $myCity = $u['city'] ?? '';
 }
 
-// 热门城市（发帖城市选择用）
+// 热门城市（城市板块导航）
 $hotCities = [];
 try {
-    $stmt = $pdo->query("SELECT name FROM cities WHERE status='active' ORDER BY rank ASC LIMIT 50");
+    $stmt = $pdo->query("SELECT name FROM cities WHERE status='active' AND is_hot = 1 ORDER BY rank ASC LIMIT 12");
     $hotCities = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    if (empty($hotCities)) {
+        $stmt = $pdo->query("SELECT name FROM cities WHERE status='active' ORDER BY rank ASC LIMIT 12");
+        $hotCities = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
 } catch (Exception $e) {
     $hotCities = [];
 }
 
-// 话题定义
+// 内容分类（城市板块内的二级分类）
 $topics = [
     ''      => ['name'=>'全部', 'icon'=>'list'],
     'block' => ['name'=>'聊区块', 'icon'=>'cubes'],
     'nft'   => ['name'=>'聊头像', 'icon'=>'palette'],
     'bct'   => ['name'=>'聊人气值', 'icon'=>'coins'],
-    'city'  => ['name'=>'聊城市', 'icon'=>'city'],
 ];
+
+// 当前城市板块名（用于标题展示）
+$cityName = $city !== '' ? $city : '全部城市';
 
 $site_config['title'] = '社区首页 - 58区块社区';
 require_once 'includes/header.php';
@@ -52,6 +58,16 @@ require_once 'includes/header.php';
 .club-actions { display: flex; gap: 10px; margin-bottom: 16px; }
 .club-btn { padding: 10px 18px; border-radius: 20px; background: #ff6b00; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; }
 .club-btn.ghost { background: #fff; color: #ff6b00; border: 1px solid #ff6b00; }
+
+/* 城市板块导航（一级） */
+.city-board { margin-bottom: 16px; }
+.city-board-title { font-size: 13px; color: #999; margin-bottom: 8px; }
+.city-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.city-tab { padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; background: #fff; color: #555; font-size: 14px; cursor: pointer; text-decoration: none; transition: all .15s; }
+.city-tab:hover { border-color: #ff6b00; color: #ff6b00; }
+.city-tab.active { background: #ff6b00; color: #fff; border-color: #ff6b00; font-weight: 600; }
+
+/* 内容分类（二级） */
 .club-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .club-tab { padding: 7px 16px; border-radius: 20px; border: 1px solid #ddd; background: #fff; color: #555; font-size: 14px; cursor: pointer; text-decoration: none; }
 .club-tab.active { background: #ff6b00; color: #fff; border-color: #ff6b00; }
@@ -79,13 +95,27 @@ require_once 'includes/header.php';
         <a href="create.php?type=moment" class="club-btn ghost"><i class="fas fa-smile"></i> 发心情</a>
     </div>
 
+    <!-- 城市板块（一级） -->
+    <div class="city-board">
+        <div class="city-board-title">📍 选择城市板块</div>
+        <div class="city-tabs">
+            <a class="city-tab <?= $city === '' ? 'active' : '' ?>" href="index.php?<?= $topic ? 'topic=' . $topic : '' ?>">全部城市</a>
+            <?php foreach ($hotCities as $c): ?>
+                <a class="city-tab <?= $city === $c ? 'active' : '' ?>" href="index.php?city=<?= urlencode($c) ?><?= $topic ? '&topic=' . $topic : '' ?>"><?= htmlspecialchars($c) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <!-- 内容分类（二级，城市板块内） -->
     <div class="club-tabs">
         <?php foreach ($topics as $key => $t): ?>
-            <a class="club-tab <?= $topic === $key ? 'active' : '' ?>" href="index.php?topic=<?= $key ?><?= $city ? '&city=' . urlencode($city) : '' ?>">
+            <a class="club-tab <?= $topic === $key ? 'active' : '' ?>" href="index.php?<?= $city ? 'city=' . urlencode($city) . '&' : '' ?>topic=<?= $key ?>">
                 <i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?>
             </a>
         <?php endforeach; ?>
     </div>
+
+    <div style="font-size:14px;color:#666;margin-bottom:12px;"><?= htmlspecialchars($cityName) ?> · <?= $total ?> 条内容</div>
 
     <?php if (empty($list)): ?>
         <div class="empty"><i class="fas fa-comments" style="font-size:48px;opacity:.4;"></i><p style="margin-top:12px;">暂无内容，来发第一条吧~</p></div>

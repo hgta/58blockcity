@@ -34,7 +34,7 @@ class Post {
         $title   = trim($data['title'] ?? '');
         $content = trim($data['content'] ?? '');
         $city    = trim($data['city'] ?? '');
-        $topic   = in_array($data['topic'] ?? '', ['block', 'nft', 'bct', 'city'], true) ? $data['topic'] : null;
+        $topic   = in_array($data['topic'] ?? '', ['block', 'nft', 'bct'], true) ? $data['topic'] : null;
         $images  = $data['images'] ?? [];
 
         if ($content === '') return '内容不能为空';
@@ -67,7 +67,7 @@ class Post {
         $params = [];
 
         if ($city !== '') { $where[] = "p.city = ?"; $params[] = $city; }
-        if (in_array($topic, ['block', 'nft', 'bct', 'city'], true)) { $where[] = "p.topic = ?"; $params[] = $topic; }
+        if (in_array($topic, ['block', 'nft', 'bct'], true)) { $where[] = "p.topic = ?"; $params[] = $topic; }
         if (in_array($type, ['post', 'moment'], true)) { $where[] = "p.type = ?"; $params[] = $type; }
         $whereSql = implode(' AND ', $where);
 
