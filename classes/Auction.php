@@ -349,7 +349,8 @@ class Auction {
             $b = $this->block->getBlockById(intval($a['item_id']));
             if ($b) {
                 $a['item_title'] = ($b['city_name'] ?? '') . ' ' . ($b['zone'] ?? '') . '区 #' . ($b['block_number'] ?? '');
-                $a['item_image'] = $b['display_image'] ?? null;
+                // 区块皮肤图片在 block 子站，用跨站绝对路径
+                $a['item_image'] = !empty($b['display_image']) ? 'https://block.58.tl/' . ltrim($b['display_image'], '/') : null;
             }
         } else {
             $ncu = $this->pdo->prepare("
@@ -362,7 +363,8 @@ class Auction {
             $rec = $ncu->fetch(PDO::FETCH_ASSOC);
             if ($rec) {
                 $a['item_title'] = 'NFT头像 #' . $rec['code'] . '（' . $rec['city_name'] . '）';
-                $a['item_image'] = $rec['base_image'] ?? null;
+                // NFT 图片在 nft 子站，用跨站绝对路径
+                $a['item_image'] = !empty($rec['base_image']) ? 'https://nft.58.tl/avatar/' . $rec['base_image'] : null;
             }
         }
         return $a;

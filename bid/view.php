@@ -86,8 +86,10 @@ require_once 'includes/header.php';
 <div class="view-wrap">
     <div class="view-grid">
         <div class="view-img">
-            <?php if (!empty($a['item_image'])): ?>
-                <img src="/<?= htmlspecialchars($a['item_image']) ?>" alt="">
+            <?php if (!empty($a['item_image'])): 
+                $imgUrl = preg_match('#^https?://#', $a['item_image']) ? $a['item_image'] : '/' . $a['item_image'];
+            ?>
+                <img src="<?= htmlspecialchars($imgUrl) ?>" alt="">
             <?php else: ?>
                 <span class="ph"><i class="fas fa-image"></i></span>
             <?php endif; ?>

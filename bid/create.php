@@ -114,7 +114,7 @@ require_once 'includes/header.php';
                     <?php else: ?>
                         <?php foreach ($myNfts as $n): ?>
                         <div class="item-opt" data-type="nft" data-id="<?= $n['ncu_id'] ?>" onclick="selectItem(this, '<?= $n['ncu_id'] ?>')">
-                            <?php if ($n['base_image']): ?><img src="/<?= htmlspecialchars($n['base_image']) ?>" alt=""><?php endif; ?>
+                            <?php if ($n['base_image']): ?><img src="https://nft.58.tl/avatar/<?= htmlspecialchars($n['base_image']) ?>" alt="" onerror="this.style.display='none'"><?php endif; ?>
                             <span class="lbl">#<?= htmlspecialchars($n['code']) ?>（<?= htmlspecialchars($n['city_name']) ?>）</span>
                         </div>
                         <?php endforeach; ?>

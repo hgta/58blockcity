@@ -59,7 +59,8 @@ require_once 'includes/header.php';
         <?php foreach ($list as $a): 
             $detail = $auction->getAuctionById($a['id']);
             $img = $detail['item_image'] ?? '';
-            $imgUrl = $img ? '/' . $img : '';
+            // 完整 URL 直接用，相对路径加 / 前缀
+            $imgUrl = $img ? (preg_match('#^https?://#', $img) ? $img : '/' . $img) : '';
         ?>
         <a class="bid-card" href="view.php?id=<?= $a['id'] ?>">
             <div class="bid-img">
