@@ -73,6 +73,11 @@ require_once 'includes/header.php';
 .item-opt img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; }
 .item-opt .lbl { font-size: 12px; color: #555; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hidden { display: none; }
+.guide-empty { text-align: center; padding: 30px 16px; background: #fff9f5; border: 1px dashed #ffd4c4; border-radius: 10px; color: #999; }
+.guide-empty i { font-size: 36px; color: #ffb380; margin-bottom: 10px; }
+.guide-empty div { font-size: 14px; margin-bottom: 12px; color: #666; }
+.guide-link { display: inline-block; padding: 8px 18px; background: #ff6b00; color: #fff; border-radius: 20px; font-size: 13px; text-decoration: none; }
+.guide-link:hover { background: #e05d00; }
 </style>
 
 <div class="create-wrap">
@@ -92,34 +97,42 @@ require_once 'includes/header.php';
             <!-- 区块选择 -->
             <div class="form-group" id="block-select">
                 <label class="form-label">选择区块</label>
+                <?php if (empty($myBlocks)): ?>
+                    <div class="guide-empty">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <div>您还没有可拍卖的区块</div>
+                        <a href="https://block.58.tl/city.php" target="_blank" class="guide-link">前往区块市场认领区块 →</a>
+                    </div>
+                <?php else: ?>
                 <div class="item-grid">
-                    <?php if (empty($myBlocks)): ?>
-                        <div style="color:#999;font-size:13px;grid-column:1/-1;">您暂无可拍卖的区块</div>
-                    <?php else: ?>
-                        <?php foreach ($myBlocks as $b): ?>
-                        <div class="item-opt" data-type="block" data-id="<?= $b['id'] ?>" onclick="selectItem(this, '<?= $b['id'] ?>')">
-                            <span class="lbl"><?= htmlspecialchars($b['city_name']) ?> <?= $b['zone'] ?>区 #<?= $b['block_number'] ?></span>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php foreach ($myBlocks as $b): ?>
+                    <div class="item-opt" data-type="block" data-id="<?= $b['id'] ?>" onclick="selectItem(this, '<?= $b['id'] ?>')">
+                        <span class="lbl"><?= htmlspecialchars($b['city_name']) ?> <?= $b['zone'] ?>区 #<?= $b['block_number'] ?></span>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
             </div>
 
             <!-- NFT 选择 -->
             <div class="form-group hidden" id="nft-select">
                 <label class="form-label">选择 NFT 头像</label>
+                <?php if (empty($myNfts)): ?>
+                    <div class="guide-empty">
+                        <i class="fas fa-image"></i>
+                        <div>您还没有可拍卖的 NFT 头像</div>
+                        <a href="https://nft.58.tl/nft/claim_list.php" target="_blank" class="guide-link">前往头像市场认领 NFT →</a>
+                    </div>
+                <?php else: ?>
                 <div class="item-grid">
-                    <?php if (empty($myNfts)): ?>
-                        <div style="color:#999;font-size:13px;grid-column:1/-1;">您暂无可拍卖的 NFT 头像</div>
-                    <?php else: ?>
-                        <?php foreach ($myNfts as $n): ?>
-                        <div class="item-opt" data-type="nft" data-id="<?= $n['ncu_id'] ?>" onclick="selectItem(this, '<?= $n['ncu_id'] ?>')">
-                            <?php if ($n['base_image']): ?><img src="https://nft.58.tl/avatar/<?= htmlspecialchars($n['base_image']) ?>" alt="" onerror="this.style.display='none'"><?php endif; ?>
-                            <span class="lbl">#<?= htmlspecialchars($n['code']) ?>（<?= htmlspecialchars($n['city_name']) ?>）</span>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php foreach ($myNfts as $n): ?>
+                    <div class="item-opt" data-type="nft" data-id="<?= $n['ncu_id'] ?>" onclick="selectItem(this, '<?= $n['ncu_id'] ?>')">
+                        <?php if ($n['base_image']): ?><img src="https://nft.58.tl/avatar/<?= htmlspecialchars($n['base_image']) ?>" alt="" onerror="this.style.display='none'"><?php endif; ?>
+                        <span class="lbl">#<?= htmlspecialchars($n['code']) ?>（<?= htmlspecialchars($n['city_name']) ?>）</span>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
             </div>
 
             <input type="hidden" name="item_id" id="item_id" value="">
