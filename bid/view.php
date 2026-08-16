@@ -133,7 +133,7 @@ require_once 'includes/header.php';
                 <button type="submit" class="btn-primary">出价</button>
             </form>
             <?php elseif ($a['status'] === 'active' && !$userId): ?>
-            <div style="margin-top:20px;"><a href="../auth/login.php" style="color:#ff6b00;">登录</a>后即可出价</div>
+            <div style="margin-top:20px;"><a href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $auctionId) ?>" style="color:#ff6b00;">登录</a>后即可出价</div>
             <?php elseif ($a['status'] === 'active' && $isSeller): ?>
             <div style="margin-top:20px;color:#999;">您是卖家，不能出价自己的拍卖</div>
             <?php endif; ?>
