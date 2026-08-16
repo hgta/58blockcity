@@ -31,6 +31,10 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             <span style="font-size:28px;">🤝</span>
             <div><div style="font-size:14px;font-weight:600;color:#333;">互访圈</div><div style="font-size:11px;color:#999;">同城社交互访</div></div>
         </a>
+        <a href="https://bid.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fff5f0,#ffe0b2);border-radius:10px;text-decoration:none;border:1px solid #ffcc80;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🔨</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">拍卖</div><div style="font-size:11px;color:#999;">区块/NFT竞拍</div></div>
+        </a>
     </div>
 </div>
 
@@ -48,6 +52,7 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                     <li><a href="https://block.58.tl/"><i class="fas fa-cubes"></i> 区块交易</a></li>
                     <li><a href="https://bct.58.tl/"><i class="fas fa-coins"></i> BCT 交易</a></li>
                     <li><a href="https://mall.58.tl/"><i class="fas fa-shopping-bag"></i> 人气商城</a></li>
+                    <li><a href="https://bid.58.tl/"><i class="fas fa-gavel"></i> 拍卖</a></li>
                 </ul>
             </div>
             <div class="footer-col">

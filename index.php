@@ -186,8 +186,7 @@ $letters = range('A', 'Z');
 				<a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
 				<a href="https://mall.58.tl/" class="nav-button">人气商城</a>
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
-				<a href="top200city.php" class="nav-button">TOP200</a>
-				<a href="hongbao.php" class="nav-button">红包</a>
+				<a href="https://bid.58.tl/" class="nav-button">拍卖</a>
 				<?php if (isset($_SESSION['user_id'])): ?>
 					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#2563eb;color:#fff;">个人中心</a>
 					<a href="auth/logout.php" class="nav-button">退出</a>
@@ -381,6 +380,7 @@ $letters = range('A', 'Z');
                         <li><a href="https://bct.58.tl/" style="color:#64748b;">BCT交易</a></li>
                         <li><a href="https://mall.58.tl/" style="color:#64748b;">人气商城</a></li>
                         <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
+                        <li><a href="https://bid.58.tl/" style="color:#64748b;">拍卖</a></li>
                     </ul>
                 </div>
                 <div>
