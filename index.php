@@ -381,6 +381,7 @@ $letters = range('A', 'Z');
                         <li><a href="https://mall.58.tl/" style="color:#64748b;">人气商城</a></li>
                         <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
                         <li><a href="https://bid.58.tl/" style="color:#64748b;">拍卖</a></li>
+                        <li><a href="https://club.58.tl/" style="color:#64748b;">社区</a></li>
                     </ul>
                 </div>
                 <div>
