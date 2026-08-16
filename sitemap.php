@@ -43,6 +43,7 @@ urlNode('https://mall.58.tl/model/list.php', '0.8', 'daily', $now);
 urlNode('https://nft.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/circles/all.php', '0.8', 'weekly', $now);
+urlNode('https://bid.58.tl/', '0.8', 'daily', $now);
 
 // 2. 城市页
 $stmt = $pdo->query("SELECT id, name, pinyin, updated_at FROM cities WHERE status = 'active' OR status IS NULL ORDER BY id");

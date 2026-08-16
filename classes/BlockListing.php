@@ -38,6 +38,14 @@ class BlockListing {
             if ($blockId === null) $blockId = $ids[0];
         }
 
+        // 互斥校验：若该区块已在拍卖中，拒绝挂牌
+        if (class_exists('Auction')) {
+            $auction = new Auction($this->pdo);
+            if ($auction->isItemInActiveAuction('block', $blockId)) {
+                return false;
+            }
+        }
+
         $this->pdo->beginTransaction();
         try {
             $stmt = $this->pdo->prepare("INSERT INTO block_listings

@@ -33,6 +33,20 @@ class NFT {
     }*/
     
     public function listForSale($nftId, $userId, $price, $currency, $transactionType) {
+        // 互斥校验：若该 NFT 已有 active 拍卖，拒绝挂牌
+        if (class_exists('Auction')) {
+            $auction = new Auction($this->pdo);
+            // 查询该 NFT 是否存在于任一 active 拍卖中（按 nft_id 关联 nft_city_user）
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM auctions a
+                JOIN nft_city_user ncu ON a.item_id = ncu.id
+                WHERE a.item_type = 'nft' AND ncu.nft_id = ? AND a.status IN ('pending','active')");
+            $stmt->execute([intval($nftId)]);
+            if ($stmt->fetchColumn() > 0) {
+                return false;
+            }
+        }
+
         $this->pdo->beginTransaction();
         
         try {
