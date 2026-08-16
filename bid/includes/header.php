@@ -8,8 +8,13 @@ $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '拍卖';
 $site_config['logo_tag']    = $site_config['logo_tag'] ?? 'BlockCity 拍卖平台';
 $site_config['nav_links']   = $site_config['nav_links'] ?? [
-    ['url'=>'index.php',            'icon'=>'gavel',           'text'=>'拍卖大厅'],
-    ['url'=>'create.php',           'icon'=>'plus-circle',     'text'=>'发起拍卖'],
-    ['url'=>'my.php',               'icon'=>'user',            'text'=>'我的拍卖'],
+    ['url'=>'/index.php',            'icon'=>'gavel',           'text'=>'拍卖大厅'],
+    ['url'=>'/create.php',           'icon'=>'plus-circle',     'text'=>'发起拍卖'],
+    ['url'=>'/my.php',               'icon'=>'user',            'text'=>'我的拍卖'],
 ];
+// 登录/个人中心等共享链接改用域名根绝对路径，避免 user/ 子目录页面相对路径错乱
+$site_config['url_dashboard'] = '/user/dashboard.php';
+$site_config['url_logout']    = '/auth/logout.php';
+$site_config['url_login']     = '/auth/login.php';
+$site_config['url_register']  = '/auth/register.php';
 require_once __DIR__ . '/../../shared/header.php';

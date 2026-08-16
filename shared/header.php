@@ -259,11 +259,11 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                     <span class="notification-badge"><?= $message_unread > 9 ? '9+' : $message_unread ?></span>
                     <?php endif; ?>
                 </a>
-                <a href="../user/dashboard.php" class="nav-button"><i class="fas fa-user"></i> 个人中心</a>
-                <a href="../auth/logout.php" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
+                <a href="<?= $site_config['url_dashboard'] ?? '../user/dashboard.php' ?>" class="nav-button"><i class="fas fa-user"></i> 个人中心</a>
+                <a href="<?= $site_config['url_logout'] ?? '../auth/logout.php' ?>" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
             <?php else: ?>
-                <a href="../auth/login.php" class="nav-button"><i class="fas fa-sign-in-alt"></i> 登录</a>
-                <a href="../auth/register.php" class="nav-button" style="background:#ff6b00;color:#fff;border-radius:6px;"><i class="fas fa-user-plus"></i> 注册</a>
+                <a href="<?= $site_config['url_login'] ?? '../auth/login.php' ?>" class="nav-button"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                <a href="<?= $site_config['url_register'] ?? '../auth/register.php' ?>" class="nav-button" style="background:#ff6b00;color:#fff;border-radius:6px;"><i class="fas fa-user-plus"></i> 注册</a>
             <?php endif; ?>
         </div>
     </div>
