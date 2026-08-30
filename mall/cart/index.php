@@ -310,6 +310,7 @@ function normalizeImageUrl($imageUrl) {
 
         .quantity-controls {
             display: flex;
+            flex-direction: row;
             align-items: center;
             gap: 0;
         }
@@ -326,6 +327,7 @@ function normalizeImageUrl($imageUrl) {
             font-size: 16px;
             color: #555;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .quantity-btn:hover {
@@ -349,6 +351,13 @@ function normalizeImageUrl($imageUrl) {
             text-align: center;
             font-size: 14px;
             color: var(--text);
+            flex: none;
+            -moz-appearance: textfield;
+        }
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .item-total {
