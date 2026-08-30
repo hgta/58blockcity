@@ -31,10 +31,10 @@
 
 ## Phase 5: 部署后验证（线上）
 
-- [ ] 5.1 访问 `/post/1-示例标题.html` 正常渲染，`post.php?id=1` 301 到新 URL
-- [ ] 5.2 首页双栏、移动端折叠正常；无 console 报错
-- [ ] 5.3 搜索关键词有结果；搜索结果页被 noindex
-- [ ] 5.4 热帖 tab 排序正确；置顶帖置顶且标记可见
-- [ ] 5.5 详情页评论分页、作者卡关注按钮（登录态）可用
-- [ ] 5.6 `sitemap.xml` 包含 club 帖子条目；发帖后百度推送日志无报错
-- [ ] 5.7 详情页 JSON-LD（Article/Breadcrumb）通过 Google Rich Results 校验
+- [x] 5.1 访问 `/post/1-示例标题.html` 正常渲染，`post.php?id=1` 301 到新 URL
+- [x] 5.2 首页双栏、移动端折叠正常；无 console 报错
+- [x] 5.3 搜索关键词有结果；搜索结果页被 noindex
+- [x] 5.4 热帖 tab 排序正确；置顶帖置顶且标记可见
+- [x] 5.5 详情页评论分页、作者卡关注按钮（登录态）可用
+- [x] 5.6 `sitemap.xml` 包含 club 帖子条目；发帖后百度推送日志无报错
+- [x] 5.7 详情页 JSON-LD（Article/Breadcrumb）通过 Google Rich Results 校验
