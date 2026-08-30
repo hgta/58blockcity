@@ -13,6 +13,7 @@ $mainTab = $_GET['tab'] ?? 'product';
 $productType = $_GET['type'] ?? 'popular';
 $shopType = $_GET['type'] ?? 'sales';
 $modelType = $_GET['type'] ?? 'follower_count';
+$authorType = $_GET['type'] ?? 'follower_count';
 
 $productTypes = [
     'popular' => ['name'=>'人气榜','icon'=>'fire','desc'=>'最多人浏览的商品'],
@@ -34,11 +35,20 @@ $modelTypes = [
     'review_count'  => ['name'=>'口碑榜','icon'=>'comments','desc'=>'评论数最多'],
 ];
 
+$authorTypes = [
+    'follower_count' => ['name'=>'粉丝榜','icon'=>'users','desc'=>'粉丝数最多的作者'],
+    'like_count'     => ['name'=>'点赞榜','icon'=>'heart','desc'=>'点赞数最高'],
+    'view_count'     => ['name'=>'访问榜','icon'=>'eye','desc'=>'个人主页访问量最高'],
+    'product_count'  => ['name'=>'关联商品','icon'=>'box','desc'=>'关联商品数最多'],
+    'review_count'   => ['name'=>'口碑榜','icon'=>'comments','desc'=>'评论数最多'],
+];
+
 $productRanking = ($mainTab === 'product') ? $ranking->getProductRanking($productType, 20) : [];
 $shopRanking = ($mainTab === 'shop') ? $ranking->getShopRanking($shopType, 20) : [];
 $modelRanking = ($mainTab === 'model') ? $ranking->getModelRanking($modelType, 20) : [];
-$currentType = ($mainTab === 'product') ? $productType : (($mainTab === 'shop') ? $shopType : $modelType);
-$currentTypes = ($mainTab === 'product') ? $productTypes : (($mainTab === 'shop') ? $shopTypes : $modelTypes);
+$authorRanking = ($mainTab === 'author') ? $ranking->getAuthorRanking($authorType, 20) : [];
+$currentType = ($mainTab === 'product') ? $productType : (($mainTab === 'shop') ? $shopType : (($mainTab === 'model') ? $modelType : $authorType));
+$currentTypes = ($mainTab === 'product') ? $productTypes : (($mainTab === 'shop') ? $shopTypes : (($mainTab === 'model') ? $modelTypes : $authorTypes));
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -164,6 +174,7 @@ a{text-decoration:none;color:inherit}
         <div class="main-tab <?= $mainTab==='product'?'active':'' ?>" onclick="location.href='?tab=product&type=<?= $productType ?>'"><i class="fas fa-trophy"></i> 商品排行</div>
         <div class="main-tab <?= $mainTab==='shop'?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $shopType ?>'"><i class="fas fa-store"></i> 店铺排行</div>
         <div class="main-tab <?= $mainTab==='model'?'active':'' ?>" onclick="location.href='?tab=model&type=follower_count'"><i class="fas fa-user-circle"></i> 模特排行</div>
+        <div class="main-tab <?= $mainTab==='author'?'active':'' ?>" onclick="location.href='?tab=author&type=follower_count'"><i class="fas fa-palette"></i> 作者排行</div>
     </div>
 
     <div class="sub-tabs">
@@ -175,9 +186,13 @@ a{text-decoration:none;color:inherit}
             <?php foreach ($shopTypes as $key => $t): ?>
                 <div class="sub-tab <?= $shopType===$key?'active':'' ?>" onclick="location.href='?tab=shop&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
             <?php endforeach; ?>
-        <?php else: ?>
+        <?php elseif ($mainTab === 'model'): ?>
             <?php foreach ($modelTypes as $key => $t): ?>
                 <div class="sub-tab <?= $modelType===$key?'active':'' ?>" onclick="location.href='?tab=model&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($authorTypes as $key => $t): ?>
+                <div class="sub-tab <?= $authorType===$key?'active':'' ?>" onclick="location.href='?tab=author&type=<?= $key ?>'"><i class="fas fa-<?= $t['icon'] ?>"></i> <?= $t['name'] ?></div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
@@ -247,7 +262,7 @@ a{text-decoration:none;color:inherit}
                     </a>
                 <?php endforeach; ?>
             <?php endif; ?>
-        <?php else: ?>
+        <?php elseif ($mainTab === 'model'): ?>
             <?php if (empty($modelRanking)): ?>
                 <div class="empty"><i class="fas fa-user-circle"></i><p>暂无模特排行数据</p></div>
             <?php else: ?>
@@ -280,6 +295,43 @@ a{text-decoration:none;color:inherit}
                             <div class="shop-metric sales"><div class="m-val"><?= $formattedVal ?></div><div class="m-lbl"><?= $metricLabel ?></div></div>
                             <div class="shop-metric rating"><div class="m-val"><?= number_format($m['like_count']) ?></div><div class="m-lbl">点赞</div></div>
                             <div class="shop-metric"><div class="m-val"><?= $m['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if (empty($authorRanking)): ?>
+                <div class="empty"><i class="fas fa-palette"></i><p>暂无作者排行数据</p></div>
+            <?php else: ?>
+                <?php foreach ($authorRanking as $i => $a): ?>
+                    <a href="<?= SeoHelper::authorUrl($a['id'], $a['nickname'] ?? '') ?>" class="shop-rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
+                        <div class="rank-num"><?= $i+1 ?></div>
+                        <?php 
+                        $aAvatar = $a['avatar'] ? '../' . $a['avatar'] : ($a['user_avatar'] ? (strpos($a['user_avatar'],'/')!==false ? '../'.$a['user_avatar'] : '/assets/images/'.$a['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
+                        ?>
+                        <img class="shop-logo" src="<?= htmlspecialchars($aAvatar) ?>" alt="">
+                        <div class="shop-info">
+                            <div class="rank-name"><?= htmlspecialchars($a['nickname']) ?> @<?= htmlspecialchars($a['username']) ?></div>
+                            <div class="rank-meta">
+                                <?php if (!empty($a['style'])): ?><span><i class="fas fa-palette"></i> <?= htmlspecialchars($a['style']) ?></span><?php endif; ?>
+                                <?php if (!empty($a['city'])): ?><span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($a['city']) ?></span><?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="shop-metrics">
+                            <?php
+                            // 按当前排行维度动态展示主指标
+                            $metricLabel = $currentTypes[$authorType]['name'] ?? '粉丝';
+                            $metricVal = $a['sort_value'] ?? $a[$authorType] ?? 0;
+                            if ($authorType === 'follower_count' || $authorType === 'view_count') {
+                                // 粉丝/访问数用万格式化
+                                $formattedVal = $metricVal >= 10000 ? rtrim(rtrim(number_format($metricVal/10000,1,'.',''),'0'),'.').'万' : number_format($metricVal);
+                            } else {
+                                $formattedVal = number_format($metricVal);
+                            }
+                            ?>
+                            <div class="shop-metric sales"><div class="m-val"><?= $formattedVal ?></div><div class="m-lbl"><?= $metricLabel ?></div></div>
+                            <div class="shop-metric rating"><div class="m-val"><?= number_format($a['like_count']) ?></div><div class="m-lbl">点赞</div></div>
+                            <div class="shop-metric"><div class="m-val"><?= $a['product_count'] ?></div><div class="m-lbl">关联商品</div></div>
                         </div>
                     </a>
                 <?php endforeach; ?>

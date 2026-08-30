@@ -105,4 +105,30 @@ class MallRanking {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * 作者排行
+     * @param string $type follower_count | like_count | view_count | product_count | review_count
+     * @param int $limit 返回数量
+     * @return array
+     */
+    public function getAuthorRanking($type = 'follower_count', $limit = 20)
+    {
+        $allowed = ['follower_count', 'like_count', 'view_count', 'product_count', 'review_count'];
+        if (!in_array($type, $allowed)) $type = 'follower_count';
+
+        $sql = "SELECT a.id, a.nickname, a.gender, a.city, a.style, a.avatar,
+                       a.product_count, a.like_count, a.review_count,
+                       a.follower_count, a.view_count, a.{$type} as sort_value,
+                       u.username, u.avatar as user_avatar
+                FROM authors a
+                LEFT JOIN users u ON a.user_id = u.id
+                WHERE a.status = 'active' AND a.{$type} > 0
+                ORDER BY a.{$type} DESC
+                LIMIT " . intval($limit);
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
