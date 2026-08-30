@@ -168,6 +168,8 @@ a{text-decoration:none;color:inherit}
         <div class="stat-box"><div class="stat-ico" style="background:linear-gradient(135deg,#3498db,#2980b9)"><i class="fas fa-eye"></i></div><div><div class="stat-num"><?= number_format($stats['total_views']) ?></div><div class="stat-lbl">总浏览量</div></div></div>
         <div class="stat-box"><div class="stat-ico" style="background:linear-gradient(135deg,#27ae60,#219a52)"><i class="fas fa-shopping-cart"></i></div><div><div class="stat-num"><?= number_format($stats['total_sales']) ?></div><div class="stat-lbl">总销量</div></div></div>
         <div class="stat-box"><div class="stat-ico" style="background:linear-gradient(135deg,#9b59b6,#8e44ad)"><i class="fas fa-store"></i></div><div><div class="stat-num"><?= number_format($stats['total_shops']) ?></div><div class="stat-lbl">活跃店铺</div></div></div>
+        <div class="stat-box"><div class="stat-ico" style="background:linear-gradient(135deg,#e74c3c,#c0392b)"><i class="fas fa-user-circle"></i></div><div><div class="stat-num"><?= number_format($stats['total_models']) ?></div><div class="stat-lbl">模特总数</div></div></div>
+        <div class="stat-box"><div class="stat-ico" style="background:linear-gradient(135deg,#7c4dff,#5b2edb)"><i class="fas fa-palette"></i></div><div><div class="stat-num"><?= number_format($stats['total_authors']) ?></div><div class="stat-lbl">作者总数</div></div></div>
     </div>
 
     <div class="main-tabs">

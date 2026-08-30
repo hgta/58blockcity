@@ -79,6 +79,12 @@ class MallRanking {
         $row2 = $this->pdo->query("SELECT COUNT(*) as total FROM shops WHERE status='active'")->fetch(PDO::FETCH_ASSOC);
         $stats['total_shops'] = (int)($row2['total'] ?? 0);
 
+        $row3 = $this->pdo->query("SELECT COUNT(*) as total FROM models WHERE status='active'")->fetch(PDO::FETCH_ASSOC);
+        $stats['total_models'] = (int)($row3['total'] ?? 0);
+
+        $row4 = $this->pdo->query("SELECT COUNT(*) as total FROM authors WHERE status='active'")->fetch(PDO::FETCH_ASSOC);
+        $stats['total_authors'] = (int)($row4['total'] ?? 0);
+
         return $stats;
     }
 
