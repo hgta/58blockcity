@@ -13,8 +13,8 @@ if ($auctionId <= 0) {
     exit;
 }
 
-// 惰性结算
-$auction->settleExpired();
+// 惰性推进状态机：激活到点的 pending 并结算到点的 active
+$auction->tick();
 
 // 出价处理
 $bidMsg = '';
@@ -26,6 +26,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_bid'])) {
         $bidMsg = '出价成功';
     } else {
         $bidErr = $r['msg'];
+    }
+}
+
+// 卖家取消拍卖
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_cancel'])) {
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $bidErr = 'CSRF令牌验证失败';
+    } else {
+        $r = $auction->cancelAuction($auctionId, $userId);
+        if ($r['ok']) $bidMsg = $r['msg'];
+        else $bidErr = $r['msg'];
     }
 }
 
@@ -138,6 +149,29 @@ require_once 'includes/header.php';
             <div style="margin-top:20px;"><a href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $auctionId) ?>" style="color:#ff6b00;">登录</a>后即可出价</div>
             <?php elseif ($a['status'] === 'active' && $isSeller): ?>
             <div style="margin-top:20px;color:#999;">您是卖家，不能出价自己的拍卖</div>
+            <?php endif; ?>
+
+            <?php if ($isSeller): ?>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px dashed #eee;">
+                <?php if ($a['status'] === 'pending'): ?>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <a href="create.php?edit=<?= $auctionId ?>" style="display:inline-block;background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;text-decoration:none;">✏️ 编辑拍卖</a>
+                        <form method="POST" onsubmit="return confirm('确定取消该拍卖吗？取消后物品将解除锁定。');" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                            <input type="hidden" name="action_cancel" value="1">
+                            <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;">🗑 取消拍卖</button>
+                        </form>
+                    </div>
+                <?php elseif ($a['status'] === 'active' && empty($a['current_bidder_id'])): ?>
+                    <form method="POST" onsubmit="return confirm('确定取消该拍卖吗？取消后物品将解除锁定。');" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                        <input type="hidden" name="action_cancel" value="1">
+                        <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;">🗑 取消拍卖</button>
+                    </form>
+                <?php elseif ($a['status'] === 'active'): ?>
+                    <div style="color:#999;font-size:13px;"><i class="fas fa-info-circle"></i> 拍卖进行中，如遇问题请联系管理员处理。</div>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

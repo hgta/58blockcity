@@ -6,8 +6,8 @@ require_once '../includes/auth.php';
 $auction = new Auction($pdo);
 $userId = $_SESSION['user_id'] ?? 0;
 
-// 惰性结算：结算所有已到期的拍卖
-$auction->settleExpired();
+// 惰性推进状态机：激活到点的 pending 并结算到点的 active
+$auction->tick();
 
 // 筛选
 $itemType = in_array($_GET['type'] ?? '', ['block', 'nft'], true) ? $_GET['type'] : '';

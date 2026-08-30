@@ -14,6 +14,20 @@ $userId = $_SESSION['user_id'];
 $msg = '';
 $err = '';
 
+// 编辑模式：?edit=<id> 仅「未开始」且归属本人的拍卖可编辑
+$editId = isset($_GET['edit']) ? intval($_GET['edit']) : 0;
+$editAuction = null;
+if ($editId > 0) {
+    $editAuction = $auction->getAuctionById($editId);
+    if (!$editAuction || intval($editAuction['seller_id']) !== $userId) {
+        $err = '无权编辑该拍卖';
+        $editAuction = null;
+    } elseif ($editAuction['status'] !== 'pending') {
+        $err = '仅「未开始」的拍卖可编辑';
+        $editAuction = null;
+    }
+}
+
 // 获取用户拥有的区块
 $myBlocks = $block->getUserBlocks($userId);
 
@@ -32,6 +46,17 @@ $myNfts = $nstmt->fetchAll(PDO::FETCH_ASSOC);
 // 所有城市（用于接受支付城市选择）
 $allCities = $city->getAllCities();
 
+// 表单预填值（编辑模式取自拍卖记录；提交失败时保留用户输入）
+$fv = [
+    'start_price'   => $editAuction ? $editAuction['start_price'] : '',
+    'reserve_price' => ($editAuction && $editAuction['reserve_price'] !== null) ? $editAuction['reserve_price'] : '',
+    'bid_increment' => $editAuction ? $editAuction['bid_increment'] : '1.00',
+    'start_time'    => $editAuction ? date('Y-m-d\TH:i', strtotime($editAuction['start_time'])) : '',
+    'end_time'      => $editAuction ? date('Y-m-d\TH:i', strtotime($editAuction['end_time'])) : '',
+    'currency'      => $editAuction ? $editAuction['currency'] : 'cny',
+    'accept_cities' => $editAuction ? (json_decode($editAuction['accept_cities'] ?? '[]', true) ?: []) : [],
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $itemType = $_POST['item_type'] ?? '';
     $itemId = intval($_POST['item_id'] ?? 0);
@@ -44,13 +69,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'currency'      => $_POST['currency'] ?? 'cny',
         'accept_cities' => $_POST['accept_cities'] ?? [],
     ];
+    // 保留用户输入
+    $fv = [
+        'start_price'   => $data['start_price'],
+        'reserve_price' => $data['reserve_price'],
+        'bid_increment' => $data['bid_increment'],
+        'start_time'    => date('Y-m-d\TH:i', strtotime($data['start_time'])),
+        'end_time'      => date('Y-m-d\TH:i', strtotime($data['end_time'])),
+        'currency'      => $data['currency'],
+        'accept_cities' => is_array($data['accept_cities']) ? $data['accept_cities'] : [],
+    ];
 
-    $result = $auction->createAuction($userId, $itemType, $itemId, $data);
-    if (is_int($result)) {
-        header('Location: view.php?id=' . $result);
-        exit;
+    if ($editId > 0) {
+        $result = $auction->updateAuction($editId, $userId, $data);
+        if ($result['ok']) {
+            header('Location: view.php?id=' . $editId);
+            exit;
+        }
+        $err = $result['msg'];
+    } else {
+        $result = $auction->createAuction($userId, $itemType, $itemId, $data);
+        if (is_int($result)) {
+            header('Location: view.php?id=' . $result);
+            exit;
+        }
+        $err = $result;
     }
-    $err = $result;
 }
 
 $site_config['title'] = '发起拍卖 - 58拍卖';
@@ -81,7 +125,8 @@ require_once 'includes/header.php';
 </style>
 
 <div class="create-wrap">
-    <h1 style="font-size: 24px; margin: 0 0 16px;">➕ 发起拍卖</h1>
+    <h1 style="font-size: 24px; margin: 0 0 16px;"><?= $editId > 0 ? '✏️ 编辑拍卖' : '➕ 发起拍卖' ?></h1>
+    <?php if ($editId > 0): ?><div style="font-size:13px;color:#999;margin-bottom:12px;">仅「未开始」的拍卖可编辑，拍卖品不可更换。</div><?php endif; ?>
     <?php if ($err): ?><div class="alert alert-err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
 
     <div class="create-card">
@@ -94,6 +139,17 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
+            <?php if ($editAuction): ?>
+            <!-- 编辑模式：物品锁定不可更换 -->
+            <div class="form-group">
+                <label class="form-label">拍卖品（不可更换）</label>
+                <div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;font-size:14px;color:#555;">
+                    <i class="fas fa-lock"></i> <?= htmlspecialchars($editAuction['item_title'] ?? ('拍卖 #' . $editAuction['id'])) ?>
+                </div>
+                <input type="hidden" name="item_type" value="<?= htmlspecialchars($editAuction['item_type']) ?>">
+                <input type="hidden" name="item_id" id="item_id" value="<?= intval($editAuction['item_id']) ?>">
+            </div>
+            <?php else: ?>
             <!-- 区块选择 -->
             <div class="form-group" id="block-select">
                 <label class="form-label">选择区块</label>
@@ -136,50 +192,51 @@ require_once 'includes/header.php';
             </div>
 
             <input type="hidden" name="item_id" id="item_id" value="">
+            <?php endif; ?>
 
             <div class="form-group">
                 <label class="form-label">起拍价</label>
-                <input type="number" name="start_price" class="form-input" step="0.01" min="0.01" required placeholder="如 100">
+                <input type="number" name="start_price" class="form-input" step="0.01" min="0.01" required placeholder="如 100" value="<?= htmlspecialchars($fv['start_price']) ?>">
             </div>
 
             <div class="form-group">
                 <label class="form-label">底价（选填，低于底价流拍）</label>
-                <input type="number" name="reserve_price" class="form-input" step="0.01" min="0" placeholder="可不填">
+                <input type="number" name="reserve_price" class="form-input" step="0.01" min="0" placeholder="可不填" value="<?= htmlspecialchars($fv['reserve_price']) ?>">
             </div>
 
             <div class="form-group">
                 <label class="form-label">加价幅度</label>
-                <input type="number" name="bid_increment" class="form-input" step="0.01" min="0.01" value="1.00" required>
+                <input type="number" name="bid_increment" class="form-input" step="0.01" min="0.01" value="<?= htmlspecialchars($fv['bid_increment']) ?>" required>
             </div>
 
             <div class="form-group">
                 <label class="form-label">开始时间</label>
-                <input type="datetime-local" name="start_time" class="form-input" required>
+                <input type="datetime-local" name="start_time" class="form-input" required value="<?= htmlspecialchars($fv['start_time']) ?>">
             </div>
 
             <div class="form-group">
                 <label class="form-label">截止时间</label>
-                <input type="datetime-local" name="end_time" class="form-input" required>
+                <input type="datetime-local" name="end_time" class="form-input" required value="<?= htmlspecialchars($fv['end_time']) ?>">
             </div>
 
             <div class="form-group">
                 <label class="form-label">计价货币</label>
                 <div style="display:flex;gap:10px;">
-                    <label><input type="radio" name="currency" value="popularity" onchange="toggleCities(true)"> 人气值 Ⓟ</label>
-                    <label><input type="radio" name="currency" value="cny" checked onchange="toggleCities(false)"> 人民币 ¥</label>
+                    <label><input type="radio" name="currency" value="popularity" <?= $fv['currency'] === 'popularity' ? 'checked' : '' ?> onchange="toggleCities(true)"> 人气值 Ⓟ</label>
+                    <label><input type="radio" name="currency" value="cny" <?= $fv['currency'] === 'cny' ? 'checked' : '' ?> onchange="toggleCities(false)"> 人民币 ¥</label>
                 </div>
             </div>
 
-            <div class="form-group hidden" id="accept-cities-group">
+            <div class="form-group <?= $fv['currency'] === 'popularity' ? '' : 'hidden' ?>" id="accept-cities-group">
                 <label class="form-label">接受哪些城市的人气值支付（不选则接受全部）</label>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                    <?php foreach ($allCities as $c): ?>
-                    <label style="font-size:13px;"><input type="checkbox" name="accept_cities[]" value="<?= $c['id'] ?>"> <?= htmlspecialchars($c['name']) ?></label>
+                    <?php foreach ($allCities as $c): $accChecked = in_array($c['id'], $fv['accept_cities']); ?>
+                    <label style="font-size:13px;"><input type="checkbox" name="accept_cities[]" value="<?= $c['id'] ?>" <?= $accChecked ? 'checked' : '' ?>> <?= htmlspecialchars($c['name']) ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
 
-            <button type="submit" class="btn-primary" onclick="return validateSubmit()">发布拍卖</button>
+            <button type="submit" class="btn-primary" onclick="return validateSubmit()"><?= $editId > 0 ? '保存修改' : '发布拍卖' ?></button>
         </form>
     </div>
 </div>

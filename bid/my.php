@@ -7,7 +7,20 @@ checkLogin();
 $auction = new Auction($pdo);
 $userId = $_SESSION['user_id'];
 
-$auction->settleExpired();
+$auction->tick();
+
+// 取消拍卖（卖家操作，POST 优先于列表查询执行）
+$opMsg = '';
+$opErr = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel') {
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $opErr = 'CSRF令牌验证失败';
+    } else {
+        $r = $auction->cancelAuction(intval($_POST['id'] ?? 0), $userId);
+        if ($r['ok']) $opMsg = $r['msg'];
+        else $opErr = $r['msg'];
+    }
+}
 
 $myAuctions = $auction->getMyAuctions($userId);
 $myBids = $auction->getMyBids($userId);
@@ -32,6 +45,13 @@ require_once 'includes/header.php';
 .my-price .p { font-size: 16px; font-weight: bold; color: #e74c3c; }
 .my-price .s { font-size: 12px; color: #999; }
 .empty { text-align: center; padding: 50px; color: #999; }
+.my-actions { display: flex; flex-direction: column; gap: 6px; margin-left: 12px; flex-shrink: 0; }
+.op-btn { display: inline-block; text-align: center; font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #555; cursor: pointer; text-decoration: none; line-height: 1.4; }
+.op-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+.op-danger:hover { border-color: #dc2626; color: #dc2626; }
+.alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+.alert-ok { background: #d4edda; color: #155724; }
+.alert-err { background: #f8d7da; color: #721c24; }
 </style>
 
 <div class="my-wrap">
@@ -43,6 +63,8 @@ require_once 'includes/header.php';
     </div>
 
     <div class="my-body">
+        <?php if ($opMsg): ?><div class="alert alert-ok"><?= htmlspecialchars($opMsg) ?></div><?php endif; ?>
+        <?php if ($opErr): ?><div class="alert alert-err"><?= htmlspecialchars($opErr) ?></div><?php endif; ?>
         <?php if ($tab === 'created'): ?>
             <?php if (empty($myAuctions)): ?>
                 <div class="empty">您还没有发布过拍卖</div>
@@ -50,17 +72,33 @@ require_once 'includes/header.php';
                 <?php foreach ($myAuctions as $a): 
                     $stMap = ['pending'=>'未开始','active'=>'竞拍中','sold'=>'已成交','ended'=>'已流拍','canceled'=>'已取消'];
                     $st = $stMap[$a['status']] ?? $a['status'];
+                    $canCancel = $a['status'] === 'pending' || ($a['status'] === 'active' && empty($a['current_bidder_id']));
                 ?>
-                <a class="my-row" href="view.php?id=<?= $a['id'] ?>">
-                    <div class="my-info">
-                        <div class="my-title"><?= $a['item_type'] === 'nft' ? 'NFT头像' : '区块' ?> #<?= $a['id'] ?></div>
-                        <div class="my-meta"><?= $st ?> · <?= date('m-d H:i', strtotime($a['end_time'])) ?> 截止</div>
+                <div class="my-row">
+                    <a href="view.php?id=<?= $a['id'] ?>" style="display:flex;justify-content:space-between;align-items:center;flex:1;text-decoration:none;color:inherit;">
+                        <div class="my-info">
+                            <div class="my-title"><?= $a['item_type'] === 'nft' ? 'NFT头像' : '区块' ?> #<?= $a['id'] ?></div>
+                            <div class="my-meta"><?= $st ?> · <?= date('m-d H:i', strtotime($a['end_time'])) ?> 截止</div>
+                        </div>
+                        <div class="my-price">
+                            <div class="p"><?= $a['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ' ?><?= number_format($a['current_price'] ?? $a['start_price'], 2) ?></div>
+                            <div class="s">起拍 <?= number_format($a['start_price'], 2) ?></div>
+                        </div>
+                    </a>
+                    <div class="my-actions">
+                        <?php if ($a['status'] === 'pending'): ?>
+                        <a class="op-btn" href="create.php?edit=<?= $a['id'] ?>">✏️ 编辑</a>
+                        <?php endif; ?>
+                        <?php if ($canCancel): ?>
+                        <form method="POST" onsubmit="return confirm('确定取消该拍卖吗？取消后物品将解除锁定。');" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                            <input type="hidden" name="action" value="cancel">
+                            <input type="hidden" name="id" value="<?= $a['id'] ?>">
+                            <button type="submit" class="op-btn op-danger">🗑 取消</button>
+                        </form>
+                        <?php endif; ?>
                     </div>
-                    <div class="my-price">
-                        <div class="p"><?= $a['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ' ?><?= number_format($a['current_price'] ?? $a['start_price'], 2) ?></div>
-                        <div class="s">起拍 <?= number_format($a['start_price'], 2) ?></div>
-                    </div>
-                </a>
+                </div>
                 <?php endforeach; ?>
             <?php endif; ?>
         <?php else: ?>

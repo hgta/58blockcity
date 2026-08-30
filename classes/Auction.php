@@ -195,6 +195,27 @@ class Auction {
         }
     }
 
+    /* ========== 状态推进 ========== */
+
+    /**
+     * 惰性推进状态机：先激活到点的 pending，再结算到点的 active。
+     * 保持纯惰性、无 cron，与现有机制一致。
+     */
+    public function tick() {
+        $this->activateStarted();
+        $this->settleExpired();
+    }
+
+    /**
+     * pending → active：开始时间已到的拍卖自动开拍
+     */
+    public function activateStarted() {
+        $stmt = $this->pdo->prepare("
+            UPDATE auctions SET status = 'active', updated_at = NOW()
+            WHERE status = 'pending' AND start_time <= NOW()");
+        $stmt->execute();
+    }
+
     /* ========== 惰性结算 ========== */
 
     /**
@@ -291,6 +312,104 @@ class Auction {
                 VALUES (?, ?, ?, ?, 'popularity', 'platform', 'completed', ?, NOW(), NOW())");
             $stmt->execute([$rec['nft_id'], $sellerId, $buyerId, $price, $rec['city_id']]);
         }
+    }
+
+    /* ========== 卖家管理 ========== */
+
+    /**
+     * 取消拍卖（仅卖家本人）
+     * 授权：pending 可取消；active 且无人出价可取消；active 有人出价/终态拒绝。
+     * @return array ['ok'=>bool, 'msg'=>string]
+     */
+    public function cancelAuction($auctionId, $sellerId) {
+        $auctionId = intval($auctionId);
+        $sellerId  = intval($sellerId);
+        if ($auctionId <= 0 || $sellerId <= 0) return ['ok' => false, 'msg' => '参数无效'];
+
+        $stmt = $this->pdo->prepare("SELECT * FROM auctions WHERE id = ?");
+        $stmt->execute([$auctionId]);
+        $a = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$a) return ['ok' => false, 'msg' => '拍卖不存在'];
+        if (intval($a['seller_id']) !== $sellerId) return ['ok' => false, 'msg' => '无权操作该拍卖'];
+
+        $status = $a['status'];
+        if ($status === 'pending') {
+            // 未开始，允许
+        } elseif ($status === 'active') {
+            if (intval($a['current_bidder_id'] ?? 0) > 0) {
+                return ['ok' => false, 'msg' => '该拍卖已有人出价，无法取消'];
+            }
+            // 无人出价，允许
+        } else {
+            return ['ok' => false, 'msg' => '该拍卖已结束，无法取消'];
+        }
+
+        // 条件更新防并发：取消瞬间若已有人出价，则不满足条件，rowCount=0
+        $stmt = $this->pdo->prepare("
+            UPDATE auctions SET status = 'canceled', updated_at = NOW()
+            WHERE id = ? AND status IN ('pending','active') AND current_bidder_id IS NULL");
+        $stmt->execute([$auctionId]);
+        if ($stmt->rowCount() > 0) {
+            return ['ok' => true, 'msg' => '已取消该拍卖'];
+        }
+        return ['ok' => false, 'msg' => '取消失败，拍卖状态已变化，请刷新后重试'];
+    }
+
+    /**
+     * 编辑拍卖（仅卖家本人且仅 pending 状态；物品不可更换）
+     * 允许修改：起拍价/底价/加价幅度/起止时间/货币/接受城市。
+     * @return array ['ok'=>bool, 'msg'=>string]
+     */
+    public function updateAuction($auctionId, $sellerId, $data) {
+        $auctionId = intval($auctionId);
+        $sellerId  = intval($sellerId);
+        if ($auctionId <= 0 || $sellerId <= 0) return ['ok' => false, 'msg' => '参数无效'];
+
+        $stmt = $this->pdo->prepare("SELECT * FROM auctions WHERE id = ?");
+        $stmt->execute([$auctionId]);
+        $a = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$a) return ['ok' => false, 'msg' => '拍卖不存在'];
+        if (intval($a['seller_id']) !== $sellerId) return ['ok' => false, 'msg' => '无权操作该拍卖'];
+        if ($a['status'] !== 'pending') return ['ok' => false, 'msg' => '仅「未开始」的拍卖可编辑'];
+
+        // 校验（与 createAuction 一致）
+        $startPrice    = floatval($data['start_price'] ?? 0);
+        $reservePrice  = isset($data['reserve_price']) && $data['reserve_price'] !== '' ? floatval($data['reserve_price']) : null;
+        $bidIncrement  = floatval($data['bid_increment'] ?? 0);
+        $startTime     = $data['start_time'] ?? '';
+        $endTime       = $data['end_time'] ?? '';
+        $currency      = in_array($data['currency'] ?? '', ['popularity', 'cny'], true) ? $data['currency'] : 'cny';
+
+        if ($startPrice <= 0) return ['ok' => false, 'msg' => '请填写有效的起拍价'];
+        if ($bidIncrement <= 0) return ['ok' => false, 'msg' => '请填写有效的加价幅度'];
+        if (empty($startTime) || empty($endTime)) return ['ok' => false, 'msg' => '请设置起止时间'];
+        if (strtotime($endTime) <= strtotime($startTime)) return ['ok' => false, 'msg' => '截止时间必须晚于开始时间'];
+        if ($reservePrice !== null && $reservePrice < $startPrice) return ['ok' => false, 'msg' => '底价不能低于起拍价'];
+
+        // 接受城市（仅人气值货币时有效）
+        $acceptCitiesJson = null;
+        if ($currency === 'popularity') {
+            $cities = isset($data['accept_cities']) ? (is_array($data['accept_cities']) ? $data['accept_cities'] : json_decode($data['accept_cities'], true)) : [];
+            if (is_array($cities) && !empty($cities)) {
+                $acceptCitiesJson = json_encode(array_values(array_filter(array_map('intval', $cities))));
+            }
+        }
+
+        // 保存后重算状态：编辑到点时间即直接开拍
+        $status = strtotime($startTime) > time() ? 'pending' : 'active';
+
+        $stmt = $this->pdo->prepare("
+            UPDATE auctions
+            SET start_price = ?, reserve_price = ?, bid_increment = ?,
+                start_time = ?, end_time = ?, currency = ?, accept_cities = ?,
+                current_price = ?, status = ?, updated_at = NOW()
+            WHERE id = ?");
+        $stmt->execute([
+            $startPrice, $reservePrice, $bidIncrement,
+            $startTime, $endTime, $currency, $acceptCitiesJson,
+            $startPrice, $status, $auctionId,
+        ]);
+        return ['ok' => true, 'msg' => '修改已保存'];
     }
 
     /* ========== 查询 ========== */
