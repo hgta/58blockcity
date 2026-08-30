@@ -66,6 +66,7 @@ require_once '../includes/header.php';
                     <a href="address.php" class="nav-item"><i class="fas fa-address-book"></i> 收货地址</a>
                     <a href="security.php" class="nav-item"><i class="fas fa-shield-alt"></i> 安全设置</a>
                     <a href="following.php" class="nav-item active"><i class="fas fa-heart"></i> 我的关注</a>
+                    <a href="messages.php" class="nav-item"><i class="fas fa-envelope"></i> 站内信</a>
                 </nav>
 
                 <div class="sidebar-card user-sidebar-card text-center">

@@ -12,6 +12,9 @@
  *     'nav_links'   => [ ['url'=>'..','icon'=>'fa-home','text'=>'首页'], ... ],
  *     'extra_head'  => '',  // 额外的CSS/JS
  *     'theme_color' => '#ff6b00',  // 主题色
+ *     'show_message'=> true,  // 是否显示站内信按钮（默认显示）
+ *     'show_cart'   => false, // 是否在右侧用户区显示购物车（默认不显示）
+ *     'url_cart'    => '../cart/index.php', // 购物车链接（show_cart 开启时生效）
  * ];
  */
 
@@ -216,6 +219,9 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                     <?= htmlspecialchars($nav['text']) ?>
                 </a>
             <?php endforeach; ?>
+            <?php if (($site_config['show_cart'] ?? false)): ?>
+                <a href="<?= $site_config['url_cart'] ?? '../cart/index.php' ?>" class="nav-button"><i class="fas fa-shopping-cart"></i> 购物车</a>
+            <?php endif; ?>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <div class="dropdown d-inline-block">
                     <a href="#" class="nav-button" id="notificationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -253,12 +259,14 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                         <?php endif; ?>
                     </div>
                 </div>
+                <?php if (($site_config['show_message'] ?? true)): ?>
                 <a href="/messages/" class="nav-button" style="position:relative;">
                     <i class="fas fa-envelope"></i> 站内信
                     <?php if ($message_unread > 0): ?>
                     <span class="notification-badge"><?= $message_unread > 9 ? '9+' : $message_unread ?></span>
                     <?php endif; ?>
                 </a>
+                <?php endif; ?>
                 <a href="<?= $site_config['url_dashboard'] ?? '../user/dashboard.php' ?>" class="nav-button"><i class="fas fa-user"></i> 个人中心</a>
                 <a href="<?= $site_config['url_logout'] ?? '../auth/logout.php' ?>" class="nav-button"><i class="fas fa-sign-out-alt"></i> 退出</a>
             <?php else: ?>

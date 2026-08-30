@@ -14,8 +14,9 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../model/list.php','icon'=>'camera','text'=>'模特库'],
     ['url'=>'../author/list.php','icon'=>'palette','text'=>'作者库'],
     ['url'=>'../shop/list.php','icon'=>'store','text'=>'店铺列表'],
-    ['url'=>'../cart/index.php','icon'=>'shopping-cart','text'=>'购物车'],
-    ['url'=>'../user/orders.php','icon'=>'clipboard-list','text'=>'我的订单'],
 ];
+// 站内信从顶栏隐藏（个人中心内仍可访问）；购物车移到右侧用户区
+$site_config['show_message'] = false;
+$site_config['show_cart']    = true;
 require_once __DIR__ . '/../../shared/header.php';
 
