@@ -46,3 +46,41 @@ CREATE TABLE IF NOT EXISTS `post_likes` (
 -- 扩展通知类型（幂等：MODIFY 可重复执行，enum 值集合不变）
 ALTER TABLE `notifications`
   MODIFY COLUMN `type` enum('visit_request','visit_confirm','return_confirm','system','order_paid','order_shipped','order_done','new_review','dm','new_comment','new_reply','new_like') NOT NULL;
+
+-- ============================================================
+-- club-redesign-v2ex-seo：置顶/浏览数/关注（幂等，可重复执行）
+-- ============================================================
+
+-- posts 新增字段：is_sticky / view_count
+-- MySQL 5.7 无 ADD COLUMN IF NOT EXISTS，用存储过程做幂等判断
+DROP PROCEDURE IF EXISTS `club_add_columns`;
+DELIMITER $$
+CREATE PROCEDURE `club_add_columns`()
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'posts' AND COLUMN_NAME = 'is_sticky'
+  ) THEN
+    ALTER TABLE `posts` ADD COLUMN `is_sticky` TINYINT NOT NULL DEFAULT 0 COMMENT '置顶: 1=置顶';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'posts' AND COLUMN_NAME = 'view_count'
+  ) THEN
+    ALTER TABLE `posts` ADD COLUMN `view_count` INT NOT NULL DEFAULT 0 COMMENT '浏览数';
+  END IF;
+END$$
+DELIMITER ;
+CALL `club_add_columns`();
+DROP PROCEDURE IF EXISTS `club_add_columns`;
+
+-- 社区关注关系
+CREATE TABLE IF NOT EXISTS `club_follows` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL COMMENT '关注者',
+  `target_id` int(11) NOT NULL COMMENT '被关注者',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_follow` (`user_id`,`target_id`),
+  KEY `idx_target` (`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='社区关注';

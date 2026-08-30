@@ -105,6 +105,18 @@ try {
     // authors 表尚未创建，跳过
 }
 
+// 9. 社区帖子（club.58.tl）
+try {
+    $stmt = $pdo->query("SELECT id, title, content, updated_at FROM posts WHERE status='active' ORDER BY id DESC LIMIT 5000");
+    while ($post = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $lastmod = $post['updated_at'] ? date('Y-m-d', strtotime($post['updated_at'])) : $now;
+        $title = !empty($post['title']) ? $post['title'] : $post['content'];
+        urlNode(SeoHelper::postUrl($post['id'], $title), '0.7', 'weekly', $lastmod);
+    }
+} catch (Exception $e) {
+    // posts 表尚未创建，跳过
+}
+
 echo '</urlset>', "\n";
 
 // 主动通知百度 sitemap 已更新（PHP 请求结束时异步执行，不影响响应速度）

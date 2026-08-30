@@ -1,6 +1,7 @@
 <?php
 require_once '../config/database.php';
 require_once '../classes/Post.php';
+require_once '../classes/SeoHelper.php';
 require_once '../includes/auth.php';
 checkLogin();
 
@@ -11,44 +12,68 @@ $page = max(1, intval($_GET['page'] ?? 1));
 $myPosts = $post->getUserPosts($userId, $page, 20);
 
 $site_config['title'] = '我的内容 - 58区块社区';
+$site_config['description'] = SeoHelper::description('查看我在58区块社区发布的所有帖子和心情。');
+$site_config['canonical_url'] = 'https://club.58.tl/my.php';
+$site_config['og_url'] = $site_config['canonical_url'];
 require_once 'includes/header.php';
 ?>
-<style>
-.my-wrap { max-width: 760px; margin: 24px auto; padding: 0 15px; }
-.post-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 12px; }
-.post-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.post-title { font-size: 16px; font-weight: bold; color: #222; margin: 6px 0; }
-.post-content { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 8px; }
-.post-meta { font-size: 12px; color: #999; }
-.post-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #eef2ff; color: #4f46e5; }
-.post-tag.moment { background: #fce7f3; color: #db2777; }
-.post-actions { display: flex; gap: 16px; font-size: 13px; color: #999; margin-top: 8px; }
-.post-actions a { color: #999; text-decoration: none; }
-.empty { text-align: center; padding: 60px; color: #999; }
-</style>
 
-<div class="my-wrap">
-    <h1 style="font-size: 24px; margin: 0 0 16px;">📋 我的内容</h1>
+<div class="club-layout">
+
+  <!-- ============ 主内容 ============ -->
+  <main class="club-main">
+    <div class="club-header-bar">
+      <h1>我的内容</h1>
+    </div>
 
     <?php if (empty($myPosts)): ?>
-        <div class="empty"><i class="fas fa-pen" style="font-size:48px;opacity:.4;"></i><p style="margin-top:12px;">你还没有发布过内容</p><a href="create.php" style="color:#ff6b00;">去发第一条 →</a></div>
+      <div class="club-card club-empty">
+        <i class="fas fa-pen"></i>
+        <p>你还没有发布过内容</p>
+        <a href="create.php" class="club-btn primary"><i class="fas fa-plus"></i> 去发第一条</a>
+      </div>
     <?php else: ?>
+      <div class="club-list">
         <?php foreach ($myPosts as $p): ?>
-        <div class="post-card">
-            <div class="post-head">
-                <span class="post-tag <?= $p['type'] === 'moment' ? 'moment' : '' ?>"><?= $p['type'] === 'moment' ? '心情' : '帖子' ?></span>
-                <span class="post-meta"><?= htmlspecialchars($p['city'] ?? '') ?> · <?= date('m-d H:i', strtotime($p['created_at'])) ?></span>
+        <div class="club-post-row">
+          <div class="club-post-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="club-post-body">
+            <a class="club-post-title" href="<?= SeoHelper::postUrl($p['id'], $p['title'] ?: $p['content']) ?>">
+              <?php if (!empty($p['is_sticky'])): ?><span class="club-badge sticky"><i class="fas fa-thumbtack"></i> 置顶</span><?php endif; ?>
+              <?php if ($p['type'] === 'moment'): ?>
+                <span class="club-badge moment">心情</span>
+              <?php else: ?>
+                <span class="club-badge">帖子</span>
+              <?php endif; ?>
+              <?= htmlspecialchars($p['type'] === 'post' && $p['title'] ? $p['title'] : mb_substr($p['content'], 0, 60)) ?>
+            </a>
+            <div class="club-post-meta">
+              <span><?= htmlspecialchars($p['city'] ?? '') ?></span>
+              <span><?= date('m-d H:i', strtotime($p['created_at'])) ?></span>
+              <span><i class="far fa-heart"></i> <?= $p['like_count'] ?></span>
+              <span><i class="far fa-comment"></i> <?= $p['comment_count'] ?></span>
+              <?php if (!empty($p['view_count'])): ?><span><i class="far fa-eye"></i> <?= $p['view_count'] ?></span><?php endif; ?>
             </div>
-            <?php if ($p['type'] === 'post' && $p['title']): ?><div class="post-title"><?= htmlspecialchars($p['title']) ?></div><?php endif; ?>
-            <div class="post-content"><?= nl2br(htmlspecialchars(mb_substr($p['content'], 0, 150))) ?></div>
-            <div class="post-actions">
-                <a href="post.php?id=<?= $p['id'] ?>">查看详情</a>
-                <span>❤ <?= $p['like_count'] ?></span>
-                <span>💬 <?= $p['comment_count'] ?></span>
-            </div>
+          </div>
         </div>
         <?php endforeach; ?>
+      </div>
+
+      <?php if (count($myPosts) >= 20): ?>
+      <div class="club-pagination">
+        <?php if ($page > 1): ?><a href="my.php?page=<?= $page - 1 ?>">上一页</a><?php endif; ?>
+        <span class="current">第 <?= $page ?> 页</span>
+        <?php if (count($myPosts) === 20): ?><a href="my.php?page=<?= $page + 1 ?>">下一页</a><?php endif; ?>
+      </div>
+      <?php endif; ?>
     <?php endif; ?>
+  </main>
+
+  <!-- ============ 右侧栏 ============ -->
+  <?php require_once 'includes/sidebar.php'; ?>
+
 </div>
 
 <?php require_once 'includes/footer.php'; ?>

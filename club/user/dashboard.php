@@ -7,8 +7,8 @@ $userId = $_SESSION['user_id'];
 $username = $_SESSION['username'] ?? '';
 $avatar = $_SESSION['avatar'] ?? 'default.jpg';
 
-// 统计我的帖子数、获赞数、评论数
-$stats = ['posts' => 0, 'likes' => 0, 'comments' => 0];
+// 统计我的帖子数、获赞数、评论数、粉丝数
+$stats = ['posts' => 0, 'likes' => 0, 'comments' => 0, 'followers' => 0];
 try {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE user_id = ?");
     $stmt->execute([$userId]);
@@ -21,56 +21,54 @@ try {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM post_comments WHERE user_id = ?");
     $stmt->execute([$userId]);
     $stats['comments'] = intval($stmt->fetchColumn());
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM club_follows WHERE target_id = ?");
+    $stmt->execute([$userId]);
+    $stats['followers'] = intval($stmt->fetchColumn());
 } catch (Exception $e) {
     // 表可能未创建，忽略
 }
 
 $site_config['title'] = '个人中心 - 58区块社区';
+$site_config['canonical_url'] = 'https://club.58.tl/user/dashboard.php';
 require_once '../includes/header.php';
 ?>
-<style>
-.dash-wrap { max-width: 760px; margin: 24px auto; padding: 0 15px; }
-.dash-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 16px; }
-.dash-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.dash-avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: #f0f0f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.dash-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.dash-name { font-size: 20px; font-weight: bold; color: #222; }
-.dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.dash-stat { text-align: center; padding: 16px; background: #fafafa; border-radius: 8px; }
-.dash-stat .num { font-size: 22px; font-weight: bold; color: #ff6b00; }
-.dash-stat .lbl { font-size: 12px; color: #999; margin-top: 4px; }
-.dash-links { display: flex; flex-direction: column; gap: 0; }
-.dash-link { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #f2f2f2; text-decoration: none; color: #333; font-size: 14px; }
-.dash-link:hover { background: #fff9f5; }
-.dash-link:last-child { border-bottom: none; }
-.dash-link .arrow { color: #ccc; }
-</style>
+<div class="club-layout">
 
-<div class="dash-wrap">
-    <div class="dash-card">
-        <div class="dash-head">
-            <div class="dash-avatar">
-                <img src="https://58.tl/assets/images/<?= htmlspecialchars($avatar) ?>" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=&quot;fas fa-user&quot; style=&quot;color:#ccc;font-size:28px;&quot;></i>'">
-            </div>
-            <div>
-                <div class="dash-name"><?= htmlspecialchars($username) ?></div>
-                <div style="font-size:13px;color:#999;">58区块社区</div>
-            </div>
-        </div>
-        <div class="dash-stats">
-            <div class="dash-stat"><div class="num"><?= $stats['posts'] ?></div><div class="lbl">我的内容</div></div>
-            <div class="dash-stat"><div class="num"><?= $stats['likes'] ?></div><div class="lbl">获赞</div></div>
-            <div class="dash-stat"><div class="num"><?= $stats['comments'] ?></div><div class="lbl">我的评论</div></div>
-        </div>
+  <main class="club-main">
+    <div class="club-header-bar">
+      <h1>个人中心</h1>
     </div>
 
-    <div class="dash-card">
-        <div class="dash-links">
-            <a class="dash-link" href="../my.php">📋 我的内容 <span class="arrow">›</span></a>
-            <a class="dash-link" href="../create.php">📝 发布新内容 <span class="arrow">›</span></a>
-            <a class="dash-link" href="../index.php">🏠 返回社区首页 <span class="arrow">›</span></a>
+    <div class="club-card">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <div class="club-author-avatar" style="width:64px;height:64px;font-size:24px;">
+          <img src="https://58.tl/assets/images/<?= htmlspecialchars($avatar) ?>" alt="<?= htmlspecialchars($username) ?>" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=&quot;fas fa-user&quot;></i>'">
         </div>
+        <div>
+          <div class="club-author-name" style="font-size:20px;"><?= htmlspecialchars($username) ?></div>
+          <div style="font-size:13px;color:#999;">58区块社区</div>
+        </div>
+      </div>
+      <div class="club-dash-stats">
+        <div class="club-dash-stat"><div class="num"><?= $stats['posts'] ?></div><div class="lbl">我的内容</div></div>
+        <div class="club-dash-stat"><div class="num"><?= $stats['likes'] ?></div><div class="lbl">获赞</div></div>
+        <div class="club-dash-stat"><div class="num"><?= $stats['comments'] ?></div><div class="lbl">我的评论</div></div>
+        <div class="club-dash-stat"><div class="num"><?= $stats['followers'] ?></div><div class="lbl">粉丝</div></div>
+      </div>
     </div>
+
+    <div class="club-card">
+      <div class="club-dash-links">
+        <a href="../my.php"><i class="fas fa-clipboard-list" style="width:20px;"></i> 我的内容 <span class="arrow">›</span></a>
+        <a href="../create.php"><i class="fas fa-pen" style="width:20px;"></i> 发布新内容 <span class="arrow">›</span></a>
+        <a href="../index.php"><i class="fas fa-home" style="width:20px;"></i> 返回社区首页 <span class="arrow">›</span></a>
+      </div>
+    </div>
+  </main>
+
+  <?php require_once '../includes/sidebar.php'; ?>
+
 </div>
 
 <?php require_once '../includes/footer.php'; ?>

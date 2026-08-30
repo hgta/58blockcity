@@ -1,0 +1,408 @@
+/* ============================================================
+   58区块社区 · V2EX 极简风样式
+   仅作用于 club 子站页面（由 club/includes/header.php 引入）
+   设计 token：浅灰底 + 白卡片 + 细边框 + 克制橙色
+   ============================================================ */
+
+:root {
+  --club-bg: #f5f5f5;
+  --club-card: #ffffff;
+  --club-border: #e2e2e2;
+  --club-border-light: #f0f0f0;
+  --club-text: #333333;
+  --club-text-secondary: #999999;
+  --club-primary: #ff6b00;
+  --club-primary-bg: #fff7ef;
+  --club-radius: 6px;
+  --club-side-width: 320px;
+}
+
+/* 页面底色与容器 */
+body {
+  background: var(--club-bg);
+}
+
+/* 双栏布局 */
+.club-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.club-main {
+  flex: 1;
+  min-width: 0;
+}
+.club-side {
+  width: var(--club-side-width);
+  flex-shrink: 0;
+}
+
+@media (max-width: 992px) {
+  .club-layout { flex-direction: column; }
+  .club-side { width: 100%; }
+}
+
+/* 卡片 */
+.club-card {
+  background: var(--club-card);
+  border: 1px solid var(--club-border);
+  border-radius: var(--club-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.club-card h3 {
+  font-size: 14px;
+  color: var(--club-text);
+  font-weight: 600;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--club-border-light);
+}
+
+/* 顶部标题区 */
+.club-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.club-header-bar h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--club-text);
+  margin: 0;
+}
+
+/* 筛选 pills（城市/话题） */
+.club-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.club-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--club-border);
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all .15s;
+}
+.club-pill:hover {
+  border-color: var(--club-primary);
+  color: var(--club-primary);
+  text-decoration: none;
+}
+.club-pill.active {
+  background: var(--club-primary);
+  border-color: var(--club-primary);
+  color: #fff;
+  font-weight: 600;
+}
+.club-pill i { font-size: 12px; }
+
+/* 搜索框 */
+.club-search {
+  display: flex;
+  width: 100%;
+}
+.club-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--club-border);
+  border-right: none;
+  border-radius: var(--club-radius) 0 0 var(--club-radius);
+  font-size: 13px;
+  background: #fff;
+  outline: none;
+}
+.club-search input:focus { border-color: var(--club-primary); }
+.club-search button {
+  padding: 8px 14px;
+  background: var(--club-primary);
+  color: #fff;
+  border: none;
+  border-radius: 0 var(--club-radius) var(--club-radius) 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* 按钮 */
+.club-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--club-radius);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .15s;
+}
+.club-btn.primary { background: var(--club-primary); color: #fff; }
+.club-btn.primary:hover { background: #e05d00; color: #fff; text-decoration: none; }
+.club-btn.ghost { background: #fff; color: var(--club-primary); border-color: var(--club-primary); }
+.club-btn.ghost:hover { background: var(--club-primary-bg); text-decoration: none; }
+.club-btn.sm { padding: 5px 12px; font-size: 13px; }
+.club-btn:disabled { background: #f0f0f0; color: #999; border-color: #ddd; cursor: not-allowed; }
+
+/* 帖子列表（V2EX 紧凑行） */
+.club-list { background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); }
+.club-post-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--club-border-light);
+  text-decoration: none;
+  transition: background .12s;
+}
+.club-post-row:last-child { border-bottom: none; }
+.club-post-row:hover { background: #fafafa; }
+.club-post-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--club-border-light);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  font-size: 14px;
+}
+.club-post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.club-post-body { flex: 1; min-width: 0; }
+.club-post-title {
+  font-size: 14px;
+  color: var(--club-text);
+  font-weight: 500;
+  line-height: 1.5;
+  display: block;
+}
+.club-post-row:hover .club-post-title { color: var(--club-primary); }
+.club-post-summary {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+  margin: 4px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.club-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--club-text-secondary);
+}
+.club-post-meta a { color: var(--club-text-secondary); text-decoration: none; }
+.club-post-meta a:hover { color: var(--club-primary); }
+.club-post-meta i { font-size: 11px; }
+
+/* 标签徽章 */
+.club-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 18px;
+  background: var(--club-primary-bg);
+  color: #e65a00;
+  white-space: nowrap;
+}
+.club-badge.moment { background: #f3f4f6; color: #6b7280; }
+.club-badge.sticky { background: #fef3c7; color: #b45309; }
+.club-badge .op { font-weight: 700; }
+
+/* 分页 */
+.club-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.club-pagination a {
+  padding: 6px 14px;
+  border: 1px solid var(--club-border);
+  border-radius: var(--club-radius);
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  text-decoration: none;
+}
+.club-pagination a:hover { border-color: var(--club-primary); color: var(--club-primary); }
+.club-pagination .current { color: var(--club-text-secondary); font-size: 13px; }
+
+/* 详情页 */
+.club-detail { background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); padding: 24px; margin-bottom: 16px; }
+.club-breadcrumb { font-size: 12px; color: var(--club-text-secondary); margin-bottom: 12px; }
+.club-breadcrumb a { color: var(--club-text-secondary); text-decoration: none; }
+.club-breadcrumb a:hover { color: var(--club-primary); }
+.club-detail h1 { font-size: 22px; font-weight: 700; color: var(--club-text); margin: 0 0 12px; line-height: 1.4; }
+.club-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--club-border-light);
+  border-bottom: 1px solid var(--club-border-light);
+  margin-bottom: 16px;
+}
+.club-author-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: var(--club-border-light); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #ccc; }
+.club-author-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.club-author-name { font-size: 14px; font-weight: 600; color: var(--club-text); }
+.club-author-meta { font-size: 12px; color: var(--club-text-secondary); margin-top: 2px; }
+.club-detail-content { font-size: 15px; color: #444; line-height: 1.8; word-break: break-word; margin-bottom: 16px; }
+.club-detail-images { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.club-detail-images img { max-width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--club-radius); border: 1px solid var(--club-border-light); }
+.club-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--club-border-light);
+  font-size: 13px;
+  color: var(--club-text-secondary);
+}
+.club-detail-actions .count { display: inline-flex; align-items: center; gap: 5px; }
+.club-detail-actions form { display: inline; }
+
+/* 评论 */
+.club-comments { background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); padding: 24px; margin-bottom: 16px; }
+.club-comments h2 { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+.club-comment-input { display: flex; gap: 10px; margin-bottom: 20px; }
+.club-comment-input input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--club-border);
+  border-radius: var(--club-radius);
+  font-size: 14px;
+  outline: none;
+}
+.club-comment-item { padding: 12px 0; border-bottom: 1px solid var(--club-border-light); }
+.club-comment-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.club-comment-user { font-size: 13px; font-weight: 600; color: var(--club-text); }
+.club-comment-time { font-size: 11px; color: var(--club-text-secondary); }
+.club-comment-body { font-size: 14px; color: #444; line-height: 1.6; }
+.club-comment-replies { margin-left: 30px; padding-left: 12px; border-left: 2px solid var(--club-border-light); }
+
+/* 作者卡/相关推荐 */
+.club-side-box { background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); padding: 16px; margin-bottom: 16px; }
+.club-related-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--club-border-light);
+  font-size: 13px;
+}
+.club-related-item:last-child { border-bottom: none; }
+.club-related-item a { color: var(--club-text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.club-related-item a:hover { color: var(--club-primary); }
+.club-related-item .cnt { color: var(--club-text-secondary); font-size: 12px; flex-shrink: 0; }
+
+/* 侧栏列表（热帖/活跃用户） */
+.club-side-list { list-style: none; margin: 0; padding: 0; }
+.club-side-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--club-border-light);
+  font-size: 13px;
+}
+.club-side-list li:last-child { border-bottom: none; }
+.club-side-list .rank {
+  width: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--club-text-secondary);
+  flex-shrink: 0;
+  font-style: normal;
+}
+.club-side-list .rank.top { color: var(--club-primary); font-weight: 700; }
+.club-side-list a { color: var(--club-text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.club-side-list a:hover { color: var(--club-primary); }
+.club-side-list .side-user { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.club-side-list .side-user img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--club-border-light); flex-shrink: 0; }
+.club-side-list .side-user i { color: #ccc; font-size: 12px; width: 24px; text-align: center; flex-shrink: 0; }
+.club-side-list .cnt { margin-left: auto; color: var(--club-text-secondary); font-size: 12px; flex-shrink: 0; }
+
+/* 发帖 CTA 卡 */
+.club-cta { text-align: center; padding: 20px 16px; }
+.club-cta p { font-size: 13px; color: var(--club-text-secondary); margin: 0 0 12px; line-height: 1.6; }
+
+/* 空状态 */
+.club-empty { text-align: center; padding: 60px 20px; color: var(--club-text-secondary); }
+.club-empty i { font-size: 40px; opacity: .35; }
+.club-empty p { margin-top: 12px; font-size: 14px; }
+
+/* 表单（发帖） */
+.club-form-card { background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); padding: 24px; }
+.club-form-group { margin: 16px 0; }
+.club-form-label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 500; }
+.club-form-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--club-border);
+  border-radius: var(--club-radius);
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.club-form-input:focus { border-color: var(--club-primary); }
+.club-form-textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--club-border); border-radius: var(--club-radius); font-size: 14px; min-height: 130px; resize: vertical; outline: none; }
+.club-form-textarea:focus { border-color: var(--club-primary); }
+
+/* 类型切换 pill */
+.club-type-switch { display: inline-flex; background: #fff; border: 1px solid var(--club-border); border-radius: var(--club-radius); overflow: hidden; }
+.club-type-switch a { padding: 8px 20px; font-size: 14px; color: #666; text-decoration: none; }
+.club-type-switch a.active { background: var(--club-primary); color: #fff; font-weight: 600; }
+.club-type-switch a:not(.active) { border-right: 1px solid var(--club-border); }
+
+/* 提示 */
+.club-alert { padding: 10px 14px; border-radius: var(--club-radius); margin-bottom: 14px; font-size: 13px; }
+.club-alert.ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.club-alert.err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* 图片预览（发帖页） */
+.club-img-preview { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.club-img-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: var(--club-radius); border: 1px solid var(--club-border-light); }
+
+/* 个人中心 */
+.club-dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.club-dash-stat { text-align: center; padding: 16px; background: #fafafa; border-radius: var(--club-radius); }
+.club-dash-stat .num { font-size: 22px; font-weight: 700; color: var(--club-primary); }
+.club-dash-stat .lbl { font-size: 12px; color: var(--club-text-secondary); margin-top: 4px; }
+.club-dash-links { display: flex; flex-direction: column; }
+.club-dash-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--club-border-light);
+  text-decoration: none;
+  color: var(--club-text);
+  font-size: 14px;
+}
+.club-dash-links a:hover { background: #fafafa; }
+.club-dash-links a:last-child { border-bottom: none; }
+.club-dash-links .arrow { color: #ccc; }

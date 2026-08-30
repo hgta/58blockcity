@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once '../classes/Post.php';
 require_once '../classes/User.php';
+require_once '../classes/SeoHelper.php';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 checkLogin();
@@ -30,6 +31,7 @@ try {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    validateCsrfToken();
     $type = in_array($_POST['type'] ?? '', ['post', 'moment'], true) ? $_POST['type'] : 'post';
     $images = [];
 
@@ -60,90 +62,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $result = $post->create($userId, $type, $data);
     if (is_int($result)) {
-        header('Location: post.php?id=' . $result);
+        // 跳转伪静态详情页
+        $title = $type === 'post' ? $data['title'] : $data['content'];
+        header('Location: ' . SeoHelper::postUrl($result, $title));
         exit;
     }
     $err = $result;
 }
 
 $site_config['title'] = ($type === 'moment' ? '发心情' : '发帖') . ' - 58区块社区';
+$site_config['description'] = SeoHelper::description(($type === 'moment' ? '发布你的心情' : '发布帖子') . '，分享见闻与观点。');
+$site_config['canonical_url'] = 'https://club.58.tl/create.php?type=' . $type;
+$site_config['og_url'] = $site_config['canonical_url'];
 require_once 'includes/header.php';
 ?>
-<style>
-.create-wrap { max-width: 680px; margin: 24px auto; padding: 0 15px; }
-.create-card { background: #fff; border-radius: 12px; padding: 26px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-.type-switch { display: flex; gap: 0; background: #f5f5f5; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-.type-btn { flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; color: #555; cursor: pointer; text-decoration: none; }
-.type-btn.active { background: #ff6b00; color: #fff; }
-.form-group { margin: 16px 0; }
-.form-label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; }
-.form-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-.form-textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; }
-.form-select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; }
-.btn-primary { background: #ff6b00; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; cursor: pointer; font-weight: bold; }
-.btn-primary:hover { background: #e05d00; }
-.alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
-.alert-err { background: #f8d7da; color: #721c24; }
-.img-preview { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.img-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; }
-.hint { font-size: 12px; color: #999; margin-top: 4px; }
-</style>
 
-<div class="create-wrap">
-    <h1 style="font-size: 24px; margin: 0 0 16px;"><?= $type === 'moment' ? '😊 发心情' : '📝 发帖' ?></h1>
-    <?php if ($err): ?><div class="alert alert-err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
+<div class="club-layout">
 
-    <div class="type-switch">
-        <a class="type-btn <?= $type === 'post' ? 'active' : '' ?>" href="create.php?type=post">发帖</a>
-        <a class="type-btn <?= $type === 'moment' ? 'active' : '' ?>" href="create.php?type=moment">发心情</a>
+  <!-- ============ 主内容 ============ -->
+  <main class="club-main">
+    <div class="club-header-bar">
+      <h1><?= $type === 'moment' ? '发心情' : '发帖' ?></h1>
     </div>
 
-    <div class="create-card">
-        <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="type" value="<?= $type ?>">
+    <div class="club-form-card">
+      <?php if ($err): ?><div class="club-alert err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
 
-            <?php if ($type === 'post'): ?>
-            <div class="form-group">
-                <label class="form-label">标题</label>
-                <input type="text" name="title" class="form-input" maxlength="100" required placeholder="一句话概括主题">
-            </div>
-            <?php endif; ?>
+      <div class="club-type-switch" style="margin-bottom:8px;">
+        <a href="create.php?type=post" class="<?= $type === 'post' ? 'active' : '' ?>"><i class="fas fa-pen"></i> 发帖</a>
+        <a href="create.php?type=moment" class="<?= $type === 'moment' ? 'active' : '' ?>"><i class="fas fa-smile"></i> 发心情</a>
+      </div>
 
-            <div class="form-group">
-                <label class="form-label"><?= $type === 'moment' ? '此刻的想法' : '正文内容' ?></label>
-                <textarea name="content" class="form-textarea" required placeholder="<?= $type === 'moment' ? '分享你此刻的心情...' : '分享你的想法...' ?>"></textarea>
-            </div>
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+        <input type="hidden" name="type" value="<?= $type ?>">
 
-            <div class="form-group">
-                <label class="form-label">配图<?= $type === 'moment' ? '（心情最多 1 张）' : '（可多图）' ?></label>
-                <input type="file" name="images[]" accept="image/*" <?= $type === 'moment' ? '' : 'multiple' ?> class="form-input" id="image-input">
-                <div class="img-preview" id="img-preview"></div>
-                <?php if ($type === 'moment'): ?><div class="hint">心情最多上传 1 张图片</div><?php endif; ?>
-            </div>
+        <?php if ($type === 'post'): ?>
+        <div class="club-form-group">
+          <label class="club-form-label">标题</label>
+          <input type="text" name="title" class="club-form-input" maxlength="100" required placeholder="一句话概括主题">
+        </div>
+        <?php endif; ?>
 
-            <div class="form-group">
-                <label class="form-label">城市</label>
-                <select name="city" class="form-select">
-                    <option value="">不指定</option>
-                    <?php foreach ($hotCities as $c): ?>
-                        <option value="<?= htmlspecialchars($c) ?>" <?= $c === $myCity ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+        <div class="club-form-group">
+          <label class="club-form-label"><?= $type === 'moment' ? '此刻的想法' : '正文内容' ?></label>
+          <textarea name="content" class="club-form-textarea" required placeholder="<?= $type === 'moment' ? '分享你此刻的心情...' : '分享你的想法...' ?>"></textarea>
+        </div>
 
-            <div class="form-group">
-                <label class="form-label">话题（可选）</label>
-                <select name="topic" class="form-select">
-                    <option value="">不指定话题</option>
-                    <option value="block">聊区块</option>
-                    <option value="nft">聊头像</option>
-                    <option value="bct">聊人气值</option>
-                </select>
-            </div>
+        <div class="club-form-group">
+          <label class="club-form-label">配图<?= $type === 'moment' ? '（心情最多 1 张）' : '（可多图）' ?></label>
+          <input type="file" name="images[]" accept="image/*" <?= $type === 'moment' ? '' : 'multiple' ?> class="club-form-input" id="image-input">
+          <div class="club-img-preview" id="img-preview"></div>
+          <?php if ($type === 'moment'): ?><div class="hint" style="font-size:12px;color:#999;margin-top:4px;">心情最多上传 1 张图片</div><?php endif; ?>
+        </div>
 
-            <button type="submit" class="btn-primary">发布</button>
-        </form>
+        <div class="club-form-group">
+          <label class="club-form-label">城市</label>
+          <select name="city" class="club-form-input">
+            <option value="">不指定</option>
+            <?php foreach ($hotCities as $c): ?>
+              <option value="<?= htmlspecialchars($c) ?>" <?= $c === $myCity ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="club-form-group">
+          <label class="club-form-label">话题（可选）</label>
+          <select name="topic" class="club-form-input">
+            <option value="">不指定话题</option>
+            <option value="block">聊区块</option>
+            <option value="nft">聊头像</option>
+            <option value="bct">聊人气值</option>
+          </select>
+        </div>
+
+        <button type="submit" class="club-btn primary"><i class="fas fa-paper-plane"></i> 发布</button>
+      </form>
     </div>
+  </main>
+
+  <!-- ============ 右侧栏 ============ -->
+  <?php require_once 'includes/sidebar.php'; ?>
+
 </div>
 
 <script>

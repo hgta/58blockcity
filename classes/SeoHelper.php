@@ -91,6 +91,14 @@ class SeoHelper
         return 'https://nft.58.tl/nft/' . intval($id) . ($slug ? '-' . $slug : '') . '.html';
     }
 
+    public static function postUrl($id, $title)
+    {
+        // nginx 规则为 ^/post/([0-9]+)-.*\.html$，slug 必须非空（moment 标题为空时兜底）
+        $slug = self::slug($title);
+        if ($slug === '') $slug = 'post';
+        return 'https://club.58.tl/post/' . intval($id) . '-' . $slug . '.html';
+    }
+
     public static function modelUrl($id, $nickname)
     {
         return 'https://mall.58.tl/model/' . intval($id) . '-' . self::slug($nickname) . '.html';

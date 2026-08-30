@@ -17,4 +17,8 @@ $site_config['url_dashboard'] = '/user/dashboard.php';
 $site_config['url_logout']    = '/auth/logout.php';
 $site_config['url_login']     = '/auth/login.php';
 $site_config['url_register']  = '/auth/register.php';
+// WebSite JSON-LD 注入 SearchAction（搜索结构化）
+$site_config['schema_search'] = $site_config['schema_search'] ?? 'https://club.58.tl/search.php?q={search_term_string}';
+// 引入 club 专属 V2EX 风格样式
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="stylesheet" href="/assets/css/club.css">';
 require_once __DIR__ . '/../../shared/header.php';
