@@ -94,7 +94,10 @@ require_once '../includes/header.php';
 
 <link rel="stylesheet" href="style.css">
 <div class="model-board">
-    <h1 style="font-size:24px;margin:0 0 16px;">📸 模特库</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <h1 style="font-size:24px;margin:0;">📸 模特库</h1>
+        <a href="../apply/model.php" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:999px;background:linear-gradient(135deg,#ff6b00,#f43f5e);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(255,107,0,.25);"><i class="fas fa-user-plus"></i> 我要当模特</a>
+    </div>
 
     <!-- 筛选条 -->
     <div class="model-filters">

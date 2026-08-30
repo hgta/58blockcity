@@ -71,7 +71,7 @@ class Model
             $values[] = intval($data['user_id']);
         }
 
-        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies'];
+        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'zodiac', 'follower_count', 'daily_photos'];
         foreach ($optional as $f) {
             if (isset($data[$f]) && $data[$f] !== '') {
                 $fields[] = $f;

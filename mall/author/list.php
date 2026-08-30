@@ -95,7 +95,10 @@ require_once '../includes/header.php';
 
 <link rel="stylesheet" href="style.css">
 <div class="author-board">
-    <h1 style="font-size:24px;margin:0 0 16px;">🎨 作者库</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <h1 style="font-size:24px;margin:0;">🎨 作者库</h1>
+        <a href="../apply/author.php" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:999px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(108,92,231,.25);"><i class="fas fa-handshake"></i> 我是作者，我要合作</a>
+    </div>
 
     <!-- 筛选条 -->
     <div class="author-filters">

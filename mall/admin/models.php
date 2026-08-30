@@ -5,6 +5,7 @@ require_once '../../classes/Model.php';
 require_once '../../classes/User.php';
 require_once '../../classes/City.php';
 require_once '../../classes/SeoHelper.php';
+require_once '../../classes/Application.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: ../auth/login.php');
@@ -15,6 +16,7 @@ $model = new Model($pdo);
 $user = new User($pdo);
 $city = new City($pdo);
 $allCities = $city->getAllCities();
+$app = new Application($pdo);
 
 // 粉丝数规范化：兼容 "5.4万" / "1.2w" / "1k" / "5,400" 等写法，统一转为整数
 // （follower_count 列已由 varchar 迁移为 int，直接写入非数值字符串会触发 1265 Data truncated）
@@ -141,9 +143,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 if (empty($data['nickname'])) {
                     $actionMsg = '<div class="admin-alert admin-alert-error">昵称为必填项</div>';
-                } elseif ($model->create($data)) {
+                } else                if ($model->create($data)) {
                     $actionMsg = '<div class="admin-alert admin-alert-success">模特创建成功</div>';
                     $newId = $pdo->lastInsertId();
+                    // 若来自申请预填，回写关联并置为已通过
+                    if ($fromApply) {
+                        $app->updateStatus($fromApply['id'], 'approved', ['model_id' => $newId]);
+                    }
                     SeoHelper::pushContentUrl(SeoHelper::modelUrl($newId, $data['nickname'] ?? ''));
                 } else {
                     $actionMsg = '<div class="admin-alert admin-alert-error">创建失败</div>';
@@ -161,6 +167,13 @@ $totalPages = $listData['pages'];
 $editModel = null;
 if (isset($_GET['edit'])) {
     $editModel = $model->getById(intval($_GET['edit']));
+}
+
+// 申请预填：apply_id 指定来自模特申请的录入
+$fromApply = null;
+if (isset($_GET['apply_id'])) {
+    $fromApply = $app->getById(intval($_GET['apply_id']));
+    if (!$fromApply || $fromApply['type'] !== 'model') $fromApply = null;
 }
 
 $admin_site_config = [
@@ -182,14 +195,41 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
 
     <?= $actionMsg ?>
 
-    <?php if (isset($_GET['add']) || $editModel):
+    <?php if (isset($_GET['add']) || $editModel || $fromApply):
         $isEdit = (bool)$editModel;
         $formData = $isEdit ? $editModel : [];
+        // 申请预填：把申请数据映射到表单（照片直接复用正式目录路径）
+        if (!$isEdit && $fromApply) {
+            $applyPhotos = $fromApply['photos_arr'];
+            $formData = [
+                'nickname'     => $fromApply['nickname'],
+                'gender'       => $fromApply['gender'],
+                'age'          => $fromApply['age'],
+                'height'       => $fromApply['height'],
+                'weight'       => $fromApply['weight'],
+                'measurements' => $fromApply['measurements'],
+                'city'         => $fromApply['city'],
+                'zodiac'       => $fromApply['zodiac'],
+                'hobbies'      => $fromApply['hobbies'],
+                'qq'           => $fromApply['qq'],
+                'weixin'       => $fromApply['weixin'],
+                'weibo'        => $fromApply['weibo'],
+                'xiaohongshu'  => $fromApply['xiaohongshu'],
+                'user_id'      => $fromApply['user_id'],
+                'avatar'       => $applyPhotos[0] ?? '',
+                'daily_photos' => json_encode($applyPhotos, JSON_UNESCAPED_SLASHES),
+            ];
+        }
     ?>
     <div class="admin-card" style="margin-bottom:20px;">
         <div class="admin-card-header">
-            <span class="admin-card-title"><?= $isEdit ? '编辑模特' : '添加模特' ?></span>
+            <span class="admin-card-title"><?= $isEdit ? '编辑模特' : ($fromApply ? '录入模特（申请预填）' : '添加模特') ?></span>
         </div>
+        <?php if (!$isEdit && $fromApply): ?>
+        <div style="background:#0c4a6e;color:#7dd3fc;border:1px solid #075985;border-radius:8px;padding:10px 14px;font-size:13px;margin:12px 16px 0;">
+            <i class="fas fa-info-circle"></i> 来自「<?= htmlspecialchars($fromApply['nickname']) ?>」的模特申请预填，请核对后保存；保存后该申请将自动标记为「已通过」。
+        </div>
+        <?php endif; ?>
         <div class="admin-card-body">
             <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="save">
@@ -223,7 +263,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                             <input type="text" value="<?= htmlspecialchars($formData['username'] ?? '-') ?>" disabled style="width:100%;padding:8px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#64748b;font-size:14px;">
                             <input type="hidden" name="user_id" value="<?= $formData['user_id'] ?>">
                         <?php else: ?>
-                            <input type="number" name="user_id" placeholder="输入用户ID（可选）" min="1" style="<?= $inputStyle ?>">
+                            <input type="number" name="user_id" value="<?= htmlspecialchars($formData['user_id'] ?? '') ?>" placeholder="输入用户ID（可选）" min="1" style="<?= $inputStyle ?>">
                         <?php endif; ?>
                     </div>
                     <div>
@@ -310,7 +350,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                 <!-- 日常照片上传 -->
                 <div style="margin-top:15px;">
                     <label style="<?= $labelStyle ?>;margin-bottom:6px;">日常照片</label>
-                    <?php if ($isEdit && !empty($formData['daily_photos'])): ?>
+                    <?php if (!empty($formData['daily_photos'])): ?>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;" id="daily-photos-preview">
                         <?php $dailyPhotos = json_decode($formData['daily_photos'], true) ?: []; ?>
                         <?php foreach ($dailyPhotos as $dp): ?>
