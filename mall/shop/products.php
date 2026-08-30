@@ -247,6 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'status' => $status,
                     'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0,
                     'model_id' => !empty($_POST['model_id']) ? intval($_POST['model_id']) : null,
+                    'author_id' => !empty($_POST['author_id']) ? intval($_POST['author_id']) : null,
                 ];
 
                 // 创建商品
@@ -394,6 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'link_wechat_shop' => $externalLinks['link_wechat_shop'],
                     'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0,
                     'model_id' => !empty($_POST['model_id']) ? intval($_POST['model_id']) : null,
+                    'author_id' => !empty($_POST['author_id']) ? intval($_POST['author_id']) : null,
                 ];
 
                 // 支持移动到其他店铺（仅限该用户拥有的店铺）
