@@ -1501,6 +1501,71 @@ CREATE TABLE IF NOT EXISTS `model_follows` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
+-- 作者（Author）：商品图案原创作者，平行模特功能
+-- 差异：无三围/体重/身高，新增 bio（简介）与 style（创作风格），
+--       author_works（原创作品图集 JSON），follower_count 直接用 int
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `authors` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL COMMENT '关联站内用户（可选）',
+  `nickname` varchar(100) NOT NULL COMMENT '作者名/艺名（必填）',
+  `gender` enum('男','女','保密') DEFAULT '保密',
+  `city` varchar(100) DEFAULT NULL COMMENT '所在城市',
+  `zodiac` varchar(20) DEFAULT NULL COMMENT '星座',
+  `style` varchar(50) DEFAULT NULL COMMENT '创作领域/风格标签',
+  `bio` text DEFAULT NULL COMMENT '作者简介',
+  `qq` varchar(20) DEFAULT NULL,
+  `weixin` varchar(100) DEFAULT NULL,
+  `weibo` varchar(200) DEFAULT NULL,
+  `xiaohongshu` varchar(200) DEFAULT NULL COMMENT '小红书',
+  `avatar` varchar(255) DEFAULT NULL COMMENT '头像',
+  `author_works` text DEFAULT NULL COMMENT '原创作品图集 JSON',
+  `follower_count` int(11) DEFAULT 0 COMMENT '粉丝数（整数，展示走 formatFollower）',
+  `like_count` int(11) DEFAULT 0 COMMENT '点赞数（冗余）',
+  `product_count` int(11) DEFAULT 0 COMMENT '关联商品数（冗余）',
+  `review_count` int(11) DEFAULT 0 COMMENT '关联评论数（冗余）',
+  `view_count` int(11) DEFAULT 0 COMMENT '访问量（冗余，详情页 +1）',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  KEY `idx_like_count` (`like_count`),
+  KEY `idx_product_count` (`product_count`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+-- 作者关注（平行 model_follows）
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `author_follows` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `author_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `author_user` (`author_id`, `user_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_author_id` (`author_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+-- 作者点赞（平行 model_likes）
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `author_likes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `author_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `author_user` (`author_id`, `user_id`),
+  KEY `idx_author_id` (`author_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 -- 统一站内信
 -- --------------------------------------------------------
 
@@ -1519,6 +1584,10 @@ CREATE TABLE IF NOT EXISTS `user_messages` (
 ALTER TABLE `products`
   ADD COLUMN `model_id` int(11) DEFAULT NULL AFTER `shop_id`,
   ADD KEY `idx_model_id` (`model_id`);
+
+ALTER TABLE `products`
+  ADD COLUMN `author_id` int(11) DEFAULT NULL COMMENT '关联图案作者（可选）' AFTER `model_id`,
+  ADD KEY `idx_author_id` (`author_id`);
 
 -- --------------------------------------------------------
 -- 通用配置（键值对，存放 token 等敏感配置，避免写入 web 目录）

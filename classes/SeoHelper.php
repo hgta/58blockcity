@@ -96,6 +96,11 @@ class SeoHelper
         return 'https://mall.58.tl/model/' . intval($id) . '-' . self::slug($nickname) . '.html';
     }
 
+    public static function authorUrl($id, $nickname)
+    {
+        return 'https://mall.58.tl/author/' . intval($id) . '-' . self::slug($nickname) . '.html';
+    }
+
     /**
      * 生成 title，自动截断到合理长度
      */

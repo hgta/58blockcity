@@ -1,0 +1,154 @@
+/* 作者库发现页 + 我的关注 共享样式（平行模特库 style.css） */
+.author-board {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+.author-filters {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    margin-bottom: 18px;
+}
+.author-filters .filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.author-filters .filter-row:last-child { margin-bottom: 0; }
+.author-filters .filter-label {
+    font-size: 13px;
+    color: #999;
+    width: 42px;
+    flex-shrink: 0;
+}
+.author-filters .chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: #f2f2f2;
+    color: #555;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.author-filters .chip:hover { background: #e8f4ff; }
+.author-filters .chip.active {
+    background: #6c5ce7;
+    color: #fff;
+    border-color: #6c5ce7;
+}
+.author-filters .gender-opt {
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: none;
+}
+.author-filters .gender-opt.active { background: #6c5ce7; color: #fff; border-color: #6c5ce7; }
+.author-filters input.search-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 7px 14px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+    outline: none;
+}
+.author-filters input.search-input:focus { border-color: #6c5ce7; }
+.author-count { color: #999; font-size: 13px; margin-bottom: 12px; }
+
+.author-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+.author-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: transform .2s, box-shadow .2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+.author-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+.ac-avatar {
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f3f3f3;
+    position: relative;
+}
+.ac-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ac-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 2px;
+    background: #f3f3f3;
+}
+.ac-thumbs img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background:#eee; }
+.ac-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; }
+.ac-name { font-size: 15px; font-weight: bold; color: #222; text-decoration: none; }
+.ac-bio { font-size: 12px; color: #999; margin: 4px 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-meta { font-size: 12px; color: #999; margin: 4px 0; line-height: 1.5; }
+.ac-stats { font-size: 12px; color: #777; display: flex; gap: 10px; margin-top: auto; padding-top: 8px; }
+.ac-stats b { color: #6c5ce7; }
+
+/* 昵称 + 关注按钮同行 */
+.ac-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.ac-name-row .ac-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.author-follow-btn {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #6c5ce7;
+    background: #fff;
+    color: #6c5ce7;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+    min-height: 32px;
+    line-height: 1.4;
+    text-decoration: none;
+    display: inline-block;
+}
+.author-follow-btn:hover { background: #f3f0ff; border-color: #5a4bd1; color: #5a4bd1; }
+.author-follow-btn.followed { background: #6c5ce7; color: #fff; border-color: #6c5ce7; }
+.author-follow-btn.followed:hover { background: #5a4bd1; border-color: #5a4bd1; }
+.author-load-more {
+    display: block;
+    margin: 24px auto;
+    padding: 10px 40px;
+    border: 1px solid #6c5ce7;
+    background: #fff;
+    color: #6c5ce7;
+    border-radius: 24px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.author-load-more:disabled { opacity: .5; cursor: default; }
+.author-empty { text-align: center; color: #999; padding: 60px 0; }

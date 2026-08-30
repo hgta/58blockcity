@@ -45,6 +45,19 @@ if ($userId && $topModelIds) {
     $stmt->execute([$userId]);
     $topModelFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
 }
+
+// 人气作者（首页导流，平行人气模特，紫色主题）
+require_once '../classes/Author.php';
+$authorObj = new Author($pdo);
+$topAuthors = $authorObj->getFilteredList(['sort' => 'follower'], 1, 5)['list'];
+$topAuthorIds = array_column($topAuthors, 'id');
+$topAuthorFollowed = [];
+if ($userId && $topAuthorIds) {
+    $ph = implode(',', array_map('intval', $topAuthorIds));
+    $stmt = $pdo->prepare("SELECT author_id FROM author_follows WHERE user_id = ? AND author_id IN ($ph)");
+    $stmt->execute([$userId]);
+    $topAuthorFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -473,6 +486,30 @@ if ($userId && $topModelIds) {
             .mini-avatar { width: 50px; height: 50px; }
             .mini-name { font-size: 12px; }
         }
+
+        /* 人气作者（平行人气模特，紫色主题） */
+        .author-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        .author-mini-grid .author-follow-btn {
+            font-size: 12px; padding: 4px 12px;
+            border-radius: 14px; border: 1px solid #7c4dff;
+            background: #fff; color: #7c4dff;
+            cursor: pointer; white-space: nowrap;
+            text-decoration: none; display: inline-block;
+            min-height: 28px; line-height: 1.3;
+        }
+        .author-mini-grid .author-follow-btn:hover { background: #f3f0ff; }
+        .author-mini-grid .author-follow-btn.followed { background: #7c4dff; color: #fff; border-color: #7c4dff; }
+        .author-mini-grid .author-follow-btn.followed:hover { background: #5a4bd1; }
+        @media (max-width: 1024px) {
+            .author-mini-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .author-mini-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -691,6 +728,50 @@ if ($userId && $topModelIds) {
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- 人气作者 -->
+        <?php if (!empty($topAuthors)): ?>
+        <div class="section">
+            <div class="section-header">
+                <h2>🎨 人气作者</h2>
+                <a href="author/list.php" class="more-link">查看作者库 &gt;</a>
+            </div>
+            <div class="author-mini-grid">
+                <?php foreach ($topAuthors as $au):
+                    $auId = intval($au['id']);
+                    $auUrl = SeoHelper::authorUrl($auId, $au['nickname'] ?? '');
+                    $auAvatar = '';
+                    if (!empty($au['avatar'])) {
+                        $auAvatar = '../' . $au['avatar'];
+                    } elseif (!empty($au['user_avatar'])) {
+                        $ua = $au['user_avatar'];
+                        $auAvatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+                    }
+                    $auFollowed = isset($topAuthorFollowed[$auId]);
+                ?>
+                <div class="mini-card">
+                    <a class="mini-avatar" href="<?= htmlspecialchars($auUrl) ?>">
+                        <?php if ($auAvatar): ?>
+                            <img src="<?= htmlspecialchars($auAvatar) ?>" alt="<?= htmlspecialchars($au['nickname']) ?>" loading="lazy">
+                        <?php else: ?>
+                            <div class="mini-avatar-placeholder"><i class="fas fa-palette"></i></div>
+                        <?php endif; ?>
+                    </a>
+                    <a class="mini-name" href="<?= htmlspecialchars($auUrl) ?>"><?= htmlspecialchars($au['nickname']) ?></a>
+                    <div class="mini-meta"><?= Author::formatFollower(intval($au['follower_count'] ?? 0)) ?> 粉丝</div>
+                    <?php if ($userId): ?>
+                    <button class="author-follow-btn <?= $auFollowed ? 'followed' : '' ?>" data-author-id="<?= $auId ?>"
+                            data-logged-in="1" data-login-url="auth/login.php?redirect=<?= urlencode($auUrl) ?>">
+                        <?= $auFollowed ? '已关注' : '+ 关注' ?>
+                    </button>
+                    <?php else: ?>
+                    <a class="author-follow-btn" href="auth/login.php?redirect=<?= urlencode($auUrl) ?>">+ 关注</a>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
         
         <!-- 热门店铺 -->
         <div class="section">
@@ -778,5 +859,6 @@ if ($userId && $topModelIds) {
     
     <?php include 'includes/footer.php'; ?>
     <script src="model/follow.js"></script>
+    <script src="author/follow.js"></script>
 </body>
 </html> 

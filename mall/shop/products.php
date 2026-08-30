@@ -918,6 +918,16 @@ require_once '../includes/header.php';
                                             $models = $modelObj->getAll();
                                         }
                                         $currentModelId = isset($editProduct) ? ($editProduct['model_id'] ?? '') : (isset($_POST['model_id']) ? $_POST['model_id'] : '');
+                                        // 加载作者列表供选择
+                                        if (class_exists('Author')) {
+                                            $authorObj = new Author($pdo);
+                                            $authors = $authorObj->getAll();
+                                        } else {
+                                            require_once '../../classes/Author.php';
+                                            $authorObj = new Author($pdo);
+                                            $authors = $authorObj->getAll();
+                                        }
+                                        $currentAuthorId = isset($editProduct) ? ($editProduct['author_id'] ?? '') : (isset($_POST['author_id']) ? $_POST['author_id'] : '');
                                         ?>
                                         <div class="form-group">
                                             <label for="model_id">关联模特（可选）</label>
@@ -930,6 +940,18 @@ require_once '../includes/header.php';
                                                 <?php endforeach; ?>
                                             </select>
                                             <small class="text-muted">选择拍摄该商品的模特，需先在后台添加模特</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="author_id">关联作者（可选）</label>
+                                            <select name="author_id" id="author_id" class="form-control" style="max-width:300px;">
+                                                <option value="">-- 不关联作者 --</option>
+                                                <?php foreach ($authors as $au): ?>
+                                                <option value="<?= $au['id'] ?>" <?= $currentAuthorId == $au['id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($au['nickname']) ?> (<?= htmlspecialchars($au['city'] ?? '') ?>)
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <small class="text-muted">选择该商品的图案原创作者，需先在后台添加作者</small>
                                         </div>
                                         <div class="form-group">
                                             <label for="name">商品名称 *</label>

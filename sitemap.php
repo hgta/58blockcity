@@ -40,6 +40,7 @@ urlNode('https://mall.58.tl/', '0.9', 'daily', $now);
 urlNode('https://mall.58.tl/product/list.php', '0.8', 'daily', $now);
 urlNode('https://mall.58.tl/shop/list.php', '0.8', 'weekly', $now);
 urlNode('https://mall.58.tl/model/list.php', '0.8', 'daily', $now);
+urlNode('https://mall.58.tl/author/list.php', '0.8', 'daily', $now);
 urlNode('https://nft.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/circles/all.php', '0.8', 'weekly', $now);
@@ -91,6 +92,17 @@ try {
     }
 } catch (Exception $e) {
     // models 表尚未创建，跳过
+}
+
+// 8. 作者页
+try {
+    $stmt = $pdo->query("SELECT id, nickname, updated_at FROM authors WHERE status='active' ORDER BY id DESC LIMIT 2000");
+    while ($author = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $lastmod = $author['updated_at'] ? date('Y-m-d', strtotime($author['updated_at'])) : $now;
+        urlNode(SeoHelper::authorUrl($author['id'], $author['nickname']), '0.7', 'weekly', $lastmod);
+    }
+} catch (Exception $e) {
+    // authors 表尚未创建，跳过
 }
 
 echo '</urlset>', "\n";

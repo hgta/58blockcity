@@ -261,11 +261,13 @@ class Product {
                            p.price_bct as price,
                            c.name as category_name,
                            s.shop_name, s.user_id as shop_owner_id, s.id as shop_id,
-                           m.nickname as model_nickname
+                           m.nickname as model_nickname,
+                           a.nickname as author_nickname
                     FROM products p
                     LEFT JOIN product_categories c ON p.category_id = c.id
                     LEFT JOIN shops s ON p.shop_id = s.id
                     LEFT JOIN models m ON p.model_id = m.id
+                    LEFT JOIN authors a ON p.author_id = a.id
                     WHERE p.id = ?";
             if (!$includeInactive) {
                 $sql .= " AND p.status = 'active'";
@@ -291,16 +293,18 @@ class Product {
             
             $stmt = $this->pdo->prepare("
                 INSERT INTO products
-                (shop_id, model_id, category_id, name, description, main_image, thumb_image, images, video_url,
+                (shop_id, model_id, author_id, category_id, name, description, main_image, thumb_image, images, video_url,
                  link_xiaohongshu, link_taobao, link_douyin, link_kuaishou, link_jd, link_pdd, link_wechat_shop,
                  price_type, price_bct, price_cny, stock, status, is_recommended)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $modelId = !empty($data['model_id']) ? intval($data['model_id']) : null;
+            $authorId = !empty($data['author_id']) ? intval($data['author_id']) : null;
             $stmt->execute([
                 $data['shop_id'],
                 $modelId,
+                $authorId,
                 $data['category_id'],
                 $data['name'],
                 $data['description'],
@@ -333,6 +337,13 @@ class Product {
                 $model->refreshCounts($modelId);
             }
 
+            // 如果创建时关联了作者，刷新计数
+            if ($authorId) {
+                if (!class_exists('Author')) require_once __DIR__ . '/Author.php';
+                $author = new Author($this->pdo);
+                $author->refreshCounts($authorId);
+            }
+
             return $productId;
         } catch (Exception $e) {
             $this->pdo->rollBack();
@@ -347,7 +358,7 @@ class Product {
         $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url',
                          'link_xiaohongshu', 'link_taobao', 'link_douyin', 'link_kuaishou', 'link_jd', 'link_pdd', 'link_wechat_shop',
                          'price_type', 
-                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id', 'model_id'];
+                         'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id', 'model_id', 'author_id'];
         $setParts = [];
         $params = [];
         
@@ -375,6 +386,16 @@ class Product {
                 if (!class_exists('Model')) require_once __DIR__ . '/Model.php';
                 $model = new Model($this->pdo);
                 $model->refreshCounts($newModelId);
+            }
+        }
+
+        // 如果更改了 author_id，刷新对应作者的计数
+        if ($result && isset($data['author_id'])) {
+            $newAuthorId = $data['author_id'] ? intval($data['author_id']) : null;
+            if ($newAuthorId) {
+                if (!class_exists('Author')) require_once __DIR__ . '/Author.php';
+                $author = new Author($this->pdo);
+                $author->refreshCounts($newAuthorId);
             }
         }
         return $result;

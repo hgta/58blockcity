@@ -874,6 +874,17 @@ if ($reviewCount > 0) {
                 </div>
                 <?php endif; ?>
 
+                <?php if (!empty($productDetail['author_nickname'])): ?>
+                <div class="product-author-badge" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:#f3f0ff;border-radius:6px;border:1px solid #d4c4ff;">
+                    <i class="fas fa-palette" style="color:#7c4dff;font-size:18px;"></i>
+                    <span style="color:#666;">作者：</span>
+                    <a href="<?= SeoHelper::authorUrl($productDetail['author_id'], $productDetail['author_nickname']) ?>" 
+                       style="color:#7c4dff;font-weight:bold;text-decoration:none;">
+                        <?= htmlspecialchars($productDetail['author_nickname']) ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+
                 <div class="product-meta">
                     <div><i class="fas fa-chart-line"></i> 销量: <?php echo number_format($productDetail['sold_count']); ?></div>
                     <div><i class="fas fa-eye"></i> 浏览: <?php echo number_format($productDetail['view_count']); ?></div>
