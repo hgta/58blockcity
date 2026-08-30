@@ -167,7 +167,7 @@ require_once '../../shared/admin/admin-header.php';
 // 统一输入框样式
 $inputStyle = 'width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;';
 $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
-$authorStyles = ['插画','国潮','卡通','写实','水墨','涂鸦','极简','复古','萌系','科技','其他'];
+$authorStyles = ['插画','国潮','卡通','写实','水墨','涂鸦','极简','复古','萌系','科技','像素风','其他'];
 $zodiacs = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座','水瓶座','双鱼座'];
 ?>
 
