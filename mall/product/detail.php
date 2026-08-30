@@ -435,6 +435,64 @@ if ($reviewCount > 0) {
             align-items: center;
             gap: 6px;
         }
+
+        /* 更多购买渠道卡片（与 info-card 风格一致） */
+        .external-links-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #f1f5f9;
+        }
+        .external-links-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .external-links-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .platform-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .platform-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+        .platform-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex: none;
+        }
+        .platform-arrow {
+            margin-left: auto;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        @media (max-width: 480px) {
+            .external-links-grid { grid-template-columns: 1fr; }
+        }
         .city-tag {
             display: inline-flex;
             align-items: center;
@@ -852,6 +910,44 @@ if ($reviewCount > 0) {
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <?php
+                // 外部售卖平台定义（字段 => 平台信息），仅渲染已填写链接的平台入口
+                $externalPlatforms = [
+                    'link_xiaohongshu' => ['name' => '小红书',  'color' => '#ff2442'],
+                    'link_taobao'      => ['name' => '淘宝',    'color' => '#ff5000'],
+                    'link_douyin'      => ['name' => '抖音',    'color' => '#161823'],
+                    'link_kuaishou'    => ['name' => '快手',    'color' => '#ff4906'],
+                    'link_jd'          => ['name' => '京东',    'color' => '#e1251b'],
+                    'link_pdd'         => ['name' => '拼多多',  'color' => '#e02e24'],
+                    'link_wechat_shop' => ['name' => '微信小店', 'color' => '#07c160'],
+                ];
+                $setPlatforms = [];
+                foreach ($externalPlatforms as $field => $p) {
+                    if (!empty($productDetail[$field])) {
+                        $setPlatforms[$field] = $p;
+                    }
+                }
+                if (!empty($setPlatforms)):
+                ?>
+                <!-- 更多购买渠道（与站内购买并存） -->
+                <div class="external-links-card">
+                    <div class="external-links-title"><i class="fas fa-store-alt"></i> 更多购买渠道</div>
+                    <div class="external-links-grid">
+                        <?php foreach ($setPlatforms as $field => $p): ?>
+                        <a href="<?= htmlspecialchars($productDetail[$field]) ?>"
+                           class="platform-btn"
+                           target="_blank"
+                           rel="nofollow noopener"
+                           title="前往<?= htmlspecialchars($p['name']) ?>购买">
+                            <span class="platform-dot" style="background:<?= $p['color'] ?>;"></span>
+                            <span class="platform-name"><?= htmlspecialchars($p['name']) ?>购买</span>
+                            <span class="platform-arrow">↗</span>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- 库存（紧凑一行） -->
                 <div style="margin-bottom:16px;font-size:14px;color:#666;">

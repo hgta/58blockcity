@@ -92,6 +92,29 @@ $success = '';
 $videoError = '';
 $videoSuccess = '';
 
+// 收集并校验 7 个外部售卖链接（空串统一转 null；格式非法时返回错误提示）
+function collectExternalLinks(&$linkError) {
+    $linkFields = [
+        'link_xiaohongshu' => '小红书',
+        'link_taobao'      => '淘宝',
+        'link_douyin'      => '抖音',
+        'link_kuaishou'    => '快手',
+        'link_jd'          => '京东',
+        'link_pdd'         => '拼多多',
+        'link_wechat_shop' => '微信小店',
+    ];
+    $links = [];
+    foreach ($linkFields as $field => $label) {
+        $value = trim($_POST[$field] ?? '');
+        if ($value !== '' && !preg_match('#^https?://#i', $value)) {
+            $linkError = $label . '链接格式不正确，需以 http:// 或 https:// 开头';
+            return [];
+        }
+        $links[$field] = $value !== '' ? $value : null;
+    }
+    return $links;
+}
+
 // 处理添加商品
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
     $name = trim($_POST['name']);
@@ -101,6 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
     $priceCny = floatval($_POST['price_cny']);
     $stock = intval($_POST['stock']);
     $status = $_POST['status'];
+    $linkError = '';
+    $externalLinks = collectExternalLinks($linkError);
     
     // 基本验证
     if (empty($name)) {
@@ -113,6 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
         $error = '人气值价格必须大于0';
     } elseif ($stock < 0) {
         $error = '库存不能为负数';
+    } elseif ($linkError) {
+        $error = $linkError;
     } else {
         try {
             // 处理主图上传
@@ -206,6 +233,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
                     'thumb_image' => $thumbImage ?: null,
                     'images' => !empty($extraImages) ? json_encode($extraImages) : null,
                     'video_url' => $videoUrl ?: null,
+                    'link_xiaohongshu' => $externalLinks['link_xiaohongshu'],
+                    'link_taobao' => $externalLinks['link_taobao'],
+                    'link_douyin' => $externalLinks['link_douyin'],
+                    'link_kuaishou' => $externalLinks['link_kuaishou'],
+                    'link_jd' => $externalLinks['link_jd'],
+                    'link_pdd' => $externalLinks['link_pdd'],
+                    'link_wechat_shop' => $externalLinks['link_wechat_shop'],
                     'price_type' => 'bct',
                     'price_bct' => $priceBct,
                     'price_cny' => $priceCny,
@@ -249,6 +283,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     $priceCny = floatval($_POST['price_cny']);
     $stock = intval($_POST['stock']);
     $status = $_POST['status'];
+    $linkError = '';
+    $externalLinks = collectExternalLinks($linkError);
     
     // 基本验证
     if (empty($name)) {
@@ -261,6 +297,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
         $error = '人气值价格必须大于0';
     } elseif ($stock < 0) {
         $error = '库存不能为负数';
+    } elseif ($linkError) {
+        $error = $linkError;
     } else {
         try {
             // 处理主图上传（编辑时主图可选）
@@ -347,6 +385,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
                     'stock' => $stock,
                     'status' => $status,
                     'video_url' => $videoUrl,
+                    'link_xiaohongshu' => $externalLinks['link_xiaohongshu'],
+                    'link_taobao' => $externalLinks['link_taobao'],
+                    'link_douyin' => $externalLinks['link_douyin'],
+                    'link_kuaishou' => $externalLinks['link_kuaishou'],
+                    'link_jd' => $externalLinks['link_jd'],
+                    'link_pdd' => $externalLinks['link_pdd'],
+                    'link_wechat_shop' => $externalLinks['link_wechat_shop'],
                     'is_recommended' => isset($_POST['is_recommended']) ? 1 : 0,
                     'model_id' => !empty($_POST['model_id']) ? intval($_POST['model_id']) : null,
                 ];
@@ -799,6 +844,15 @@ require_once '../includes/header.php';
                         $copyPriceBct = $copyProduct['price_bct'];
                         $copyPriceCny = $copyProduct['price_cny'];
                         $copyStock = $copyProduct['stock'];
+                        $copyLinks = [
+                            'link_xiaohongshu' => $copyProduct['link_xiaohongshu'] ?? '',
+                            'link_taobao' => $copyProduct['link_taobao'] ?? '',
+                            'link_douyin' => $copyProduct['link_douyin'] ?? '',
+                            'link_kuaishou' => $copyProduct['link_kuaishou'] ?? '',
+                            'link_jd' => $copyProduct['link_jd'] ?? '',
+                            'link_pdd' => $copyProduct['link_pdd'] ?? '',
+                            'link_wechat_shop' => $copyProduct['link_wechat_shop'] ?? '',
+                        ];
                     }
                 ?>
                 <?php endif; ?>
@@ -975,6 +1029,44 @@ require_once '../includes/header.php';
                                                     <small class="form-text text-muted">推荐商品会在首页优先展示</small>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-section">
+                                        <h5 class="section-title"><i class="fas fa-external-link-alt"></i> 售卖渠道 <small class="text-muted" style="font-weight:400;font-size:12px;">(可选)</small></h5>
+                                        <p class="form-text text-muted" style="margin-top:-6px;font-size:13px;">填写平台商品链接后，商品详情页将显示对应平台的购买入口；留空则不显示</p>
+                                        <div class="row">
+                                            <?php
+                                            $linkFieldValue = function ($field) use (&$editProduct, &$copyLinks) {
+                                                if (isset($editProduct) && isset($editProduct[$field])) return htmlspecialchars($editProduct[$field]);
+                                                if (isset($_POST[$field])) return htmlspecialchars($_POST[$field]);
+                                                if (isset($copyLinks) && isset($copyLinks[$field])) return htmlspecialchars($copyLinks[$field]);
+                                                return '';
+                                            };
+                                            $linkPlatforms = [
+                                                ['field' => 'link_xiaohongshu', 'label' => '小红书',   'color' => '#ff2442', 'placeholder' => 'https://www.xiaohongshu.com/...'],
+                                                ['field' => 'link_taobao',      'label' => '淘宝',     'color' => '#ff5000', 'placeholder' => 'https://item.taobao.com/...'],
+                                                ['field' => 'link_douyin',      'label' => '抖音',     'color' => '#161823', 'placeholder' => 'https://v.douyin.com/...'],
+                                                ['field' => 'link_kuaishou',    'label' => '快手',     'color' => '#ff4906', 'placeholder' => 'https://v.kuaishou.com/...'],
+                                                ['field' => 'link_jd',          'label' => '京东',     'color' => '#e1251b', 'placeholder' => 'https://item.jd.com/...'],
+                                                ['field' => 'link_pdd',         'label' => '拼多多',   'color' => '#e02e24', 'placeholder' => 'https://mobile.yangkeduo.com/...'],
+                                                ['field' => 'link_wechat_shop', 'label' => '微信小店', 'color' => '#07c160', 'placeholder' => 'https://...'],
+                                            ];
+                                            ?>
+                                            <?php foreach ($linkPlatforms as $lp): ?>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label style="display:flex;align-items:center;gap:6px;">
+                                                        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:<?= $lp['color'] ?>;"></span>
+                                                        <?= $lp['label'] ?>
+                                                    </label>
+                                                    <input type="url" class="form-control" name="<?= $lp['field'] ?>"
+                                                           placeholder="<?= $lp['placeholder'] ?>"
+                                                           maxlength="500"
+                                                           value="<?= $linkFieldValue($lp['field']) ?>">
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
                                 </div>

@@ -292,8 +292,9 @@ class Product {
             $stmt = $this->pdo->prepare("
                 INSERT INTO products
                 (shop_id, model_id, category_id, name, description, main_image, thumb_image, images, video_url,
+                 link_xiaohongshu, link_taobao, link_douyin, link_kuaishou, link_jd, link_pdd, link_wechat_shop,
                  price_type, price_bct, price_cny, stock, status, is_recommended)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $modelId = !empty($data['model_id']) ? intval($data['model_id']) : null;
@@ -307,6 +308,13 @@ class Product {
                 $data['thumb_image'] ?? null,
                 $data['images'] ?? null,
                 $data['video_url'] ?? null,
+                $data['link_xiaohongshu'] ?? null,
+                $data['link_taobao'] ?? null,
+                $data['link_douyin'] ?? null,
+                $data['link_kuaishou'] ?? null,
+                $data['link_jd'] ?? null,
+                $data['link_pdd'] ?? null,
+                $data['link_wechat_shop'] ?? null,
                 $data['price_type'],
                 $data['price_bct'],
                 $data['price_cny'],
@@ -336,7 +344,9 @@ class Product {
      * 更新商品信息
      */
     public function updateProduct($productId, $data) {
-        $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url', 'price_type', 
+        $allowedFields = ['name', 'description', 'main_image', 'thumb_image', 'images', 'video_url',
+                         'link_xiaohongshu', 'link_taobao', 'link_douyin', 'link_kuaishou', 'link_jd', 'link_pdd', 'link_wechat_shop',
+                         'price_type', 
                          'price_bct', 'price_cny', 'stock', 'status', 'is_recommended', 'sort_order', 'shop_id', 'model_id'];
         $setParts = [];
         $params = [];
