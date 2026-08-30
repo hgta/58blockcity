@@ -13,5 +13,8 @@ RewriteRule ^product/category/([0-9]+)-.*\.html$ product/list.php?category=$1 [B
 # 模特详情伪静态
 RewriteRule ^model/([0-9]+)-.*\.html$ model/view.php?id=$1 [B,L,QSA]
 
+# 作者详情伪静态
+RewriteRule ^author/([0-9]+)-.*\.html$ author/view.php?id=$1 [B,L,QSA]
+
 # 自定义 404
 ErrorDocument 404 /404.php
