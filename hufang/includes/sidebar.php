@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/classes/User.php';
 // 检查用户是否登录且是管理员
 //if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] !== 1/* $_SESSION['user_role'] !== 'admin' */) {
     //header('Location: ../login.php');

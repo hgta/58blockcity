@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/database.php';
+require_once '../../classes/User.php';
 require_once '../../classes/NFTRanking.php';
 
 $nftRanking = new NFTRanking($pdo);

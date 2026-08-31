@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/classes/User.php';
 // 模特卡片渲染（被 list.php / following.php 复用）
 if (!function_exists('renderModelCard')) {
     function renderModelCard($m, $imgStrip = [], $isFollowed = false, $userId = 0) {

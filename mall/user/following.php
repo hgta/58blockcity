@@ -1,6 +1,7 @@
 <?php
 // 我的关注（模特 / 作者）
 require_once '../../config/database.php';
+require_once '../../classes/User.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Model.php';
 require_once '../../classes/Author.php';

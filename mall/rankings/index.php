@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once '../../config/database.php';
+require_once '../../classes/User.php';
 require_once '../../classes/MallRanking.php';
 require_once '../../classes/SeoHelper.php';
 

@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__, 2) . '/classes/User.php';
+
 /**
  * 通用辅助函数
  */

@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__, 2) . '/classes/User.php';
+
 /**
  * club 右侧栏组件（V2EX 风格）
  *

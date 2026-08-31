@@ -41,3 +41,13 @@
 - [ ] 4.3 无头像用户全站显示统一默认图，无 404 无破图（默认图 URL 已预验证 200）
 - [ ] 4.4 站内信弹窗（JS 渲染）头像一致（JS/PHP 双端逻辑已代码级核对一致）
 - [ ] 4.5 迁移脚本重复执行结果不变（幂等）
+
+## Hotfix 记录（2026-09-01 部署后）
+
+> **线上报错**：`Uncaught Error: Class 'User' not found in hufang/includes/functions.php:114`（`hufang/index.php` → `renderCircleCard()`）。
+>
+> **根因**：`User::avatarUrl()` 引入到展示端后，有 24 个使用点文件自身未 `require classes/User.php`（全站无 autoload，仅依赖入口间接引入）；`hufang` 入口 `index.php` 未 require User.php，首次部署即触发。
+>
+> **修复**：给全部 24 个缺失文件补 `require_once`（hufang 4：includes/functions.php、includes/sidebar.php、user/dashboard.php、index_v1.php；mall 11：index、model/{card,view}、author/{card,view}、rankings/index、user/{shops,following,dashboard}、shop/{orders,manage}；nft 4：user/dashboard、includes/sidebar、ranking/{index,user}；club 3：search、post、user/dashboard、includes/sidebar；bid 1：user/dashboard）。`require_once` 幂等，重复无副作用。
+>
+> **遗留注意**：`*_v1.php` / `*_v2.php` / `index_v1.php` 等历史备份文件被 .gitignore 忽略、不进版本库，如线上保留这些文件需自行同步补 require（本地已改好）。

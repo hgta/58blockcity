@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/classes/User.php';
 // 作者卡片渲染（被 list.php / view.php / following.php 复用）
 if (!function_exists('renderAuthorCard')) {
     function renderAuthorCard($a, $imgStrip = [], $isFollowed = false, $userId = 0) {
