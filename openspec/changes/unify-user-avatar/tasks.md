@@ -30,8 +30,14 @@
 
 ## Phase 4 — 上线验证（部署后执行）
 
-- [ ] 4.1 执行 `init/migrate-avatars-files.sh` + `init/migrate-avatar.sql`（幂等）后，bct / hufang / mall 旧头像在全部子站正常显示
+> **线上现状预核查（2026-09-01，部署前）**
+> - 线上（58.tl）**尚未部署**本 change 代码：`hufang/circles/index.php` 仍输出旧拼接 `<img src="../assets/images/uploads/avatars/xxx.jpg">`（相对路径、无 onerror）。
+> - 该相对路径解析后 `https://58.tl/hufang/assets/images/uploads/avatars/xxx.jpg` 返回 **404** → 线上旧头像当前即破图（与用户反馈"头像显示不正常"吻合）。
+> - `https://58.tl/assets/images/default.jpg` 可访问（200，176×176 JPEG）→ 默认图就绪（4.3 部分预验证通过）。
+> - 本地 hufang 旧目录 14 个文件 / bct 1 个待 `cp -n` 迁移；线上 DB 头像文件需由 `init/migrate-avatars-files.sh` 在服务器上复制。
+
+- [ ] 4.1 部署代码（de66118）后执行 `init/migrate-avatars-files.sh` + `init/migrate-avatar.sql`（幂等），bct / hufang / mall 旧头像在全部子站正常显示
 - [ ] 4.2 任一子站换头像 → 全站同步更新（文件落主仓库目录）
-- [ ] 4.3 无头像用户全站显示统一默认图，无 404 无破图
-- [ ] 4.4 站内信弹窗（JS 渲染）头像一致
+- [ ] 4.3 无头像用户全站显示统一默认图，无 404 无破图（默认图 URL 已预验证 200）
+- [ ] 4.4 站内信弹窗（JS 渲染）头像一致（JS/PHP 双端逻辑已代码级核对一致）
 - [ ] 4.5 迁移脚本重复执行结果不变（幂等）
