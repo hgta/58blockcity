@@ -85,8 +85,8 @@ if (isset($_SESSION['user_id'])) {
             <?php foreach ($circles as $circle): ?>
                 <div class="circle-card">
                     <div class="circle-header">
-                        <img src="../assets/images/<?= htmlspecialchars($circle['avatar'] ?? 'default.jpg') ?>" 
-                             class="circle-avatar" alt="<?= htmlspecialchars($circle['username']) ?>">
+                        <img src="<?= htmlspecialchars(User::avatarUrl($circle['avatar'] ?? '')) ?>" 
+                             class="circle-avatar" alt="<?= htmlspecialchars($circle['username']) ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                         <div class="circle-title">
                             <h3><?= htmlspecialchars($circle['name']) ?></h3>
                             <span class="circle-owner">

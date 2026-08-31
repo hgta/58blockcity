@@ -70,7 +70,7 @@ require_once '../includes/header.php';
                 <div class="sidebar-card user-sidebar-card text-center">
                     <div class="user-avatar mb-3">
                         <?php if (!empty($userInfo['avatar'])): ?>
-                            <img src="../<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                            <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'])) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                         <?php else: ?>
                             <div class="avatar-placeholder-lg"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
                         <?php endif; ?>

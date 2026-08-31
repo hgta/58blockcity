@@ -8,6 +8,7 @@ if (!defined('MSG_ROOT')) die('请先定义 MSG_ROOT 常量');
 session_start();
 require_once MSG_ROOT . '/config/database.php';
 require_once MSG_ROOT . '/classes/Message.php';
+require_once MSG_ROOT . '/classes/User.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 if (!$userId) {
@@ -41,9 +42,8 @@ if ($withUser > 0) {
 }
 
 function avatarUrl($avatar) {
-    if (empty($avatar)) return '';
-    if (strpos($avatar, '/') !== false) return '/' . $avatar;
-    return '/assets/images/' . $avatar;
+    // 统一委托 User::avatarUrl()（全站单一事实来源，含默认图兜底）
+    return User::avatarUrl($avatar);
 }
 ?>
 <!DOCTYPE html>

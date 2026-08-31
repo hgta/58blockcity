@@ -33,7 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $avatarPath = $userData['avatar']; // 默认为原头像
         
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = '../assets/images/uploads/avatars/';
+            // 统一落盘到主仓库 assets/images/uploads/avatars/（hufang/user/ 上溯 2 层即仓库根）
+            $uploadDir = dirname(__DIR__, 2) . '/assets/images/uploads/avatars/';
             
             // 确保上传目录存在
             if (!file_exists($uploadDir)) {
@@ -91,9 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             unlink($tmpFile);
 
-            // 删除旧头像文件 (如果不是默认头像)
-            if ($userData['avatar'] !== 'default.jpg' && file_exists('../assets/images/' . $userData['avatar'])) {
-                unlink('../assets/images/' . $userData['avatar']);
+            // 删除旧头像文件 (如果不是默认头像) — 指向主仓库 assets/images/
+            if ($userData['avatar'] !== 'default.jpg' && file_exists(dirname(__DIR__, 2) . '/assets/images/' . $userData['avatar'])) {
+                unlink(dirname(__DIR__, 2) . '/assets/images/' . $userData['avatar']);
             }
         }
 		
@@ -158,8 +159,8 @@ $cities = $city->getAllCities();
             <!-- 用户侧边栏 -->
             <div class="user-sidebar">
                 <div class="user-profile-card">
-                    <img src="../assets/images/<?php echo htmlspecialchars($userData['avatar']); ?>" 
-                         alt="<?php echo htmlspecialchars($userData['username']); ?>" class="user-avatar">
+                    <img src="<?php echo htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')); ?>" 
+                         alt="<?php echo htmlspecialchars($userData['username']); ?>" class="user-avatar" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     <h4><?php echo htmlspecialchars($userData['username']); ?></h4>
                     <p><?php echo htmlspecialchars($userData['city']); ?></p>
                 </div>
@@ -250,8 +251,8 @@ $cities = $city->getAllCities();
                 <div class="avatar-upload-section">
                     <h4>头像设置</h4> 
                         <div class="current-avatar">
-                            <img src="../../assets/images/<?php echo htmlspecialchars($userData['avatar']); ?>" 
-                                 alt="当前头像" class="avatar-preview">
+                            <img src="<?php echo htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')); ?>" 
+                                 alt="当前头像" class="avatar-preview" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                         </div>
                         <div class="form-group">
                             <label for="avatar">选择新头像</label>

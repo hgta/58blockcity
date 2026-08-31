@@ -272,7 +272,7 @@ a{text-decoration:none;color:inherit}
                     <a href="<?= SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '') ?>" class="shop-rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <?php 
-                        $rAvatar = $m['model_avatar'] ? '../' . $m['model_avatar'] : ($m['user_avatar'] ? (strpos($m['user_avatar'],'/')!==false ? '../'.$m['user_avatar'] : '/assets/images/'.$m['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
+                        $rAvatar = $m['model_avatar'] ? '../' . $m['model_avatar'] : ($m['user_avatar'] ? User::avatarUrl($m['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
                         ?>
                         <img class="shop-logo" src="<?= htmlspecialchars($rAvatar) ?>" alt="">
                         <div class="shop-info">
@@ -309,7 +309,7 @@ a{text-decoration:none;color:inherit}
                     <a href="<?= SeoHelper::authorUrl($a['id'], $a['nickname'] ?? '') ?>" class="shop-rank-item" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;transition:background .2s;margin-bottom:6px;border:1px solid transparent;cursor:pointer">
                         <div class="rank-num"><?= $i+1 ?></div>
                         <?php 
-                        $aAvatar = $a['avatar'] ? '../' . $a['avatar'] : ($a['user_avatar'] ? (strpos($a['user_avatar'],'/')!==false ? '../'.$a['user_avatar'] : '/assets/images/'.$a['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
+                        $aAvatar = $a['avatar'] ? '../' . $a['avatar'] : ($a['user_avatar'] ? User::avatarUrl($a['user_avatar']) : 'https://58.tl/assets/images/default-avatar.jpg');
                         ?>
                         <img class="shop-logo" src="<?= htmlspecialchars($aAvatar) ?>" alt="">
                         <div class="shop-info">

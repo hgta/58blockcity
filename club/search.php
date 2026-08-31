@@ -56,12 +56,12 @@ require_once 'includes/header.php';
         <?php foreach ($list as $p):
           $imgs = json_decode($p['images'] ?? '', true);
           $imgs = is_array($imgs) ? $imgs : [];
-          $avatarUrl = $p['avatar'] ? '/assets/images/' . $p['avatar'] : '';
+          $avatarUrl = User::avatarUrl($p['avatar'] ?? '');
           $pUrl = SeoHelper::postUrl($p['id'], $p['title'] ?: $p['content']);
         ?>
         <div class="club-post-row">
           <div class="club-post-avatar">
-            <?php if ($avatarUrl): ?><img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" loading="lazy"><?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" loading="lazy" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
           </div>
           <div class="club-post-body">
             <a class="club-post-title" href="<?= $pUrl ?>">

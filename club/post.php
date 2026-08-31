@@ -95,7 +95,7 @@ foreach ($replyMap as $pid => $replies) {
 
 $imgs = json_decode($p['images'] ?? '', true);
 $imgs = is_array($imgs) ? $imgs : [];
-$avatarUrl = $p['avatar'] ? '/assets/images/' . $p['avatar'] : '';
+$avatarUrl = User::avatarUrl($p['avatar'] ?? '');
 $isSticky = !empty($p['is_sticky']);
 
 // 相关推荐
@@ -180,7 +180,7 @@ require_once 'includes/header.php';
 
       <div class="club-author-row">
         <div class="club-author-avatar">
-          <?php if ($avatarUrl): ?><img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>"><?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+          <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
         </div>
         <div style="flex:1;">
           <div class="club-author-name">
@@ -259,11 +259,11 @@ require_once 'includes/header.php';
         <div style="color:#999;padding:20px;text-align:center;font-size:14px;">暂无评论，来抢沙发~</div>
       <?php else: ?>
         <?php foreach ($topComments as $c):
-          $cAvatar = $c['avatar'] ? '/assets/images/' . $c['avatar'] : '';
+          $cAvatar = User::avatarUrl($c['avatar'] ?? '');
         ?>
         <div class="club-comment-item">
           <div class="club-comment-head">
-            <?php if ($cAvatar): ?><img src="<?= htmlspecialchars($cAvatar) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;"><?php endif; ?>
+            <img src="<?= htmlspecialchars($cAvatar) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
             <span class="club-comment-user"><?= htmlspecialchars($c['username'] ?? '用户#' . $c['user_id']) ?></span>
             <span class="club-comment-time"><?= date('m-d H:i', strtotime($c['created_at'])) ?></span>
           </div>

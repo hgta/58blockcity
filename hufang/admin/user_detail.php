@@ -98,7 +98,7 @@ require_once '../../shared/admin/admin-header.php';
     <!-- 左侧用户信息 -->
     <div class="admin-card">
         <div class="admin-card-body" style="text-center;">
-            <img src="../assets/images/<?= htmlspecialchars($userInfo['avatar'] ?? 'default.jpg') ?>" alt="" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:16px;">
+            <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" alt="" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:16px;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
             <h3 style="margin:0 0 8px;"><?= htmlspecialchars($userInfo['username']) ?></h3>
             <p class="admin-text-muted" style="font-size:13px;margin-bottom:12px;">注册于 <?= date('Y-m-d H:i', strtotime($userInfo['created_at'])) ?></p>
             <?php if ($userInfo['status'] === 'active'): ?>

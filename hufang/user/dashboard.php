@@ -221,8 +221,8 @@ $recentNotifications = $notification->getUserNotifications($userId, 5);
                                 <tr>
                                     <td>
                                         <div class="user-info">
-                                            <img src="../assets/images/<?= htmlspecialchars($visit['avatar'] ?? 'default.jpg') ?>" 
-                                                 class="avatar-sm" alt="<?= htmlspecialchars($visit['username']) ?>">
+                                            <img src="<?= htmlspecialchars(User::avatarUrl($visit['avatar'] ?? '')) ?>" 
+                                                 class="avatar-sm" alt="<?= htmlspecialchars($visit['username']) ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                             <span><?= htmlspecialchars($visit['username']) ?></span>
                                         </div>
                                     </td>

@@ -6,6 +6,24 @@
     if (window._messageModalInit) return;
     window._messageModalInit = true;
 
+    // JS 端头像 URL 解析（与 PHP User::avatarUrl() 保持一致）
+    function avatarUrl(avatar) {
+        var base = window.AVATAR_BASE || 'https://58.tl/assets/images/';
+        var def = window.DEFAULT_AVATAR || 'https://58.tl/assets/images/default.jpg';
+        if (!avatar) return def;
+        avatar = String(avatar).trim();
+        if (avatar === 'default.jpg' || avatar === 'default') return def;
+        if (/^(https?:)?\/\//i.test(avatar)) return avatar;
+        if (avatar.charAt(0) === '/') return avatar;
+        if (avatar.indexOf('assets/uploads/avatars/') === 0) {
+            avatar = 'uploads/avatars/' + avatar.substring('assets/uploads/avatars/'.length);
+        }
+        if (avatar.indexOf('/') === -1) {
+            avatar = 'uploads/avatars/' + avatar;
+        }
+        return base + avatar.replace(/^\/+/, '');
+    }
+
     // 注入模态框 HTML
     var modal = document.createElement('div');
     modal.id = 'msg-modal';
@@ -78,7 +96,7 @@ function openMessage(userId, username) {
                 var isMe = m.from_user_id != _msgToId;
                 var div = document.createElement('div');
                 div.className = 'msg-item';
-                div.innerHTML = '<div class="msg-avatar">' + (m.user_avatar ? '<img src="/assets/images/' + m.user_avatar + '">' : '<i class="fas fa-user"></i>') + '</div>' +
+                div.innerHTML = '<div class="msg-avatar"><img src="' + avatarUrl(m.user_avatar) + '" onerror="this.onerror=null;this.src=\'' + (window.DEFAULT_AVATAR || 'https://58.tl/assets/images/default.jpg') + '\'"></div>' +
                     '<div class="msg-content"><div class="msg-name">' + (isMe ? '我' : m.username) + '</div><div class="msg-text">' + escHtml(m.message) + '</div></div>';
                 body.appendChild(div);
             });

@@ -39,8 +39,8 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
             <!-- User Profile Sidebar -->
             <div class="card profile-card">
                 <div class="card-body text-center">
-                    <img src="https://58.tl/assets/images/<?= htmlspecialchars($_SESSION['avatar'] ?? 'default.jpg') ?>" 
-                         class="avatar-img-large" alt="<?= htmlspecialchars($username) ?>">
+                    <img src="<?= htmlspecialchars(User::avatarUrl($_SESSION['avatar'] ?? '')) ?>" 
+                         class="avatar-img-large" alt="<?= htmlspecialchars($username) ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     <h4 class="mt-3"><?= htmlspecialchars($username) ?></h4>
                     
                     <?php if ($topCity): ?>

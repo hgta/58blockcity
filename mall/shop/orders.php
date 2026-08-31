@@ -255,7 +255,7 @@ require_once '../includes/header.php';
                                         <div class="buyer-info">
                                             <div class="buyer-avatar">
                                                 <?php if (!empty($o['buyer_avatar'])): ?>
-                                                    <img src="<?= htmlspecialchars(normalizeImageUrl($o['buyer_avatar'])) ?>" alt="" onerror="this.src='/assets/images/default-product.jpg'">
+                                                    <img src="<?= htmlspecialchars(User::avatarUrl($o['buyer_avatar'])) ?>" alt="" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                                 <?php else: ?>
                                                     <div class="avatar-placeholder"><?= mb_substr($o['buyer_name'] ?? '用', 0, 1) ?></div>
                                                 <?php endif; ?>

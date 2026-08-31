@@ -11,11 +11,11 @@
     <div class="position-sticky pt-3">
         <!-- 管理员信息区域 -->
         <div class="text-center mb-4">
-            <img src="../assets/images/<?= htmlspecialchars($_SESSION['avatar'] ?? 'default-admin.jpg') ?>" 
+            <img src="<?= htmlspecialchars(User::avatarUrl($_SESSION['avatar'] ?? '')) ?>" 
                  class="rounded-circle mb-2" 
                  width="80" 
                  height="80"
-                 alt="管理员头像">
+                 alt="管理员头像" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
             <h6 class="text-white mb-1"><?= htmlspecialchars($_SESSION['username']) ?></h6>
             <span class="badge bg-primary">系统管理员</span>
         </div>

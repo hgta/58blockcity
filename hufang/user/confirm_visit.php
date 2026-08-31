@@ -120,8 +120,8 @@ $defaultNextDate = date('Y-m-d', strtotime('+6 months'));
                         <div class="info-row">
                             <label>访问者:</label>
                             <span>
-                                <img src="../assets/images/<?= htmlspecialchars($visitInfo['visitor_avatar'] ?? 'default.jpg') ?>" 
-                                     class="avatar-sm" alt="<?= htmlspecialchars($visitInfo['visitor_name']) ?>">
+                                <img src="<?= htmlspecialchars(User::avatarUrl($visitInfo['visitor_avatar'] ?? '')) ?>" 
+                                     class="avatar-sm" alt="<?= htmlspecialchars($visitInfo['visitor_name']) ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 <?= htmlspecialchars($visitInfo['visitor_name']) ?>
                             </span>
                         </div>

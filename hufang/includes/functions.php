@@ -111,7 +111,7 @@ function renderCircleCard($circle, $visitStatus = null, $extraActions = '', $ext
     $html = '<div class="circle-card" style="position:relative;">';
     $html .= $badgeHtml;
     $html .= '<div class="circle-header">';
-    $html .= '<img src="../assets/images/' . e($circle['avatar'] ?? 'default.jpg') . '" class="circle-avatar" alt="' . e($circle['username'] ?? '') . '">';
+    $html .= '<img src="' . User::avatarUrl($circle['avatar'] ?? '') . '" class="circle-avatar" alt="' . e($circle['username'] ?? '') . '" onerror="this.onerror=null;this.src=\'https://58.tl/assets/images/default.jpg\'">';
     $html .= '<div class="circle-title">';
     $html .= '<h3>' . e($circle['name']) . '</h3>';
     $html .= '<span class="circle-owner"><i class="fas fa-user"></i> ' . e($circle['username'] ?? '') . '</span>';
@@ -145,7 +145,7 @@ function renderVisitItem($visit, $showUser = true, $extraActions = '') {
     $html = '<div class="visit-item status-' . e($visit['status']) . '">';
     if ($showUser) {
         $html .= '<div class="visit-user">';
-        $html .= '<img src="../assets/images/' . e($visit['avatar'] ?? 'default.jpg') . '" class="avatar" alt="">';
+        $html .= '<img src="' . User::avatarUrl($visit['avatar'] ?? '') . '" class="avatar" alt="" onerror="this.onerror=null;this.src=\'https://58.tl/assets/images/default.jpg\'">';
         $html .= '<span class="username">' . e($visit['username'] ?? '') . '</span>';
         $html .= '</div>';
     }

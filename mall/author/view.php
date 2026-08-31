@@ -90,12 +90,8 @@ $authorAvatar = '';
 if (!empty($authorInfo['avatar'])) {
     $authorAvatar = '../' . $authorInfo['avatar'];
 } elseif (!empty($authorInfo['user_avatar'])) {
-    $ua = $authorInfo['user_avatar'];
-    if (strpos($ua, '/') !== false) {
-        $authorAvatar = '../' . $ua;
-    } else {
-        $authorAvatar = '/assets/images/' . $ua;
-    }
+    // 用户头像（作者未设置专属头像时）— 统一走全站 avatarUrl()
+    $authorAvatar = User::avatarUrl($authorInfo['user_avatar']);
 }
 $ogImage = $authorAvatar ? (strpos($authorAvatar, '://') !== false ? $authorAvatar : 'https://mall.58.tl/' . ltrim($authorAvatar, '/')) : 'https://58.tl/assets/images/og-mall.jpg';
 $site_config['og_image']    = $ogImage;
@@ -240,12 +236,12 @@ require_once '../includes/header.php';
         <p style="color:#999;padding:20px;text-align:center;">暂无留言，快来抢沙发~</p>
         <?php else: ?>
         <?php foreach ($messages as $msg): 
-            $msgAvatar = !empty($msg['user_avatar']) ? '/assets/images/' . $msg['user_avatar'] : '';
+            $msgAvatar = User::avatarUrl($msg['user_avatar'] ?? '');
         ?>
         <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
             <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#f0f0f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                 <?php if ($msgAvatar): ?>
-                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;">
+                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                 <?php else: ?>
                 <i class="fas fa-user" style="color:#ccc;font-size:18px;"></i>
                 <?php endif; ?>

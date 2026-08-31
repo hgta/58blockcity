@@ -31,8 +31,8 @@ unset($circleItem);
 <div class="container user-circles-container">
     <div class="user-profile-header mb-3">
         <div class="d-flex align-items-center">
-            <img src="../assets/images/<?= htmlspecialchars($userInfo['avatar'] ?? 'default.jpg') ?>" 
-                 class="avatar-sm rounded-circle mr-2">
+            <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" 
+                 class="avatar-sm rounded-circle mr-2" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
             <h5 class="mb-0"><?= htmlspecialchars($userInfo['username']) ?>的互访圈</h5>
         </div>
     </div>

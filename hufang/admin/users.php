@@ -110,7 +110,7 @@ require_once '../../shared/admin/admin-header.php';
                             <td><?= $u['id'] ?></td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:8px;">
-                                    <img src="../assets/images/<?= htmlspecialchars($u['avatar'] ?? 'default.jpg') ?>" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                                    <img src="<?= htmlspecialchars(User::avatarUrl($u['avatar'] ?? '')) ?>" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                     <span><?= htmlspecialchars($u['username']) ?></span>
                                 </div>
                             </td>

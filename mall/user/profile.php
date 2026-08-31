@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'update_avatar') {
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/../assets/uploads/avatars/';
+            // 统一落盘到主仓库 assets/images/uploads/avatars/（mall/user/ 上溯 2 层即仓库根）
+            $uploadDir = dirname(__DIR__, 2) . '/assets/images/uploads/avatars/';
             $dirReady = true;
             if (!is_dir($uploadDir)) {
                 if (!@mkdir($uploadDir, 0777, true)) {
@@ -77,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($_FILES['avatar']['tmp_name'], $filePath)) {
-                    $avatarPath = 'assets/uploads/avatars/' . $fileName;
+                    // 统一存值格式：uploads/avatars/<file>（去掉 assets/ 前缀）
+                    $avatarPath = 'uploads/avatars/' . $fileName;
                     if ($user->updateAvatar($userId, $avatarPath)) {
                         $success = '头像更新成功';
                         $userInfo = $user->getUserById($userId);
@@ -114,7 +116,7 @@ require_once '../includes/header.php';
                 <div class="sidebar-card user-sidebar-card text-center">
                     <div class="user-avatar mb-3">
                         <?php if (!empty($userInfo['avatar']) && $userInfo['avatar'] !== 'default.jpg'): ?>
-                            <img src="../<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                            <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'])) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                         <?php else: ?>
                             <div class="avatar-placeholder-lg"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
                         <?php endif; ?>
@@ -145,7 +147,7 @@ require_once '../includes/header.php';
                         <div class="card-body text-center">
                             <div class="profile-avatar mb-3">
                                 <?php if (!empty($userInfo['avatar']) && $userInfo['avatar'] !== 'default.jpg'): ?>
-                                    <img src="../<?= htmlspecialchars($userInfo['avatar']) ?>" alt="" id="avatarPreview">
+                                    <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'])) ?>" alt="" id="avatarPreview" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 <?php else: ?>
                                     <div class="avatar-placeholder-xl" id="avatarPreviewPlaceholder"><?= mb_substr($userInfo['username'], 0, 1) ?></div>
                                 <?php endif; ?>

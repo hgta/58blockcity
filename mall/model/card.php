@@ -11,8 +11,7 @@ if (!function_exists('renderModelCard')) {
         if (!empty($m['avatar'])) {
             $avatar = '../' . $m['avatar'];
         } elseif (!empty($m['user_avatar'])) {
-            $ua = $m['user_avatar'];
-            $avatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+            $avatar = User::avatarUrl($m['user_avatar']);
         }
 
         // 图集缩略：商品图 + 日常照片，最多 4 张

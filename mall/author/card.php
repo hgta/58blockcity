@@ -11,8 +11,7 @@ if (!function_exists('renderAuthorCard')) {
         if (!empty($a['avatar'])) {
             $avatar = '../' . $a['avatar'];
         } elseif (!empty($a['user_avatar'])) {
-            $ua = $a['user_avatar'];
-            $avatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+            $avatar = User::avatarUrl($a['user_avatar']);
         }
 
         // 图集缩略：author_works 优先 + 商品图补齐，最多 4 张

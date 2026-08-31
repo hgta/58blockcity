@@ -88,13 +88,8 @@ $modelAvatar = '';
 if (!empty($modelInfo['avatar'])) {
     $modelAvatar = '../' . $modelInfo['avatar'];
 } elseif (!empty($modelInfo['user_avatar'])) {
-    // 用户头像可能是 assets/uploads/avatars/xxx.jpg 或 uploads/avatars/xxx.jpg
-    $ua = $modelInfo['user_avatar'];
-    if (strpos($ua, '/') !== false) {
-        $modelAvatar = '../' . $ua; // 已含路径
-    } else {
-        $modelAvatar = '/assets/images/' . $ua; // 旧格式文件名
-    }
+    // 用户头像（模特未设置专属头像时）— 统一走全站 avatarUrl()
+    $modelAvatar = User::avatarUrl($modelInfo['user_avatar']);
 }
 // OG image 必须用绝对 URL
 $ogImage = $modelAvatar ? (strpos($modelAvatar, '://') !== false ? $modelAvatar : 'https://mall.58.tl/' . ltrim($modelAvatar, '/')) : 'https://58.tl/assets/images/og-mall.jpg';
@@ -240,12 +235,12 @@ require_once '../includes/header.php';
         <p style="color:#999;padding:20px;text-align:center;">暂无留言，快来抢沙发~</p>
         <?php else: ?>
         <?php foreach ($messages as $msg): 
-            $msgAvatar = !empty($msg['user_avatar']) ? '/assets/images/' . $msg['user_avatar'] : '';
+            $msgAvatar = User::avatarUrl($msg['user_avatar'] ?? '');
         ?>
         <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
             <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#f0f0f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                 <?php if ($msgAvatar): ?>
-                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;">
+                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                 <?php else: ?>
                 <i class="fas fa-user" style="color:#ccc;font-size:18px;"></i>
                 <?php endif; ?>

@@ -136,8 +136,8 @@ $isOwnProfile = ($userId == $currentUserId);
         <div class="col-md-3">
             <div class="card profile-card">
                 <div class="card-body text-center">
-                    <img src="../assets/images/<?= htmlspecialchars($profileUser['avatar'] ?? 'default.jpg') ?>" 
-                         class="avatar-lg rounded-circle mb-3" alt="用户头像">
+                    <img src="<?= htmlspecialchars(User::avatarUrl($profileUser['avatar'] ?? '')) ?>" 
+                         class="avatar-lg rounded-circle mb-3" alt="用户头像" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     <h4><?= htmlspecialchars($profileUser['username']) ?></h4>
                     <p class="text-muted">
                         <i class="fas fa-map-marker-alt"></i> 

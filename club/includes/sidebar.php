@@ -128,11 +128,7 @@ function club_side_link($params) {
                 <?php foreach ($activeUsers as $au): ?>
                     <li>
                         <span class="side-user">
-                            <?php if (!empty($au['avatar'])): ?>
-                                <img src="/assets/images/<?= htmlspecialchars($au['avatar']) ?>" alt="<?= htmlspecialchars($au['username'] ?? '') ?>" loading="lazy">
-                            <?php else: ?>
-                                <i class="fas fa-user"></i>
-                            <?php endif; ?>
+                            <img src="<?= htmlspecialchars(User::avatarUrl($au['avatar'] ?? '')) ?>" alt="<?= htmlspecialchars($au['username'] ?? '') ?>" loading="lazy" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                             <span><?= htmlspecialchars($au['username'] ?? '用户#' . $au['id']) ?></span>
                         </span>
                         <span class="cnt"><?= intval($au['post_cnt']) + intval($au['comment_cnt']) ?> 互动</span>

@@ -29,7 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $avatarPath = $userData['avatar']; // 默认为原头像
         
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = '../assets/images/uploads/avatars/';
+            // 统一落盘到主仓库 assets/images/uploads/avatars/（bct/user/ 上溯 2 层即仓库根）
+            $uploadDir = dirname(__DIR__, 2) . '/assets/images/uploads/avatars/';
             
             // 确保上传目录存在
             if (!file_exists($uploadDir)) {
@@ -87,9 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             unlink($tmpFile);
 
-            // 删除旧头像文件 (如果不是默认头像)
-            if ($userData['avatar'] !== 'default.jpg' && file_exists('../assets/images/' . $userData['avatar'])) {
-                unlink('../assets/images/' . $userData['avatar']);
+            // 删除旧头像文件 (如果不是默认头像) — 指向主仓库 assets/images/
+            if ($userData['avatar'] !== 'default.jpg' && file_exists(dirname(__DIR__, 2) . '/assets/images/' . $userData['avatar'])) {
+                unlink(dirname(__DIR__, 2) . '/assets/images/' . $userData['avatar']);
             }
         }
 		
@@ -199,8 +200,8 @@ if (isset($_SESSION['error'])) {
                             <label for="avatar">头像</label>
                             <div class="avatar-upload">
                                 <div class="avatar-preview">
-                                    <img src="https://58.tl/assets/images/<?= htmlspecialchars($userData['avatar'] ?? 'default.jpg') ?>" 
-                                         id="avatarPreview" class="avatar-img">
+                                    <img src="<?= htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')) ?>" 
+                                         id="avatarPreview" class="avatar-img" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 </div>
                                 <div class="avatar-upload-controls">
                                     <input type="file" id="avatar" name="avatar" accept="image/*" 
@@ -245,8 +246,8 @@ if (isset($_SESSION['error'])) {
                 <div class="card-body">
                     <div class="account-summary">
                         <div class="account-avatar">
-                            <img src="https://58.tl/assets/images/<?= htmlspecialchars($userData['avatar'] ?? 'default.jpg') ?>" 
-                                 class="avatar-img-large">
+                            <img src="<?= htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')) ?>" 
+                                 class="avatar-img-large" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                         </div>
                         <div class="account-details">
                             <h4><?= htmlspecialchars($userData['username']) ?></h4>

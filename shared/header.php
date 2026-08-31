@@ -112,6 +112,11 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://58.tl/assets/js/main.js"></script>
     <script src="https://58.tl/assets/js/message-modal.js"></script>
+    <!-- 头像全局常量（JS 端与 User::avatarUrl() 保持一致） -->
+    <script>
+    window.AVATAR_BASE = 'https://58.tl/assets/images/';
+    window.DEFAULT_AVATAR = 'https://58.tl/assets/images/default.jpg';
+    </script>
     <?= $extra_head ?>
     <!-- 51.LA 统计 -->
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>

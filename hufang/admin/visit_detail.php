@@ -92,7 +92,7 @@ require_once '../../shared/admin/admin-header.php';
             <div class="admin-info-item">
                 <label>圈主</label>
                 <span style="display:flex;align-items:center;gap:8px;">
-                    <img src="../../assets/images/<?= htmlspecialchars($ownerInfo['avatar'] ?? 'default.jpg') ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+                    <img src="<?= htmlspecialchars(User::avatarUrl($ownerInfo['avatar'] ?? '')) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     <?= htmlspecialchars($ownerInfo['username']) ?>
                 </span>
             </div>
@@ -105,7 +105,7 @@ require_once '../../shared/admin/admin-header.php';
             <div class="admin-info-item">
                 <label>访问者</label>
                 <span style="display:flex;align-items:center;gap:8px;">
-                    <img src="../../assets/images/<?= htmlspecialchars($visitorInfo['avatar'] ?? 'default.jpg') ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+                    <img src="<?= htmlspecialchars(User::avatarUrl($visitorInfo['avatar'] ?? '')) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     <?= htmlspecialchars($visitorInfo['username']) ?>
                 </span>
             </div>

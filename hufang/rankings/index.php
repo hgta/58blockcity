@@ -146,7 +146,7 @@ $mostPopularOwners = $pdo->query("SELECT * FROM user_rankings ORDER BY visits_re
                             <?php foreach ($topOwners as $index => $user): ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="../../assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" class="avatar-xs">
+                                <img src="<?= htmlspecialchars(User::avatarUrl($user['avatar'] ?? '')) ?>" class="avatar-xs" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username']) ?></span>
                                 <span class="value"><?= $user['owned_circles'] ?>个圈子</span>
                             </li>
@@ -161,7 +161,7 @@ $mostPopularOwners = $pdo->query("SELECT * FROM user_rankings ORDER BY visits_re
                             <?php foreach ($topBlockOwners as $index => $user): ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="../../assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" class="avatar-xs">
+                                <img src="<?= htmlspecialchars(User::avatarUrl($user['avatar'] ?? '')) ?>" class="avatar-xs" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username']) ?></span>
                                 <span class="value"><?= $user['total_blocks'] ?>区块</span>
                             </li>
@@ -176,7 +176,7 @@ $mostPopularOwners = $pdo->query("SELECT * FROM user_rankings ORDER BY visits_re
                             <?php foreach ($mostActiveVisitors as $index => $user): ?>
                             <li>
                                 <span class="rank"><?= $index + 1 ?></span>
-                                <img src="../../assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" class="avatar-xs">
+                                <img src="<?= htmlspecialchars(User::avatarUrl($user['avatar'] ?? '')) ?>" class="avatar-xs" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username']) ?></span>
                                 <span class="value"><?= $user['visits_made'] ?>次访问</span>
                             </li>

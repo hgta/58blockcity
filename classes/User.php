@@ -251,5 +251,42 @@ class User {
             return 0;
         }
     }
+
+    /**
+     * 统一用户头像 URL（全站单一事实来源）
+     * 兼容历史三种存量格式（裸文件名 / uploads/avatars/ / assets/uploads/avatars/）+ 未来新格式。
+     * 纯静态方法，不依赖实例/PDO，任何子站均可直接调用。
+     *
+     * @param string|null $avatar users.avatar 原始值（可空）
+     * @return string 完整头像 URL
+     */
+    public static function avatarUrl($avatar) {
+        $default = 'https://58.tl/assets/images/default.jpg';
+        $base    = 'https://58.tl/assets/images/';
+        $avatar  = trim((string)$avatar);
+
+        // 空 / default 占位 → 默认图
+        if ($avatar === '' || $avatar === 'default.jpg' || $avatar === 'default') {
+            return $default;
+        }
+        // 绝对 URL（http/https/protocol-relative）→ 原样
+        if (preg_match('#^(https?:)?//#i', $avatar)) {
+            return $avatar;
+        }
+        // 根相对路径（/ 开头）→ 原样（如已拼好的 /assets/images/...）
+        if ($avatar[0] === '/') {
+            return $avatar;
+        }
+        // 历史 mall 格式：assets/uploads/avatars/xxx → uploads/avatars/xxx
+        if (strpos($avatar, 'assets/uploads/avatars/') === 0) {
+            $avatar = 'uploads/avatars/' . substr($avatar, strlen('assets/uploads/avatars/'));
+        }
+        // 裸文件名（历史主站早期格式）→ 归一到 uploads/avatars/ 目录
+        if (strpos($avatar, '/') === false) {
+            $avatar = 'uploads/avatars/' . $avatar;
+        }
+        // 现在只剩 uploads/avatars/xxx 这一种 → 主站前缀
+        return $base . ltrim($avatar, '/');
+    }
 }
 ?>

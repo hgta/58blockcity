@@ -59,9 +59,9 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
             <div class="panel panel-default profile-card">
                 <div class="panel-body text-center">
                     <div class="avatar-container">
-                        <img src="../assets/images/<?= htmlspecialchars($userInfo['avatar']) ?>" 
+                        <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" 
                              alt="<?= htmlspecialchars($userInfo['username']) ?>" 
-                             class="avatar-img">
+                             class="avatar-img" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                     </div>
                     <h3><?= htmlspecialchars($userInfo['username']) ?></h3>
                     <p class="text-muted"><?= htmlspecialchars($userInfo['city'] ?? '未设置城市') ?></p>

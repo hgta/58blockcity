@@ -700,8 +700,7 @@ if ($userId && $topAuthorIds) {
                     if (!empty($m['avatar'])) {
                         $mAvatar = '../' . $m['avatar'];
                     } elseif (!empty($m['user_avatar'])) {
-                        $ua = $m['user_avatar'];
-                        $mAvatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+                        $mAvatar = User::avatarUrl($m['user_avatar']);
                     }
                     $mFollowed = isset($topModelFollowed[$mId]);
                 ?>
@@ -744,8 +743,7 @@ if ($userId && $topAuthorIds) {
                     if (!empty($au['avatar'])) {
                         $auAvatar = '../' . $au['avatar'];
                     } elseif (!empty($au['user_avatar'])) {
-                        $ua = $au['user_avatar'];
-                        $auAvatar = (strpos($ua, '/') !== false) ? '../' . $ua : '/assets/images/' . $ua;
+                        $auAvatar = User::avatarUrl($au['user_avatar']);
                     }
                     $auFollowed = isset($topAuthorFollowed[$auId]);
                 ?>

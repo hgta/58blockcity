@@ -417,7 +417,7 @@ require_once '../includes/header.php';
                                 <div class="recent-order-item">
                                     <div class="order-avatar">
                                         <?php if (!empty($o['buyer_avatar']) && $o['buyer_avatar'] != 'default.jpg'): ?>
-                                            <img src="../../<?= htmlspecialchars($o['buyer_avatar']) ?>" alt="">
+                                            <img src="<?= htmlspecialchars(User::avatarUrl($o['buyer_avatar'])) ?>" alt="" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                         <?php else: ?>
                                             <div class="avatar-placeholder"><i class="fas fa-user"></i></div>
                                         <?php endif; ?>

@@ -174,8 +174,8 @@ $users = $pdo->query($sql)->fetchAll();
                                 <td><?= $index + 1 ?></td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="../assets/images/<?= htmlspecialchars($user['avatar'] ?? 'default.jpg') ?>" 
-                                             class="avatar-sm rounded-circle mr-2" style="width:32px;height:32px;object-fit:cover;flex-shrink:0;">
+                                        <img src="<?= htmlspecialchars(User::avatarUrl($user['avatar'] ?? '')) ?>" 
+                                             class="avatar-sm rounded-circle mr-2" style="width:32px;height:32px;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
                                         <a href="https://v.58.tl/circles/circles.php?user_id=<?= $user['id'] ?>" class="font-weight-bold">
                                             <?= htmlspecialchars($user['username']) ?>
                                         </a>

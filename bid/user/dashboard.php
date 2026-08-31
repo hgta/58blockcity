@@ -46,7 +46,7 @@ require_once '../includes/header.php';
     <div class="dash-card">
         <div class="dash-head">
             <div class="dash-avatar">
-                <img src="https://58.tl/assets/images/<?= htmlspecialchars($avatar) ?>" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=&quot;fas fa-user&quot; style=&quot;color:#ccc;font-size:28px;&quot;></i>'">
+                <img src="<?= htmlspecialchars(User::avatarUrl($avatar)) ?>" alt="" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
             </div>
             <div>
                 <div class="dash-name"><?= htmlspecialchars($username) ?></div>
