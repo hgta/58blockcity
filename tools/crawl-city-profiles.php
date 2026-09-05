@@ -334,7 +334,7 @@ foreach (array_chunk($qids, QID_CHUNK) as $chunk) {
             continue;
         }
         foreach ($rows as $r) {
-            $qid = preg_replace('/^.*\/(Q\d+)$/', '', $r['item']);
+            $qid = preg_replace('/^.*\/(Q\d+)$/', '$1', $r['item']);
             $v = numval($r['value']);
             if ($v === null) {
                 continue;
@@ -402,7 +402,8 @@ foreach ($todo as $c) {
         'potential' => '',
         'districts' => '',
         'intro'     => '',
-        'data_year' => max(array_filter([$area['y'] ?? null, $pop['y'] ?? null, $gdp['y'] ?? null])),
+        'data_year' => ($y1 = $area['y'] ?? null) || ($y2 = $pop['y'] ?? null) || ($y3 = $gdp['y'] ?? null)
+            ? max(array_filter([$y1, $y2, $y3], 'is_int')) : null,
         'status'    => ($area || $pop || $gdp) ? 1 : 0,
         'source'    => [
             'area' => $area ? "Wikidata P2046(km², {$qid})" : '',
