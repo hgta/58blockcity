@@ -167,17 +167,25 @@ function yearOf($dt) {
     return preg_match('/^(\d{4})/', (string)$dt, $m) ? (int)$m[1] : null;
 }
 
-/** 数字千分位；万亿→亿/万亿 转换（展示口径） */
+/** 数字千分位；万亿→亿/万亿 转换（展示口径）
+ *  注意：rtrim(...,'0') 只能用于带小数点的串；dec=0 的 number_format 无小数点，
+ *  直接 rtrim 会把整数部分有效尾 0 剥掉（730万 → "73万" 的历史 bug 即源于此）。
+ */
 function fmtBig($v, $dec = 0) {
     $v = (float)$v;
+    $fmt = function ($n, $d) {
+        $s = number_format($n, $d);
+        // 仅当有小数点时才做"去小数尾零"，保护整数部分尾 0
+        return (strpos($s, '.') !== false) ? rtrim(rtrim($s, '0'), '.') : $s;
+    };
     if ($v >= 1e12) {
-        return rtrim(rtrim(number_format($v / 1e12, $dec + 1), '0'), '.') . '万亿';
+        return $fmt($v / 1e12, $dec + 1) . '万亿';          // 万亿档至少 1 位小数（3.4万亿）
     }
     if ($v >= 1e8) {
-        return rtrim(rtrim(number_format($v / 1e8, $dec), '0'), '.') . '亿';
+        return $fmt($v / 1e8, max(1, $dec)) . '亿';        // 亿档至少 1 位小数，避免 1.2亿 被舍成 1亿
     }
     if ($v >= 1e4) {
-        return rtrim(rtrim(number_format($v / 1e4, $dec), '0'), '.') . '万';
+        return $fmt($v / 1e4, $dec) . '万';                // 万档 dec=0 输出整数（730万）
     }
     return number_format($v);
 }
