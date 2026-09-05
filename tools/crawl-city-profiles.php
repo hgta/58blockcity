@@ -328,9 +328,12 @@ foreach (array_chunk($qids, QID_CHUNK) as $chunk) {
     }, $chunk));
     foreach ($propQueries as $key => $def) {
         list($p, $ps) = $def;
+        // 只取 preferred/normal，排除 deprecated：Wikidata 部分中国城市人口被填过
+        // deprecated 错值（数量级错误、与正确声明同一年份时 pick 可能误选 → 曾现 ÷10 结果）
         $q = "SELECT ?item ?value ?time WHERE {
           VALUES ?item { $values }
           ?item p:$p ?s . ?s $ps ?value .
+          ?s wikibase:rank ?rank . FILTER(?rank != wikibase:DeprecatedRank)
           OPTIONAL { ?s pq:P585 ?time }
         }";
         $rows = sparql($q, $timeout);
