@@ -47,3 +47,8 @@ auth_v2.php
 
 # blockcity.vip sync token (runtime, server-only)
 block/admin/.blockcity_token.php
+
+# 城市门户运行时缓存 / 采集产物（cron/build-static 生成）
+city/cache/
+data/city-profiles/
+data/city-profiles/*.json
