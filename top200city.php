@@ -604,29 +604,8 @@
             </div>
         </div>
     </footer>
-	
-	<!-- 新增：优惠悬浮窗口 -->
-    <div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header">
-            <i>🎉</i> 限时优惠
-        </div>
-        <div class="promotion-content">
-            凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7.5折优惠</strong>！<br>
-            详情请扫描下方二维码添加客服微信咨询。
-        </div>
-        <div class="promotion-qrcode">
-            <img src="qr.jpg" alt="客服微信二维码">
-        </div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
-    </div>
 
     <script>
-        // 3秒后显示悬浮窗口
-        setTimeout(function() {
-            document.getElementById('promotionFloating').style.display = 'block';
-        }, 3000);
-		
 		// 页面加载时获取城市信息
         window.onload = function() {
             getCityInfo();

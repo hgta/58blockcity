@@ -43,12 +43,12 @@ $letters = range('A', 'Z');
 	<script src="/city/city.js"></script>
     <style>
         :root {
-            --bg: #f0f2f5;
+            --bg: #f5f5f5;
             --card: #fff;
             --text: #1a1a2e;
             --muted: #6b7280;
-            --primary: #2563eb;
-            --accent: #f59e0b;
+            --primary: #ff6b00;
+            --accent: #ffb380;
             --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
             --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
             --radius: 12px;
@@ -70,8 +70,8 @@ $letters = range('A', 'Z');
         .nav-button:hover { background:#f3f4f6; color:var(--primary); }
         
         /* 城市定位条 */
-        .city-location-bar { background:linear-gradient(135deg,#eff6ff,#f0f9ff); color:#1e40af; text-align:center; padding:10px; font-size:14px; border-bottom:1px solid #dbeafe; }
-        .city-location-bar a { color:#2563eb; font-weight:600; }
+        .city-location-bar { background:linear-gradient(135deg,#fff7f0,#fff3ea); color:#b35400; text-align:center; padding:10px; font-size:14px; border-bottom:1px solid #ffd9c2; }
+        .city-location-bar a { color:#ff6b00; font-weight:600; }
         
         /* 字母导航 */
         .letter-nav { background:#fff; position:sticky; top:63px; z-index:99; border-bottom:1px solid #f3f4f6; }
@@ -79,18 +79,18 @@ $letters = range('A', 'Z');
         .letter-link { padding:8px 13px; font-size:13px; color:#9ca3af; font-weight:600; flex-shrink:0; }
         .letter-link:hover { color:var(--primary); }
         
-        /* Hero Banner */
-        .banner-section { margin:30px 0 40px; }
-        .hero { background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 50%,#7c3aed 100%); border-radius:var(--radius); padding:60px 50px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:40px; }
-        .hero-left h1 { font-size:36px; font-weight:800; line-height:1.2; margin-bottom:12px; }
-        .hero-left p { font-size:16px; opacity:.85; margin-bottom:24px; max-width:420px; }
+        /* Hero Banner（紧凑横条，与城市门户 hero 同款品牌橙渐变） */
+        .banner-section { margin:20px 0 24px; }
+        .hero { background:linear-gradient(135deg,#ff6b00 0%,#ff8c33 60%,#ffb380 100%); border-radius:var(--radius); padding:22px 32px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:24px; box-shadow:0 4px 14px rgba(255,107,0,.22); }
+        .hero-left h1 { font-size:24px; font-weight:800; line-height:1.3; margin-bottom:4px; }
+        .hero-left p { font-size:14px; opacity:.92; margin-bottom:12px; max-width:520px; }
         .hero-btns { display:flex; gap:12px; }
-        .hero-btns a { padding:10px 24px; border-radius:8px; font-size:14px; font-weight:600; transition:all .2s; }
-        .btn-primary { background:#fff; color:#1e3a5f; }
+        .hero-btns a { padding:8px 20px; border-radius:999px; font-size:13px; font-weight:600; transition:all .2s; }
+        .btn-primary { background:#fff; color:#ff6b00; }
         .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
-        .btn-outline { border:1.5px solid rgba(255,255,255,.4); color:#fff; }
-        .btn-outline:hover { background:rgba(255,255,255,.1); }
-        .hero-right { font-size:80px; opacity:.15; }
+        .btn-outline { border:1.5px solid rgba(255,255,255,.55); color:#fff; }
+        .btn-outline:hover { background:rgba(255,255,255,.12); }
+        .hero-right { font-size:44px; opacity:.9; }
         
         /* 热门城市 */
         .hot-cities { padding:0 0 30px; }
@@ -107,44 +107,37 @@ $letters = range('A', 'Z');
         .city-letter { font-size:18px; font-weight:700; color:var(--primary); padding:8px 0; border-bottom:2px solid #e5e7eb; margin-bottom:12px; }
         .city-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
         .city-item { background:var(--card); padding:7px 4px; text-align:center; border-radius:6px; font-size:12px; color:#6b7280; transition:all .2s; }
-        .city-item:hover { background:#eff6ff; color:var(--primary); }
+        .city-item:hover { background:#fff3ea; color:var(--primary); }
         .city-item.hot-city { font-weight:600; color:#374151; }
-        
-        /* 特色促销区 */
-        .featured-section { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:30px 0; }
-        .promo-banner { padding:30px; border-radius:var(--radius); color:#fff; text-align:center; }
-        .promo-banner.shop { background:linear-gradient(135deg,#059669,#10b981); }
-        .promo-banner.red { background:linear-gradient(135deg,#dc2626,#ef4444); }
-        .promo-title { font-size:20px; font-weight:700; margin-bottom:6px; }
-        .promo-desc { font-size:13px; opacity:.9; margin-bottom:16px; }
-        .promo-btn { display:inline-block; background:#fff; padding:8px 22px; border-radius:20px; font-size:13px; font-weight:600; }
-        
-        /* 元宇宙特色 */
-        .metaverse-features { padding:40px 0; text-align:center; }
-        .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:20px; }
-        .feature-card { background:var(--card); padding:30px 20px; border-radius:var(--radius); box-shadow:var(--shadow); transition:all .3s; }
-        .feature-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); }
-        .feature-icon { font-size:44px; margin-bottom:12px; }
-        .feature-title { font-size:16px; font-weight:700; margin-bottom:8px; color:var(--text); }
-        .feature-desc { font-size:13px; color:var(--muted); line-height:1.6; }
-        
-        /* DAO社区 */
-        .dao-community { background:linear-gradient(135deg,#1e3a5f,#312e81); color:#fff; padding:44px 40px; border-radius:var(--radius); margin:30px 0 40px; text-align:center; }
-        .dao-title { font-size:26px; font-weight:700; margin-bottom:12px; }
-        .dao-text { font-size:15px; line-height:1.7; opacity:.9; margin-bottom:20px; max-width:600px; margin-left:auto; margin-right:auto; }
-        .dao-button { display:inline-block; background:#fff; color:#1e3a5f; padding:12px 30px; border-radius:24px; font-size:14px; font-weight:700; transition:all .2s; }
+
+        /* 生态入口（子站导航网格） */
+        .eco-section { margin:30px 0; }
+        .eco-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+        .eco-card { display:block; background:var(--card); border:1px solid #f0e3d8; border-radius:var(--radius); padding:18px 16px 14px; text-align:center; box-shadow:var(--shadow); transition:all .2s; }
+        .eco-card:hover { transform:translateY(-3px); box-shadow:0 4px 12px rgba(255,107,0,.15); border-color:#ffb380; }
+        .eco-icon { font-size:30px; line-height:1; margin-bottom:8px; }
+        .eco-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:3px; }
+        .eco-desc { font-size:12px; color:var(--muted); margin-bottom:10px; }
+        .eco-go { display:inline-block; font-size:12px; font-weight:600; color:#ff6b00; background:#fff3ea; border-radius:999px; padding:4px 16px; }
+        .eco-card:hover .eco-go { background:#ff6b00; color:#fff; }
+
+        /* DAO社区（紧凑条） */
+        .dao-community { background:linear-gradient(135deg,#7a3500,#c05c10); color:#fff; padding:24px 32px; border-radius:var(--radius); margin:10px 0 36px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+        .dao-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+        .dao-text { font-size:13px; line-height:1.7; opacity:.9; max-width:640px; }
+        .dao-button { display:inline-block; background:#fff; color:#ff6b00; padding:10px 26px; border-radius:999px; font-size:14px; font-weight:700; transition:all .2s; }
         .dao-button:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,.2); }
         
         /* 响应式 */
         @media(max-width:768px){
             .header-container{flex-direction:column;gap:10px}
             .user-actions{justify-content:center}
-            .hero{flex-direction:column;text-align:center;padding:40px 24px}
+            .hero{flex-direction:column;text-align:center;padding:24px 20px}
             .hero-btns{justify-content:center}
             .hot-city-grid{grid-template-columns:repeat(3,1fr)}
             .city-grid{grid-template-columns:repeat(4,1fr)}
-            .feature-grid{grid-template-columns:1fr}
-            .featured-section{grid-template-columns:1fr}
+            .eco-grid{grid-template-columns:repeat(2,1fr)}
+            .dao-community{text-align:center;justify-content:center}
             .footer-grid{grid-template-columns:repeat(2,1fr)!important}
         }
         @media(max-width:480px){
@@ -181,17 +174,17 @@ $letters = range('A', 'Z');
                 </div>
             </div>
             <div class="user-actions">
-				<a href="https://block.58.tl/" class="nav-button">区块交易</a>
+                <a href="https://block.58.tl/" class="nav-button">区块交易</a>
 				<a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
 				<a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
 				<a href="https://mall.58.tl/" class="nav-button">人气商城</a>
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
 				<a href="https://bid.58.tl/" class="nav-button">拍卖</a>
 				<?php if (isset($_SESSION['user_id'])): ?>
-					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#2563eb;color:#fff;">个人中心</a>
+					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#ff6b00;color:#fff;">个人中心</a>
 					<a href="auth/logout.php" class="nav-button">退出</a>
 				<?php else: ?>
-					<a href="auth/login.php" class="nav-button" style="background:#2563eb;color:#fff;">登录</a>
+					<a href="auth/login.php" class="nav-button" style="background:#ff6b00;color:#fff;">登录</a>
 					<a href="auth/register.php" class="nav-button">注册</a>
 				<?php endif; ?>
             </div>
@@ -245,8 +238,8 @@ $letters = range('A', 'Z');
         <div class="container">
             <div class="hero">
                 <div class="hero-left">
-                    <h1>探索元宇宙<br>城市生态</h1>
-                    <p>58区块城市 — 基于区块链的虚拟城市交易平台，发现、认领、交易你的数字领地</p>
+                    <h1>探索元宇宙城市生态</h1>
+                    <p>58区块城市 — 基于区块链的虚拟城市平台，发现、认领、交易你的数字领地</p>
                     <div class="hero-btns">
                         <a href="https://block.58.tl/" class="btn-primary">开始探索</a>
                         <a href="https://bct.58.tl/" class="btn-outline">了解BCT</a>
@@ -272,19 +265,60 @@ $letters = range('A', 'Z');
             </div>
         </section>
         
-        <!-- 促销区 -->
-        <div class="featured-section">
-            <div class="promo-banner shop">
-                <div class="promo-title">🛍️ 人气商城</div>
-                <div class="promo-desc">BCT支付购物，区块城市专属商城</div>
-                <a href="https://mall.58.tl/" class="promo-btn">立即购物</a>
+        <!-- 生态入口：全站子服务导航 -->
+        <section class="eco-section">
+            <h2 class="section-title">区块城市生态 · 一站直达</h2>
+            <div class="eco-grid">
+                <a href="https://block.58.tl/" class="eco-card">
+                    <div class="eco-icon">🏙️</div>
+                    <div class="eco-name">区块交易</div>
+                    <div class="eco-desc">城市地块认领与买卖</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://bct.58.tl/" class="eco-card">
+                    <div class="eco-icon">💰</div>
+                    <div class="eco-name">BCT交易</div>
+                    <div class="eco-desc">平台通证交易市场</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://nft.58.tl/" class="eco-card">
+                    <div class="eco-icon">🖼️</div>
+                    <div class="eco-name">NFT头像</div>
+                    <div class="eco-desc">数字头像铸造与收藏</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://mall.58.tl/" class="eco-card">
+                    <div class="eco-icon">🛍️</div>
+                    <div class="eco-name">人气商城</div>
+                    <div class="eco-desc">BCT支付优惠购物</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://v.58.tl/" class="eco-card">
+                    <div class="eco-icon">🤝</div>
+                    <div class="eco-name">互访圈</div>
+                    <div class="eco-desc">同城互访拓展人脉</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://bid.58.tl/" class="eco-card">
+                    <div class="eco-icon">🔨</div>
+                    <div class="eco-name">拍卖</div>
+                    <div class="eco-desc">稀缺资产竞价捡漏</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://club.58.tl/" class="eco-card">
+                    <div class="eco-icon">👥</div>
+                    <div class="eco-name">社区</div>
+                    <div class="eco-desc">同城圈子畅聊互动</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
+                <a href="https://www.blockcity.pub/?iclc" class="eco-card">
+                    <div class="eco-icon">🏛️</div>
+                    <div class="eco-name">DAO治理</div>
+                    <div class="eco-desc">社区共建共治共享</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
             </div>
-            <div class="promo-banner red">
-                <div class="promo-title">🧧 红包时间表</div>
-                <div class="promo-desc">各城市红包发放时间，定好闹钟来抢</div>
-                <a href="hongbao.php" class="promo-btn">查看时间表</a>
-            </div>
-        </div>
+        </section>
 
         <!-- 城市列表（仅展示前200个） -->
         <div class="city-list-container">
@@ -317,7 +351,7 @@ $letters = range('A', 'Z');
 
         <?php if ($displayedCount >= $maxCities): ?>
         <div class="more-cities-bar" style="text-align:center;padding:24px 0 40px;">
-            <a href="all-cities.php" class="btn-primary" style="display:inline-block;padding:12px 32px;border-radius:8px;font-size:15px;">
+            <a href="all-cities.php" style="display:inline-block;background:var(--primary);color:#fff;padding:12px 32px;border-radius:999px;font-size:15px;font-weight:600;box-shadow:var(--shadow-md);">
                 查看全部 <?= $city->getTotalCitiesCount() ?> 个城市 →
             </a>
         </div>
@@ -326,40 +360,13 @@ $letters = range('A', 'Z');
         
         
         
-        <!-- 元宇宙特色 -->
-        <section class="metaverse-features">
-            <h2 class="section-title">BlockCity元宇宙特色</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🌐</div>
-                    <h3 class="feature-title">虚拟城市探索</h3>
-                    <p class="feature-desc">通过元宇宙技术，58区块城市为您提供沉浸式的虚拟城市探索体验，足不出户逛遍全城。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🪙</div>
-                    <h3 class="feature-title">数字资产交易</h3>
-                    <p class="feature-desc">基于区块链技术的数字资产交易平台，安全可靠地交易您的虚拟商品和服务。</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">👥</div>
-                    <h3 class="feature-title">DAO社区治理</h3>
-                    <p class="feature-desc">58区块城市采用DAO(去中心化自治组织)模式，让用户参与平台治理和决策。</p>
-                </div>
-            </div>
-        </section>
-        
-        <!-- DAO社区 -->
+        <!-- DAO社区（紧凑条） -->
         <section class="dao-community">
-            <h2 class="dao-title">加入BlockCity DAO社区</h2>
-            <div class="dao-content">
-                <div class="dao-text">
-                    <p>58区块城市正在构建全球最大的元宇宙同城DAO社区。通过持有平台通证，您可以参与社区治理、投票决策、分享收益，共同打造下一代去中心化城市服务平台。</p>
-                    <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入DAO</a>
-                </div>
-                <div class="dao-image">
-                    BlockCity DAO
-                </div>
+            <div>
+                <h2 class="dao-title">加入 BlockCity DAO 社区</h2>
+                <p class="dao-text">持有平台通证，参与社区治理、投票决策、分享收益，共建去中心化城市服务平台。</p>
             </div>
+            <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入DAO</a>
         </section>
     </main>
     
@@ -419,29 +426,8 @@ $letters = range('A', 'Z');
         </div>
     </footer>
 	
-	<!-- 新增：优惠悬浮窗口 -->
-    <!--<div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header">
-            <i>🎉</i> 限时优惠
-        </div>
-        <div class="promotion-content">
-            凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7折优惠</strong>！<br>
-            详情请扫描下方二维码添加客服微信咨询。
-        </div>
-        <div class="promotion-qrcode">
-            <img src="../qr.jpg" alt="客服微信二维码">
-        </div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
-    </div>-->
-
     <script>
-        // 3秒后显示悬浮窗口
-        //setTimeout(function() {
-        //    document.getElementById('promotionFloating').style.display = 'block';
-        //}, 3000);
-		
-		// 页面加载时获取城市信息
+        // 页面加载时获取城市信息
         window.onload = function() {
             if (typeof getCityInfo === 'function') getCityInfo();
         };

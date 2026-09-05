@@ -913,29 +913,8 @@
     
     <!-- 返回顶部按钮 -->
     <a href="#" class="jump-to-top" id="jumpToTop">↑</a>
-    
-    <!-- 数据订阅悬浮窗口 -->
-    <div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header">
-            <i>📊</i> GDP数据订阅
-        </div>
-        <div class="promotion-content">
-            订阅完整城市GDP数据集，包含<strong style="color:#0066cc;">300+城市历史数据</strong>和<strong style="color:#0066cc;">详细分析报告</strong>！<br>
-            专业版可下载Excel格式完整数据。
-        </div>
-        <div class="promotion-qrcode">
-            <img src="../qr.jpg" alt="GDP数据服务微信二维码" loading="lazy">
-        </div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码咨询数据服务</div>
-    </div>
 
     <script>
-        // 3秒后显示悬浮窗口
-        setTimeout(function() {
-            document.getElementById('promotionFloating').style.display = 'block';
-        }, 3000);
-        
         // 返回顶部按钮逻辑
         window.addEventListener('scroll', function() {
             const jumpToTop = document.getElementById('jumpToTop');

@@ -674,29 +674,8 @@
             </div>
         </div>
     </footer>
-    
-    <!-- 数据订阅悬浮窗口 -->
-    <div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header">
-            <i>📊</i> 数据订阅服务
-        </div>
-        <div class="promotion-content">
-            订阅我们的城市数据服务，获取<strong style="color:#0066cc;">最新排行榜数据</strong>和<strong style="color:#0066cc;">深度分析报告</strong>！<br>
-            专业版用户可下载完整数据集。
-        </div>
-        <div class="promotion-qrcode">
-            <img src="../qr.jpg" alt="58区块城市数据服务微信二维码" loading="lazy">
-        </div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码咨询数据服务</div>
-    </div>
 
     <script>
-        // 3秒后显示悬浮窗口
-        setTimeout(function() {
-            document.getElementById('promotionFloating').style.display = 'block';
-        }, 3000);
-        
         // 页面加载时获取城市信息
         window.onload = function() {
             getCityInfo();

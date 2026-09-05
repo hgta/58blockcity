@@ -97,11 +97,29 @@ if (!function_exists('cp_money')) {
     }
 }
 if (!function_exists('cp_avatar_svg')) {
-    /** 城市首字 SVG 头像 data URI（原静态页风格） */
+    /** 城市特色 SVG 头像 data URI：城市名 hash 选色渐变 + 天际线剪影 + 城市首字
+     *  注意：SVG 内颜色直接写 '#'，由 rawurlencode 统一编码为 %23——
+     *  切勿在字符串里预写 %23（会被二次编码成 %2523，fill 非法回退黑色，即历史黑块 bug） */
     function cp_avatar_svg($text) {
         $ch = cp_e(mb_substr((string)$text, 0, 1, 'UTF-8'));
-        return "data:image/svg+xml;charset=UTF-8," .
-            rawurlencode("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fff8f0'/><text x='50' y='60' font-size='40' text-anchor='middle' fill='%23cc0000'>{$ch}</text></svg>");
+        $palettes = [
+            ['#ff6b00', '#ff9a44'], ['#e63946', '#ff8f9c'], ['#2563eb', '#6f9bff'],
+            ['#0e9fd8', '#67d4f5'], ['#7c3aed', '#a78bfa'], ['#0a9d6e', '#3ddba0'],
+            ['#d98306', '#ffc247'], ['#0f8a80', '#40d4c8'], ['#c2417f', '#f284b4'],
+            ['#3b5165', '#7d93a8'],
+        ];
+        list($c1, $c2) = $palettes[abs(crc32((string)$text)) % count($palettes)];
+        $svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'>"
+             . "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
+             . "<stop offset='0' stop-color='{$c1}'/><stop offset='1' stop-color='{$c2}'/>"
+             . "</linearGradient></defs>"
+             . "<rect width='120' height='120' fill='url(#g)'/>"
+             . "<circle cx='98' cy='22' r='7' fill='rgba(255,255,255,.65)'/>"
+             . "<path d='M0 100 L0 80 13 80 13 62 23 62 23 80 31 80 31 54 45 54 45 80 55 80 55 66 67 66 67 80 75 80 75 48 89 48 89 80 99 80 99 70 109 70 109 80 120 80 120 100 Z' fill='rgba(255,255,255,.22)'/>"
+             . "<path d='M0 100 L0 90 15 90 15 72 27 72 27 90 41 90 41 60 55 60 55 90 71 90 71 76 85 76 85 90 97 90 97 68 120 68 120 100 Z' fill='rgba(255,255,255,.14)'/>"
+             . "<text x='60' y='56' font-size='44' font-weight='700' text-anchor='middle' fill='#fff' stroke='rgba(0,0,0,.16)' stroke-width='1.5' paint-order='stroke' font-family='sans-serif'>{$ch}</text>"
+             . "</svg>";
+        return "data:image/svg+xml;charset=UTF-8," . rawurlencode($svg);
     }
 }
 
@@ -483,17 +501,9 @@ if (!function_exists('city_portal_render')) {
             <div class="copyright">© 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台</div>
         </div>
     </footer>
-    <div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header"><i>🎉</i> 限时优惠</div>
-        <div class="promotion-content">凡通过本站购买各城市新区块，一律享<strong style="color:#ff6b00;">7.5折优惠</strong>！<br>详情请扫描下方二维码添加客服微信咨询。</div>
-        <div class="promotion-qrcode"><img src="/qr.jpg" alt="<?= cp_e($cityName) ?>区块城市客服微信二维码" loading="lazy"></div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码添加客服微信</div>
-    </div>
     <script src="/city/city.js"></script>
     <script>
         window.onload=getCityInfo;
-        setTimeout(function(){document.getElementById('promotionFloating').style.display='block';},3000);
     </script>
 </body>
 </html>

@@ -1019,29 +1019,8 @@
             </div>
         </div>
     </footer>
-    
-    <!-- 新增：优惠悬浮窗口 -->
-    <div class="promotion-floating" id="promotionFloating">
-        <div class="promotion-close" onclick="document.getElementById('promotionFloating').style.display='none'">×</div>
-        <div class="promotion-header">
-            <i>🎉</i> 红包提醒
-        </div>
-        <div class="promotion-content">
-            设置红包提醒，不错过任何福利！<br>
-            扫描下方二维码关注公众号，获取每日红包提醒服务。
-        </div>
-        <div class="promotion-qrcode">
-            <img src="qr.jpg" alt="公众号二维码">
-        </div>
-        <div style="text-align:center;font-size:12px;color:#999;">扫码关注公众号</div>
-    </div>
 
     <script>
-        // 3秒后显示悬浮窗口
-        setTimeout(function() {
-            document.getElementById('promotionFloating').style.display = 'block';
-        }, 3000);
-        
         // 排序功能
         document.addEventListener('DOMContentLoaded', function() {
             const table = document.getElementById('redpacketTable');
