@@ -62,6 +62,8 @@ foreach (array_slice($argv, 1) as $a) {
         $args['timeout'] = (int)$m[1];
     } elseif (preg_match('/^--?limit=(\d+)$/i', $a, $m)) {
         $args['limit'] = (int)$m[1];
+    } elseif ($a === '--debug' || $a === '-d') {
+        $args['debug'] = true;
     } elseif (preg_match('/^[a-z]+$/', $a)) {
         $onlyPinyin = $a;
     } else {
@@ -74,6 +76,7 @@ $useWiki = !($args['wiki'] === false);
 $delay  = $args['delay'] ?? REQUEST_DELAY;
 $timeout = $args['timeout'] ?? HTTP_TIMEOUT;
 $limit  = $args['limit'] ?? 0;
+$DEBUG  = !empty($args['debug']);
 
 if (!is_dir(OUT_DIR)) {
     @mkdir(OUT_DIR, 0775, true);
@@ -470,6 +473,12 @@ foreach ($todo as $c) {
         OUT_DIR . '/' . $pinyin . '.json',
         json_encode($profile, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
     );
+    if ($DEBUG) {
+        echo "  [dbg] {$pinyin}: 候选Q=" . implode(',', array_keys($candQids)) . " → 选中={$qid} score={$bestScore}\n";
+        foreach ($candQids as $q => $_) {
+            echo "  [dbg]   {$q}: " . json_encode($facts[$q] ?? [], JSON_UNESCAPED_UNICODE) . "\n";
+        }
+    }
     if ($profile['status']) {
         $ok++;
         echo "  [ok] {$pinyin}(" . ($qid ?: '-') . "): 面积={$profile['admin_area']} 人口={$profile['population']} GDP={$profile['gdp']}\n";
