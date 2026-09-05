@@ -191,16 +191,19 @@ function shortName($name) {
     return $s;
 }
 
-/** 候选维基词条标题 / Wikidata label 列表（含 短名、原名、原名+市 形态） */
+/** 候选维基词条标题 / Wikidata label 列表（城市主 label 优先，短名兜底） */
 function candidateNames($name) {
     $s = trim((string)$name);
     $out = [$s];
     $short = shortName($s);
-    if ($short !== '' && $short !== $s) {
+    $hasSuffix = ($short !== '' && $short !== $s);
+    if ($hasSuffix) {
+        // 原名已带行政后缀（市/州/盟/省/自治区等）：原名优先，去后缀短名兜底
         $out[] = $short;
-    }
-    if (mb_substr($s, -1) !== '市') {
-        $out[] = $s . '市';
+    } else {
+        // 短名（如"北京"）：Wikidata 中国城市主 label 基本带"市"。
+        // 必须把「XX市」放最前——裸短 label 常命中同名历史/子实体（如 Q578328 人口仅 3 万）
+        array_unshift($out, $s . '市');
     }
     return array_values(array_unique($out));
 }
@@ -242,7 +245,7 @@ foreach ($cities as $c) {
 //       再对少量命中实体做「城市(Q515 及其子类)」类型校验 ----
 // 注意：切勿写成「先展开 wdt:P31/wdt:P279* wd:Q515 全量城市图再按 label 过滤」——
 // 那会触发全图扫描并在 Wikidata 60s 上限被 kill（表现为整批 [warn]、0 命中）。
-$label2q = [];   // 候选名 → qid（仅保留通过城市类型校验的实体，同名取首个）
+$label2q = [];   // 候选名 → [qid...]（同名多实体全部保留，汇总阶段按数据量打分选最优）
 $candByQ = [];   // qid → 命中的候选名集合（A2 校验后回填 label2q）
 for ($i = 0; $i < count($todo); $i += NAME_CHUNK) {
     $chunk = array_slice($todo, $i, NAME_CHUNK);
@@ -278,6 +281,7 @@ for ($i = 0; $i < count($todo); $i += NAME_CHUNK) {
 }
 echo "[采集] label 反查出 " . count($candByQ) . " 个实体，开始城市类型校验\n";
 
+$cityQids = [];  // 通过类型校验的城市 qid 集合（供 Phase B 属性取数）
 $hit = 0;
 foreach (array_chunk(array_keys($candByQ), 100) as $chunk) {
     $values = implode(' ', array_map(function ($qid) {
@@ -297,9 +301,10 @@ foreach (array_chunk(array_keys($candByQ), 100) as $chunk) {
         if (!isset($candByQ[$qid])) {
             continue;
         }
+        $cityQids[$qid] = true;
         foreach (array_keys($candByQ[$qid]) as $lb) {
-            if (!isset($label2q[$lb])) {
-                $label2q[$lb] = $qid;
+            if (!in_array($qid, $label2q[$lb] ?? [], true)) {
+                $label2q[$lb][] = $qid;
                 $hit++;
             }
         }
@@ -316,7 +321,7 @@ $propQueries = [
     'pop'  => ['P1082', 'ps:P1082'],
     'gdp'  => ['P2132', 'ps:P2132'],
 ];
-$qids = array_values(array_unique($label2q));
+$qids = array_keys($cityQids);
 foreach (array_chunk($qids, QID_CHUNK) as $chunk) {
     $values = implode(' ', array_map(function ($q) {
         return 'wd:' . $q;
@@ -349,14 +354,13 @@ foreach (array_chunk($qids, QID_CHUNK) as $chunk) {
 $ok = 0; $empty = 0; $fail = [];
 foreach ($todo as $c) {
     $pinyin = $c['pinyin'];
-    $qid = null;
+    $candQids = [];
     foreach (candidateNames($c['name']) as $n) {
-        if (isset($label2q[$n])) {
-            $qid = $label2q[$n];
-            break;
+        foreach ($label2q[$n] ?? [] as $q) {
+            $candQids[$q] = true;
         }
     }
-    if (!$qid) {
+    if (!$candQids) {
         $empty++;
         echo "  [empty] {$pinyin}: 未匹配到 Wikidata 城市实体\n";
         file_put_contents(OUT_DIR . '/' . $pinyin . '.json', json_encode([
@@ -379,7 +383,30 @@ foreach ($todo as $c) {
         }
         return $best;
     };
-    $f = $facts[$qid] ?? [];
+
+    // 同名候选（如"北京"可能是历史上的北京/子实体）按数据量打分：
+    // 面积/人口/GDP 各有值 +1 分，平手取人口多者，避开同名小实体
+    $qid = null;
+    $bestScore = -1;
+    $bestPop = -1.0;
+    $bestF = null;
+    foreach (array_keys($candQids) as $q) {
+        $f0 = $facts[$q] ?? [];
+        $score = (int)!empty($f0['area']) + (int)!empty($f0['pop']) + (int)!empty($f0['gdp']);
+        $pm = -1.0;
+        foreach ($f0['pop'] ?? [] as $it) {
+            if ($it['v'] > $pm) {
+                $pm = (float)$it['v'];
+            }
+        }
+        if ($score > $bestScore || ($score === $bestScore && $pm > $bestPop)) {
+            $bestScore = $score;
+            $bestPop = $pm;
+            $qid = $q;
+            $bestF = $f0;
+        }
+    }
+    $f = $bestF ?? [];
     $area = $pick($f['area'] ?? []);
     $pop  = $pick($f['pop'] ?? []);
     $gdp  = $pick($f['gdp'] ?? []);
