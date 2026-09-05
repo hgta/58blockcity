@@ -45,7 +45,7 @@ define('OUT_DIR', __DIR__ . '/../data/city-profiles');
 define('HTTP_TIMEOUT', 20);                   // 秒
 define('HTTP_RETRY', 1);                      // 失败重试次数
 define('REQUEST_DELAY', 1.0);                 // 每城基础间隔秒
-define('NAME_CHUNK', 30);                     // SPARQL 单批匹配城市数
+define('NAME_CHUNK', 15);                     // SPARQL 单批匹配城市数（含多语言 label 变体，防 GET URL 过长）
 define('QID_CHUNK', 20);                      // SPARQL 单批属性查询 Q 数
 
 // ================= 命令行参数 =================
@@ -90,20 +90,36 @@ function http_get($url, $timeout) {
     $ctx = stream_context_create(['http' => [
         'method' => 'GET',
         'timeout' => $timeout,
+        'ignore_errors' => true,
         'header' => "User-Agent: {$ua}\r\nAccept: application/sparql-results+json, application/json\r\n",
     ]]);
     $t0 = microtime(true);
     $body = @file_get_contents($url, false, $ctx);
-    return ['ok' => ($body !== false), 'body' => $body, 'ms' => (int)((microtime(true) - $t0) * 1000)];
+    $code = 0;
+    if (isset($http_response_header)) {
+        foreach ($http_response_header as $h) {
+            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $h, $m)) {
+                $code = (int)$m[1];
+                break;
+            }
+        }
+    }
+    return [
+        'ok'   => ($body !== false && $code >= 200 && $code < 300),
+        'body' => $body,
+        'code' => $code,
+        'ms'   => (int)((microtime(true) - $t0) * 1000),
+    ];
 }
 
-/** SPARQL 查询 → assoc 数组；失败返回 null */
+/** SPARQL 查询 → assoc 数组；失败打印诊断并返回 null */
 function sparql($query, $timeout) {
     $url = SPARQL_ENDPOINT . '?query=' . rawurlencode($query) . '&format=json';
+    $err = '';
     for ($i = 0; $i <= HTTP_RETRY; $i++) {
         $res = http_get($url, $timeout);
         if ($res['ok']) {
-            $j = json_decode($res['body'], true);
+            $j = json_decode((string)$res['body'], true);
             if (isset($j['results']['bindings']) && is_array($j['results']['bindings'])) {
                 $rows = [];
                 foreach ($j['results']['bindings'] as $b) {
@@ -115,11 +131,16 @@ function sparql($query, $timeout) {
                 }
                 return $rows;
             }
+            // HTTP 200 但内容不是 SPARQL JSON（多半是端点超时/错误页）
+            $err = sprintf('code=%d body=%s', $res['code'], mb_substr(trim((string)$res['body']), 0, 200, 'UTF-8'));
+        } else {
+            $err = sprintf('HTTP %d (%dms)', $res['code'], $res['ms']);
         }
         if ($i < HTTP_RETRY) {
             usleep(500000 * ($i + 1)); // 0.5s/1s 退避
         }
     }
+    fwrite(STDERR, "  [warn] SPARQL 失败: {$err}\n      query: " . mb_substr(preg_replace('/\s+/u', ' ', $query), 0, 160, 'UTF-8') . "\n");
     return null;
 }
 
@@ -186,7 +207,7 @@ function candidateNames($name) {
 
 // ================= 主流程 =================
 
-$stmt = $pdo->query("SELECT id, name, pinyin FROM cities WHERE status = 'active' ORDER BY rank ASC, id ASC");
+$stmt = $pdo->query("SELECT id, name, pinyin FROM cities WHERE status = 'active' AND pinyin <> '' ORDER BY rank ASC, id ASC");
 $cities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (!$cities) {
     fwrite(STDERR, "cities 表无数据。\n");
@@ -217,8 +238,12 @@ foreach ($cities as $c) {
     $todo[] = $c;
 }
 
-// ---- Phase A：按 label 分块匹配 Wikidata 城市实体（Q515） ----
-$label2q = [];   // label → qid（每个 label 只保留一个城市实体）
+// ---- Phase A：先按 label 精确反查候选实体（轻量、走 label 索引），
+//       再对少量命中实体做「城市(Q515 及其子类)」类型校验 ----
+// 注意：切勿写成「先展开 wdt:P31/wdt:P279* wd:Q515 全量城市图再按 label 过滤」——
+// 那会触发全图扫描并在 Wikidata 60s 上限被 kill（表现为整批 [warn]、0 命中）。
+$label2q = [];   // 候选名 → qid（仅保留通过城市类型校验的实体，同名取首个）
+$candByQ = [];   // qid → 命中的候选名集合（A2 校验后回填 label2q）
 for ($i = 0; $i < count($todo); $i += NAME_CHUNK) {
     $chunk = array_slice($todo, $i, NAME_CHUNK);
     $names = [];
@@ -228,30 +253,60 @@ for ($i = 0; $i < count($todo); $i += NAME_CHUNK) {
         }
     }
     $names = array_values(array_unique($names));
-    $values = implode(' ', array_map(function ($n) {
-        return '"' . addcslashes($n, "\\\"") . '"';
-    }, $names));
-    // 无法用 VALUES ?name{...} 时改用 FILTER(STR(?l) IN (...))
-    $q = "SELECT DISTINCT ?item ?itemLabel WHERE {
-      ?item wdt:P31/wdt:P279* wd:Q515 .
-      ?item rdfs:label ?l . FILTER(lang(?l) = 'zh')
-      BIND(STR(?l) AS ?itemLabel)
-      FILTER(?itemLabel IN ($values))
-    }";
+    // label 语言变体：中文标签通常存 @zh，部分实体为 @zh-hans，两条都给
+    $ls = [];
+    foreach ($names as $n) {
+        $esc = addcslashes($n, "\\\"");
+        $ls[] = "\"{$esc}\"@zh";
+        $ls[] = "\"{$esc}\"@zh-hans";
+    }
+    $q = "SELECT DISTINCT ?item ?itemLabel WHERE {\n"
+       . "  VALUES ?l { " . implode(' ', $ls) . " }\n"
+       . "  ?item rdfs:label ?l .\n"
+       . "  BIND(STR(?l) AS ?itemLabel)\n"
+       . "}";
     $rows = sparql($q, $timeout);
     if ($rows === null) {
-        echo "  [warn] label 匹配批次失败（跳过 " . count($chunk) . " 城），重试留给下一轮手动运行\n";
+        echo "  [warn] label 反查批次失败（跳过 " . count($chunk) . " 城），详情见上方 sparql 日志\n";
         continue;
     }
     foreach ($rows as $r) {
         $qid = preg_replace('/^.*\/(Q\d+)$/', '$1', $r['item']);
-        if (!isset($label2q[$r['itemLabel']])) {
-            $label2q[$r['itemLabel']] = $qid;
+        $candByQ[$qid][$r['itemLabel']] = true;
+    }
+    usleep((int)($delay * 1000000));
+}
+echo "[采集] label 反查出 " . count($candByQ) . " 个实体，开始城市类型校验\n";
+
+$hit = 0;
+foreach (array_chunk(array_keys($candByQ), 100) as $chunk) {
+    $values = implode(' ', array_map(function ($qid) {
+        return 'wd:' . $qid;
+    }, $chunk));
+    $q = "SELECT DISTINCT ?item WHERE {\n"
+       . "  VALUES ?item { $values }\n"
+       . "  ?item wdt:P31/wdt:P279* wd:Q515 .\n"
+       . "}";
+    $rows = sparql($q, $timeout);
+    if ($rows === null) {
+        echo "  [warn] 类型校验批次失败，跳过 " . count($chunk) . " 个候选实体\n";
+        continue;
+    }
+    foreach ($rows as $r) {
+        $qid = preg_replace('/^.*\/(Q\d+)$/', '$1', $r['item']);
+        if (!isset($candByQ[$qid])) {
+            continue;
+        }
+        foreach (array_keys($candByQ[$qid]) as $lb) {
+            if (!isset($label2q[$lb])) {
+                $label2q[$lb] = $qid;
+                $hit++;
+            }
         }
     }
     usleep((int)($delay * 1000000));
 }
-echo "[采集] label 匹配完成，命中 " . count($label2q) . " 个实体\n";
+echo "[采集] label 匹配完成，命中 " . $hit . " 个城市 label\n";
 
 // ---- Phase B：分块取 P2046/P1082/P2132（带时间戳，PHP 端选最新） ----
 // key: qid → [ 'area'=>[[v,time]...], 'pop'=>..., 'gdp'=>... ]
