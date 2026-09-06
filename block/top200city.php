@@ -48,12 +48,12 @@ if ($myMode && $currentUserId) {
     // activated_blocks/resident_count/popularity 是 cities 表的基础数据（后台录入/同步）
     // claimed_count 是 blocks 表实时统计（block.58.tl 前端认领产生的真实数据）
     $sortMap = [
-        'activated' => 'c.rank ASC',
-        'resident'  => 'c.resident_count DESC',
-        'popularity'=> 'c.popularity DESC',
-        'claimed'   => 'claimed_count DESC',
-        'sale'      => 'sale_count DESC',
-        'purchase'  => 'purchase_count DESC',
+        'activated' => 'c.activated_blocks DESC, c.rank ASC',
+        'resident'  => 'c.resident_count DESC, c.rank ASC',
+        'popularity'=> 'c.popularity DESC, c.rank ASC',
+        'claimed'   => 'claimed_count DESC, c.rank ASC',
+        'sale'      => 'sale_count DESC, c.rank ASC',
+        'purchase'  => 'purchase_count DESC, c.rank ASC',
     ];
     $orderBy = $sortMap[$sort] ?? $sortMap['activated'];
 
