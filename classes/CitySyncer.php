@@ -21,8 +21,8 @@
  * 用法：
  *   require_once __DIR__ . '/CitySyncer.php';
  *   $list = CitySyncer::fetchRankList();          // 失败抛 RuntimeException
- *   $stat = CitySyncer::apply($list, $pdo);       // 单事务批量更新
- *   // $stat = ['fetched'=>200,'updated'=>198,'unchanged'=>0,'missed'=>['中国数藏',...]]
+ *   $stat = CitySyncer::apply($list, $pdo);       // 单事务批量更新 + 掉榜城市排名清零
+ *   // $stat = ['fetched'=>200,'updated'=>198,'unchanged'=>0,'missed'=>['中国数藏',...],'demoted'=>2]
  */
 
 class CitySyncer
@@ -125,26 +125,30 @@ class CitySyncer
         }
         $byExact = [];
         $byNorm  = [];
+        $id2name = [];
         foreach ($rows as $r) {
             $name = (string)$r['name'];
             $id   = (int)$r['id'];
             $byExact[$name] = $id;
             $byNorm[self::normName($name)] = $id;
+            $id2name[$id]   = $name;
         }
 
-        $stat = ['fetched' => count($list), 'updated' => 0, 'unchanged' => 0, 'missed' => []];
+        $stat = ['fetched' => count($list), 'updated' => 0, 'unchanged' => 0, 'missed' => [], 'demoted' => 0];
 
         $pdo->beginTransaction();
         try {
             $upd = $pdo->prepare(
                 'UPDATE cities SET rank = ?, resident_count = ?, activated_blocks = ?, updated_at = NOW() WHERE id = ?'
             );
+            $matchedNames = [];   // 本次榜单命中的库内城市名（用于掉榜清理）
             foreach ($list as $c) {
                 $id = $byExact[$c['name']] ?? ($byNorm[self::normName($c['name'])] ?? null);
                 if ($id === null) {
                     $stat['missed'][] = $c['name'];
                     continue;
                 }
+                $matchedNames[$id2name[$id]] = true;
                 $upd->execute([$c['rank'], $c['resident_count'], $c['activated_blocks'], $id]);
                 if ($upd->rowCount() > 0) {
                     $stat['updated']++;
@@ -152,6 +156,18 @@ class CitySyncer
                     $stat['unchanged']++;
                 }
             }
+
+            // 掉榜清理：不在本次官方榜单中的城市，旧排名（1-200 残留）清零，
+            // 否则会与新榜单撞号错位（如旧 198 名与官方新 198 名同时显示）
+            if ($matchedNames) {
+                $ph  = implode(',', array_fill(0, count($matchedNames), '?'));
+                $clr = $pdo->prepare(
+                    "UPDATE cities SET rank = 0, updated_at = NOW() WHERE rank > 0 AND name NOT IN ({$ph})"
+                );
+                $clr->execute(array_keys($matchedNames));
+                $stat['demoted'] = $clr->rowCount();
+            }
+
             $pdo->commit();
         } catch (Exception $e) {
             $pdo->rollBack();

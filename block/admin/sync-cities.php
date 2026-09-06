@@ -38,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            . (count($stat['missed']) > 10 ? ' 等' : '');
             }
             $unchangedTxt = $stat['unchanged'] > 0 ? "，{$stat['unchanged']} 个无变化" : '';
-            $msg = "同步完成：解析 {$stat['fetched']} 个城市，更新 {$stat['updated']} 个{$unchangedTxt}{$missedTxt}";
+            $demotedTxt   = !empty($stat['demoted']) ? "，{$stat['demoted']} 个掉榜城市排名已清零" : '';
+            $msg = "同步完成：解析 {$stat['fetched']} 个城市，更新 {$stat['updated']} 个{$unchangedTxt}{$demotedTxt}{$missedTxt}";
         } catch (Exception $e) {
             $err = '同步失败：' . $e->getMessage() . '。可改用下方「手动粘贴 JSON」兜底。';
         }

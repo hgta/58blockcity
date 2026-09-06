@@ -16,6 +16,7 @@ try {
         $rows = $pdo->query(
             "SELECT name, area_code, rank, resident_count, activated_blocks
              FROM cities
+             WHERE resident_count > 0
              ORDER BY resident_count DESC, activated_blocks DESC
              LIMIT 200"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -26,6 +27,7 @@ try {
         $rows = $pdo->query(
             "SELECT name, area_code, rank, resident_count, activated_blocks
              FROM cities
+             WHERE activated_blocks > 0
              ORDER BY activated_blocks DESC, resident_count DESC
              LIMIT 200"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -36,7 +38,8 @@ try {
         $rows = $pdo->query(
             "SELECT name, area_code, rank, resident_count, activated_blocks
              FROM cities
-             ORDER BY (rank > 0) DESC, rank ASC, activated_blocks DESC
+             WHERE rank > 0
+             ORDER BY rank ASC, activated_blocks DESC
              LIMIT 200"
         )->fetchAll(PDO::FETCH_ASSOC);
         $pageTitle = 'TOP200热门城市';

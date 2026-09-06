@@ -44,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'sync'
                        . (count($stat['missed']) > 10 ? ' 等' : '');
         }
         $unchangedTxt = $stat['unchanged'] > 0 ? "，{$stat['unchanged']} 个无变化" : '';
-        $_SESSION['success'] = "同步完成：解析 {$stat['fetched']} 个城市，更新 {$stat['updated']} 个{$unchangedTxt}{$missedTxt}";
+        $demotedTxt   = !empty($stat['demoted']) ? "，{$stat['demoted']} 个掉榜城市排名已清零" : '';
+        $_SESSION['success'] = "同步完成：解析 {$stat['fetched']} 个城市，更新 {$stat['updated']} 个{$unchangedTxt}{$demotedTxt}{$missedTxt}";
     } catch (Exception $e) {
         $_SESSION['error'] = '同步失败：' . $e->getMessage();
     }
