@@ -63,7 +63,7 @@ require_once 'includes/header.php';
 
 <div class="bct-page-title" style="padding-top:20px;">
     <div>
-        <h1><i class="fas fa-coins"></i> 城市人气值交易所</h1>
+        <h1><i class="fas fa-coins"></i> 城市人气值市场</h1>
         <div class="subtitle">城市人气值自由交易 · 实时行情 · 安全便捷</div>
     </div>
     <div>

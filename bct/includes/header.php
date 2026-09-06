@@ -16,9 +16,9 @@ $site_config['schema_search'] = $site_config['schema_search'] ?? 'https://bct.58
 $site_config['main_class'] = 'bct-exchange';
 $site_config['body_class'] = 'bct-theme-dark';
 
-// BCT 交易所主题资源
+// BCT 主题资源
 $extra = $site_config['extra_head'] ?? '';
-$extra .= "\n<link rel=\"stylesheet\" href=\"https://bct.58.tl/assets/css/exchange-theme.css?v=3\">\n";
+$extra .= "\n<link rel=\"stylesheet\" href=\"https://bct.58.tl/assets/css/exchange-theme.css?v=4\">\n";
 $extra .= "<script src=\"https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js\"></script>\n";
 $extra .= "<script src=\"https://bct.58.tl/assets/js/exchange-charts.js\"></script>\n";
 $site_config['extra_head'] = $extra;
