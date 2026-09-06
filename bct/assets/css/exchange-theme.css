@@ -514,37 +514,40 @@
   --bct-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* body 级深色 */
+/* body / html 级深色：加 !important 防止被 main.css / bootstrap 覆盖 */
+html body.bct-theme-dark,
 body.bct-theme-dark {
-  background-color: var(--bct-bg);
-  color: var(--bct-text);
+  background-color: var(--bct-bg) !important;
+  color: var(--bct-text) !important;
 }
 body.bct-theme-dark main.container {
-  background-color: transparent;
+  background-color: transparent !important;
   padding-top: 0;
 }
 
-/* header 深色覆盖 */
+/* header 深色覆盖：提高权重并加 !important，对抗共享头内联样式 */
+body.bct-theme-dark > header,
 body.bct-theme-dark header {
-  background-color: var(--bct-bg-secondary);
-  border-bottom: 1px solid var(--bct-border);
-  box-shadow: var(--bct-shadow);
+  background-color: var(--bct-bg-secondary) !important;
+  background: var(--bct-bg-secondary) !important;
+  border-bottom: 1px solid var(--bct-border) !important;
+  box-shadow: var(--bct-shadow) !important;
 }
-body.bct-theme-dark .header-container { background-color: transparent; }
-body.bct-theme-dark .logo { color: var(--bct-text); }
-body.bct-theme-dark .logo-text strong { color: var(--bct-text); }
-body.bct-theme-dark .logo-text span { color: var(--bct-text-secondary); }
+body.bct-theme-dark .header-container { background-color: transparent !important; }
+body.bct-theme-dark .logo { color: var(--bct-text) !important; }
+body.bct-theme-dark .logo-text strong { color: var(--bct-text) !important; }
+body.bct-theme-dark .logo-text span { color: var(--bct-text-secondary) !important; }
 body.bct-theme-dark .logo-img {
-  background: linear-gradient(135deg, var(--bct-accent), #d4a009);
-  color: #000;
+  background: linear-gradient(135deg, var(--bct-accent), #d4a009) !important;
+  color: #000 !important;
 }
 body.bct-theme-dark .nav-button {
-  color: var(--bct-text-secondary);
-  background-color: transparent;
+  color: var(--bct-text-secondary) !important;
+  background-color: transparent !important;
 }
 body.bct-theme-dark .nav-button:hover {
-  background-color: var(--bct-bg-hover);
-  color: var(--bct-accent);
+  background-color: var(--bct-bg-hover) !important;
+  color: var(--bct-accent) !important;
 }
 body.bct-theme-dark .nav-button[style*="background:#ff6b00"] {
   background: var(--bct-accent) !important;
@@ -592,32 +595,37 @@ body.bct-theme-dark .dropdown-item.text-primary { color: var(--bct-accent) !impo
 
 /* 城市定位条 */
 body.bct-theme-dark .city-location-bar {
-  background-color: var(--bct-bg-tertiary);
-  color: var(--bct-text-secondary);
-  border-bottom: 1px solid var(--bct-border);
+  background-color: var(--bct-bg-tertiary) !important;
+  background: var(--bct-bg-tertiary) !important;
+  color: var(--bct-text-secondary) !important;
+  border-bottom: 1px solid var(--bct-border) !important;
 }
-body.bct-theme-dark .city-location-bar a { color: var(--bct-accent); }
+body.bct-theme-dark .city-location-bar a { color: var(--bct-accent) !important; }
 
 /* 跨站引流卡片 */
 body.bct-theme-dark .cross-site-links { margin-top: 40px; }
-body.bct-theme-dark .cross-site-links h3 { color: var(--bct-text); }
+body.bct-theme-dark .cross-site-links h3 { color: var(--bct-text) !important; }
 body.bct-theme-dark .cross-site-links a {
   background: var(--bct-bg-secondary) !important;
+  background-color: var(--bct-bg-secondary) !important;
   border: 1px solid var(--bct-border) !important;
   color: var(--bct-text) !important;
 }
 body.bct-theme-dark .cross-site-links a:hover {
   background: var(--bct-bg-hover) !important;
+  background-color: var(--bct-bg-hover) !important;
   border-color: var(--bct-accent) !important;
 }
 body.bct-theme-dark .cross-site-links a div { color: var(--bct-text) !important; }
 body.bct-theme-dark .cross-site-links a div + div { color: var(--bct-text-secondary) !important; }
 
 /* footer 深色覆盖 */
-body.bct-theme-dark footer.site-footer {
-  background-color: var(--bct-bg-secondary);
-  color: var(--bct-text-secondary);
-  border-top: 1px solid var(--bct-border);
+body.bct-theme-dark footer.site-footer,
+body.bct-theme-dark > footer.site-footer {
+  background-color: var(--bct-bg-secondary) !important;
+  background: var(--bct-bg-secondary) !important;
+  color: var(--bct-text-secondary) !important;
+  border-top: 1px solid var(--bct-border) !important;
   margin-top: 40px;
 }
 body.bct-theme-dark .footer-col h4 {
@@ -644,13 +652,20 @@ body.bct-theme-dark #back-to-top {
 }
 
 /* 修复 main 与 header 之间的缝隙 */
-body.bct-theme-dark main.container.bct-exchange {
-  background-color: var(--bct-bg);
+body.bct-theme-dark main.container.bct-exchange,
+body.bct-theme-dark main.container {
+  background-color: var(--bct-bg) !important;
 }
 
 /* 通用 alert 在深色背景下可读性 */
 body.bct-theme-dark .alert {
-  background-color: var(--bct-bg-secondary);
-  border-color: var(--bct-border);
-  color: var(--bct-text);
+  background-color: var(--bct-bg-secondary) !important;
+  border-color: var(--bct-border) !important;
+  color: var(--bct-text) !important;
+}
+
+/* footer 底部版权条 */
+body.bct-theme-dark .footer-bottom {
+  border-top: 1px solid var(--bct-border) !important;
+  color: var(--bct-text-muted) !important;
 }
