@@ -11,7 +11,7 @@ class CityBCT {
         $stmt = $this->pdo->prepare("
             SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
             FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name
+            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
             WHERE cb.city = ?
         ");
         $stmt->execute([$city]);
@@ -35,7 +35,7 @@ class CityBCT {
         $stmt = $this->pdo->prepare("
             SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
             FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name
+            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
             ORDER BY cb.city
         ");
         $stmt->execute();
@@ -64,7 +64,7 @@ class CityBCT {
         $stmt = $this->pdo->query("
             SELECT COALESCE(SUM(COALESCE(c.popularity, cb.circulating_supply) * cb.current_price), 0) as cap
             FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name
+            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
         ");
         $stats['total_market_cap'] = (float)$stmt->fetchColumn();
 
