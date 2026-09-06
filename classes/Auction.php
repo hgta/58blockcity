@@ -451,6 +451,45 @@ class Auction {
     }
 
     /**
+     * 已结束拍卖列表（sold + ended）
+     */
+    public function getEndedAuctions($page = 1, $perPage = 20, $itemType = '', $currency = '') {
+        $offset = (max(1, intval($page)) - 1) * intval($perPage);
+        $where = ["a.status IN ('sold','ended')"];
+        $params = [];
+        if (in_array($itemType, ['block', 'nft'], true)) {
+            $where[] = "a.item_type = ?";
+            $params[] = $itemType;
+        }
+        if (in_array($currency, ['popularity', 'cny'], true)) {
+            $where[] = "a.currency = ?";
+            $params[] = $currency;
+        }
+        $whereSql = implode(' AND ', $where);
+
+        $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM auctions a WHERE " . $whereSql);
+        $countStmt->execute($params);
+        $total = intval($countStmt->fetchColumn());
+
+        $stmt = $this->pdo->prepare("
+            SELECT a.*,
+                   s.username AS seller_name, s.avatar AS seller_avatar,
+                   w.username AS winner_name, w.avatar AS winner_avatar
+            FROM auctions a
+            LEFT JOIN users s ON a.seller_id = s.id
+            LEFT JOIN users w ON a.current_bidder_id = w.id
+            WHERE {$whereSql}
+            ORDER BY a.end_time DESC
+            LIMIT {$perPage} OFFSET {$offset}");
+        $stmt->execute($params);
+        return [
+            'list' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+            'pages' => $total > 0 ? ceil($total / $perPage) : 0,
+        ];
+    }
+
+    /**
      * 拍卖详情（含物品信息）
      */
     public function getAuctionById($id) {
