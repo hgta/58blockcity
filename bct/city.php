@@ -73,7 +73,7 @@ require_once 'includes/header.php';
         </div>
         <div class="bct-hero-stat">
             <div class="label">流通市值</div>
-            <div class="value">¥<?= number_format($cityInfo['market_cap'] / 1000000, 2) ?> 百万</div>
+            <div class="value">¥<?= number_format($cityInfo['market_cap'] / 10000, 2) ?> 万</div>
         </div>
         <div class="bct-hero-stat">
             <div class="label">流通量</div>

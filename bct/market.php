@@ -170,7 +170,7 @@ require_once 'includes/header.php';
                     <td class="price">¥<?= number_format($city['current_price'], 2) ?></td>
                     <td class="change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</td>
                     <td class="volume">¥<?= number_format($city['volume_24h'], 2) ?></td>
-                    <td class="market-cap">¥<?= number_format($city['market_cap'] / 1000000, 2) ?> 百万</td>
+                    <td class="market-cap">¥<?= number_format($city['market_cap'] / 10000, 2) ?> 万</td>
                     <td><?= number_format($city['circulating_supply']) ?> / <?= number_format($city['total_supply']) ?></td>
                     <td>
                         <a href="city.php?city=<?= urlencode($city['city']) ?>" class="btn btn-sm btn-primary">交易</a>

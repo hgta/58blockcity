@@ -100,7 +100,7 @@ require_once 'includes/header.php';
     </div>
     <div class="bct-stat-card">
         <div class="label">总市值</div>
-        <div class="value">¥<?= number_format($marketStats['total_market_cap'] / 10000000, 2) ?> 千万</div>
+        <div class="value">¥<?= number_format($marketStats['total_market_cap'] / 100000000, 2) ?> 亿</div>
     </div>
     <div class="bct-stat-card">
         <div class="label">涨跌城市</div>
@@ -125,7 +125,7 @@ require_once 'includes/header.php';
         <div class="city-change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</div>
         <div class="city-meta">
             <span>24h 成交 ¥<?= number_format($city['volume_24h'], 0) ?></span>
-            <span>市值 ¥<?= number_format($city['market_cap'] / 1000000, 2) ?> 百万</span>
+            <span>市值 ¥<?= number_format($city['market_cap'] / 10000, 2) ?> 万</span>
         </div>
     </a>
     <?php endforeach; ?>
