@@ -4,6 +4,7 @@
  * 数据源：cities 表（管理后台「同步数据」一键更新，见 classes/CitySyncer.php）
  * 排序：?sort=activated 按开启区块数 / ?sort=population 按居民人数 / 默认综合排名
  */
+session_start();
 require_once __DIR__ . '/config/database.php';
 
 $sort = isset($_GET['sort']) ? (string)$_GET['sort'] : '';
@@ -500,6 +501,101 @@ try {
             text-decoration: underline;
             margin-left: 5px;
         }
+
+        /* ---------- 主站 header/footer 同款覆盖 ---------- */
+        :root {
+            --bg: #f5f5f5;
+            --card: #fff;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+            --primary: #ff6b00;
+            --accent: #ffb380;
+        }
+        body { font-family: 'PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif; -webkit-font-smoothing: antialiased; }
+        header {
+            background: #fff !important;
+            color: var(--text) !important;
+            padding: 0 !important;
+            box-shadow: 0 1px 0 rgba(0,0,0,.06) !important;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-img {
+            width: 38px !important;
+            height: 38px !important;
+            margin: 0 !important;
+            background: var(--primary) !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .logo-text {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: var(--text) !important;
+        }
+        .logo-text span {
+            display: block !important;
+            font-size: 11px !important;
+            font-weight: 400 !important;
+            color: var(--muted) !important;
+            margin: 0 !important;
+            opacity: 1 !important;
+        }
+        .user-actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            background: transparent !important;
+            color: #4b5563 !important;
+            padding: 6px 14px !important;
+            border-radius: 6px !important;
+            font-size: 13px !important;
+            font-weight: 500;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+        .nav-button:hover {
+            background: #f3f4f6 !important;
+            color: var(--primary) !important;
+            transform: none !important;
+        }
+        .city-location-bar {
+            background: linear-gradient(135deg,#fff7f0,#fff3ea) !important;
+            color: #b35400 !important;
+            padding: 10px !important;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #ffd9c2;
+        }
+        .city-location-bar a {
+            color: #ff6b00 !important;
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 0;
+        }
     </style>
     <!-- BreadcrumbList 结构化数据 -->
     <script type="application/ld+json">
@@ -516,18 +612,28 @@ try {
 <body>
     <!-- 头部区域 -->
     <header>
-        <div class="container header-container">
-            <div class="logo">
+        <div class="header-container">
+            <a href="/" class="logo" style="text-decoration:none;">
                 <div class="logo-img">58</div>
                 <div class="logo-text">
                     区块城市
                     <span>元宇宙同城生活服务平台</span>
                 </div>
-            </div>
+            </a>
             <div class="user-actions">
-                <a href="index.php" class="nav-button">返回首页</a>
-                <a href="news.php" class="nav-button">区块城市新闻</a>
-                <a href="https://www.blockcity.vip/pages/user/user/?iclc=1" class="nav-button">我的区块</a>
+                <a href="https://block.58.tl/" class="nav-button">区块交易</a>
+                <a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
+                <a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
+                <a href="https://mall.58.tl/" class="nav-button">人气商城</a>
+                <a href="https://v.58.tl/" class="nav-button">互访圈</a>
+                <a href="https://bid.58.tl/" class="nav-button">拍卖</a>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#ff6b00;color:#fff;">个人中心</a>
+                    <a href="auth/logout.php" class="nav-button">退出</a>
+                <?php else: ?>
+                    <a href="auth/login.php" class="nav-button" style="background:#ff6b00;color:#fff;">登录</a>
+                    <a href="auth/register.php" class="nav-button">注册</a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -602,57 +708,57 @@ try {
     </script>
     
     <!-- 底部 -->
-    <footer>
-		<!-- 原有footer内容前添加 -->
-        <!--<div class="container">
-            <div class="domain-sale" style="margin-bottom: 30px;">
-                <div class="domain-sale-text">💎 本网站域名诚意出售 | Domain Name For Sale</div>
-                <a href="https://domainbatch.com/name/58.tl" class="domain-sale-link">联系购买 | Contact Now</a>
-                <div class="domain-sale-english">Premium domain "58.tl" available for blockchain/metaverse projects</div>
-            </div>
-        </div>-->
-		
+    <footer style="background:#1a1a2e;color:#94a3b8;padding:48px 0 20px;margin-top:40px;">
         <div class="container">
-            <div class="footer-container">
-                <div class="footer-column">
-                    <h3>关于58区块城市</h3>
-                    <ul>
-                        <li><a href="https://www.blockcity.vip/pages/index/company/?iclc">公司简介</a></li>
-                        <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc">元宇宙愿景</a></li>
-                        <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
-                        <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
+            <div class="footer-grid" style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr 1fr;gap:30px;margin-bottom:30px;">
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关于58区块城市</h4>
+                    <p style="font-size:13px;line-height:1.8;color:#64748b;">
+                        58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理，为用户提供虚拟城市探索、数字资产交易的一站式体验。
+                    </p>
+                </div>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">快速链接</h4>
+                    <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
+                        <li><a href="https://block.58.tl/" style="color:#64748b;">区块交易</a></li>
+                        <li><a href="https://bct.58.tl/" style="color:#64748b;">BCT交易</a></li>
+                        <li><a href="https://mall.58.tl/" style="color:#64748b;">人气商城</a></li>
+                        <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
+                        <li><a href="https://bid.58.tl/" style="color:#64748b;">拍卖</a></li>
+                        <li><a href="https://club.58.tl/" style="color:#64748b;">社区</a></li>
                     </ul>
                 </div>
-                <div class="footer-column">
-                    <h3>帮助中心</h3>
-                    <ul>
-                        <li><a href="https://www.blockcity.pub/pages/index/help/?iclc">新手指南</a></li>
-                        <li><a href="#">元宇宙入门</a></li>
-                        <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
-                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc">常见问题</a></li>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">帮助支持</h4>
+                    <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1" style="color:#64748b;">使用指南</a></li>
+                        <li><a href="https://www.blockcity.pub/?iclc=1" style="color:#64748b;">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/naquba/" style="color:#64748b;">元宇宙店铺</a></li>
+                        <li><a href="news.php" style="color:#64748b;">区块新闻</a></li>
                     </ul>
                 </div>
-                <div class="footer-column">
-                    <h3>商家服务</h3>
-                    <ul>
-                        <li><a href="news.php">区块新闻</a></li>
-                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
-                        <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
-                        <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
-                    </ul>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关注我们</h4>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                        <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                    </div>
+                    <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:12px;">
+                        <span style="width:80px;text-align:center;">7.5折购地</span>
+                        <span style="width:80px;text-align:center;">客服微信</span>
+                    </div>
                 </div>
-                <div class="footer-column">
-                    <h3>关注我们</h3>
-                    <ul>
-                        <li><a href="#">BlockCity微信公众号</a></li>
-                        <li><a href="#">BlockCity微博</a></li>
-                        <li><a href="#">BlockCity小红书</a></li>
-                        <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">BlockCity在线客服</a></li>
-                    </ul>
+                <div>
+                    <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">联系我们</h4>
+                    <p style="font-size:13px;color:#64748b;line-height:2;">
+                        📧 support@58.tl<br>
+                        🌐 www.58.tl<br>
+                        📍 元宇宙同城生态
+                    </p>
                 </div>
             </div>
-            <div class="copyright">
-                © 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台
+            <div style="border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#475569;">
+                © 2025 58区块城市 | BlockCity 版权所有 | 基于元宇宙技术的下一代同城服务平台
             </div>
         </div>
     </footer>
