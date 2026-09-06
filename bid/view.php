@@ -75,9 +75,15 @@ require_once 'includes/header.php';
 .view-wrap { max-width: 900px; margin: 24px auto; padding: 0 15px; }
 .view-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
 @media (max-width: 700px) { .view-grid { grid-template-columns: 1fr; } }
-.view-img { background: #f5f5f5; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; }
+.view-img { background: #f5f5f5; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; position: relative; }
 .view-img img { width: 100%; height: 100%; object-fit: cover; }
 .view-img .ph { color: #ccc; font-size: 60px; }
+.view-img-link-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity .2s; text-align: center; padding: 10px; pointer-events: none; }
+.view-img:hover .view-img-link-hint { opacity: 1; }
+.view-ext-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; pointer-events: none; }
+.view-title-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: inherit; }
+.view-title-link:hover { color: #ff6b00; }
+.view-title-link:hover .view-title { text-decoration: underline; }
 .view-info { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
 .view-title { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 8px; }
 .view-tag { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 4px; background: #eef2ff; color: #4f46e5; margin-bottom: 12px; }
@@ -118,13 +124,17 @@ require_once 'includes/header.php';
             <?php else: ?>
                 <span class="ph"><i class="fas fa-image"></i></span>
             <?php endif; ?>
+            <?php if ($detailUrl): ?>
+                <span class="view-img-link-hint">点击查看<?= $a['item_type'] === 'nft' ? '头像' : '区块' ?>详情<i class="fas fa-external-link-alt" style="margin-left:6px;"></i></span>
+                <span class="view-ext-badge"><i class="fas fa-external-link-alt"></i> <?= $a['item_type'] === 'nft' ? 'NFT详情' : '区块详情' ?></span>
+            <?php endif; ?>
             <?php if ($detailUrl): ?></a><?php endif; ?>
         </div>
         <div class="view-info">
             <span class="view-tag <?= $a['item_type'] === 'nft' ? 'nft' : '' ?>"><?= $a['item_type'] === 'nft' ? 'NFT头像' : '区块' ?></span>
-            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" style="text-decoration:none;color:inherit;"><?php endif; ?>
+            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" class="view-title-link"><?php endif; ?>
             <div class="view-title"><?= htmlspecialchars($a['item_title'] ?? ('拍卖 #' . $a['id'])) ?></div>
-            <?php if ($detailUrl): ?></a><?php endif; ?>
+            <?php if ($detailUrl): ?><i class="fas fa-external-link-alt" style="font-size:13px;color:#999;"></i></a><?php endif; ?>
 
             <div class="view-status">
                 <?php

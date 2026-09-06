@@ -15,13 +15,13 @@
 - [x] 3.2 当 `$auction['item_type'] === 'nft'` 且 `nft_id > 0` 时，将预览图与标题包裹在 `<a href="https://nft.58.tl/nft/view.php?id=<?= $auction['nft_id'] ?>" target="_blank">` 中。
 - [x] 3.3 在 `bid/view.php` 中找到区块拍品的预览图与标题渲染区域。
 - [x] 3.4 当 `$auction['item_type'] === 'block'` 且 `item_id > 0` 时，将预览图与标题包裹在 `<a href="https://block.58.tl/block/view.php?id=<?= $auction['item_id'] ?>" target="_blank">` 中。
-- [x] 3.5 修改区块图片输出逻辑：当 `display_image` 为空时，显示默认占位图。
+- [x] 3.5 为详情页图片添加 hover 提示与常驻角标，标题旁显示外部链接图标，避免用户误点。
+- [x] 3.6 修改区块图片输出逻辑：当 `display_image` 为空时，显示默认占位图。
 
-## 4. 可选：列表页同步增加入口
+## 4. 列表页保持拍卖详情入口
 
-- [x] 4.1 在 `bid/index.php` 的 NFT 拍卖卡片中，为头像图增加 `nft.58.tl` 跳转入口（悬停显示「查看头像详情」，新标签页打开）。
-- [x] 4.2 在 `bid/index.php` 的区块拍卖卡片中，为预览图增加 `block.58.tl` 跳转入口（悬停显示「查看区块详情」，新标签页打开）。
-- [x] 4.3 确保列表页区块无图时也显示默认占位图。
+- [x] 4.1 列表页（`bid/index.php`）整张卡片仅跳转拍卖详情页 `view.php?id=`，图片不单独跳转外部详情页。
+- [x] 4.2 列表页区块无图时仍显示 `/assets/images/default-block.png`。
 
 ## 5. 验证与部署
 

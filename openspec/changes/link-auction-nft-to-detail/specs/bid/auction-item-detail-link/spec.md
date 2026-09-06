@@ -29,6 +29,14 @@
 - **THEN** 系统显示默认占位图
 - **AND** 该占位图仍可点击跳转至 block 子站详情页
 
+### Requirement: 外部跳转入口需有明确提示
+拍卖详情页中，当预览图或标题可跳转至外部子站详情页时，系统 SHALL 通过 hover 提示、角标或图标等方式明确告知用户该操作会打开外部详情页，避免用户误点。
+
+#### Scenario: 用户悬停 NFT 头像预览图
+- **WHEN** 用户将鼠标悬停在 NFT 头像预览图上
+- **THEN** 页面显示半透明提示文字「点击查看头像详情」及外部链接图标
+- **AND** 预览图右上角常驻显示「NFT详情」角标
+
 ### Requirement: 使用子站可识别的标识
 跳转链接所使用的 `id` 参数 SHALL 为子站详情页所需主键：NFT 使用 `nft_avatars.id`（即 `nft_city_user.nft_id`），区块使用 `blocks.id`（即 auctions.item_id）。
 

@@ -40,11 +40,9 @@ require_once 'includes/header.php';
 .bid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .bid-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.06); text-decoration: none; color: inherit; transition: transform .2s, box-shadow .2s; display: flex; flex-direction: column; }
 .bid-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
-.bid-img { aspect-ratio: 1/1; background: #f5f5f5; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.bid-img { aspect-ratio: 1/1; background: #f5f5f5; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .bid-img img { width: 100%; height: 100%; object-fit: cover; }
 .bid-img .ph { color: #ccc; font-size: 40px; }
-.bid-ext-link { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; opacity: 0; transition: opacity .2s; }
-.bid-img:hover .bid-ext-link { opacity: 1; }
 .bid-body { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; }
 .bid-title { font-size: 15px; font-weight: bold; color: #222; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bid-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #eef2ff; color: #4f46e5; margin-bottom: 6px; }
@@ -84,19 +82,11 @@ require_once 'includes/header.php';
             }
             // 完整 URL 直接用，相对路径加 / 前缀
             $imgUrl = $img ? (preg_match('#^https?://#', $img) ? $img : '/' . ltrim($img, '/')) : '';
-            // 子站详情页链接
-            $extUrl = '';
-            if ($a['item_type'] === 'nft' && !empty($detail['nft_id'])) {
-                $extUrl = 'https://nft.58.tl/nft/view.php?id=' . intval($detail['nft_id']);
-            } elseif ($a['item_type'] === 'block' && !empty($detail['block_id'])) {
-                $extUrl = 'https://block.58.tl/block/view.php?id=' . intval($detail['block_id']);
-            }
             $isEnded = $tab === 'ended';
         ?>
         <a class="bid-card" href="view.php?id=<?= $a['id'] ?>">
             <div class="bid-img">
                 <?php if ($imgUrl): ?><img src="<?= htmlspecialchars($imgUrl) ?>" alt=""><?php else: ?><span class="ph"><i class="fas fa-image"></i></span><?php endif; ?>
-                <?php if ($extUrl): ?><span class="bid-ext-link" onclick="event.stopPropagation();event.preventDefault();window.open('<?= htmlspecialchars($extUrl) ?>','_blank');">查看<?= $a['item_type'] === 'nft' ? '头像' : '区块' ?>详情</span><?php endif; ?>
             </div>
             <div class="bid-body">
                 <span class="bid-tag <?= $a['item_type'] === 'nft' ? 'nft' : '' ?> <?= $isEnded && $a['status'] === 'sold' ? 'sold' : ($isEnded ? 'ended' : '') ?>">
