@@ -201,7 +201,8 @@ if (!function_exists('city_portal_render')) {
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="/city/city.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="/assets/css/city-portal.css" type="text/css" media="all" />
+    <!-- v=20260906：升级缓存指纹，强制浏览器/CDN 重新拉取新样式（旧版 css 无 5 列统计/9 区/页脚样式） -->
+    <link rel="stylesheet" href="/assets/css/city-portal.css?v=20260906" type="text/css" media="all" />
     <script>
     var _hmt=_hmt||[];
     (function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();
@@ -210,7 +211,7 @@ if (!function_exists('city_portal_render')) {
 <body>
     <div class="container breadcrumb">
         <a href="/index.php">首页</a> &gt;
-        <a href="/top200city.php">TOP200城市</a> &gt;
+        <a href="/all-cities.php">城市列表</a> &gt;
         <span><?= cp_e($cityName) ?>区块城市</span>
     </div>
     <header>
@@ -245,8 +246,13 @@ if (!function_exists('city_portal_render')) {
         <section class="cp-hero">
             <div class="cp-hero-avatar"><img src="<?= cp_e(cp_avatar_svg($cityName)) ?>" alt="<?= cp_e($cityName) ?>城市"></div>
             <div class="cp-hero-main">
-                <h1 class="cp-city-name"><?= cp_e($cityName) ?>区块城市</h1>
-                <p class="cp-slogan"><?= cp_e(trim((string)($profile['slogan'] ?? '')) ?: ('共建' . $cityName . '元宇宙')) ?></p>
+                <div class="cp-hero-top">
+                    <div class="cp-hero-titles">
+                        <h1 class="cp-city-name"><?= cp_e($cityName) ?>区块城市</h1>
+                        <p class="cp-slogan"><?= cp_e(trim((string)($profile['slogan'] ?? '')) ?: ('共建' . $cityName . '元宇宙')) ?></p>
+                    </div>
+                    <a class="cp-enter-btn" href="<?= cp_e($enterUrl) ?>" rel="nofollow">进入<?= cp_e($cityName) ?>区块城市 →</a>
+                </div>
                 <div class="cp-statgrid">
                     <div class="cp-stat"><span class="cp-stat-label">全国排名</span><span class="cp-stat-value">第<?= cp_e($rank) ?>名</span></div>
                     <div class="cp-stat"><span class="cp-stat-label">现有居民</span><span class="cp-stat-value"><?= cp_e($residents) ?>人</span></div>
@@ -254,7 +260,6 @@ if (!function_exists('city_portal_render')) {
                     <div class="cp-stat"><span class="cp-stat-label">人气值</span><span class="cp-stat-value"><?= cp_e(cp_bignum($popularity)) ?></span></div>
                     <div class="cp-stat"><span class="cp-stat-label">基金余额</span><span class="cp-stat-value">¥<?= cp_e($fund) ?></span></div>
                 </div>
-                <a class="cp-enter-btn" href="<?= cp_e($enterUrl) ?>" rel="nofollow">进入<?= cp_e($cityName) ?>区块城市 →</a>
             </div>
         </section>
 
@@ -333,9 +338,14 @@ if (!function_exists('city_portal_render')) {
                     <?php endforeach; ?>
                 </div>
                 <div class="cp-mapstrip" aria-label="区块分区示意">
-                    <?php foreach ($zones as $z): $st = $zoneStats[$z] ?? null; ?>
-                        <span class="cp-minizone"<?= !empty($byZone[$z]) ? ' title="' . cp_e($byZone[$z]) . '"' : '' ?>>
-                            <b><?= $z ?></b><?= $st && (int)$st['opened'] > 0 ? '<i class="cp-mini-open">' . (int)$st['opened'] . '</i>' : '' ?><?= !empty($byZone[$z]) ? cp_e($byZone[$z]) : '区' ?>
+                    <?php foreach ($zones as $z):
+                        $st = $zoneStats[$z] ?? null;
+                        $open = $st ? (int)$st['opened'] : 0;
+                        $zt   = $st ? (int)$st['total'] : 0;
+                        $zn   = !empty($byZone[$z]) ? $byZone[$z] : '';
+                    ?>
+                        <span class="cp-minizone"<?= $zn !== '' ? ' title="' . cp_e($zn . '区 · 已开 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
+                            <b><?= $z ?></b><?= $open > 0 ? '<i class="cp-mini-open">' . $open . '</i>' : '' ?>
                         </span>
                     <?php endforeach; ?>
                 </div>
@@ -344,12 +354,14 @@ if (!function_exists('city_portal_render')) {
                 <div class="cp-zones">
                     <?php foreach ($zones as $z):
                         $st = $zoneStats[$z] ?? ['total' => 0, 'opened' => 0];
-                        $zoneName = !empty($byZone[$z]) ? $byZone[$z] : $z . ' 区';
+                        $areaName = !empty($byZone[$z]) ? (string)$byZone[$z] : '';
+                        $zt   = (int)$st['total'];
+                        $open = (int)$st['opened'];
                     ?>
-                        <a class="cp-zone" href="https://block.58.tl/city.php?name=<?= cp_e($pinyin) ?>#zone-<?= $z ?>" rel="nofollow"<?= !empty($byZone[$z]) ? ' title="' . cp_e($byZone[$z]) . '"' : '' ?>>
+                        <a class="cp-zone" href="https://block.58.tl/city.php?name=<?= cp_e($pinyin) ?>#zone-<?= $z ?>" rel="nofollow"<?= $areaName !== '' ? ' title="' . cp_e($areaName . '区 · 已开 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
                             <span class="cp-zone-letter"><?= cp_e($z) ?> 区</span>
-                            <span class="cp-zone-name"><?= cp_e(cp_clip($zoneName, 7)) ?></span>
-                            <span class="cp-zone-num"><?= (int)$st['opened'] ?> / <?= (int)$st['total'] ?> 块已开</span>
+                            <?php if ($areaName !== ''): ?><span class="cp-zone-name"><?= cp_e(cp_clip($areaName, 7)) ?></span><?php endif; ?>
+                            <span class="cp-zone-num"><?= $zt > 0 ? $open . ' / ' . $zt . ' 块已开' : '该区暂未开放' ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>

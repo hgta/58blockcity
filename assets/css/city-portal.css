@@ -9,15 +9,16 @@
     padding: 16px 15px 30px;
 }
 
-/* ---------- Hero（紧凑横条：坪效优先，桌面总高约 180px） ---------- */
+/* ---------- Hero（紧凑双行：上行=头像+标题/标语+进入按钮，下行=5 项数据条）
+   桌面整体高约 130px，统计卡强制 5 列单行不换行 ---------- */
 .cp-hero {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 16px;
     background: linear-gradient(135deg, #ff6b00 0%, #ff8c33 60%, #ffb380 100%);
     color: #fff;
     border-radius: 12px;
-    padding: 18px 26px;
+    padding: 14px 22px;
     box-shadow: 0 4px 14px rgba(255, 107, 0, .22);
 }
 
@@ -26,8 +27,8 @@
 }
 
 .cp-hero-avatar img {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, .85);
     background: #fff8f0;
@@ -39,60 +40,85 @@
     min-width: 0;
 }
 
+.cp-hero-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.cp-hero-titles {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .cp-city-name {
-    font-size: 24px;
+    font-size: 21px;
     font-weight: 700;
     margin: 0;
-    letter-spacing: 1px;
+    line-height: 1.25;
+    letter-spacing: .5px;
 }
 
 .cp-slogan {
-    font-size: 13px;
+    font-size: 12px;
     color: rgba(255, 255, 255, .92);
-    margin: 2px 0 10px;
+    margin: 2px 0 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .cp-statgrid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
-    margin-bottom: 10px;
 }
 
 .cp-stat {
     background: rgba(255, 255, 255, .16);
     border: 1px solid rgba(255, 255, 255, .35);
     border-radius: 8px;
-    padding: 7px 10px;
+    padding: 6px 10px;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    min-height: 0;
 }
 
 .cp-stat-label {
     font-size: 11px;
     color: rgba(255, 255, 255, .88);
+    line-height: 1.3;
 }
 
 .cp-stat-value {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
-    word-break: break-all;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cp-enter-btn {
-    display: inline-block;
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
     background: #fff;
     color: #ff6b00;
     font-weight: 700;
-    padding: 8px 20px;
+    font-size: 13px;
+    padding: 7px 16px;
     border-radius: 999px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
     transition: transform .15s ease;
 }
 
 .cp-enter-btn:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     color: #e05d00;
 }
 
@@ -303,13 +329,18 @@
     margin-right: 3px;
 }
 
-.cp-minizone b i.cp-mini-open {
+.cp-minizone i.cp-mini-open {
     font-style: normal;
     color: #ff6b00;
+    font-weight: 700;
+    font-size: 11px;
+    margin-left: 1px;
 }
 
-.cp-minizone b i.cp-mini-open::before {
+.cp-minizone i.cp-mini-open::before {
     content: "·";
+    margin-right: 2px;
+    color: #ffb380;
 }
 
 /* ---------- BCT ---------- */
@@ -632,6 +663,7 @@
 }
 
 .cp-zone-num {
+    margin-top: 4px;
     font-size: 11px;
     color: #999;
 }
@@ -802,12 +834,28 @@ header .nav-button:hover {
     }
 
     .cp-hero-avatar img {
-        width: 64px;
-        height: 64px;
+        width: 56px;
+        height: 56px;
+    }
+
+    .cp-hero-top {
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cp-slogan {
+        white-space: normal;
+    }
+
+    .cp-enter-btn {
+        margin-left: 0;
+        padding: 6px 16px;
     }
 
     .cp-statgrid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
     }
 
     /* 5 块在 2 列下为 2+2+1，第 5 卡（基金余额）跨整行 */
@@ -816,11 +864,8 @@ header .nav-button:hover {
     }
 
     .cp-stat-value {
-        font-size: 16px;
-    }
-
-    .cp-enter-btn {
-        padding: 7px 18px;
+        font-size: 15px;
+        white-space: normal;
     }
 
     .cp-card {
