@@ -13,6 +13,9 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/City.php';
 require_once __DIR__ . '/includes/city-portal-render.php';
 
+// 登录态：导航按钮随会话切换（session 须在一切输出前开启）
+session_start();
+
 // 缓存有效期（秒）：TTL 内直接吐缓存文件；批量重生成由 city/build-static.php 覆盖
 if (!defined('CITY_PORTAL_CACHE_TTL')) {
     define('CITY_PORTAL_CACHE_TTL', 600);
@@ -47,6 +50,7 @@ if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < CITY_PORTAL_CACHE_
 
 // ===== 实时渲染 =====
 $ctx  = city_portal_build_ctx($pdo, $city, $pinyin);
+$ctx['logged_in'] = !empty($_SESSION['user_id']);
 $html = city_portal_render($ctx);
 
 // ===== 回填缓存（临时文件 + rename 原子替换；失败静默不影响在线输出）=====

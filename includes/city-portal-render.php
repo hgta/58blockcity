@@ -130,6 +130,8 @@ if (!function_exists('city_portal_render')) {
         $portal  = $ctx['portal'];
         $pinyin  = $ctx['pinyin'];
         $meta    = $ctx['meta'];
+        // 登录态（city.php 由 session 注入；build-static.php 无会话默认未登录）
+        $loggedIn = !empty($ctx['logged_in']);
 
         $cityName  = $portal['city_name'] ?: ($city['name'] ?? '');
         // Schema.org addressRegion：原值已带行政后缀则原样，否则补「市」
@@ -151,6 +153,7 @@ if (!function_exists('city_portal_render')) {
         $residents = number_format((int)($city['resident_count'] ?? 0));
         $blocksCnt = number_format((int)($city['activated_blocks'] ?? 0));
         $fund      = number_format((float)($city['current_balance'] ?? ($city['total_fund'] ?? 0)), 1);
+        $popularity = (int)($city['popularity'] ?? 0);
         $areaCode  = (string)($city['area_code'] ?? '');
         $enterUrl  = $areaCode !== '' ? "https://www.blockcity.pub/{$areaCode}?iclc" : 'https://www.blockcity.pub/?iclc';
         $pageUrl   = 'https://58.tl/city/' . $pinyin . '.html';
@@ -212,16 +215,24 @@ if (!function_exists('city_portal_render')) {
     </div>
     <header>
         <div class="container header-container">
-            <div class="logo">
+            <a class="logo" href="/index.php" title="返回 58区块城市 首页">
                 <div class="logo-img">58</div>
                 <div class="logo-text">区块城市<span>元宇宙同城生活服务平台</span></div>
-            </div>
+            </a>
             <div class="user-actions">
-                <a href="/index.php" class="nav-button">返回首页</a>
-                <a href="https://nft.58.tl/" class="nav-button">NFT交易</a>
+                <a href="https://block.58.tl/" class="nav-button">区块交易</a>
+                <a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
+                <a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
+                <a href="https://mall.58.tl/" class="nav-button">人气商城</a>
                 <a href="https://v.58.tl/" class="nav-button">互访圈</a>
-                <a href="/top200city.php" class="nav-button">TOP200城市</a>
-                <a href="https://www.blockcity.vip/pages/user/user/?iclc" class="nav-button">我的区块</a>
+                <a href="https://bid.58.tl/" class="nav-button">拍卖</a>
+                <?php if ($loggedIn): ?>
+                    <a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#ff6b00;color:#fff;">个人中心</a>
+                    <a href="/auth/logout.php" class="nav-button">退出</a>
+                <?php else: ?>
+                    <a href="/auth/login.php" class="nav-button" style="background:#ff6b00;color:#fff;">登录</a>
+                    <a href="/auth/register.php" class="nav-button">注册</a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -240,6 +251,7 @@ if (!function_exists('city_portal_render')) {
                     <div class="cp-stat"><span class="cp-stat-label">全国排名</span><span class="cp-stat-value">第<?= cp_e($rank) ?>名</span></div>
                     <div class="cp-stat"><span class="cp-stat-label">现有居民</span><span class="cp-stat-value"><?= cp_e($residents) ?>人</span></div>
                     <div class="cp-stat"><span class="cp-stat-label">开启区块数</span><span class="cp-stat-value"><?= cp_e($blocksCnt) ?></span></div>
+                    <div class="cp-stat"><span class="cp-stat-label">人气值</span><span class="cp-stat-value"><?= cp_e(cp_bignum($popularity)) ?></span></div>
                     <div class="cp-stat"><span class="cp-stat-label">基金余额</span><span class="cp-stat-value">¥<?= cp_e($fund) ?></span></div>
                 </div>
                 <a class="cp-enter-btn" href="<?= cp_e($enterUrl) ?>" rel="nofollow">进入<?= cp_e($cityName) ?>区块城市 →</a>
@@ -291,6 +303,14 @@ if (!function_exists('city_portal_render')) {
 
         <?php /* ============ 🏘 区块街景 ============ */ ?>
         <?php $blocksMod = $portal['blocks'] ?? ['ok' => false, 'count' => 0, 'items' => []]; ?>
+        <?php
+            // 9 区基础数据：zone_stats（CityPortal 聚合）、现实区名映射（city_profiles.districts）
+            $zoneStats = $blocksMod['zone_stats'] ?? [];
+            $districts = cp_json_arr($profile['districts'] ?? '');
+            $byZone = [];
+            if ($districts) { foreach ($districts as $d) { $byZone[strtoupper((string)($d['zone'] ?? ''))] = (string)($d['area'] ?? ''); } }
+            $zones = ['A','B','C','D','E','F','G','H','Z'];
+        ?>
         <section class="cp-card" id="city-blocks">
             <h2 class="cp-card-title"><span class="cp-dot"></span>🏘 区块街景
                 <a class="cp-more" href="<?= cp_e($L['blocks']) ?>" rel="nofollow">进入区块地图 →</a></h2>
@@ -312,21 +332,28 @@ if (!function_exists('city_portal_render')) {
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <div class="cp-mapstrip" aria-label="区块分区示意">
+                    <?php foreach ($zones as $z): $st = $zoneStats[$z] ?? null; ?>
+                        <span class="cp-minizone"<?= !empty($byZone[$z]) ? ' title="' . cp_e($byZone[$z]) . '"' : '' ?>>
+                            <b><?= $z ?></b><?= $st && (int)$st['opened'] > 0 ? '<i class="cp-mini-open">' . (int)$st['opened'] . '</i>' : '' ?><?= !empty($byZone[$z]) ? cp_e($byZone[$z]) : '区' ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
             <?php else: ?>
-                <div class="cp-empty">该城暂无已命名的区块，<a href="<?= cp_e($L['blocks']) ?>" rel="nofollow">去区块地图认领你的第 1 个区块 →</a></div>
+                <div class="cp-zones-tip">该城还没有被命名认领的区块，<a href="<?= cp_e($L['blocks']) ?>" rel="nofollow">去区块地图抢注你的地盘 →</a></div>
+                <div class="cp-zones">
+                    <?php foreach ($zones as $z):
+                        $st = $zoneStats[$z] ?? ['total' => 0, 'opened' => 0];
+                        $zoneName = !empty($byZone[$z]) ? $byZone[$z] : $z . ' 区';
+                    ?>
+                        <a class="cp-zone" href="https://block.58.tl/city.php?name=<?= cp_e($pinyin) ?>#zone-<?= $z ?>" rel="nofollow"<?= !empty($byZone[$z]) ? ' title="' . cp_e($byZone[$z]) . '"' : '' ?>>
+                            <span class="cp-zone-letter"><?= cp_e($z) ?> 区</span>
+                            <span class="cp-zone-name"><?= cp_e(cp_clip($zoneName, 7)) ?></span>
+                            <span class="cp-zone-num"><?= (int)$st['opened'] ?> / <?= (int)$st['total'] ?> 块已开</span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
             <?php endif; ?>
-            <?php
-                // 9 区 mini 卡（现实区名若 city_profiles.districts 提供，否则仅 A~Z 占位）
-                $districts = cp_json_arr($profile['districts'] ?? '');
-                $byZone = [];
-                if ($districts) { foreach ($districts as $d) { $byZone[strtoupper((string)($d['zone'] ?? ''))] = (string)($d['area'] ?? ''); } }
-                $zones = ['A','B','C','D','E','F','G','H','Z'];
-            ?>
-            <div class="cp-mapstrip" aria-label="区块分区示意">
-                <?php foreach ($zones as $z): ?>
-                    <span class="cp-minizone"><b><?= $z ?></b><?= !empty($byZone[$z]) ? cp_e('·' . $byZone[$z]) : '区' ?></span>
-                <?php endforeach; ?>
-            </div>
         </section>
 
         <?php /* ============ 💰 BCT 行情 ============ */ ?>
@@ -414,11 +441,11 @@ if (!function_exists('city_portal_render')) {
             <?php endif; ?>
             <?php if ($circlesMod['count'] > 0): ?>
                 <div class="cp-cgrid">
-                    <?php foreach ($circlesMod['items'] as $c): ?>
+                    <?php foreach ($circlesMod['items'] as $c): $cBlk = (int)($c['block_count'] ?? 0); ?>
                         <a class="cp-ccard" href="<?= cp_e(SeoHelper::circleUrl($c['id'], $c['name'])) ?>">
                             <span class="cp-ccard-name"><?= cp_e($c['name']) ?></span>
                             <span class="cp-ccard-desc"><?= cp_e(cp_clip($c['description'] ?: '暂无简介', 40)) ?></span>
-                            <span class="cp-ccard-meta">圈主 <?= cp_e($c['username'] ?: '匿名') ?><?= $c['category'] ? ' · ' . cp_e($c['category']) : '' ?></span>
+                            <span class="cp-ccard-meta">圈主 <?= cp_e($c['username'] ?: '匿名') ?><?= $c['category'] ? ' · ' . cp_e($c['category']) : '' ?><?= $cBlk > 0 ? ' · ' . $cBlk . ' 个区块' : '' ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -470,35 +497,47 @@ if (!function_exists('city_portal_render')) {
         endif; ?>
     </div>
 
-    <footer>
+    <!-- 底部：与首页 index.php 同款 5 栏深色页脚（视觉/链接逐项对齐） -->
+    <footer class="cp-footer">
         <div class="container">
-            <div class="footer-container">
-                <div class="footer-column"><h3>关于58区块城市</h3><ul>
-                    <li><a href="https://www.blockcity.vip/pages/index/company/?iclc=1">公司简介</a></li>
-                    <li><a href="https://www.blockcity.vip/zt/pages/invest/plan/?iclc=1">元宇宙愿景</a></li>
-                    <li><a href="https://www.blockcity.vip/pages/index/help3?iclc=1&id=72&type=7">产品介绍</a></li>
-                    <li><a href="https://www.blockcity.pub/pages/index/book/?iclc=1">元宇宙白皮书</a></li>
-                </ul></div>
-                <div class="footer-column"><h3>帮助中心</h3><ul>
-                    <li><a href="/help/help.html">新手指南</a></li>
-                    <li><a href="#">元宇宙入门</a></li>
-                    <li><a href="https://mp.weixin.qq.com/s/KWoNXzeldh3GxI9uS2O80g">用户答疑</a></li>
-                    <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">常见问题</a></li>
-                </ul></div>
-                <div class="footer-column"><h3>商家服务</h3><ul>
-                    <li><a href="/news.html">区块新闻</a></li>
-                    <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
-                    <li><a href="https://www.blockcity.pub/pages/index/block/?iclc=1">9区价格表</a></li>
-                    <li><a href="http://blockcity.pub/zc/?iclc">营销推广</a></li>
-                </ul></div>
-                <div class="footer-column"><h3>关注我们</h3><ul>
-                    <li><a href="#">BlockCity微信公众号</a></li>
-                    <li><a href="#">BlockCity微博</a></li>
-                    <li><a href="#">BlockCity小红书</a></li>
-                    <li><a href="https://work.weixin.qq.com/kfid/kfc5e3b38b343460881">BlockCity在线客服</a></li>
-                </ul></div>
+            <div class="cp-footer-grid">
+                <div class="cp-fcol-about">
+                    <h4>关于58区块城市</h4>
+                    <p>58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理，为用户提供虚拟城市探索、数字资产交易的一站式体验。</p>
+                </div>
+                <div>
+                    <h4>快速链接</h4>
+                    <ul>
+                        <li><a href="https://block.58.tl/">区块交易</a></li>
+                        <li><a href="https://bct.58.tl/">BCT交易</a></li>
+                        <li><a href="https://mall.58.tl/">人气商城</a></li>
+                        <li><a href="https://nft.58.tl/">NFT头像</a></li>
+                        <li><a href="https://bid.58.tl/">拍卖</a></li>
+                        <li><a href="https://club.58.tl/">社区</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>帮助支持</h4>
+                    <ul>
+                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">使用指南</a></li>
+                        <li><a href="https://www.blockcity.pub/?iclc=1">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
+                        <li><a href="/news.php">区块新闻</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>关注我们</h4>
+                    <div class="cp-footer-qr">
+                        <figure><img src="/images/qr-discount.png" alt="7.5折购地"><figcaption>7.5折购地</figcaption></figure>
+                        <figure><img src="/images/qr-customer-service.png" alt="客服微信"><figcaption>客服微信</figcaption></figure>
+                    </div>
+                </div>
+                <div>
+                    <h4>联系我们</h4>
+                    <p class="cp-fcol-contact">📧 support@58.tl<br>🌐 www.58.tl<br>📍 元宇宙同城生态</p>
+                </div>
             </div>
-            <div class="copyright">© 2025 58区块城市 | BlockCity DAO 版权所有 | 基于元宇宙技术的下一代同城服务平台</div>
+            <div class="cp-footer-copy">© 2025 58区块城市 | BlockCity 版权所有 | 基于元宇宙技术的下一代同城服务平台</div>
         </div>
     </footer>
     <script src="/city/city.js"></script>

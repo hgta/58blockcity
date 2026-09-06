@@ -66,7 +66,7 @@ class CityPortal {
 
     /* ================= 各模块 getter ================= */
 
-    /** 🏘 区块街景：最新命名区块（有名字 + 已售出/预留） */
+    /** 🏘 区块街景：最新命名区块（有名字 + 已售出/预留）+ 分区统计 zone_stats */
     public function blocks($cityId) {
         return $this->guard(function () use ($cityId) {
             $sql = "SELECT zone, block_number, name, status, display_type,
@@ -97,7 +97,33 @@ class CityPortal {
                     'updated_at' => $r['updated_at'] ?? '',
                 ];
             }
-            return $this->pack($items);
+            $res = $this->pack($items);
+
+            // 分区统计：每区总块数 + 已开(售出/预留)块数，供空态 9 区概览 / mapstrip 使用。
+            // 单独 try：聚合失败只丢 zone_stats，不影响命名区块主结果。
+            $res['zone_stats'] = [];
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT zone,
+                            COUNT(*) AS total,
+                            SUM(status IN ('sold','reserved')) AS opened
+                     FROM blocks WHERE city_id = ? GROUP BY zone"
+                );
+                $stmt->execute([(int)$cityId]);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $z = strtoupper(trim((string)($r['zone'] ?? '')));
+                    if ($z === '') {
+                        continue;
+                    }
+                    $res['zone_stats'][$z] = [
+                        'total'  => (int)($r['total'] ?? 0),
+                        'opened' => (int)($r['opened'] ?? 0),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                error_log('[CityPortal::blocks] zone_stats 聚合失败: ' . $e->getMessage());
+            }
+            return $res;
         });
     }
 
@@ -196,7 +222,8 @@ class CityPortal {
             }
             $this->_load('Circle');
             $circle = new Circle($this->pdo);
-            $rows = $circle->getCirclesByCity($cityName, 6, '');
+            // 取 8 个填满 4 列 × 2 行网格，避免第二行右侧缺两个角
+            $rows = $circle->getCirclesByCity($cityName, 8, '');
             if (!is_array($rows)) {
                 $rows = [];
             }

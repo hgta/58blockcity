@@ -1,22 +1,23 @@
 /* ============================================================
    统一城市门户（city.php / city-portal-render.php）模块样式
-   依赖 city/city.css 提供 基础布局/header/footer/面包屑/定位条
-   主品牌色 #ff6b00（橙）与 #f5f5f5 页面底一致
+   - 依赖 city/city.css 提供 基础布局/container/面包屑/定位条
+   - 页头/页脚/导航在本文件覆盖为与主站首页(index.php)一致的白底风格
+   - 主品牌色 #ff6b00（橙）与 #f5f5f5 页面底一致
    ============================================================ */
 
 .cp-wrap {
     padding: 16px 15px 30px;
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero（紧凑横条：坪效优先，桌面总高约 180px） ---------- */
 .cp-hero {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 18px;
     background: linear-gradient(135deg, #ff6b00 0%, #ff8c33 60%, #ffb380 100%);
     color: #fff;
     border-radius: 12px;
-    padding: 28px 30px;
+    padding: 18px 26px;
     box-shadow: 0 4px 14px rgba(255, 107, 0, .22);
 }
 
@@ -25,10 +26,10 @@
 }
 
 .cp-hero-avatar img {
-    width: 104px;
-    height: 104px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, .85);
+    border: 2px solid rgba(255, 255, 255, .85);
     background: #fff8f0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
 }
@@ -39,41 +40,41 @@
 }
 
 .cp-city-name {
-    font-size: 30px;
+    font-size: 24px;
     font-weight: 700;
-    margin: 0 0 2px;
+    margin: 0;
     letter-spacing: 1px;
 }
 
 .cp-slogan {
-    font-size: 14px;
+    font-size: 13px;
     color: rgba(255, 255, 255, .92);
-    margin: 0 0 14px;
+    margin: 2px 0 10px;
 }
 
 .cp-statgrid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
 }
 
 .cp-stat {
     background: rgba(255, 255, 255, .16);
     border: 1px solid rgba(255, 255, 255, .35);
-    border-radius: 10px;
-    padding: 10px 12px;
+    border-radius: 8px;
+    padding: 7px 10px;
     display: flex;
     flex-direction: column;
 }
 
 .cp-stat-label {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(255, 255, 255, .88);
 }
 
 .cp-stat-value {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     color: #fff;
     word-break: break-all;
@@ -84,7 +85,7 @@
     background: #fff;
     color: #ff6b00;
     font-weight: 700;
-    padding: 10px 22px;
+    padding: 8px 20px;
     border-radius: 999px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
     transition: transform .15s ease;
@@ -300,6 +301,15 @@
     color: #ff6b00;
     font-size: 14px;
     margin-right: 3px;
+}
+
+.cp-minizone b i.cp-mini-open {
+    font-style: normal;
+    color: #ff6b00;
+}
+
+.cp-minizone b i.cp-mini-open::before {
+    content: "·";
 }
 
 /* ---------- BCT ---------- */
@@ -559,20 +569,258 @@
     text-decoration: underline;
 }
 
+/* ---------- 区块街景空态：9 区概览（替代单行灰字空态） ---------- */
+.cp-zones-tip {
+    background: #fafafa;
+    border: 1px dashed #ddd;
+    border-radius: 10px;
+    color: #777;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.cp-zones-tip a {
+    color: #ff6b00;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.cp-zones-tip a:hover {
+    text-decoration: underline;
+}
+
+.cp-zones {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 8px;
+}
+
+.cp-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #f0e3d8;
+    border-radius: 10px;
+    padding: 9px 8px 7px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.cp-zone:hover {
+    border-color: #ffb380;
+    box-shadow: 0 2px 8px rgba(255, 107, 0, .14);
+    transform: translateY(-2px);
+}
+
+.cp-zone-letter {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ff6b00;
+    line-height: 1.3;
+}
+
+.cp-zone-name {
+    max-width: 100%;
+    margin: 2px 0 6px;
+    font-size: 12px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cp-zone-num {
+    font-size: 11px;
+    color: #999;
+}
+
+/* ============================================================
+   头部/导航：覆盖 city.css 旧橙底胶囊风格 → 首页白底深字风格
+   仅门户页加载本文件，不影响其它使用 city.css 的页面
+   ============================================================ */
+header {
+    background: #fff;
+    color: #1a1a2e;
+    padding: 0;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .06);
+}
+
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1a1a2e;
+}
+
+header .logo-img {
+    width: 38px;
+    height: 38px;
+    margin-right: 0;
+    background-color: #ff6b00;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 17px;
+}
+
+header .logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.25;
+}
+
+header .logo-text span {
+    display: block;
+    margin-left: 0;
+    font-size: 11px;
+    font-weight: 400;
+    color: #6b7280;
+    opacity: 1;
+}
+
+header .user-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+header .nav-button {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    color: #4b5563;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    transition: all .2s;
+    transform: none;
+}
+
+header .nav-button:hover {
+    background: #f3f4f6;
+    color: #ff6b00;
+    transform: none;
+}
+
+/* ============================================================
+   页脚：与首页 index.php 同款 5 栏深色页脚
+   ============================================================ */
+.cp-footer {
+    background: #1a1a2e;
+    color: #94a3b8;
+    padding: 48px 0 20px;
+    margin-top: 40px;
+}
+
+.cp-footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.cp-footer-grid h4 {
+    color: #fff;
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.cp-footer-grid ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+    line-height: 2.2;
+}
+
+.cp-footer-grid ul a {
+    color: #64748b;
+    transition: color .2s;
+}
+
+.cp-footer-grid ul a:hover {
+    color: #fff;
+}
+
+.cp-fcol-about p,
+.cp-fcol-contact {
+    font-size: 13px;
+    line-height: 1.9;
+    color: #64748b;
+    margin: 0;
+}
+
+.cp-footer-qr {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cp-footer-qr figure {
+    margin: 0;
+    text-align: center;
+}
+
+.cp-footer-qr img {
+    width: 80px;
+    height: 80px;
+    max-width: 80px;
+    max-height: 80px;
+    background: #fff;
+    border-radius: 6px;
+    padding: 3px;
+    display: block;
+}
+
+.cp-footer-qr figcaption {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 6px;
+    width: 80px;
+    text-align: center;
+}
+
+.cp-footer-copy {
+    border-top: 1px solid #1e293b;
+    padding-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #475569;
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 768px) {
     .cp-hero {
         flex-direction: column;
         text-align: center;
-        padding: 20px;
+        padding: 16px;
+    }
+
+    .cp-hero-avatar img {
+        width: 64px;
+        height: 64px;
     }
 
     .cp-statgrid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    /* 5 块在 2 列下为 2+2+1，第 5 卡（基金余额）跨整行 */
+    .cp-statgrid .cp-stat:last-child {
+        grid-column: span 2;
+    }
+
     .cp-stat-value {
-        font-size: 17px;
+        font-size: 16px;
+    }
+
+    .cp-enter-btn {
+        padding: 7px 18px;
     }
 
     .cp-card {
@@ -581,5 +829,43 @@
 
     .cp-feed-meta {
         padding-left: 0;
+    }
+
+    .cp-zones {
+        grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    }
+
+    header .header-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    header .user-actions {
+        justify-content: center;
+    }
+
+    .cp-footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    header .logo-img {
+        width: 38px;
+        height: 38px;
+        font-size: 17px;
+    }
+
+    header .nav-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .cp-hero {
+        padding: 14px 12px;
+    }
+
+    .cp-footer-grid {
+        grid-template-columns: 1fr;
     }
 }
