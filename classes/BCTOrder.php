@@ -289,6 +289,34 @@ class BCTOrder {
 	}
 
 	/**
+	 * 获取用户订单总数（用于分页）
+	 */
+	public function getUserOrderCount($userId, $type = 'all', $status = 'all') {
+		$sql = "SELECT COUNT(*) FROM bct_orders WHERE user_id = ?";
+		$params = [$userId];
+
+		if ($type === 'buy') {
+			$sql .= " AND type = 'buy'";
+			$params[] = 'buy';
+		} elseif ($type === 'sell') {
+			$sql .= " AND type = 'sell'";
+			$params[] = 'sell';
+		}
+
+		if ($status === 'active') {
+			$sql .= " AND status IN ('pending','processing')";
+		} elseif ($status === 'pending') {
+			$sql .= " AND status = 'pending'";
+		} elseif ($status === 'completed') {
+			$sql .= " AND status = 'completed'";
+		}
+
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return (int)$stmt->fetchColumn();
+	}
+
+	/**
 	 * 获取用户订单统计
 	 */
 	public function getUserOrderStats($userId) {
