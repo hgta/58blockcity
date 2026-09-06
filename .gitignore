@@ -52,3 +52,6 @@ block/admin/.blockcity_token.php
 city/cache/
 data/city-profiles/
 data/city-profiles/*.json
+
+# playwright-cli 会话快照
+.playwright-cli/
