@@ -288,4 +288,4 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
     欢迎您，来自于<a href="https://www.58.tl/top200city.php" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.58.tl/top200city.php" id="cityLink2">点击进入您的区块城市</a>
 </div>
 
-<main class="container">
+<main class="container <?= htmlspecialchars($site_config['main_class'] ?? '') ?>">

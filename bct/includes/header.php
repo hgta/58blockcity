@@ -13,5 +13,14 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../trade.php','icon'=>'exchange-alt','text'=>'交易'],
 ];
 $site_config['schema_search'] = $site_config['schema_search'] ?? 'https://bct.58.tl/search?q={search_term_string}';
+$site_config['main_class'] = 'bct-exchange';
+
+// BCT 交易所主题资源
+$extra = $site_config['extra_head'] ?? '';
+$extra .= "\n<link rel=\"stylesheet\" href=\"https://bct.58.tl/assets/css/exchange-theme.css\">\n";
+$extra .= "<script src=\"https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js\"></script>\n";
+$extra .= "<script src=\"https://bct.58.tl/assets/js/exchange-charts.js\"></script>\n";
+$site_config['extra_head'] = $extra;
+
 require_once __DIR__ . '/../../shared/header.php';
 

@@ -10,7 +10,7 @@ checkLogin();
 // 辅助：返回错误到trade.php
 function fail($msg, $city) {
     $_SESSION['error'] = $msg;
-    header("Location: ../trade.php?city=" . urlencode($city));
+    header("Location: trade.php?city=" . urlencode($city));
     exit;
 }
 
@@ -60,10 +60,10 @@ if ($tradeType === 'platform') {
 // 根据订单类型跳转到不同页面
 if ($type === 'buy') {
     $_SESSION['message'] = "购买订单创建成功";
-    header("Location: ../user/orders.php?type=buy");
+    header("Location: user/orders.php?type=buy");
 } else {
     $_SESSION['message'] = "出售订单创建成功";
-    header("Location: ../user/orders.php?type=sell");
+    header("Location: user/orders.php?type=sell");
 }
 exit();
 ?>

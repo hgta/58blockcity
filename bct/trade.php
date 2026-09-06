@@ -7,8 +7,10 @@ checkLogin();
 
 require_once 'includes/header.php';
 require_once '../classes/UserBCTAccount.php';
+require_once '../classes/CityBCT.php';
 
 $account = new UserBCTAccount($pdo);
+$cityBCT = new CityBCT($pdo);
 
 // 获取城市参数
 $selectedCity = $_GET['city'] ?? '';
@@ -32,6 +34,17 @@ if ($selectedCity) {
 
 $userAccount = $selectedCity && $cityInfo ? $account->getAccount($_SESSION['user_id'], $selectedCity) : null;
 
+// 选中城市的 BCT 行情
+$selectedCityBCT = null;
+if ($selectedCity) {
+    $selectedCityBCT = $cityBCT->getCityBCT($selectedCity);
+    if ($selectedCityBCT) {
+        $changes = $cityBCT->get24hChanges();
+        $selectedCityBCT['change_pct'] = $changes[$selectedCity] ?? 0;
+        $selectedCityBCT['volume_24h'] = $cityBCT->getCity24hVolume($selectedCity);
+    }
+}
+
 // 显示消息
 if (isset($_SESSION['message'])) {
     echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
@@ -44,18 +57,18 @@ if (isset($_SESSION['error'])) {
 }
 ?>
 
-<div class="container">
-    <!-- 页面标题 -->
-    <div class="page-header">
-        <h1>
-            <i class="glyphicon glyphicon-plus"></i>
-            发布交易
-        </h1>
-        <p class="text-muted">发布您的人气值买卖需求</p>
+<div class="bct-page-title" style="padding-top:20px;">
+    <div>
+        <h1><i class="fas fa-plus-circle"></i> 发布交易</h1>
+        <div class="subtitle">发布您的人气值买卖需求</div>
     </div>
+    <div>
+        <a href="market.php" class="btn btn-default"><i class="fas fa-chart-line"></i> 行情中心</a>
+    </div>
+</div>
 
-    <div class="row">
-        <div class="col-md-8">
+<div class="row">
+    <div class="col-md-8">
             <!-- 交易表单卡片 -->
             <div class="card">
                 <div class="card-header">
@@ -144,7 +157,7 @@ if (isset($_SESSION['error'])) {
                                         <input type="number" class="form-control" id="price" name="price" 
                                                min="0.01" max="100" step="0.01" required 
                                                placeholder="请输入单价"
-                                               value="0.10">
+                                               value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 4) : '0.10' ?>">
                                         <small class="form-text text-muted">最低价格: 0.01 元</small>
                                     </div>
                                 </div>
@@ -303,6 +316,22 @@ if (isset($_SESSION['error'])) {
                     </div>
                 </div>
             </div>
+
+            <!-- 城市 BCT 行情卡片 -->
+            <?php if ($selectedCityBCT): ?>
+            <?php $cls = $selectedCityBCT['change_pct'] >= 0 ? 'up' : 'down'; $sign = $selectedCityBCT['change_pct'] >= 0 ? '+' : ''; ?>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4><i class="fas fa-chart-line"></i> <?= htmlspecialchars($selectedCity) ?> 行情</h4>
+                </div>
+                <div class="card-body" style="text-align:center;">
+                    <div style="font-size:28px;font-weight:700;font-family:monospace;">¥<?= number_format($selectedCityBCT['current_price'], 4) ?></div>
+                    <div style="font-size:16px;font-weight:600;margin-top:6px;" class="<?= $cls ?>"><?= $sign ?><?= number_format($selectedCityBCT['change_pct'], 2) ?>%</div>
+                    <div style="font-size:12px;color:var(--bct-text-secondary);margin-top:10px;">24h 成交量 ¥<?= number_format($selectedCityBCT['volume_24h'], 2) ?></div>
+                    <a href="city.php?city=<?= urlencode($selectedCity) ?>" class="btn btn-primary btn-sm" style="margin-top:12px;">查看详情</a>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- 用户账户信息（仅作展示，不影响交易） -->
             <?php if ($userAccount): ?>

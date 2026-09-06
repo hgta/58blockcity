@@ -7,6 +7,28 @@ class UserBCTAccount {
     }
 
     /**
+     * 获取投资组合总览
+     */
+    public function getPortfolioSummary($userId) {
+        $accounts = $this->getUserAccounts($userId);
+
+        $summary = [
+            'total_valuation' => 0,
+            'total_balance' => 0,
+            'total_frozen' => 0,
+            'city_count' => count($accounts)
+        ];
+
+        foreach ($accounts as $account) {
+            $summary['total_valuation'] += $account['valuation'];
+            $summary['total_balance'] += $account['balance'];
+            $summary['total_frozen'] += $account['frozen'];
+        }
+
+        return $summary;
+    }
+
+    /**
      * 获取用户所有城市的BCT账户信息
      */
     public function getUserAccounts($userId) {

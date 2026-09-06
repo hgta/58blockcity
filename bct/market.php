@@ -1,322 +1,209 @@
 <?php
 require_once '../config/database.php';
 require_once 'includes/auth.php';
-require_once 'includes/header.php';
 require_once '../classes/CityBCT.php';
 
 $cityBCT = new CityBCT($pdo);
-$cities = $cityBCT->getAllCitiesBCT();
 
-// 动态计算每个城市24h价格变化
-$changes = [];
+// 获取城市拼音映射
+$cityPinyin = [];
 try {
-    $stmt = $pdo->query("
-        SELECT t.city, 
-            (t.current_price - COALESCE(t.prev_price, t.current_price)) / NULLIF(COALESCE(t.prev_price, t.current_price), 0) * 100 as change_pct
-        FROM (
-            SELECT city, 
-                (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
-                (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
-            FROM city_bct cb
-        ) t
-    ");
+    $stmt = $pdo->query("SELECT name, pinyin FROM cities WHERE status = 'active'");
     while ($row = $stmt->fetch()) {
-        $changes[$row['city']] = round($row['change_pct'], 1);
+        $cityPinyin[$row['name']] = $row['pinyin'];
     }
 } catch (Exception $e) {
-    $changes = [];
+    $cityPinyin = [];
 }
 
-// 显示消息
-if (isset($_SESSION['message'])) {
-    echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>';
-    unset($_SESSION['message']);
+if (isset($_SESSION['message'])) { echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>'; unset($_SESSION['message']); }
+if (isset($_SESSION['error'])) { echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>'; unset($_SESSION['error']); }
+
+$top5Cities = ['北京','上海','广州','深圳','杭州'];
+
+// 分页、排序、搜索
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 50;
+$sort = $_GET['sort'] ?? 'market_cap';
+$order = $_GET['order'] ?? 'desc';
+$search = trim($_GET['search'] ?? '');
+
+$allowedSort = ['market_cap','current_price','change_pct','volume_24h','city'];
+if (!in_array($sort, $allowedSort)) $sort = 'market_cap';
+$order = strtolower($order) === 'asc' ? 'asc' : 'desc';
+
+try {
+    $allCities = $cityBCT->getAllCitiesBCT();
+    $changes = $cityBCT->get24hChanges();
+
+    $cities = [];
+    foreach ($allCities as $city) {
+        $city['change_pct'] = $changes[$city['city']] ?? 0;
+        $city['volume_24h'] = $cityBCT->getCity24hVolume($city['city']);
+        $city['market_cap'] = $city['circulating_supply'] * $city['current_price'];
+        $city['pinyin'] = $cityPinyin[$city['city']] ?? '';
+        $cities[] = $city;
+    }
+
+    // 搜索过滤
+    if ($search !== '') {
+        $cities = array_filter($cities, function($c) use ($search) {
+            $pinyin = $c['pinyin'] ?? '';
+            return stripos($c['city'], $search) !== false || stripos($pinyin, $search) !== false;
+        });
+    }
+
+    // 排序
+    usort($cities, function($a, $b) use ($sort, $order) {
+        $av = $a[$sort] ?? 0;
+        $bv = $b[$sort] ?? 0;
+        if (is_string($av)) { $cmp = strcmp($av, $bv); }
+        else { $cmp = $av <=> $bv; }
+        return $order === 'asc' ? $cmp : -$cmp;
+    });
+
+    // TOP5 数据
+    $top5Data = [];
+    foreach ($top5Cities as $name) {
+        foreach ($cities as $city) { if ($city['city']===$name) { $top5Data[]=$city; break; } }
+    }
+
+    // 分页
+    $total = count($cities);
+    $totalPages = max(1, ceil($total / $perPage));
+    $page = min($page, $totalPages);
+    $offset = ($page - 1) * $perPage;
+    $pagedCities = array_slice($cities, $offset, $perPage);
+
+} catch (Exception $e) {
+    $cities = $pagedCities = $top5Data = [];
+    $total = 0; $totalPages = 1; $page = 1;
+    error_log("BCT market error: " . $e->getMessage());
 }
 
-if (isset($_SESSION['error'])) {
-    echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>';
-    unset($_SESSION['error']);
+function sortUrl($field, $currentSort, $currentOrder, $search) {
+    $newOrder = ($currentSort === $field && $currentOrder === 'desc') ? 'asc' : 'desc';
+    $q = ['sort'=>$field, 'order'=>$newOrder];
+    if ($search) $q['search'] = $search;
+    return '?' . http_build_query($q);
 }
+
+function sortIcon($field, $currentSort, $currentOrder) {
+    if ($currentSort !== $field) return '⇅';
+    return $currentOrder === 'desc' ? '↓' : '↑';
+}
+
+require_once 'includes/header.php';
 ?>
 
-<div class="container">
-    <!-- 页面标题 -->
-    <div class="page-header">
-        <h1>
-            <i class="glyphicon glyphicon-stats"></i>
-            人气值(BCT)行情
-        </h1>
-        <p class="text-muted">查看各城市人气值实时价格与流通情况</p>
+<div class="bct-page-title" style="padding-top:20px;">
+    <div>
+        <h1><i class="fas fa-chart-line"></i> 城市币行情</h1>
+        <div class="subtitle">全部城市 BCT 实时行情 · 市值 · 成交量 · 涨跌幅</div>
     </div>
-
-    <!-- 城市筛选 -->
-    <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col-md-6">
-                    <h2><i class="glyphicon glyphicon-filter"></i> 城市筛选</h2>
-                </div>
-                <div class="col-md-6 text-right">
-                    <div class="input-group">
-                        <input type="text" id="citySearch" class="form-control" placeholder="搜索城市...">
-                        <span class="input-group-btn">
-                            <button class="btn btn-primary" type="button">
-                                <i class="glyphicon glyphicon-search"></i>
-                            </button>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="letter-nav">
-                <div class="letter-nav-container">
-                    <?php 
-                    $letters = range('A', 'Z');
-                    foreach ($letters as $letter): ?>
-                    <a href="#<?= $letter ?>" class="letter-link"><?= $letter ?></a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 热门城市行情 -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h2><i class="glyphicon glyphicon-fire"></i> 热门城市行情</h2>
-        </div>
-        <div class="card-body">
-            <div class="hot-city-grid">
-                <?php 
-                $hotCities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉', '苏州', '天津', '南京'];
-                foreach ($hotCities as $city): 
-                    $cityInfo = array_filter($cities, function($c) use ($city) {
-                        return $c['city'] === $city;
-                    });
-                    $cityInfo = reset($cityInfo);
-                    if ($cityInfo):
-                ?>
-                <a href="#<?= $cityInfo['city'] ?>" class="hot-city-item">
-                    <div class="hot-city-name"><?= htmlspecialchars($cityInfo['city']) ?></div>
-                    <div class="hot-city-price"><?= number_format($cityInfo['current_price'], 2) ?>元</div>
-                    <div class="hot-city-change">
-                        <?php if (!empty($changes[$cityInfo['city']] ?? null)): ?>
-                            <i class="glyphicon glyphicon-arrow-<?= $changes[$cityInfo['city']] ?? null >= 0 ? 'up' : 'down' ?> <?= $changes[$cityInfo['city']] ?? null >= 0 ? 'text-success' : 'text-danger' ?>"></i>
-                            <?= $changes[$cityInfo['city']] ?? null >= 0 ? '+' : '' ?><?= number_format($changes[$cityInfo['city']] ?? null, 1) ?>%
-                        <?php else: ?>
-                            <span class="text-muted">--</span>
-                        <?php endif; ?>
-                    </div>
-                </a>
-                <?php endif; endforeach; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- 全部城市行情 -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h2><i class="glyphicon glyphicon-globe"></i> 全部城市行情</h2>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>城市</th>
-                            <th>当前价格</th>
-                            <th>基础价格</th>
-                            <th>流通量</th>
-                            <th>总供应量</th>
-                            <th>24h变化</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($cities)): ?>
-                        <tr>
-                            <td colspan="7" class="text-center">暂无城市数据</td>
-                        </tr>
-                        <?php else: ?>
-                        <?php foreach ($cities as $city): ?>
-                        <tr id="<?= htmlspecialchars($city['city']) ?>">
-                            <td>
-                                <strong><?= htmlspecialchars($city['city']) ?></strong>
-                            </td>
-                            <td><?= number_format($city['current_price'], 4) ?>元</td>
-                            <td><?= number_format($city['base_price'], 4) ?>元</td>
-                            <td><?= number_format($city['circulating_supply']) ?></td>
-                            <td><?= number_format($city['total_supply']) ?></td>
-                            <td>
-                                <?php if (!empty($changes[$city['city']] ?? null)): ?>
-                                    <span class="<?= $changes[$city['city']] ?? null >= 0 ? 'text-success' : 'text-danger' ?>">
-                                        <i class="glyphicon glyphicon-arrow-<?= $changes[$city['city']] ?? null >= 0 ? 'up' : 'down' ?>"></i>
-                                        <?= $changes[$city['city']] ?? null >= 0 ? '+' : '' ?><?= number_format($changes[$city['city']] ?? null, 1) ?>%
-                                    </span>
-                                <?php else: ?>
-                                    <span class="text-muted">--</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <a href="trade.php?city=<?= urlencode($city['city']) ?>" class="btn btn-sm btn-primary">
-                                    交易
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- 行情说明 -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h2><i class="glyphicon glyphicon-info-sign"></i> 行情说明</h2>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>价格形成机制</h4>
-                    <p>各城市人气值(BCT)价格由市场供需关系决定，系统会根据买卖订单比例自动调整价格，最低不低于基础价格0.10元。</p>
-                </div>
-                <div class="col-md-6">
-                    <h4>流通量说明</h4>
-                    <p>流通量指当前市场上可交易的人气值数量，总供应量为2100万，每个城市独立计算。</p>
-                </div>
-            </div>
-        </div>
+    <div>
+        <a href="trade.php" class="btn btn-primary"><i class="fas fa-plus"></i> 发布交易</a>
     </div>
 </div>
 
-<!-- 页面特定样式 -->
-<style>
-/* 字母导航 - 与首页一致 */
-.letter-nav {
-    background-color: white;
-    padding: 10px 0;
-    position: sticky;
-    top: 80px;
-    z-index: 90;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-body">
+        <form method="get" class="form-inline" style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <input type="text" name="search" class="form-control bct-market-search" style="width:100%;" placeholder="搜索城市名或拼音..." value="<?= htmlspecialchars($search) ?>">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> 搜索</button>
+            <?php if ($search): ?>
+            <a href="market.php" class="btn btn-default">重置</a>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
 
-.letter-nav-container {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 15px;
-    justify-content: center;
-}
+<?php if (!empty($top5Data) && $page === 1 && !$search): ?>
+<div class="bct-top5-grid" style="margin-bottom:24px;">
+    <?php foreach ($top5Data as $city):
+        $cls = $city['change_pct'] >= 0 ? 'up' : 'down';
+        $sign = $city['change_pct'] >= 0 ? '+' : '';
+    ?>
+    <a href="city.php?city=<?= urlencode($city['city']) ?>" class="bct-city-card">
+        <div class="city-name"><?= htmlspecialchars($city['city']) ?></div>
+        <div class="city-price">¥<?= number_format($city['current_price'], 4) ?></div>
+        <div class="city-change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</div>
+        <div class="city-meta">
+            <span>24h 成交 ¥<?= number_format($city['volume_24h'], 0) ?></span>
+        </div>
+    </a>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
-.letter-nav-container::-webkit-scrollbar {
-    display: none;
-}
+<div class="card">
+    <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-list-ol"></i> 全部城市币</h3></div>
+    <div class="table-responsive">
+        <table class="table bct-market-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>城市</th>
+                    <th><a href="<?= sortUrl('current_price', $sort, $order, $search) ?>">价格 <span class="sort-icon"><?= sortIcon('current_price', $sort, $order) ?></span></a></th>
+                    <th><a href="<?= sortUrl('change_pct', $sort, $order, $search) ?>">24h 涨跌 <span class="sort-icon"><?= sortIcon('change_pct', $sort, $order) ?></span></a></th>
+                    <th><a href="<?= sortUrl('volume_24h', $sort, $order, $search) ?>">24h 成交量 <span class="sort-icon"><?= sortIcon('volume_24h', $sort, $order) ?></span></a></th>
+                    <th><a href="<?= sortUrl('market_cap', $sort, $order, $search) ?>">流通市值 <span class="sort-icon"><?= sortIcon('market_cap', $sort, $order) ?></span></a></th>
+                    <th>流通量 / 总量</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($pagedCities)): ?>
+                <tr><td colspan="8" class="text-center" style="padding:40px;color:var(--bct-text-secondary);">暂无城市数据</td></tr>
+                <?php else: ?>
+                <?php foreach ($pagedCities as $idx => $city):
+                    $rank = $offset + $idx + 1;
+                    $isTop5 = in_array($city['city'], $top5Cities);
+                    $cls = $city['change_pct'] >= 0 ? 'up' : 'down';
+                    $sign = $city['change_pct'] >= 0 ? '+' : '';
+                ?>
+                <tr class="<?= $isTop5 ? 'top5' : '' ?>">
+                    <td><span class="rank"><?= $rank ?></span></td>
+                    <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
+                    <td class="price">¥<?= number_format($city['current_price'], 4) ?></td>
+                    <td class="change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</td>
+                    <td class="volume">¥<?= number_format($city['volume_24h'], 2) ?></td>
+                    <td class="market-cap">¥<?= number_format($city['market_cap'], 2) ?></td>
+                    <td><?= number_format($city['circulating_supply']) ?> / <?= number_format($city['total_supply']) ?></td>
+                    <td>
+                        <a href="city.php?city=<?= urlencode($city['city']) ?>" class="btn btn-sm btn-primary">交易</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 
-.letter-link {
-    padding: 5px 12px;
-    font-size: 16px;
-    color: #666;
-    border-radius: 15px;
-    margin-right: 5px;
-}
+    <?php if ($totalPages > 1): ?>
+    <div style="padding:16px;display:flex;justify-content:center;">
+        <ul class="pagination">
+            <?php if ($page > 1): ?>
+            <li><a href="?<?= http_build_query(['page'=>$page-1,'sort'=>$sort,'order'=>$order]+($search?['search'=>$search]:[])) ?>">上一页</a></li>
+            <?php else: ?><li class="disabled"><span>上一页</span></li><?php endif; ?>
 
-.letter-link.active, .letter-link:hover {
-    background-color: #ff6b00;
-    color: white;
-}
+            <?php for ($i=1;$i<=$totalPages;$i++):
+                if ($i==1 || $i==$totalPages || abs($i-$page)<=2):
+                    $active = $i==$page ? 'class="active"' : '';
+                    $q = ['page'=>$i,'sort'=>$sort,'order'=>$order]+($search?['search'=>$search]:[]);
+            ?>
+            <li <?= $active ?>><a href="?<?= http_build_query($q) ?>"><?= $i ?></a></li>
+            <?php elseif (abs($i-$page)==3): ?><li class="disabled"><span>...</span></li><?php endif; ?>
+            <?php endfor; ?>
 
-/* 热门城市网格 */
-.hot-city-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 15px;
-}
-
-.hot-city-item {
-    background-color: #fff8f5;
-    padding: 15px;
-    text-align: center;
-    border-radius: 5px;
-    color: #ff6b00;
-    font-weight: bold;
-    transition: all 0.3s;
-    border: 1px solid #ffe0d2;
-}
-
-.hot-city-item:hover {
-    background-color: #ff6b00;
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(255,107,0,0.2);
-}
-
-.hot-city-name {
-    font-size: 16px;
-    margin-bottom: 5px;
-}
-
-.hot-city-price {
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-.hot-city-change {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-/* 响应式调整 */
-@media (max-width: 992px) {
-    .hot-city-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .hot-city-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 576px) {
-    .hot-city-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .letter-nav {
-        top: 140px;
-    }
-}
-</style>
-
-<!-- 页面特定脚本 -->
-<script>
-$(document).ready(function() {
-    // 城市搜索功能
-    $('#citySearch').on('keyup', function() {
-        var value = $(this).val().toLowerCase();
-        $('table tbody tr').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
-    });
-    
-    // 字母导航点击滚动
-    $('.letter-link').click(function(e) {
-        e.preventDefault();
-        var letter = $(this).attr('href');
-        var target = $(letter);
-        if (target.length) {
-            $('html, body').animate({
-                scrollTop: target.offset().top - 100
-            }, 500);
-        }
-    });
-});
-</script>
+            <?php if ($page < $totalPages): ?>
+            <li><a href="?<?= http_build_query(['page'=>$page+1,'sort'=>$sort,'order'=>$order]+($search?['search'=>$search]:[])) ?>">下一页</a></li>
+            <?php else: ?><li class="disabled"><span>下一页</span></li><?php endif; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
+</div>
 
 <?php require_once 'includes/footer.php'; ?>

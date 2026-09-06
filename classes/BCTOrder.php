@@ -263,7 +263,76 @@ class BCTOrder {
         }
     }
 	
-	/**
+    /**
+     * 获取买卖盘深度
+     */
+    public function getOrderBook($city, $type = null, $limit = 10) {
+        $sql = "
+            SELECT price, SUM(amount) as total_amount, COUNT(*) as order_count
+            FROM bct_orders
+            WHERE city = ? AND status IN ('pending', 'processing')
+        ";
+        $params = [$city];
+
+        if ($type === 'sell' || $type === 'buy') {
+            $sql .= " AND type = ?";
+            $params[] = $type;
+        }
+
+        $sql .= " GROUP BY price";
+
+        if ($type === 'sell' || $type === null) {
+            // 卖盘按价格从低到高
+            $sql .= " ORDER BY price ASC";
+        } else {
+            // 买盘按价格从高到低
+            $sql .= " ORDER BY price DESC";
+        }
+
+        $sql .= " LIMIT " . (int)$limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        // 计算累计深度
+        $cumulative = 0;
+        foreach ($rows as &$row) {
+            $cumulative += (float)$row['total_amount'];
+            $row['cumulative_amount'] = $cumulative;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * 获取最新成交记录
+     */
+    public function getRecentTrades($city = null, $limit = 20) {
+        $sql = "
+            SELECT t.*, u.username as seller_name, ub.username as buyer_name,
+                o.type as order_type
+            FROM bct_transactions t
+            LEFT JOIN users u ON t.from_user = u.id
+            LEFT JOIN users ub ON t.to_user = ub.id
+            LEFT JOIN bct_orders o ON t.order_id = o.id
+            WHERE 1=1
+        ";
+        $params = [];
+
+        if ($city) {
+            $sql .= " AND t.city = ?";
+            $params[] = $city;
+        }
+
+        $sql .= " ORDER BY t.created_at DESC LIMIT " . (int)$limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
 	 * 获取用户订单（带分页）
 	 */
 	public function getUserOrders($userId, $type = 'all', $status = 'all', $page = 1, $perPage = 15) {
