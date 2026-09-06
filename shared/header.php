@@ -137,7 +137,7 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
       new LingQue.Monitor().init({id:"LFfavVEfhfo7DVvu"});
     </script>
 </head>
-<body>
+<body class="<?= htmlspecialchars($site_config['body_class'] ?? '') ?>">
 
 <style>
 header { background:#fff; color:#333; border-bottom:1px solid #e8e8e8; position:sticky; top:0; z-index:100; }

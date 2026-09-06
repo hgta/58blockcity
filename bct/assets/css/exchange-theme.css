@@ -488,3 +488,169 @@
   .bct-city-hero .city-price-large { font-size: 28px; }
   .bct-ticker-item { padding: 0 12px; }
 }
+
+/* =========================================================
+   全站深色覆盖：让 header / body / footer 统一为交易所深色
+   ========================================================= */
+
+/* 全局 CSS 变量，供 body/header/footer 统一使用 */
+:root {
+  --bct-bg: #0b0e11;
+  --bct-bg-secondary: #151a21;
+  --bct-bg-tertiary: #1e2329;
+  --bct-bg-hover: #2b3139;
+  --bct-border: #2b3139;
+  --bct-text: #eaecef;
+  --bct-text-secondary: #848e9c;
+  --bct-text-muted: #5e6673;
+  --bct-accent: #f0b90b;
+  --bct-accent-hover: #f8d33a;
+  --bct-up: #0ecb81;
+  --bct-down: #f6465d;
+  --bct-up-bg: rgba(14, 203, 129, 0.1);
+  --bct-down-bg: rgba(246, 70, 93, 0.1);
+  --bct-link: #f0b90b;
+  --bct-radius: 8px;
+  --bct-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* body 级深色 */
+body.bct-theme-dark {
+  background-color: var(--bct-bg);
+  color: var(--bct-text);
+}
+body.bct-theme-dark main.container {
+  background-color: transparent;
+  padding-top: 0;
+}
+
+/* header 深色覆盖 */
+body.bct-theme-dark header {
+  background-color: var(--bct-bg-secondary);
+  border-bottom: 1px solid var(--bct-border);
+  box-shadow: var(--bct-shadow);
+}
+body.bct-theme-dark .header-container { background-color: transparent; }
+body.bct-theme-dark .logo { color: var(--bct-text); }
+body.bct-theme-dark .logo-text strong { color: var(--bct-text); }
+body.bct-theme-dark .logo-text span { color: var(--bct-text-secondary); }
+body.bct-theme-dark .logo-img {
+  background: linear-gradient(135deg, var(--bct-accent), #d4a009);
+  color: #000;
+}
+body.bct-theme-dark .nav-button {
+  color: var(--bct-text-secondary);
+  background-color: transparent;
+}
+body.bct-theme-dark .nav-button:hover {
+  background-color: var(--bct-bg-hover);
+  color: var(--bct-accent);
+}
+body.bct-theme-dark .nav-button[style*="background:#ff6b00"] {
+  background: var(--bct-accent) !important;
+  color: #000 !important;
+}
+body.bct-theme-dark .nav-button[style*="background:#ff6b00"]:hover {
+  background: var(--bct-accent-hover) !important;
+}
+body.bct-theme-dark .menu-toggle {
+  color: var(--bct-text);
+  background-color: transparent;
+}
+body.bct-theme-dark .menu-toggle:hover { background-color: var(--bct-bg-hover); }
+
+/* 移动端菜单下拉 */
+@media (max-width: 768px) {
+  body.bct-theme-dark .header-actions {
+    background-color: var(--bct-bg-secondary);
+    border-bottom: 1px solid var(--bct-border);
+  }
+  body.bct-theme-dark .header-actions .nav-button { color: var(--bct-text); }
+  body.bct-theme-dark .header-actions .nav-button:hover { background-color: var(--bct-bg-hover); }
+}
+
+/* 通知红点、下拉菜单 */
+body.bct-theme-dark .notification-badge {
+  background: var(--bct-down);
+  color: #fff;
+}
+body.bct-theme-dark .dropdown-menu {
+  background-color: var(--bct-bg-secondary);
+  border: 1px solid var(--bct-border);
+  box-shadow: var(--bct-shadow);
+}
+body.bct-theme-dark .dropdown-item {
+  color: var(--bct-text);
+}
+body.bct-theme-dark .dropdown-item.text-muted { color: var(--bct-text-secondary) !important; }
+body.bct-theme-dark .dropdown-item:hover {
+  background-color: var(--bct-bg-hover);
+  color: var(--bct-accent);
+}
+body.bct-theme-dark .dropdown-divider { background-color: var(--bct-border); }
+body.bct-theme-dark .dropdown-item.text-primary { color: var(--bct-accent) !important; }
+
+/* 城市定位条 */
+body.bct-theme-dark .city-location-bar {
+  background-color: var(--bct-bg-tertiary);
+  color: var(--bct-text-secondary);
+  border-bottom: 1px solid var(--bct-border);
+}
+body.bct-theme-dark .city-location-bar a { color: var(--bct-accent); }
+
+/* 跨站引流卡片 */
+body.bct-theme-dark .cross-site-links { margin-top: 40px; }
+body.bct-theme-dark .cross-site-links h3 { color: var(--bct-text); }
+body.bct-theme-dark .cross-site-links a {
+  background: var(--bct-bg-secondary) !important;
+  border: 1px solid var(--bct-border) !important;
+  color: var(--bct-text) !important;
+}
+body.bct-theme-dark .cross-site-links a:hover {
+  background: var(--bct-bg-hover) !important;
+  border-color: var(--bct-accent) !important;
+}
+body.bct-theme-dark .cross-site-links a div { color: var(--bct-text) !important; }
+body.bct-theme-dark .cross-site-links a div + div { color: var(--bct-text-secondary) !important; }
+
+/* footer 深色覆盖 */
+body.bct-theme-dark footer.site-footer {
+  background-color: var(--bct-bg-secondary);
+  color: var(--bct-text-secondary);
+  border-top: 1px solid var(--bct-border);
+  margin-top: 40px;
+}
+body.bct-theme-dark .footer-col h4 {
+  color: var(--bct-text);
+  border-bottom: 1px solid var(--bct-border);
+  padding-bottom: 10px;
+}
+body.bct-theme-dark .footer-col p,
+body.bct-theme-dark .footer-col li,
+body.bct-theme-dark .footer-col a {
+  color: var(--bct-text-secondary);
+}
+body.bct-theme-dark .footer-col a:hover { color: var(--bct-accent); }
+body.bct-theme-dark .footer-bottom {
+  border-top: 1px solid var(--bct-border);
+  color: var(--bct-text-muted);
+}
+body.bct-theme-dark .qr-item span { color: var(--bct-text-secondary); }
+
+/* 回到顶部按钮 */
+body.bct-theme-dark #back-to-top {
+  background: var(--bct-accent);
+  color: #000;
+}
+
+/* 修复 main 与 header 之间的缝隙 */
+body.bct-theme-dark main.container.bct-exchange {
+  background-color: var(--bct-bg);
+}
+
+/* 通用 alert 在深色背景下可读性 */
+body.bct-theme-dark .alert {
+  background-color: var(--bct-bg-secondary);
+  border-color: var(--bct-border);
+  color: var(--bct-text);
+}

@@ -14,6 +14,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
 ];
 $site_config['schema_search'] = $site_config['schema_search'] ?? 'https://bct.58.tl/search?q={search_term_string}';
 $site_config['main_class'] = 'bct-exchange';
+$site_config['body_class'] = 'bct-theme-dark';
 
 // BCT 交易所主题资源
 $extra = $site_config['extra_head'] ?? '';
