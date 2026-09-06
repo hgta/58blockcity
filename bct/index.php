@@ -10,8 +10,6 @@ $bctOrder = new BCTOrder($pdo);
 if (isset($_SESSION['message'])) { echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>'; unset($_SESSION['message']); }
 if (isset($_SESSION['error'])) { echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>'; unset($_SESSION['error']); }
 
-$top5Cities = ['北京','上海','广州','深圳','杭州'];
-
 try {
     $allCities = $cityBCT->getAllCitiesBCT();
     $changes = $cityBCT->get24hChanges();
@@ -24,6 +22,7 @@ try {
     }
     usort($citiesWithData, fn($a,$b)=>$b['market_cap']<=>$a['market_cap']);
     $tickerCities = array_slice($citiesWithData, 0, 30);
+    $top5Cities = $cityBCT->getTopCitiesByRank(5);
     $top5Data = [];
     foreach ($top5Cities as $name) {
         foreach ($citiesWithData as $city) { if ($city['city']===$name) { $top5Data[]=$city; break; } }

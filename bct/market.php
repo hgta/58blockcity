@@ -19,8 +19,6 @@ try {
 if (isset($_SESSION['message'])) { echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>'; unset($_SESSION['message']); }
 if (isset($_SESSION['error'])) { echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>'; unset($_SESSION['error']); }
 
-$top5Cities = ['北京','上海','广州','深圳','杭州'];
-
 // 分页、排序、搜索
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 50;
@@ -62,7 +60,8 @@ try {
         return $order === 'asc' ? $cmp : -$cmp;
     });
 
-    // TOP5 数据
+    // TOP5 数据（按 cities.rank 取前5）
+    $top5Cities = $cityBCT->getTopCitiesByRank(5);
     $top5Data = [];
     foreach ($top5Cities as $name) {
         foreach ($cities as $city) { if ($city['city']===$name) { $top5Data[]=$city; break; } }

@@ -30,6 +30,18 @@ class CityBCT {
         return $stmt->execute([$basePrice, $city]);
     }
     
+    // 按 cities.rank 取前 N 个城市（用于 TOP5 热门城市）
+    public function getTopCitiesByRank($limit = 5) {
+        $stmt = $this->pdo->prepare("
+            SELECT name FROM cities
+            WHERE status = 'active'
+            ORDER BY rank ASC, popularity DESC, id ASC
+            LIMIT ?
+        ");
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    
     // 获取所有城市人气值信息（流通量取 cities.popularity）
     public function getAllCitiesBCT() {
         $stmt = $this->pdo->prepare("
