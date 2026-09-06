@@ -31,15 +31,37 @@ class CityBCT {
     }
     
     // 按 cities.rank 取前 N 个城市（用于 TOP5 热门城市）
+    // 若 rank 字段不存在或查询失败，则 fallback 为按 popularity 降序取前 N
     public function getTopCitiesByRank($limit = 5) {
-        $stmt = $this->pdo->prepare("
-            SELECT name FROM cities
-            WHERE status = 'active'
-            ORDER BY rank ASC, popularity DESC, id ASC
-            LIMIT ?
-        ");
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        try {
+            $hasRank = $this->pdo->query("SHOW COLUMNS FROM cities LIKE 'rank'")->rowCount() > 0;
+            if ($hasRank) {
+                $stmt = $this->pdo->prepare("
+                    SELECT name FROM cities
+                    WHERE status = 'active'
+                    ORDER BY rank ASC, popularity DESC, id ASC
+                    LIMIT ?
+                ");
+            } else {
+                $stmt = $this->pdo->prepare("
+                    SELECT name FROM cities
+                    WHERE status = 'active'
+                    ORDER BY popularity DESC, id ASC
+                    LIMIT ?
+                ");
+            }
+            $stmt->execute([$limit]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Exception $e) {
+            error_log("getTopCitiesByRank fallback: " . $e->getMessage());
+            $stmt = $this->pdo->prepare("
+                SELECT name FROM cities
+                ORDER BY popularity DESC, id ASC
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
     }
     
     // 获取所有城市人气值信息（流通量取 cities.popularity）
