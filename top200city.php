@@ -33,10 +33,13 @@ try {
         $pageDesc  = '58区块城市开启区块数TOP200排名，按已开启区块数量从高到低实时排列，数据同步自BlockCity官方城市榜';
         $subtitle  = '当前按开启区块数排名 · 数据实时更新 · 点击表头可切换排序';
     } else {
+        // 默认视图 = 官方 TOP200 语义：仅展示 rank 1-200（官方同步排名）。
+        // 不用 rank>0：cities 为全量城市表，存在管理员手动维护的 200+/300+ 排名，
+        // 若官方榜匹配不足 200 时它们会被 LIMIT 200 意外补入，污染官方榜。
         $rows = $pdo->query(
             "SELECT name, area_code, rank, resident_count, activated_blocks
              FROM cities
-             WHERE rank > 0
+             WHERE rank BETWEEN 1 AND 200
              ORDER BY rank ASC, activated_blocks DESC
              LIMIT 200"
         )->fetchAll(PDO::FETCH_ASSOC);

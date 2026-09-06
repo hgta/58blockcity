@@ -157,12 +157,14 @@ class CitySyncer
                 }
             }
 
-            // 掉榜清理：不在本次官方榜单中的城市，旧排名（1-200 残留）清零，
-            // 否则会与新榜单撞号错位（如旧 198 名与官方新 198 名同时显示）
+            // 掉榜清理：仅清「官方榜语义」的幽灵排名 —— rank 落在 1-200 但不在本次官方名单中。
+            // 收窄范围原因：cities 为全量城市表，管理员可能手动维护 200+ / 300+ 的合法排名
+            //（那些城市本就不在官方 TOP200，但有真实名次），不能一并清零。
             if ($matchedNames) {
                 $ph  = implode(',', array_fill(0, count($matchedNames), '?'));
                 $clr = $pdo->prepare(
-                    "UPDATE cities SET rank = 0, updated_at = NOW() WHERE rank > 0 AND name NOT IN ({$ph})"
+                    "UPDATE cities SET rank = 0, updated_at = NOW()
+                     WHERE rank BETWEEN 1 AND 200 AND name NOT IN ({$ph})"
                 );
                 $clr->execute(array_keys($matchedNames));
                 $stat['demoted'] = $clr->rowCount();
