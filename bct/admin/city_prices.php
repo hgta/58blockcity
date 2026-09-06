@@ -97,7 +97,7 @@ require_once '../../shared/admin/admin-header.php';
                                 <?= $city['change_pct'] >= 0 ? '▲' : '▼' ?> <?= number_format(abs($city['change_pct']), 2) ?>%
                             </td>
                             <td><?= number_format($city['circulating_supply']) ?></td>
-                            <td>¥<?= number_format($city['market_cap'], 2) ?></td>
+                            <td>¥<?= number_format($city['market_cap'] / 1000000, 2) ?> 百万</td>
                             <td><?= $city['last_updated'] ?></td>
                             <td>
                                 <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm">
