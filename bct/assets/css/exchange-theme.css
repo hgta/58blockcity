@@ -669,3 +669,68 @@ body.bct-theme-dark .footer-bottom {
   border-top: 1px solid var(--bct-border) !important;
   color: var(--bct-text-muted) !important;
 }
+
+/* Bootstrap 模态框深色覆盖 */
+body.bct-theme-dark .modal-content {
+  background-color: var(--bct-bg-secondary) !important;
+  border: 1px solid var(--bct-border) !important;
+  color: var(--bct-text) !important;
+}
+body.bct-theme-dark .modal-header {
+  background-color: var(--bct-bg-tertiary) !important;
+  border-bottom: 1px solid var(--bct-border) !important;
+}
+body.bct-theme-dark .modal-header .modal-title { color: var(--bct-text) !important; }
+body.bct-theme-dark .modal-header .close {
+  color: var(--bct-text-secondary) !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+body.bct-theme-dark .modal-header .close:hover { color: var(--bct-text) !important; }
+body.bct-theme-dark .modal-body { color: var(--bct-text) !important; }
+body.bct-theme-dark .modal-footer {
+  background-color: var(--bct-bg-tertiary) !important;
+  border-top: 1px solid var(--bct-border) !important;
+}
+body.bct-theme-dark .modal-backdrop.show { opacity: 0.8 !important; }
+
+/* 表单控件深色 */
+body.bct-theme-dark .form-control {
+  background-color: var(--bct-bg-tertiary) !important;
+  border: 1px solid var(--bct-border) !important;
+  color: var(--bct-text) !important;
+}
+body.bct-theme-dark .form-control:focus {
+  background-color: var(--bct-bg-tertiary) !important;
+  border-color: var(--bct-accent) !important;
+  color: var(--bct-text) !important;
+  box-shadow: 0 0 0 0.2rem rgba(240, 185, 11, 0.25) !important;
+}
+body.bct-theme-dark .form-control::placeholder { color: var(--bct-text-muted) !important; }
+body.bct-theme-dark label { color: var(--bct-text-secondary) !important; }
+body.bct-theme-dark .radio-inline,
+body.bct-theme-dark .checkbox-inline { color: var(--bct-text) !important; }
+body.bct-theme-dark .alert-info {
+  background-color: rgba(96, 165, 250, 0.1) !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
+  color: var(--bct-text) !important;
+}
+body.bct-theme-dark .alert-info strong { color: var(--bct-accent) !important; }
+
+/* 分页深色 */
+body.bct-theme-dark .pagination > li > a,
+body.bct-theme-dark .pagination > li > span {
+  background-color: var(--bct-bg-tertiary) !important;
+  border-color: var(--bct-border) !important;
+  color: var(--bct-text-secondary) !important;
+}
+body.bct-theme-dark .pagination > li.active > a,
+body.bct-theme-dark .pagination > li.active > span {
+  background-color: var(--bct-accent) !important;
+  border-color: var(--bct-accent) !important;
+  color: #000 !important;
+}
+body.bct-theme-dark .pagination > li > a:hover {
+  background-color: var(--bct-bg-hover) !important;
+  color: var(--bct-text) !important;
+}
