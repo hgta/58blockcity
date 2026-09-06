@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cityBCT->updatePrice($city, $currentPrice);
         $cityBCT->updateBasePrice($city, $basePrice);
 
-        $_SESSION['message'] = "【{$city}】人气值单价已更新为 ¥" . number_format($currentPrice, 4);
+        $_SESSION['message'] = "【{$city}】人气值单价已更新为 ¥" . number_format($currentPrice, 2);
     } catch (Exception $e) {
         $_SESSION['error'] = $e->getMessage();
     }
@@ -84,13 +84,13 @@ require_once '../../shared/admin/admin-header.php';
                             <td><?= $idx + 1 ?></td>
                             <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
                             <td>
-                                <input type="number" name="current_price" step="0.0001" min="0.0001" required
-                                       value="<?= number_format($city['current_price'], 4) ?>"
+                                <input type="number" name="current_price" step="0.01" min="0.01" required
+                                       value="<?= number_format($city['current_price'], 2) ?>"
                                        style="width:110px;padding:6px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
                             </td>
                             <td>
-                                <input type="number" name="base_price" step="0.0001" min="0.0001" required
-                                       value="<?= number_format($city['base_price'], 4) ?>"
+                                <input type="number" name="base_price" step="0.01" min="0.01" required
+                                       value="<?= number_format($city['base_price'], 2) ?>"
                                        style="width:110px;padding:6px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
                             </td>
                             <td style="color:<?= $city['change_pct'] >= 0 ? '#4ade80' : '#f87171' ?>;">

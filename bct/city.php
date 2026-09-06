@@ -54,18 +54,18 @@ require_once 'includes/header.php';
 
 <div class="bct-city-hero">
     <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-        <div class="city-price-large">¥<?= number_format($cityInfo['current_price'], 4) ?></div>
+        <div class="city-price-large">¥<?= number_format($cityInfo['current_price'], 2) ?></div>
         <?php $cls = $cityInfo['change_pct'] >= 0 ? 'up' : 'down'; $sign = $cityInfo['change_pct'] >= 0 ? '+' : ''; ?>
         <div class="city-change-large <?= $cls ?>"><?= $sign ?><?= number_format($cityInfo['change_pct'], 2) ?>%</div>
     </div>
     <div class="bct-hero-stats">
         <div class="bct-hero-stat">
             <div class="label">24h 最高</div>
-            <div class="value">¥<?= number_format($highLow['high'] ?? 0, 4) ?></div>
+            <div class="value">¥<?= number_format($highLow['high'] ?? 0, 2) ?></div>
         </div>
         <div class="bct-hero-stat">
             <div class="label">24h 最低</div>
-            <div class="value">¥<?= number_format($highLow['low'] ?? 0, 4) ?></div>
+            <div class="value">¥<?= number_format($highLow['low'] ?? 0, 2) ?></div>
         </div>
         <div class="bct-hero-stat">
             <div class="label">24h 成交量</div>
@@ -125,7 +125,7 @@ require_once 'includes/header.php';
                                 <?php foreach ($orderBookAsks as $i => $ask): ?>
                                 <div class="bct-order-book-row ask <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($ask['cumulative_amount']/max(1,$orderBookAsks[count($orderBookAsks)-1]['cumulative_amount'])*100)) ?>%;"></span>
-                                    <span class="price"><?= number_format($ask['price'], 4) ?></span>
+                                    <span class="price"><?= number_format($ask['price'], 2) ?></span>
                                     <span class="text-right"><?= number_format($ask['total_amount']) ?></span>
                                     <span class="text-right"><?= number_format($ask['cumulative_amount']) ?></span>
                                 </div>
@@ -136,7 +136,7 @@ require_once 'includes/header.php';
                                 <?php foreach ($orderBookBids as $i => $bid): ?>
                                 <div class="bct-order-book-row bid <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($bid['cumulative_amount']/max(1,$orderBookBids[count($orderBookBids)-1]['cumulative_amount'])*100)) ?>%;"></span>
-                                    <span class="price"><?= number_format($bid['price'], 4) ?></span>
+                                    <span class="price"><?= number_format($bid['price'], 2) ?></span>
                                     <span class="text-right"><?= number_format($bid['total_amount']) ?></span>
                                     <span class="text-right"><?= number_format($bid['cumulative_amount']) ?></span>
                                 </div>
@@ -164,7 +164,7 @@ require_once 'includes/header.php';
                         ?>
                         <div class="bct-trade-item">
                             <span class="side <?= $side ?>"><?= $sideText ?></span>
-                            <span class="price">¥<?= number_format($t['price'], 4) ?></span>
+                            <span class="price">¥<?= number_format($t['price'], 2) ?></span>
                             <span class="num"><?= number_format($t['amount']) ?></span>
                             <span class="time"><?= date('H:i', strtotime($t['created_at'])) ?></span>
                         </div>
@@ -190,7 +190,7 @@ require_once 'includes/header.php';
 
                 <div class="form-group">
                     <label>单价 (CNY/BCT)</label>
-                    <input type="number" name="price" id="quickPrice" class="form-control" step="0.01" min="0.01" value="<?= number_format($cityInfo['current_price'], 4) ?>" required>
+                    <input type="number" name="price" id="quickPrice" class="form-control" step="0.01" min="0.01" value="<?= number_format($cityInfo['current_price'], 2) ?>" required>
                 </div>
                 <div class="form-group">
                     <label>数量 (BCT)</label>

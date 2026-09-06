@@ -78,7 +78,7 @@ if (isset($_SESSION['error'])) {
                     </td>
                     <td><?= htmlspecialchars($order['city']) ?></td>
                     <td><?= number_format($order['amount']) ?></td>
-                    <td><?= number_format($order['price'], 4) ?></td>
+                    <td><?= number_format($order['price'], 2) ?></td>
                     <td><?= number_format($order['total_amount'], 2) ?></td>
                     <td>
                         <?php 

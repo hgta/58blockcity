@@ -157,7 +157,7 @@ if (isset($_SESSION['error'])) {
                                         <input type="number" class="form-control" id="price" name="price" 
                                                min="0.01" max="100" step="0.01" required 
                                                placeholder="请输入单价"
-                                               value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 4) : '0.10' ?>">
+                                               value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 2) : '0.10' ?>">
                                         <small class="form-text text-muted">最低价格: 0.01 元</small>
                                     </div>
                                 </div>
@@ -325,7 +325,7 @@ if (isset($_SESSION['error'])) {
                     <h4><i class="fas fa-chart-line"></i> <?= htmlspecialchars($selectedCity) ?> 行情</h4>
                 </div>
                 <div class="card-body" style="text-align:center;">
-                    <div style="font-size:28px;font-weight:700;font-family:monospace;">¥<?= number_format($selectedCityBCT['current_price'], 4) ?></div>
+                    <div style="font-size:28px;font-weight:700;font-family:monospace;">¥<?= number_format($selectedCityBCT['current_price'], 2) ?></div>
                     <div style="font-size:16px;font-weight:600;margin-top:6px;" class="<?= $cls ?>"><?= $sign ?><?= number_format($selectedCityBCT['change_pct'], 2) ?>%</div>
                     <div style="font-size:12px;color:var(--bct-text-secondary);margin-top:10px;">24h 成交量 ¥<?= number_format($selectedCityBCT['volume_24h'], 2) ?></div>
                     <a href="city.php?city=<?= urlencode($selectedCity) ?>" class="btn btn-primary btn-sm" style="margin-top:12px;">查看详情</a>

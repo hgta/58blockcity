@@ -110,7 +110,7 @@ require_once '../includes/header.php';
                             <tr>
                                 <td><strong><?= htmlspecialchars($acc['city']) ?></strong></td>
                                 <td class="text-right"><?= number_format($acc['balance']) ?> BCT</td>
-                                <td class="text-right">¥<?= number_format($acc['current_price'], 4) ?></td>
+                                <td class="text-right">¥<?= number_format($acc['current_price'], 2) ?></td>
                                 <td class="text-right">¥<?= number_format($acc['valuation'], 2) ?></td>
                                 <td class="text-right"><?= number_format($ratio, 2) ?>%</td>
                             </tr>
@@ -172,7 +172,7 @@ require_once '../includes/header.php';
                         <td style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
                         <td><?= htmlspecialchars($o['city']) ?></td>
                         <td><?= number_format($o['amount']) ?> BCT</td>
-                        <td>¥<?= number_format($o['price'], 4) ?></td>
+                        <td>¥<?= number_format($o['price'], 2) ?></td>
                         <td>¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
                         <td><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span></td>
                         <td>

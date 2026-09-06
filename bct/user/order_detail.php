@@ -218,7 +218,7 @@ $tradeTypeText = [
                         </div>
                         <div class="col-md-4 text-center">
                             <div class="trade-stat">
-                                <div class="stat-number"><?= number_format($order['price'], 4) ?></div>
+                                <div class="stat-number"><?= number_format($order['price'], 2) ?></div>
                                 <div class="stat-label">单价 (元)</div>
                             </div>
                         </div>
@@ -272,7 +272,7 @@ $tradeTypeText = [
                                         <?php endif; ?>
                                     </td>
                                     <td><?= number_format($tx['amount']) ?> BCT</td>
-                                    <td><?= number_format($tx['price'], 4) ?> 元</td>
+                                    <td><?= number_format($tx['price'], 2) ?> 元</td>
                                     <td><?= number_format($tx['fee'], 2) ?> 元</td>
                                     <td>
                                         <span class="label label-success">已完成</span>
@@ -320,7 +320,7 @@ $tradeTypeText = [
                                     </td>
                                     <td><?= htmlspecialchars($related['username']) ?></td>
                                     <td><?= number_format($related['amount']) ?> BCT</td>
-                                    <td><?= number_format($related['price'], 4) ?> 元</td>
+                                    <td><?= number_format($related['price'], 2) ?> 元</td>
                                     <td>
                                         <span class="label label-<?= 
                                             $related['status'] == 'completed' ? 'success' : 
@@ -429,12 +429,12 @@ $tradeTypeText = [
                         </div>
                         <div class="info-group">
                             <label>当前市价:</label>
-                            <span class="info-value"><?= number_format($order['city_current_price'] ?? 0.01, 4) ?> 元</span>
+                            <span class="info-value"><?= number_format($order['city_current_price'] ?? 0.01, 2) ?> 元</span>
                         </div>
                         <div class="info-group">
                             <label>订单价格:</label>
                             <span class="info-value <?= ($order['price'] < ($order['city_current_price'] ?? 0.01)) ? 'text-success' : 'text-danger' ?>">
-                                <?= number_format($order['price'], 4) ?> 元
+                                <?= number_format($order['price'], 2) ?> 元
                             </span>
                         </div>
                         <?php if ($order['city_current_price']): ?>
@@ -542,7 +542,7 @@ $tradeTypeText = [
                         <strong>修改预览</strong>
                         <div class="trade-preview-small">
                             <div>原数量: <?= number_format($order['amount']) ?> BCT</div>
-                            <div>原单价: <?= number_format($order['price'], 4) ?> 元</div>
+                            <div>原单价: <?= number_format($order['price'], 2) ?> 元</div>
                             <div>原总价: <?= number_format($order['total_amount'], 2) ?> 元</div>
                             <div class="total">新总价: <span id="editPreviewTotal">0.00</span> 元</div>
                         </div>
