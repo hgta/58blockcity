@@ -1,16 +1,68 @@
+<?php
+/**
+ * TOP200 热门城市榜
+ * 数据源：cities 表（管理后台「同步数据」一键更新，见 classes/CitySyncer.php）
+ * 排序：?sort=activated 按开启区块数 / ?sort=population 按居民人数 / 默认综合排名
+ */
+require_once __DIR__ . '/config/database.php';
+
+$sort = isset($_GET['sort']) ? (string)$_GET['sort'] : '';
+if (!in_array($sort, ['activated', 'population'], true)) {
+    $sort = 'rank';
+}
+
+try {
+    if ($sort === 'population') {
+        $rows = $pdo->query(
+            "SELECT name, area_code, rank, resident_count, activated_blocks
+             FROM cities
+             ORDER BY resident_count DESC, activated_blocks DESC
+             LIMIT 200"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $pageTitle = '居民人数TOP200城市';
+        $pageDesc  = '58区块城市居民人数TOP200排名，按现有居民数从高到低实时排列，数据同步自BlockCity官方城市榜';
+        $subtitle  = '当前按居民人数排名 · 数据实时更新 · 点击表头可切换排序';
+    } elseif ($sort === 'activated') {
+        $rows = $pdo->query(
+            "SELECT name, area_code, rank, resident_count, activated_blocks
+             FROM cities
+             ORDER BY activated_blocks DESC, resident_count DESC
+             LIMIT 200"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $pageTitle = '开启区块数TOP200城市';
+        $pageDesc  = '58区块城市开启区块数TOP200排名，按已开启区块数量从高到低实时排列，数据同步自BlockCity官方城市榜';
+        $subtitle  = '当前按开启区块数排名 · 数据实时更新 · 点击表头可切换排序';
+    } else {
+        $rows = $pdo->query(
+            "SELECT name, area_code, rank, resident_count, activated_blocks
+             FROM cities
+             ORDER BY (rank > 0) DESC, rank ASC, activated_blocks DESC
+             LIMIT 200"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $pageTitle = 'TOP200热门城市';
+        $pageDesc  = '58区块城市TOP200热门城市排名，基于居民人数和开启区块数量综合排序，数据实时更新';
+        $subtitle  = '基于居民人数和开启区块数量综合排序 · 数据实时更新 · 表头可点击切换排序';
+    }
+} catch (PDOException $e) {
+    $rows = [];
+    $pageTitle = 'TOP200热门城市';
+    $pageDesc  = '58区块城市TOP200热门城市排名';
+    $subtitle  = '数据加载异常，请稍后刷新重试';
+}
+?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOP200热门城市 - 58区块城市</title>
-    <meta name="description" content="58区块城市TOP200热门城市排名，基于居民人数和开启区块数量综合排序">
-    <meta name="keywords" content="58,区块城市,区块同城,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市,top200城市">
-    <meta property="og:title" content="58区块城市 - 元宇宙同城生活服务平台">
-    <meta property="og:description" content="基于元宇宙技术的下一代同城生活服务平台">
+    <title><?= $pageTitle ?> - 58区块城市</title>
+    <meta name="description" content="<?= htmlspecialchars($pageDesc, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="keywords" content="58,区块城市,区块同城,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市,top200城市,城市排名">
+    <meta property="og:title" content="<?= $pageTitle ?> - 58区块城市">
+    <meta property="og:description" content="<?= htmlspecialchars($pageDesc, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.58.tl">
-    <link rel="canonical" href="https://www.58.tl">
+    <meta property="og:url" content="https://www.58.tl/top200city.php">
+    <link rel="canonical" href="https://www.58.tl/top200city.php">
     
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -169,6 +221,18 @@
             border-bottom: 1px solid #eee;
         }
         
+        /* 表头排序链接 */
+        .top200-table th a {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .top200-table th a:hover,
+        .top200-table th a.active {
+            color: #ff6b00;
+        }
+
         .top200-table tr:nth-child(even) {
             background-color: #fff8f5;
         }
@@ -472,7 +536,7 @@
     <!-- 主内容 -->
     <div class="container top200-container">
         <h1 class="page-title">全国TOP200热门城市</h1>
-        <p class="page-subtitle">基于居民人数和开启区块数量综合排序 · 数据实时更新</p>
+        <p class="page-subtitle"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></p>
         
         <div class="pagination">
             <button class="page-btn active" onclick="showPage(1)">1-50</button>
@@ -484,51 +548,35 @@
         <table class="top200-table" id="citiesTable">
             <thead>
                 <tr>
-                    <th>排名</th>
+                    <th><a href="top200city.php" class="th-sort<?= $sort === 'rank' ? ' active' : '' ?>">排名</a></th>
                     <th>城市名称</th>
-                    <th>居民人数</th>
-                    <th>开启区块</th>
+                    <th><a href="?sort=population" class="th-sort<?= $sort === 'population' ? ' active' : '' ?>">居民人数<?= $sort === 'population' ? ' ▼' : '' ?></a></th>
+                    <th><a href="?sort=activated" class="th-sort<?= $sort === 'activated' ? ' active' : '' ?>">开启区块<?= $sort === 'activated' ? ' ▼' : '' ?></a></th>
                 </tr>
             </thead>
             <tbody id="citiesTableBody">
-                <!-- 数据将通过JavaScript动态加载 -->
+                <?php if (empty($rows)): ?>
+                <tr><td colspan="4" style="color:#999;text-align:center;">暂无城市数据，请管理员在后台执行「同步数据」</td></tr>
+                <?php else: foreach ($rows as $i => $c):
+                    $pageNo   = intdiv($i, 50) + 1;
+                    // 默认视图展示官方综合排名（未上榜显示 —）；排序视图展示当前位次
+                    $rankCell = $sort === 'rank' ? ((int)$c['rank'] > 0 ? (int)$c['rank'] : '—') : $i + 1;
+                    $nameAttr = htmlspecialchars((string)$c['name'], ENT_QUOTES, 'UTF-8');
+                    $areaAttr = htmlspecialchars((string)$c['area_code'], ENT_QUOTES, 'UTF-8');
+                ?>
+                <tr class="page-<?= $pageNo ?>"<?= $pageNo > 1 ? ' style="display:none"' : '' ?>>
+                    <td class="rank"><?= $rankCell ?></td>
+                    <td class="city-name"><a href="https://www.blockcity.pub/<?= $areaAttr ?>?iclc" title="<?= $nameAttr ?>区块城市详情"><?= $nameAttr ?></a></td>
+                    <td class="stats"><?= number_format((int)$c['resident_count']) ?></td>
+                    <td class="stats"><?= number_format((int)$c['activated_blocks']) ?></td>
+                </tr>
+                <?php endforeach; endif; ?>
             </tbody>
         </table>
     </div>
 
     <script>
-        // 加载JSON数据并渲染表格
-        fetch('cities-data.json')
-            .then(response => response.json())
-            .then(data => {
-                const tableBody = document.getElementById('citiesTableBody');
-                
-                // 生成表格行
-                data.cities.forEach(city => {
-                    const row = document.createElement('tr');
-                    row.className = 'page-'+Math.ceil(city.rank/50);
-                    if(city.rank > 50) row.style.display = 'none';
-                    /*
-                    row.innerHTML = `
-                        <td class="rank">${city.rank}</td>
-                        <td class="city-name">
-                            <a href="https://www.blockcity.pub/?iclc=1&areaNo=${city.areaNo}" title="${city.name}区块城市详情">
-                                ${city.name}
-                            </a>
-                        </td>
-                        <td class="stats">${city.population}</td>
-                        <td class="stats">${city.blocks}</td>
-                    `;*/
-					row.innerHTML = '<td class="rank">'+city.rank+'</td><td class="city-name"><a href="https://www.blockcity.pub/'+city.areaNo+'?iclc" title="'+city.name+'区块城市详情">'+city.name+'</a></td><td class="stats">'+city.population+'</td><td class="stats">'+city.blocks+'</td>';
-					
-                    tableBody.appendChild(row);
-                });
-            })
-            .catch(error => {
-                console.error('加载城市数据失败:', error);
-                document.getElementById('citiesTableBody').innerHTML = '<tr><td colspan="4" style="color:red;text-align:center;">数据加载失败，请刷新重试</td></tr>';
-            });
-
+        // 数据已由服务端渲染（来源 cities 表，后台「同步数据」一键更新），此处仅保留分页切换。
         // 分页控制函数
         function showPage(pageNum) {
             // 隐藏所有行
