@@ -6,9 +6,14 @@ class CityBCT {
         $this->pdo = $pdo;
     }
     
-    // 获取城市人气值信息
+    // 获取城市人气值信息（流通量取 cities.popularity）
     public function getCityBCT($city) {
-        $stmt = $this->pdo->prepare("SELECT * FROM city_bct WHERE city = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
+            FROM city_bct cb
+            LEFT JOIN cities c ON cb.city = c.name
+            WHERE cb.city = ?
+        ");
         $stmt->execute([$city]);
         return $stmt->fetch();
     }
@@ -19,9 +24,20 @@ class CityBCT {
         return $stmt->execute([$newPrice, $city]);
     }
     
-    // 获取所有城市人气值信息
+    // 更新城市人气值基础价
+    public function updateBasePrice($city, $basePrice) {
+        $stmt = $this->pdo->prepare("UPDATE city_bct SET base_price = ? WHERE city = ?");
+        return $stmt->execute([$basePrice, $city]);
+    }
+    
+    // 获取所有城市人气值信息（流通量取 cities.popularity）
     public function getAllCitiesBCT() {
-        $stmt = $this->pdo->prepare("SELECT * FROM city_bct ORDER BY city");
+        $stmt = $this->pdo->prepare("
+            SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
+            FROM city_bct cb
+            LEFT JOIN cities c ON cb.city = c.name
+            ORDER BY cb.city
+        ");
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -44,10 +60,11 @@ class CityBCT {
         ");
         $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
 
-        // 总市值 = SUM(流通量 * 当前价格)
+        // 总市值 = SUM(cities.popularity * city_bct.current_price)
         $stmt = $this->pdo->query("
-            SELECT COALESCE(SUM(circulating_supply * current_price), 0) as cap
-            FROM city_bct
+            SELECT COALESCE(SUM(COALESCE(c.popularity, cb.circulating_supply) * cb.current_price), 0) as cap
+            FROM city_bct cb
+            LEFT JOIN cities c ON cb.city = c.name
         ");
         $stats['total_market_cap'] = (float)$stmt->fetchColumn();
 

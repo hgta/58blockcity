@@ -98,8 +98,8 @@ require_once 'includes/header.php';
 
 <div class="bct-page-title" style="padding-top:20px;">
     <div>
-        <h1><i class="fas fa-chart-line"></i> 城市币行情</h1>
-        <div class="subtitle">全部城市 BCT 实时行情 · 市值 · 成交量 · 涨跌幅</div>
+        <h1><i class="fas fa-chart-line"></i> 城市人气值行情</h1>
+        <div class="subtitle">全部城市人气值实时行情 · 市值 · 成交量 · 涨跌幅</div>
     </div>
     <div>
         <a href="trade.php" class="btn btn-primary"><i class="fas fa-plus"></i> 发布交易</a>
@@ -139,7 +139,7 @@ require_once 'includes/header.php';
 <?php endif; ?>
 
 <div class="card">
-    <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-list-ol"></i> 全部城市币</h3></div>
+    <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-list-ol"></i> 全部城市人气值</h3></div>
     <div class="table-responsive">
         <table class="table bct-market-table">
             <thead>

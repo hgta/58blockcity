@@ -77,9 +77,10 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-city',        'text' => '城市管理', 'url' => 'cities.php'],
     ],
     'bct' => [
-        ['icon' => 'fa-home',        'text' => 'BCT看板',    'url' => 'dashboard.php'],
-        ['icon' => 'fa-wallet',      'text' => '余额管理',    'url' => 'bct_management.php'],
-        ['icon' => 'fa-exchange-alt','text' => '触发匹配',    'url' => 'trigger_match.php'],
+        ['icon' => 'fa-home',        'text' => 'BCT看板',        'url' => 'dashboard.php'],
+        ['icon' => 'fa-wallet',      'text' => '余额管理',        'url' => 'bct_management.php'],
+        ['icon' => 'fa-tags',        'text' => '人气值单价管理',  'url' => 'city_prices.php'],
+        ['icon' => 'fa-exchange-alt','text' => '触发匹配',        'url' => 'trigger_match.php'],
     ],
 ];
 

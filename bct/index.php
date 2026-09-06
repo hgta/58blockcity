@@ -30,6 +30,8 @@ try {
     }
     $marketStats = $cityBCT->getMarketStats();
     $recentTrades = $bctOrder->getRecentTrades(null, 12);
+    $activeBuyOrders = $bctOrder->getActiveOrders('buy', 10);
+    $activeSellOrders = $bctOrder->getActiveOrders('sell', 10);
 } catch (Exception $e) {
     $citiesWithData = $tickerCities = $top5Data = [];
     $marketStats = ['total_volume_24h'=>0,'total_market_cap'=>0,'gainers_count'=>0,'losers_count'=>0,'active_orders'=>0];
@@ -107,12 +109,45 @@ require_once 'includes/header.php';
 </div>
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-4">
         <div class="card">
-            <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-exchange-alt"></i> 交易市场</h3></div>
-            <div class="card-body text-center" style="padding:40px;">
-                <p style="color:var(--bct-text-secondary);font-size:16px;">查看全部城市币行情与挂单，进入城市详情页交易</p>
-                <a href="market.php" class="btn btn-primary" style="margin-top:10px;"><i class="fas fa-chart-line"></i> 进入行情中心</a>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;font-size:16px;"><i class="fas fa-arrow-down" style="color:var(--bct-up);"></i> 买入挂单</h3>
+                <a href="market.php" class="btn btn-sm btn-default">更多</a>
+            </div>
+            <div class="bct-trade-list">
+                <?php if (empty($activeBuyOrders)): ?>
+                <div class="text-center" style="padding:30px;color:var(--bct-text-secondary);">暂无买入挂单</div>
+                <?php else: ?>
+                <?php foreach ($activeBuyOrders as $o): ?>
+                <a href="city.php?city=<?= urlencode($o['city']) ?>" class="bct-trade-item" style="text-decoration:none;">
+                    <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
+                    <span class="price">¥<?= number_format($o['price'], 4) ?></span>
+                    <span class="num"><?= number_format($o['amount']) ?></span>
+                </a>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;font-size:16px;"><i class="fas fa-arrow-up" style="color:var(--bct-down);"></i> 卖出挂单</h3>
+                <a href="market.php" class="btn btn-sm btn-default">更多</a>
+            </div>
+            <div class="bct-trade-list">
+                <?php if (empty($activeSellOrders)): ?>
+                <div class="text-center" style="padding:30px;color:var(--bct-text-secondary);">暂无卖出挂单</div>
+                <?php else: ?>
+                <?php foreach ($activeSellOrders as $o): ?>
+                <a href="city.php?city=<?= urlencode($o['city']) ?>" class="bct-trade-item" style="text-decoration:none;">
+                    <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
+                    <span class="price">¥<?= number_format($o['price'], 4) ?></span>
+                    <span class="num"><?= number_format($o['amount']) ?></span>
+                </a>
+                <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -131,7 +166,7 @@ require_once 'includes/header.php';
                     <span><strong><?= htmlspecialchars($t['city']) ?></strong></span>
                     <span class="side <?= $side ?>"><?= $sideText ?></span>
                     <span class="price">¥<?= number_format($t['price'], 4) ?></span>
-                    <span class="num"><?= number_format($t['amount']) ?> BCT</span>
+                    <span class="num"><?= number_format($t['amount']) ?></span>
                     <span class="time"><?= date('H:i', strtotime($t['created_at'])) ?></span>
                 </div>
                 <?php endforeach; ?>
