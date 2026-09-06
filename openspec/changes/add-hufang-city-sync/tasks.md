@@ -24,4 +24,4 @@
 - [x] 4.1 数据核对：同步后 cities 表前 5 名 rank/resident_count/activated_blocks 与 blockcity.vip/pages/block/area 页面显示一致（北京 1/3993/4970 基准）；「中国数藏」「中国书画」出现在未匹配名单且不报错
 - [x] 4.2 边界验证：断网/接口超时模拟（临时改错域名）→ 显示失败原因且 cities 表无写入；数据无变化时二次同步 updated=0/unchanged 计数正确
 - [x] 4.3 lint 全部改动文件（CitySyncer.php / 两个 admin 页面）无错误；提交推送；服务器 `git pull` 后按 design.md「验证顺序」走查三个入口
-- [x] 4.4 掉榜城市排名清零：CitySyncer::apply() 事务内将不在榜单中的旧排名城市 rank 置 0（stat.demoted），top200city.php 各排序视图增加 WHERE 过滤（rank>0 / activated_blocks>0 / resident_count>0）——修复「红河 0 区块上榜」残留排名问题
+- [x] 4.4 掉榜城市排名清零：CitySyncer::apply() 事务内将不在榜单中的旧排名城市 rank 置 0（stat.demoted）——修复「红河 0 区块上榜」残留排名问题（红河经查是从默认视图按旧 rank=198 进榜，与排序视图无关）。top200city.php 默认视图保留 `WHERE rank > 0`（全量城市表结构性必需，防未上榜城市按 rank=0 涌入榜首）；排序视图的 0 值过滤经确认数据现实（官方 200 城全在库且全部非 0，恰好满榜）为冗余，已移除保持 SQL 语义纯粹
