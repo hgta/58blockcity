@@ -51,6 +51,19 @@ $bids = $auction->getBids($auctionId, 50);
 $isSeller = intval($a['seller_id']) === $userId;
 $isCurrentBidder = intval($a['current_bidder_id'] ?? 0) === $userId;
 
+// 子站详情页链接与图片回退
+$detailUrl = '';
+$displayImage = $a['item_image'] ?? '';
+if ($a['item_type'] === 'nft' && !empty($a['nft_id'])) {
+    $detailUrl = 'https://nft.58.tl/nft/view.php?id=' . intval($a['nft_id']);
+} elseif ($a['item_type'] === 'block' && !empty($a['block_id'])) {
+    $detailUrl = 'https://block.58.tl/block/view.php?id=' . intval($a['block_id']);
+}
+// 区块无图时显示默认占位图
+if ($a['item_type'] === 'block' && empty($displayImage)) {
+    $displayImage = '/assets/images/default-block.png';
+}
+
 // 当前最小可出价
 $currentPrice = floatval($a['current_price'] ?? $a['start_price']);
 $minBid = $a['current_bidder_id'] === null ? floatval($a['start_price']) : $currentPrice + floatval($a['bid_increment']);
@@ -97,17 +110,21 @@ require_once 'includes/header.php';
 <div class="view-wrap">
     <div class="view-grid">
         <div class="view-img">
-            <?php if (!empty($a['item_image'])): 
-                $imgUrl = preg_match('#^https?://#', $a['item_image']) ? $a['item_image'] : '/' . $a['item_image'];
+            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" style="display:flex;width:100%;height:100%;"><?php endif; ?>
+            <?php if (!empty($displayImage)):
+                $imgUrl = preg_match('#^https?://#', $displayImage) ? $displayImage : '/' . ltrim($displayImage, '/');
             ?>
                 <img src="<?= htmlspecialchars($imgUrl) ?>" alt="">
             <?php else: ?>
                 <span class="ph"><i class="fas fa-image"></i></span>
             <?php endif; ?>
+            <?php if ($detailUrl): ?></a><?php endif; ?>
         </div>
         <div class="view-info">
             <span class="view-tag <?= $a['item_type'] === 'nft' ? 'nft' : '' ?>"><?= $a['item_type'] === 'nft' ? 'NFT头像' : '区块' ?></span>
+            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" style="text-decoration:none;color:inherit;"><?php endif; ?>
             <div class="view-title"><?= htmlspecialchars($a['item_title'] ?? ('拍卖 #' . $a['id'])) ?></div>
+            <?php if ($detailUrl): ?></a><?php endif; ?>
 
             <div class="view-status">
                 <?php

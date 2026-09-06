@@ -507,8 +507,10 @@ class Auction {
             $b = $this->block->getBlockById(intval($a['item_id']));
             if ($b) {
                 $a['item_title'] = ($b['city_name'] ?? '') . ' ' . ($b['zone'] ?? '') . '区 #' . ($b['block_number'] ?? '');
-                // 区块皮肤图片在 block 子站，用跨站绝对路径
+                // 区块皮肤图片在 block 子站，用跨站绝对路径；无图时返回空，由展示层回退默认图
                 $a['item_image'] = !empty($b['display_image']) ? 'https://block.58.tl/' . ltrim($b['display_image'], '/') : null;
+                // 保留 blocks.id 作为详情页参数（ auctions.item_id 已等同 blocks.id，显式同步防后续变动）
+                $a['block_id'] = intval($b['id'] ?? $a['item_id']);
             }
         } else {
             $ncu = $this->pdo->prepare("
@@ -523,6 +525,8 @@ class Auction {
                 $a['item_title'] = 'NFT头像 #' . $rec['code'] . '（' . $rec['city_name'] . '）';
                 // NFT 图片在 nft 子站，用跨站绝对路径
                 $a['item_image'] = !empty($rec['base_image']) ? 'https://nft.58.tl/avatar/' . $rec['base_image'] : null;
+                // 暴露 nft 子站详情页所需主键
+                $a['nft_id'] = $rec['nft_id'] ?? null;
             }
         }
         return $a;
