@@ -19,7 +19,7 @@
 ## 4. 验证
 
 - [x] 4.1 对改动文件执行 `php -l` 语法检查（本地无 php 时用编辑器诊断复核）。验证：语法检查通过无错误。
-- [ ] 4.2 在线上 `bct.58.tl/admin/city_prices.php` 冒烟：默认第 1 页 100 条、翻页完整、第 3 页保存回跳、搜索命中非首页城市、搜索后回第 1 页、批量填入非当前页城市行仍能匹配更新。验证：上述行为与 spec 场景一致。
+- [x] 4.2 在线上 `bct.58.tl/admin/city_prices.php` 冒烟：默认第 1 页 100 条、翻页完整、第 3 页保存回跳、搜索命中非首页城市、搜索后回第 1 页、批量填入非当前页城市行仍能匹配更新。验证：上述行为与 spec 场景一致。
 - [x] 4.3 `git add` 改动文件并提交推送（commit `18230e0`）。验证：`git log` 与远程一致。
 
 ## 5. 开通全量城市行情（数据补齐）
@@ -37,4 +37,4 @@
 - [x] 6.3 清理人气值双写与裸 JOIN：`CitySyncer::applyPopularity()` 与 `hufang/admin/sync-popularity-api.php` 不再 `UPDATE city_bct.circulating_supply`；`UserBCTAccount`/`bct/user/order_detail.php` 改 JOIN `cities`。验证：全仓 PHP 无 `city_bct` 读写（仅历史注释）。
 - [x] 6.4 `bct/admin/city_prices.php`：移除 POST `sync_cities` 分支、标题区"开通全部行情"按钮与统计、批量匹配 SQL 改 `cities.bct_current_price`；标题区改为"BCT 单价存于 cities，全量 N 词条均含行情"；说明第 3/8 条改新口径。验证：页面无"开通/待开通"残留元素，全量约 421 词条。
 - [x] 6.5 同步 openspec 工件（spec Requirement、design Context/Goals/Decision 8/Risks、tasks）并 `openspec validate --strict` 通过。验证：validate 无错误。
-- [ ] 6.6 线上迁移与冒烟：① 在服务器执行 `init/migration-merge-city-bct.sql`；② 部署代码；③ 冒烟：`city_prices.php` 共 421 词条分页正常、原 94 城价格与迁移前一致、批量设置命中新词条、`market.php`/`city.php`/首页/门户行情正常、人气值同步单城更新不报错、`process_order.php` 校验正常；④ 全部通过后执行 `RENAME TABLE city_bct TO city_bct_deprecated_20260908` 备份。验证：行为与 spec "BCT 单价并入 cities" 场景一致。
+- [x] 6.6 线上迁移与冒烟：① 在服务器执行 `init/migration-merge-city-bct.sql`；② 部署代码；③ 冒烟：`city_prices.php` 共 421 词条分页正常、原 94 城价格与迁移前一致、批量设置命中新词条、`market.php`/`city.php`/首页/门户行情正常、人气值同步单城更新不报错、`process_order.php` 校验正常；④ 全部通过后执行 `RENAME TABLE city_bct TO city_bct_deprecated_20260908` 备份。验证：行为与 spec "BCT 单价并入 cities" 场景一致。
