@@ -9,6 +9,19 @@ class Circle {
         $this->pdo = $pdo;
     }
 
+    /**
+     * 创建互访圈
+     *
+     * @param int    $userId      用户 ID
+     * @param string $name        圈子名称
+     * @param string $description 圈子描述
+     * @param string $city        所在城市
+     * @param string $category    圈子分类
+     * @param int    $blockCount  拥有区块总数。创建页（hufang/circles/create.php）
+     *                            会根据用户在 block 子站所选城市已认领的区块数自动计算后传入，
+     *                            前端未回填时后端也会按城市重新计算兜底。
+     * @return int 新圈子 ID，失败时返回 0
+     */
     public function create($userId, $name, $description, $city, $category, $blockCount = 0) {
         // 参数验证
         $this->validateParameters([

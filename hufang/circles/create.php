@@ -2,6 +2,7 @@
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
+require_once '../../classes/Block.php';
 require_once '../../classes/City.php';
 require_once '../../classes/SeoHelper.php';
 
@@ -16,24 +17,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $city = trim($_POST['city'] ?? '');
     $category = trim($_POST['category'] ?? 'BlockCity');
-    $blockCount = intval($_POST['block_count'] ?? 0);
+    $blockCountRaw = $_POST['block_count'] ?? '';
+    $blockCount = intval($blockCountRaw);
 
     if (empty($name) || empty($city)) {
         $error = '互访圈名称和所在城市是必填项';
-    } elseif ($blockCount < 0) {
-        $error = '区块数不能为负数';
     } else {
-        $circle = new Circle($pdo);
-        if ($circle->create($userId, $name, $description, $city, $category, $blockCount)) {
-            $success = '互访圈创建成功！';
-            // 百度主动推送新创建的互访圈
-            $newCircleId = $pdo->lastInsertId();
-            if ($newCircleId) {
-                SeoHelper::baiduPush(SeoHelper::circleUrl($newCircleId, $name));
+        // 后端兜底：区块数未回填（空）或非法（负数）时，按所选城市重新计算已认领区块数
+        if ($blockCountRaw === '' || $blockCount < 0) {
+            $cityId = 0;
+            $stmt = $pdo->prepare("SELECT id FROM cities WHERE name = ? LIMIT 1");
+            $stmt->execute([$city]);
+            $cityRow = $stmt->fetch();
+            if ($cityRow) {
+                $cityId = (int)$cityRow['id'];
+            } else {
+                // 去除“市”后缀后再匹配一次
+                $short = preg_replace('/市$/u', '', $city);
+                if ($short !== $city) {
+                    $stmt = $pdo->prepare("SELECT id FROM cities WHERE name = ? LIMIT 1");
+                    $stmt->execute([$short]);
+                    $cityRow = $stmt->fetch();
+                    if ($cityRow) {
+                        $cityId = (int)$cityRow['id'];
+                    }
+                }
             }
-            $_POST = []; // 清空表单
+            if ($cityId) {
+                $block = new Block($pdo);
+                $blockCount = $block->countUserBlocksByCity($userId, $cityId);
+            }
+        }
+
+        if ($blockCount < 0) {
+            $error = '区块数不能为负数';
         } else {
-            $error = '创建互访圈时出错，请稍后再试';
+            $circle = new Circle($pdo);
+            if ($circle->create($userId, $name, $description, $city, $category, $blockCount)) {
+                $success = '互访圈创建成功！';
+                // 百度主动推送新创建的互访圈
+                $newCircleId = $pdo->lastInsertId();
+                if ($newCircleId) {
+                    SeoHelper::baiduPush(SeoHelper::circleUrl($newCircleId, $name));
+                }
+                $_POST = []; // 清空表单
+            } else {
+                $error = '创建互访圈时出错，请稍后再试';
+            }
         }
     }
 }
@@ -96,8 +126,10 @@ $categories = ['BlockCity'];
                 <div class="form-group">
                     <label for="block_count">拥有区块总数 *</label>
                     <input type="number" class="form-control" id="block_count" name="block_count" 
-                           min="0" value="<?= htmlspecialchars($_POST['block_count'] ?? '0') ?>" required>
-                    <small class="form-text text-muted">请输入您的互访圈包含的区块数量</small>
+                           min="0" value="<?= htmlspecialchars($_POST['block_count'] ?? '0') ?>" 
+                           readonly required>
+                    <small class="form-text text-muted">根据 block 子站认领数自动计算，选择城市后自动更新，无需手动填写</small>
+                    <small class="form-text text-muted" id="block_count_hint" style="display:none;"></small>
                 </div>
 
                 <!--<div class="form-group">
@@ -144,7 +176,52 @@ $categories = ['BlockCity'];
 document.addEventListener('DOMContentLoaded', function() {
     const cityInput = document.getElementById('city');
     const cityOptions = <?= $citiesJson ?>;
-    
+    const blockCountInput = document.getElementById('block_count');
+    const blockCountHint = document.getElementById('block_count_hint');
+
+    // 根据所选城市，从 block 子站认领数自动计算拥有区块总数
+    function fetchBlockCount(cityName) {
+        if (!cityName) {
+            blockCountInput.value = 0;
+            return;
+        }
+        blockCountHint.textContent = '正在根据认领记录计算…';
+        blockCountHint.style.display = 'block';
+        const body = new URLSearchParams();
+        body.append('city', cityName);
+        fetch('ajax-block-count.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString(),
+            credentials: 'same-origin'
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            if (data && data.success) {
+                blockCountInput.value = data.count;
+                blockCountHint.style.display = 'none';
+            } else {
+                blockCountInput.value = 0;
+                blockCountHint.textContent = (data && data.msg) ? data.msg : '未能获取区块数';
+                blockCountHint.style.display = 'block';
+            }
+        })
+        .catch(function() {
+            blockCountInput.value = 0;
+            blockCountHint.style.display = 'none';
+        });
+    }
+
+    // 选择/切换城市后重新计算
+    cityInput.addEventListener('change', function() {
+        fetchBlockCount(this.value.trim());
+    });
+
+    // 页面加载时若已有城市值（如提交报错回显），同步一次
+    if (cityInput.value.trim()) {
+        fetchBlockCount(cityInput.value.trim());
+    }
+
     // 实时搜索功能
     cityInput.addEventListener('input', function() {
         const value = this.value.toLowerCase();

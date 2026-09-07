@@ -429,6 +429,27 @@ class Block {
             return [];
         }
     }
+
+    /**
+     * 统计用户在某城市已认领（status='sold'）的区块总数
+     *
+     * 合并块（merged_blocks）在认领时已把组内每个单块写入 blocks 表并标记为 sold，
+     * 因此直接统计 blocks 表即可，不会重复计数。
+     *
+     * @param int $userId 用户 ID
+     * @param int $cityId 城市 ID
+     * @return int 已认领区块总数
+     */
+    public function countUserBlocksByCity($userId, $cityId) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM blocks WHERE owner_id = ? AND city_id = ? AND status = 'sold'");
+            $stmt->execute([(int)$userId, (int)$cityId]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("统计用户城市区块失败: " . $e->getMessage());
+            return 0;
+        }
+    }
 	
 	/**
 	 * 根据区块ID判断所属区域
