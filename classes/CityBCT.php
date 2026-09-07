@@ -80,7 +80,32 @@ class CityBCT {
         $stmt->execute();
         return $stmt->fetchAll();
     }
-    
+
+    // 统计 cities 中尚未登记行情（不在 city_bct）的词条数量
+    public function countMissingMarketCities() {
+        return (int)$this->pdo->query("
+            SELECT COUNT(*)
+            FROM cities c
+            WHERE NOT EXISTS (SELECT 1 FROM city_bct cb WHERE cb.city = c.name)
+        ")->fetchColumn();
+    }
+
+    // 将 cities 中尚未登记行情的词条（城市/数字资产）全部补入 city_bct，幂等。
+    // 新词条使用表默认值：total_supply=21000000、circulating_supply=0、base_price=current_price=0.10。
+    public function openMarketForAllCities() {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO city_bct (city)
+            SELECT c.name
+            FROM cities c
+            WHERE NOT EXISTS (SELECT 1 FROM city_bct cb WHERE cb.city = c.name)
+        ");
+        $stmt->execute();
+        return [
+            'inserted' => $stmt->rowCount(),
+            'total'    => (int)$this->pdo->query('SELECT COUNT(*) FROM city_bct')->fetchColumn(),
+        ];
+    }
+
     // 获取市场全局统计
     public function getMarketStats() {
         $stats = [

@@ -20,4 +20,12 @@
 
 - [x] 4.1 对改动文件执行 `php -l` 语法检查（本地无 php 时用编辑器诊断复核）。验证：语法检查通过无错误。
 - [ ] 4.2 在线上 `bct.58.tl/admin/city_prices.php` 冒烟：默认第 1 页 100 条、翻页完整、第 3 页保存回跳、搜索命中非首页城市、搜索后回第 1 页、批量填入非当前页城市行仍能匹配更新。验证：上述行为与 spec 场景一致。
-- [ ] 4.3 `git add` 改动文件并提交推送（commit message 建议：`feat(bct-admin): 城市人气值单价列表分页与批量全量匹配说明`）。验证：`git log` 与远程一致。
+- [x] 4.3 `git add` 改动文件并提交推送（commit `18230e0`）。验证：`git log` 与远程一致。
+
+## 5. 开通全量城市行情（数据补齐）
+
+- [x] 5.1 在 `classes/CityBCT.php` 新增 `countMissingMarketCities()`（统计 `cities` 中未登记 `city_bct` 的词条数）与 `openMarketForAllCities()`（`INSERT INTO city_bct (city) SELECT c.name FROM cities c WHERE NOT EXISTS(...)`，其余列走表默认值；返回本次插入数与开通后总数）。验证：方法统计/补齐逻辑正确且幂等。
+- [x] 5.2 在 `bct/admin/city_prices.php` 的 POST 处理中新增 `action=sync_cities` 分支调用补齐方法，通过 `$_SESSION['message']` 反馈本次开通数与当前总数。验证：提交后跳转展示结果提示；重复提交提示"已全量开通，无需新增"。
+- [x] 5.3 列表卡片标题区新增"开通全部城市行情（+N）"按钮（提交前 `confirm` 明示影响，含品牌/数字资产），N=0 时改为展示"城市行情已全量开通"；读取全量 `cities` 数与待开通数并展示；底部"说明"新增第 8 条解释数据口径与操作语义。验证：开通前显示 +327 类数字且按钮可用，开通后变为已全量开通状态，说明文案与实现一致。
+- [x] 5.4 语法检查（`php -l` 不可用则以编辑器诊断复核）、`openspec validate --change city-prices-pagination --strict` 通过、`git add` 提交推送。验证：语法与 spec 校验通过，`git log` 与远程一致。
+- [ ] 5.5 线上冒烟：部署后访问 `bct.58.tl/admin/city_prices.php`，点击"开通全部城市行情"并在确认框放行；随后列表总数约 421、分页完整（每页 100）、可搜索/编辑新开通词条、批量可命中新开通城市、重复点击提示已全量开通、`market.php` 市场列表同步放量。验证：行为与 spec 场景一致。

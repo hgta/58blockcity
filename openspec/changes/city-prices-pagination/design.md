@@ -1,6 +1,8 @@
 ## Context
 
-现状：`bct/admin/city_prices.php` 一次请求内通过 `CityBCT::getAllCitiesBCT()` 拉取 `city_bct` 全量，并在 PHP 内完成：
+现状：`city_bct` 表（唯一存单价）只登记了 94 个词条，而 `cities` 表共有约 421 个词条（城市与品牌/数字资产）。全仓库没有任何代码对 `city_bct` 做 INSERT，该表靠人工/外部 SQL 初始化，故单价管理页与线上行情市场均只覆盖 94 城，其余词条无人气值单价、无法管理。
+
+`bct/admin/city_prices.php` 一次请求内通过 `CityBCT::getAllCitiesBCT()` 拉取 `city_bct` 全量，并在 PHP 内完成：
 - 合并 `get24hChanges()` 计算涨跌幅
 - 用 `cities.rank` / `cities.pinyin` 组装榜单名次与拼音映射
 - 全量过滤（搜索：城市名或拼音包含）与排序（市值/排名/单价/流通量）
@@ -18,11 +20,13 @@
 - 排序/搜索仍在全量上计算后分页切片，语义与现状一致。
 - 保存/批量操作后回到操作前页码，URL 状态（sort/order/search/page）可复现。
 - 明确"批量设置作用于全量城市、不受分页/搜索限制"的页面文案。
+- 提供"开通全部城市行情"入口，将 `cities` 未登记词条按默认单价补入 `city_bct`，使列表覆盖全量词条。
 
 **Non-Goals:**
 - 不改变批量设置的匹配规则、保护规则与写入逻辑。
-- 不改 `classes/CityBCT.php`、不改数据库结构、不引入前端分页框架。
+- 不改变数据库结构（`city_bct` 列与默认值沿用建表定义）、不引入前端分页框架。
 - 不做 SQL 化分页/查询下推（见 Decisions）。
+- 不自动"静默"开通：全量开通由管理员在页面显式确认触发，避免后台脚本擅自放量。
 
 ## Decisions
 
@@ -65,8 +69,21 @@ $page = ($totalPages > 0) ? min($page, $totalPages) : 1;
 
 在批量设置卡片说明区与底部"说明"第 7 条中，补充一句加粗说明：批量按输入行在**全量城市**（`city_bct`/`cities`）中匹配，与列表当前页码、搜索词无关。逻辑代码不动。
 
+### 7. "开通全部城市行情"：显式按钮 + 幂等 INSERT..SELECT
+
+在 `classes/CityBCT.php` 增加：
+- `countMissingMarketCities()`：`cities` 中不存在对应 `city_bct` 行的词条数。
+- `openMarketForAllCities()`：`INSERT INTO city_bct (city) SELECT c.name FROM cities c WHERE NOT EXISTS (...)`，其余列走表默认值（`total_supply=21000000`、`circulating_supply=0`、`base_price=current_price=0.10`），返回本次插入数与开通后总数。
+
+- **入口**：`city_prices.php` 卡片标题区按钮（POST `action=sync_cities`），带 `confirm` 提示影响范围（含品牌/数字资产）；`missingCount > 0` 时可用并显示 +N，否则展示"已全量开通"。
+- **幂等**：`NOT EXISTS` 过滤 + `city_bct.city` 唯一键保证重复执行零副作用、不改既有价格。
+- **理由**：`city_bct` 全仓库无 INSERT 来源，仅人工初始化到 94 行；用 SQL 级补齐避免逐条 PHP 判断，语义最稳。默认 0.10 与表建表默认一致。
+- **备选**：提供一次性 SQL 交由运维手工执行。被否：无 UI 反馈、易被重复执行产生不同步；按钮方案可复现、可解释。
+- **注意**：补齐后 `market.php`/`index.php`/统计接口会随 `getAllCitiesBCT()` 自然覆盖新增词条（总市值按 `circulating_supply×current_price`，新增词条若 `cities.popularity>0` 会自动按实际流通量计入），属预期放量行为。
+
 ## Risks / Trade-offs
 
 - [每请求仍全量加载城市数据] → 当前数百级规模可接受；若未来城市量级大幅增长，可在此后单独将排序/过滤/分页 SQL 化（本 change 不做）。
 - [行保存 redirect 携带的 page 在数据变化后可能越界] → 渲染侧 `min($page, $totalPages)` 收敛到末页，无报错、无空白页。
 - [URL 参数增多导致链接较长] → 仅 sort/order/search/page 四个标量参数，对 GET/表单 action 无实际影响。
+- [一次开通 300+ 词条会显著扩大行情市场（含北大/鲸探等品牌资产，市值按实际人气值计入）] → 属用户明确需求（"补全开通 421 个全部词条"）；按钮前置 `confirm` 明示影响，默认单价 0.10 保守，开通后管理页可逐页改价/下架需另行处理。

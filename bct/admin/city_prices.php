@@ -7,9 +7,21 @@ $cityBCT = new CityBCT($pdo);
 
 // 处理价格更新
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $isBatch = (($_POST['action'] ?? '') === 'batch');
+    $action = $_POST['action'] ?? '';
+    $isBatch = ($action === 'batch');
+    $isSync  = ($action === 'sync_cities');
 
-    if ($isBatch) {
+    if ($isSync) {
+        // ---- 开通全部城市行情：把 cities 中未登记的词条按默认单价补入 city_bct ----
+        try {
+            $sync = $cityBCT->openMarketForAllCities();
+            $_SESSION['message'] = $sync['inserted'] > 0
+                ? "已开通 {$sync['inserted']} 个城市行情（city_bct 现有 {$sync['total']} 城），可回到列表管理其单价。"
+                : "城市行情已全量开通（city_bct 现有 {$sync['total']} 城），无需新增。";
+        } catch (Exception $e) {
+            $_SESSION['error'] = '开通全部城市行情失败：' . $e->getMessage();
+        }
+    } elseif ($isBatch) {
         // ---- 批量设置：每行「城市 数量 价格」，空格/Tab 分隔 ----
         // 规则：数量仅校验不写库；价格仅更新 current_price；
         //      若该城市现有单价 < 录入价，则提示并跳过（不更新）。
@@ -143,9 +155,19 @@ try {
         foreach ($stmt->fetchAll() as $r) {
             $rankMap[$r['name']] = (int)$r['rank'];
         }
-    } catch (Exception $e2) {
-        $rankMap = []; // cities 表没有 rank 字段
+        } catch (Exception $e2) {
+            $rankMap = []; // cities 表没有 rank 字段
+        }
     }
+
+// 全量城市（cities）与待开通（未登记 city_bct）统计，用于"开通全部城市行情"
+$cityTotal = 0;
+$missingCount = 0;
+try {
+    $cityTotal = (int)$pdo->query('SELECT COUNT(*) FROM cities')->fetchColumn();
+    $missingCount = $cityBCT->countMissingMarketCities();
+} catch (Exception $e) {
+    error_log('city_prices stats error: ' . $e->getMessage());
 }
 
 // 排序参数（白名单）
@@ -273,6 +295,17 @@ require_once '../../shared/admin/admin-header.php';
 <div class="admin-card">
     <div class="admin-card-header">
         <span class="admin-card-title"><i class="fas fa-tags"></i> 城市人气值单价管理</span>
+        <?php if ($missingCount > 0): ?>
+        <form method="POST" action="<?= $buildUrl($sort, $order, 1, '') ?>" style="margin-left:auto;display:inline-flex;"
+              onsubmit="return confirm('确认将 cities 中尚未开通行情的 <?= (int)$missingCount ?> 个词条按默认单价 ¥0.10 纳入人气值市场？开通后即出现在上方列表与行情市场，可随时改价；品牌/数字资产词条同样会被开通。');">
+            <input type="hidden" name="action" value="sync_cities">
+            <button type="submit" class="admin-btn admin-btn-secondary admin-btn-sm">
+                <i class="fas fa-plus-circle"></i> 开通全部城市行情（+<?= (int)$missingCount ?>）
+            </button>
+        </form>
+        <?php else: ?>
+        <span style="margin-left:auto;color:#4ade80;font-size:13px;"><i class="fas fa-check-circle"></i> 城市行情已全量开通（<?= (int)$cityTotal ?> 个）</span>
+        <?php endif; ?>
     </div>
     <div class="admin-card-body" style="padding:0;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #1e293b;">
@@ -427,6 +460,7 @@ require_once '../../shared/admin/admin-header.php';
         <p>5. <strong>排序方式</strong>：顶部「市值 / 城市排名 / 当前单价 / 流通量」按钮可切换排序，再点一次可切换升/降序。</p>
         <p>6. <strong>排名</strong>列：取自 <code>cities.rank</code> 城市榜名次；若该城市不在榜单，则按当前排列序号显示。</p>
         <p>7. <strong>批量设置</strong>：按「城市 数量 价格」每行一条；数量仅校验、价格只写入当前单价；匹配范围为<strong>全量城市</strong>（支持城市名或拼音），与上方列表分页/搜索无关；若某城市现有单价低于录入价则提示并跳过，不会覆盖。</p>
+        <p>8. <strong>数据范围</strong>：本页单价数据保存在 <code>city_bct</code>，只有登记其中的词条才会出现在列表与行情市场；当前 <code>cities</code> 共 <?= (int)$cityTotal ?> 个词条（含城市与品牌/数字资产），其中 <?= (int)($cityTotal - $missingCount) ?> 个已开通行情、<?= (int)$missingCount ?> 个待开通。点击上方「开通全部城市行情」可将缺失词条按默认单价 ¥0.10 补入（幂等，重复执行无副作用），随后即可逐页管理其单价。</p>
     </div>
 </div>
 
