@@ -10,6 +10,13 @@ $bctOrder = new BCTOrder($pdo);
 if (isset($_SESSION['message'])) { echo '<div class="alert alert-success">'.htmlspecialchars($_SESSION['message']).'</div>'; unset($_SESSION['message']); }
 if (isset($_SESSION['error'])) { echo '<div class="alert alert-danger">'.htmlspecialchars($_SESSION['error']).'</div>'; unset($_SESSION['error']); }
 
+// 默认值
+$citiesWithData = $tickerCities = $top5Data = [];
+$marketStats = ['total_volume_24h'=>0,'total_market_cap'=>0,'gainers_count'=>0,'losers_count'=>0,'active_orders'=>0];
+$recentTrades = $activeBuyOrders = $activeSellOrders = $orderSummary = [];
+$loadErrors = [];
+
+// 1. 加载城市行情数据（跑马灯 + TOP5）
 try {
     $allCities = $cityBCT->getAllCitiesBCT();
     $changes = $cityBCT->get24hChanges();
@@ -22,17 +29,43 @@ try {
     }
     usort($citiesWithData, fn($a,$b)=>$b['market_cap']<=>$a['market_cap']);
     $tickerCities = array_slice($citiesWithData, 0, 30);
+
     $top5Cities = $cityBCT->getTopCitiesByRank(5);
-    $top5Data = [];
     foreach ($top5Cities as $name) {
         foreach ($citiesWithData as $city) { if ($city['city']===$name) { $top5Data[]=$city; break; } }
     }
+} catch (Exception $e) {
+    $loadErrors[] = '城市行情加载失败：' . $e->getMessage();
+    error_log('BCT index cities error: ' . $e->getMessage());
+}
+
+// 2. 加载市场统计
+try {
     $marketStats = $cityBCT->getMarketStats();
+} catch (Exception $e) {
+    $loadErrors[] = '市场统计加载失败：' . $e->getMessage();
+    error_log('BCT index stats error: ' . $e->getMessage());
+}
+
+// 3. 加载最新成交
+try {
     $recentTrades = $bctOrder->getRecentTrades(null, 12);
+} catch (Exception $e) {
+    $loadErrors[] = '最新成交加载失败：' . $e->getMessage();
+    error_log('BCT index trades error: ' . $e->getMessage());
+}
+
+// 4. 加载买入/卖出挂单
+try {
     $activeBuyOrders = $bctOrder->getActiveOrders('buy', 10);
     $activeSellOrders = $bctOrder->getActiveOrders('sell', 10);
+} catch (Exception $e) {
+    $loadErrors[] = '挂单加载失败：' . $e->getMessage();
+    error_log('BCT index orders error: ' . $e->getMessage());
+}
 
-    // 当前挂单汇总：按城市统计买卖挂单数/最高买价/最低卖价/总价
+// 5. 当前挂单汇总
+try {
     $orderSummary = $pdo->query("
         SELECT
             city,
@@ -49,13 +82,8 @@ try {
         LIMIT 20
     ")->fetchAll();
 } catch (Exception $e) {
-    $citiesWithData = $tickerCities = $top5Data = [];
-    $marketStats = ['total_volume_24h'=>0,'total_market_cap'=>0,'gainers_count'=>0,'losers_count'=>0,'active_orders'=>0];
-    $recentTrades = [];
-    $activeBuyOrders = [];
-    $activeSellOrders = [];
-    $orderSummary = [];
-    error_log("BCT index error: " . $e->getMessage());
+    $loadErrors[] = '挂单汇总加载失败：' . $e->getMessage();
+    error_log('BCT index summary error: ' . $e->getMessage());
 }
 
 require_once 'includes/header.php';
@@ -267,5 +295,16 @@ require_once 'includes/header.php';
 }
 .bct-order-summary tbody tr:hover { background-color: var(--bct-bg-hover); }
 </style>
+
+<?php if (!empty($loadErrors)): ?>
+<div class="alert alert-warning" style="margin-top:24px;background-color:rgba(240,185,11,0.1);border-color:var(--bct-accent);color:var(--bct-text);">
+    <strong><i class="fas fa-exclamation-triangle"></i> 部分数据加载异常：</strong>
+    <ul style="margin:8px 0 0 0;padding-left:20px;">
+        <?php foreach ($loadErrors as $err): ?>
+        <li><?= htmlspecialchars($err) ?></li>
+        <?php endforeach; ?>
+    </ul>
+</div>
+<?php endif; ?>
 
 <?php require_once 'includes/footer.php'; ?>
