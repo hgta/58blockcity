@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $_SESSION['error'] = $e->getMessage();
     }
-    header("Location: city_prices.php");
+    header("Location: city_prices.php?sort=" . urlencode($_GET['sort'] ?? 'cap') . "&order=" . urlencode($_GET['order'] ?? 'desc'));
     exit();
 }
 
@@ -37,8 +37,44 @@ foreach ($allCities as &$city) {
 }
 unset($city);
 
-// 按市值降序
-usort($allCities, fn($a, $b) => $b['market_cap'] <=> $a['market_cap']);
+// 读取城市榜真实排名 cities.rank（列不存在时容错为空）
+$rankMap = [];
+try {
+    $stmt = $pdo->query("SELECT name, `rank` FROM cities WHERE `rank` IS NOT NULL AND `rank` > 0 ORDER BY `rank` ASC");
+    foreach ($stmt->fetchAll() as $r) {
+        $rankMap[$r['name']] = (int)$r['rank'];
+    }
+} catch (Exception $e) {
+    $rankMap = []; // cities 表没有 rank 字段
+}
+
+// 排序参数（白名单）
+$sortOptions = [
+    'cap'    => '市值',
+    'rank'   => '城市排名',
+    'price'  => '当前单价',
+    'supply' => '流通量',
+];
+$sort = $_GET['sort'] ?? 'cap';
+if (!isset($sortOptions[$sort])) $sort = 'cap';
+$order = $_GET['order'] ?? 'desc';
+if (!in_array($order, ['asc', 'desc'], true)) $order = 'desc';
+
+// 各排序维度取值函数
+$sortKey = [
+    'cap'    => fn($c) => (float)$c['market_cap'],
+    'price'  => fn($c) => (float)$c['current_price'],
+    'supply' => fn($c) => (float)$c['circulating_supply'],
+    'rank'   => fn($c) => $rankMap[$c['city']] ?? PHP_INT_MAX,
+];
+
+usort($allCities, function ($a, $b) use ($sortKey, $sort, $order) {
+    $va = $sortKey[$sort]($a);
+    $vb = $sortKey[$sort]($b);
+    if ($va == $vb) return 0;
+    if ($order === 'asc') return $va < $vb ? -1 : 1;
+    return $va > $vb ? -1 : 1;
+});
 
 $admin_site_config = ['site' => 'bct', 'page_title' => '城市人气值单价管理'];
 require_once '../../shared/admin/admin-header.php';
@@ -61,6 +97,24 @@ require_once '../../shared/admin/admin-header.php';
         <span class="admin-card-title"><i class="fas fa-tags"></i> 城市人气值单价管理</span>
     </div>
     <div class="admin-card-body" style="padding:0;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #1e293b;">
+            <span style="color:#94a3b8;font-size:13px;">排序方式：</span>
+            <?php foreach ($sortOptions as $key => $label):
+                $active = ($sort === $key);
+                // 激活态点击切换方向；未激活首次点击按维度给合理默认（排名升序、其余降序）
+                if ($active) {
+                    $nextOrder = ($order === 'asc') ? 'desc' : 'asc';
+                } else {
+                    $nextOrder = ($key === 'rank') ? 'asc' : 'desc';
+                }
+                $arrow = $active ? ($order === 'asc' ? ' ↑' : ' ↓') : '';
+            ?>
+            <a href="city_prices.php?sort=<?= $key ?>&order=<?= $nextOrder ?>"
+               class="admin-btn <?= $active ? 'admin-btn-primary' : '' ?> admin-btn-sm">
+                <?= $label ?><?= $arrow ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
         <div style="overflow-x:auto;">
             <table class="admin-data-table">
                 <thead>
@@ -79,9 +133,9 @@ require_once '../../shared/admin/admin-header.php';
                 <tbody>
                     <?php foreach ($allCities as $idx => $city): ?>
                     <tr>
-                        <form method="POST">
+                        <form method="POST" action="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?>">
                             <input type="hidden" name="city" value="<?= htmlspecialchars($city['city']) ?>">
-                            <td><?= $idx + 1 ?></td>
+                            <td><?= $rankMap[$city['city']] ?? ($idx + 1) ?></td>
                             <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
                             <td>
                                 <input type="number" name="current_price" step="0.01" min="0.01" required
@@ -124,7 +178,9 @@ require_once '../../shared/admin/admin-header.php';
         <p>1. <strong>当前单价</strong>：城市人气值在交易市场的实时单价，首页/行情页/城市详情页均显示此价格。</p>
         <p>2. <strong>基础单价</strong>：自动调价算法的底价，autoAdjustPrice 不会把价格压到基础单价以下。</p>
         <p>3. <strong>人气流通量</strong>：取自 <code>cities.popularity</code>（已产生人气值），用于计算流通市值。</p>
-        <p>4. 修改后点击「保存」即可生效，无需重启服务。</p>
+        <p>4. 修改后点击「保存」即可生效，无需重启服务，保存后停留在当前排序。</p>
+        <p>5. <strong>排序方式</strong>：顶部「市值 / 城市排名 / 当前单价 / 流通量」按钮可切换排序，再点一次可切换升/降序。</p>
+        <p>6. <strong>排名</strong>列：取自 <code>cities.rank</code> 城市榜名次；若该城市不在榜单，则按当前排列序号显示。</p>
     </div>
 </div>
 
