@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $_SESSION['error'] = $e->getMessage();
     }
-    header("Location: city_prices.php?sort=" . urlencode($_GET['sort'] ?? 'cap') . "&order=" . urlencode($_GET['order'] ?? 'desc'));
+    $backSearch = trim($_GET['search'] ?? '');
+    header("Location: city_prices.php?sort=" . urlencode($_GET['sort'] ?? 'cap') . "&order=" . urlencode($_GET['order'] ?? 'desc')
+        . ($backSearch !== '' ? "&search=" . urlencode($backSearch) : ''));
     exit();
 }
 
@@ -37,15 +39,25 @@ foreach ($allCities as &$city) {
 }
 unset($city);
 
-// 读取城市榜真实排名 cities.rank（列不存在时容错为空）
+// 读取城市榜真实排名 cities.rank 与拼音 cities.pinyin（列不存在时容错为空）
 $rankMap = [];
+$pinyinMap = [];
 try {
-    $stmt = $pdo->query("SELECT name, `rank` FROM cities WHERE `rank` IS NOT NULL AND `rank` > 0 ORDER BY `rank` ASC");
+    $stmt = $pdo->query("SELECT name, `rank`, pinyin FROM cities");
     foreach ($stmt->fetchAll() as $r) {
         $rankMap[$r['name']] = (int)$r['rank'];
+        $pinyinMap[$r['name']] = strtolower((string)$r['pinyin']);
     }
 } catch (Exception $e) {
-    $rankMap = []; // cities 表没有 rank 字段
+    // 兼容没有 pinyin 列的环境
+    try {
+        $stmt = $pdo->query("SELECT name, `rank` FROM cities");
+        foreach ($stmt->fetchAll() as $r) {
+            $rankMap[$r['name']] = (int)$r['rank'];
+        }
+    } catch (Exception $e2) {
+        $rankMap = []; // cities 表没有 rank 字段
+    }
 }
 
 // 排序参数（白名单）
@@ -59,6 +71,20 @@ $sort = $_GET['sort'] ?? 'cap';
 if (!isset($sortOptions[$sort])) $sort = 'cap';
 $order = $_GET['order'] ?? 'desc';
 if (!in_array($order, ['asc', 'desc'], true)) $order = 'desc';
+
+// 搜索关键词：匹配城市名 或 拼音（含拼音前缀/包含）
+$search = trim($_GET['search'] ?? '');
+if ($search !== '') {
+    $kwName = mb_strtolower($search);
+    $kwPy = strtolower($search);
+    $allCities = array_values(array_filter($allCities, function ($city) use ($kwName, $kwPy, $pinyinMap) {
+        $name = (string)($city['city'] ?? '');
+        if (mb_stripos($name, $kwName) !== false) return true;
+        $pinyin = $pinyinMap[$name] ?? '';
+        if ($pinyin !== '' && strpos($pinyin, $kwPy) !== false) return true;
+        return false;
+    }));
+}
 
 // 各排序维度取值函数
 $sortKey = [
@@ -108,12 +134,26 @@ require_once '../../shared/admin/admin-header.php';
                     $nextOrder = ($key === 'rank') ? 'asc' : 'desc';
                 }
                 $arrow = $active ? ($order === 'asc' ? ' ↑' : ' ↓') : '';
+                $sortHref = 'city_prices.php?sort=' . $key . '&order=' . $nextOrder
+                    . ($search !== '' ? '&search=' . urlencode($search) : '');
             ?>
-            <a href="city_prices.php?sort=<?= $key ?>&order=<?= $nextOrder ?>"
+            <a href="<?= $sortHref ?>"
                class="admin-btn <?= $active ? 'admin-btn-primary' : '' ?> admin-btn-sm">
                 <?= $label ?><?= $arrow ?>
             </a>
             <?php endforeach; ?>
+
+            <form method="get" action="city_prices.php" style="display:flex;gap:8px;margin-left:auto;">
+                <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
+                <input type="hidden" name="order" value="<?= htmlspecialchars($order) ?>">
+                <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="搜索城市名 / 拼音"
+                       style="width:180px;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
+                <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm"><i class="fas fa-search"></i> 搜索</button>
+                <?php if ($search !== ''): ?>
+                    <a href="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?>"
+                       class="admin-btn admin-btn-secondary admin-btn-sm">重置</a>
+                <?php endif; ?>
+            </form>
         </div>
         <div style="overflow-x:auto;">
             <table class="admin-data-table">
@@ -133,7 +173,7 @@ require_once '../../shared/admin/admin-header.php';
                 <tbody>
                     <?php foreach ($allCities as $idx => $city): ?>
                     <tr>
-                        <form method="POST" action="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?>">
+                        <form method="POST" action="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?><?= $search !== '' ? '&search=' . urlencode($search) : '' ?>">
                             <input type="hidden" name="city" value="<?= htmlspecialchars($city['city']) ?>">
                             <td><?= $rankMap[$city['city']] ?? ($idx + 1) ?></td>
                             <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
@@ -162,7 +202,7 @@ require_once '../../shared/admin/admin-header.php';
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($allCities)): ?>
-                    <tr><td colspan="9" style="text-align:center;padding:24px;color:#64748b;">暂无城市数据</td></tr>
+                    <tr><td colspan="9" style="text-align:center;padding:24px;color:#64748b;"><?= $search !== '' ? '未找到匹配「' . htmlspecialchars($search) . '」的城市' : '暂无城市数据' ?></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
