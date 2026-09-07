@@ -139,8 +139,8 @@ class CityBCT {
                 (t.current_price - COALESCE(t.prev_price, t.current_price)) / NULLIF(COALESCE(t.prev_price, t.current_price), 0) * 100 as change_pct
             FROM (
                 SELECT c.name AS city,
-                    (SELECT price FROM bct_transactions WHERE city = c.name AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
-                    (SELECT price FROM bct_transactions WHERE city = c.name AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
+                    (SELECT price FROM bct_transactions WHERE city = c.name COLLATE utf8mb4_general_ci AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
+                    (SELECT price FROM bct_transactions WHERE city = c.name COLLATE utf8mb4_general_ci AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
                 FROM cities c
             ) t
         ");

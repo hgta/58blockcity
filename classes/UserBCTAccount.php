@@ -34,7 +34,7 @@ class UserBCTAccount {
     public function getUserAccounts($userId) {
         $sql = "SELECT uba.*, c.bct_current_price AS current_price 
                 FROM user_bct_account uba
-                JOIN cities c ON uba.city = c.name
+                JOIN cities c ON uba.city = c.name COLLATE utf8mb4_general_ci
                 WHERE uba.user_id = ?";
         
         $stmt = $this->pdo->prepare($sql);

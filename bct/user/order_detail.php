@@ -21,7 +21,7 @@ try {
                c.bct_current_price as city_current_price
         FROM bct_orders o 
         LEFT JOIN users u ON o.user_id = u.id 
-        LEFT JOIN cities c ON o.city = c.name
+        LEFT JOIN cities c ON o.city = c.name COLLATE utf8mb4_general_ci
         WHERE o.id = ?
     ");
     $stmt->execute([$orderId]);
