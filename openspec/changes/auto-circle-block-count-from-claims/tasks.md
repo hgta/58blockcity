@@ -21,5 +21,5 @@
 
 ## 5. 提交与部署
 
-- [ ] 5.1 `git add` 所有改动，提交 `feat(hufang-circles): 创建互访圈时自动根据城市认领区块数计算 block_count`，并 `push origin main`。
+- [x] 5.1 `git add` 所有改动，提交 `feat(hufang-circles): 创建互访圈时自动根据城市认领区块数计算 block_count`，并 `push origin main`。
 - [ ] 5.2 线上 `v.58.tl/circles/create.php` 验证实际用户选择城市后 `block_count` 自动回填。
