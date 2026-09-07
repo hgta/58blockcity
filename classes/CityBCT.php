@@ -33,6 +33,7 @@ class CityBCT {
     // 按 cities.rank 取前 N 个城市（用于 TOP5 热门城市）
     // 若 rank 字段不存在或查询失败，则 fallback 为按 popularity 降序取前 N
     public function getTopCitiesByRank($limit = 5) {
+        $limit = (int)$limit;
         try {
             $hasRank = $this->pdo->query("SHOW COLUMNS FROM cities LIKE 'rank'")->rowCount() > 0;
             if ($hasRank) {
@@ -40,26 +41,26 @@ class CityBCT {
                     SELECT name FROM cities
                     WHERE status = 'active'
                     ORDER BY rank ASC, popularity DESC, id ASC
-                    LIMIT ?
+                    LIMIT {$limit}
                 ");
             } else {
                 $stmt = $this->pdo->prepare("
                     SELECT name FROM cities
                     WHERE status = 'active'
                     ORDER BY popularity DESC, id ASC
-                    LIMIT ?
+                    LIMIT {$limit}
                 ");
             }
-            $stmt->execute([$limit]);
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_COLUMN);
         } catch (Exception $e) {
             error_log("getTopCitiesByRank fallback: " . $e->getMessage());
             $stmt = $this->pdo->prepare("
                 SELECT name FROM cities
                 ORDER BY popularity DESC, id ASC
-                LIMIT ?
+                LIMIT {$limit}
             ");
-            $stmt->execute([$limit]);
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_COLUMN);
         }
     }
