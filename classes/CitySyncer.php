@@ -335,9 +335,6 @@ class CitySyncer
                     updated_at = NOW()
                 WHERE id = ?"
         );
-        $updBct  = $pdo->prepare(
-            "UPDATE city_bct SET circulating_supply = ? WHERE city = ?"
-        );
 
         $stat = ['total' => count($areaIds), 'updated' => 0, 'failed' => 0, 'errors' => []];
         $total = $stat['total'];
@@ -354,7 +351,6 @@ class CitySyncer
             $city = $byArea[$areaId];
             try {
                 $bal = self::fetchAreaBalance($areaId);
-                $circulating = max(0, $bal['points'] - $bal['consume']);
 
                 $updCity->execute([
                     $bal['points'],
@@ -364,7 +360,6 @@ class CitySyncer
                     $bal['pointsId'],
                     $city['id'],
                 ]);
-                $updBct->execute([$circulating, $city['name']]);
                 $stat['updated']++;
                 if ($onProgress) {
                     call_user_func($onProgress, $i + 1, $total, $city['name'], true);

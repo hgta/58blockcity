@@ -18,10 +18,10 @@ try {
     // 获取订单详细信息
     $stmt = $pdo->prepare("
         SELECT o.*, u.username, u.email, u.phone,
-               cb.current_price as city_current_price
+               c.bct_current_price as city_current_price
         FROM bct_orders o 
         LEFT JOIN users u ON o.user_id = u.id 
-        LEFT JOIN city_bct cb ON o.city = cb.city
+        LEFT JOIN cities c ON o.city = c.name
         WHERE o.id = ?
     ");
     $stmt->execute([$orderId]);

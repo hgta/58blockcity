@@ -27,6 +27,6 @@
 ## Impact
 
 - 修改文件：`bct/admin/city_prices.php`（列表切片、分页控件、URL 状态保留、批量说明文案）。
-- 无需改动：`classes/CityBCT.php`、`shared/admin/admin-header.php` 等公共部分。
 - 批量设置的匹配范围/保护规则（现有单价 < 录入价则跳过）与数据写入逻辑保持不变。
-- 无数据库变更，无新增依赖。
+
+> **演进（2026-09-08，见 design 决策 8）**：BCT 单价随后物理并入 `cities`（`bct_base_price`/`bct_current_price`/`bct_price_updated`），取代"一键开通全部城市行情"入口与 `city_bct` 独立表；`CityBCT` 查询改以 `cities` 为源并保持返回键兼容，人气值同步不再双写流通量，`city_bct` 迁移后改名备份。新增数据库迁移 `init/migration-merge-city-bct.sql`（幂等）与对 `classes/CityBCT.php`、`UserBCTAccount.php`、`CitySyncer.php`、`sync-popularity-api.php`、`order_detail.php` 的改动。

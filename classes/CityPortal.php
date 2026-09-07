@@ -127,7 +127,7 @@ class CityPortal {
         });
     }
 
-    /** 💰 BCT 行情（city_bct 单行） */
+    /** 💰 BCT 行情（cities 行：bct_base_price / bct_current_price） */
     public function bct($cityName) {
         return $this->guard(function () use ($cityName) {
             if ($cityName === '') {

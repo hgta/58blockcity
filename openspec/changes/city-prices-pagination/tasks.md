@@ -28,4 +28,13 @@
 - [x] 5.2 在 `bct/admin/city_prices.php` 的 POST 处理中新增 `action=sync_cities` 分支调用补齐方法，通过 `$_SESSION['message']` 反馈本次开通数与当前总数。验证：提交后跳转展示结果提示；重复提交提示"已全量开通，无需新增"。
 - [x] 5.3 列表卡片标题区新增"开通全部城市行情（+N）"按钮（提交前 `confirm` 明示影响，含品牌/数字资产），N=0 时改为展示"城市行情已全量开通"；读取全量 `cities` 数与待开通数并展示；底部"说明"新增第 8 条解释数据口径与操作语义。验证：开通前显示 +327 类数字且按钮可用，开通后变为已全量开通状态，说明文案与实现一致。
 - [x] 5.4 语法检查（`php -l` 不可用则以编辑器诊断复核）、`openspec validate --change city-prices-pagination --strict` 通过、`git add` 提交推送。验证：语法与 spec 校验通过，`git log` 与远程一致。
-- [ ] 5.5 线上冒烟：部署后访问 `bct.58.tl/admin/city_prices.php`，点击"开通全部城市行情"并在确认框放行；随后列表总数约 421、分页完整（每页 100）、可搜索/编辑新开通词条、批量可命中新开通城市、重复点击提示已全量开通、`market.php` 市场列表同步放量。验证：行为与 spec 场景一致。
+- [ ] 5.5 ~~线上冒烟（按钮方案）~~：已被第 6 组"单价并入 cities"取代，勿再按按钮流程执行。原验收点（列表 421、分页、批量命中新词条、market 放量）并入 6.6。
+
+## 6. 演进：BCT 单价并入 cities（单一事实源，取代方案 5）
+
+- [x] 6.1 新增幂等迁移 `init/migration-merge-city-bct.sql`：`cities` 加 `bct_base_price`/`bct_current_price`/`bct_price_updated`，从 `city_bct` 按 name 回填既有 94 城单价并输出核对；`init/db-init.sql` 建表同步三列、标注 `city_bct` 废弃为历史备份。验证：脚本可重复执行（加列幂等、UPDATE 覆盖同值），回填行数与 `city_bct` 一致。
+- [x] 6.2 `classes/CityBCT.php` 重构为以 `cities` 为唯一数据源（公共 `bctSelect()`，返回键 `id/city/base_price/current_price/circulating_supply/total_supply/last_updated/city_popularity` 保持兼容）；`total_supply` 收敛类常量 `TOTAL_SUPPLY=21000000`；流通量统一 `popularity - popularity_consume`；删除 `countMissingMarketCities()`/`openMarketForAllCities()`；`updatePrice()`/`updateBasePrice()`/`getMarketStats()`/`get24hChanges()` 去 `city_bct`。验证：php lint 或编辑器诊断通过；market.php / index.php / city.php / 城市门户 / 账户估值 / 订单详情取键不变。
+- [x] 6.3 清理人气值双写与裸 JOIN：`CitySyncer::applyPopularity()` 与 `hufang/admin/sync-popularity-api.php` 不再 `UPDATE city_bct.circulating_supply`；`UserBCTAccount`/`bct/user/order_detail.php` 改 JOIN `cities`。验证：全仓 PHP 无 `city_bct` 读写（仅历史注释）。
+- [x] 6.4 `bct/admin/city_prices.php`：移除 POST `sync_cities` 分支、标题区"开通全部行情"按钮与统计、批量匹配 SQL 改 `cities.bct_current_price`；标题区改为"BCT 单价存于 cities，全量 N 词条均含行情"；说明第 3/8 条改新口径。验证：页面无"开通/待开通"残留元素，全量约 421 词条。
+- [x] 6.5 同步 openspec 工件（spec Requirement、design Context/Goals/Decision 8/Risks、tasks）并 `openspec validate --strict` 通过。验证：validate 无错误。
+- [ ] 6.6 线上迁移与冒烟：① 在服务器执行 `init/migration-merge-city-bct.sql`；② 部署代码；③ 冒烟：`city_prices.php` 共 421 词条分页正常、原 94 城价格与迁移前一致、批量设置命中新词条、`market.php`/`city.php`/首页/门户行情正常、人气值同步单城更新不报错、`process_order.php` 校验正常；④ 全部通过后执行 `RENAME TABLE city_bct TO city_bct_deprecated_20260908` 备份。验证：行为与 spec "BCT 单价并入 cities" 场景一致。

@@ -213,7 +213,7 @@
 
 **用户**: users, remember_tokens, user_addresses
 **城市区块**: cities, blocks, merged_blocks, purchase_requests, transactions
-**BCT经济**: city_bct, bct_orders, bct_transactions, user_bct_account, user_city_popularity, mediators
+**BCT经济**: city_bct（已并入 cities.bct_base_price/bct_current_price/bct_price_updated，见 init/migration-merge-city-bct.sql）, bct_orders, bct_transactions, user_bct_account, user_city_popularity, mediators
 **NFT**: nft_avatars, nft_city_user, nft_sales, nft_transactions, nft_purchase_requests, nft_claim_appeals, nft_attributes, nft_tags, tags, attribute_definitions, comments, user_nft_collections
 **商城**: shops, products, product_categories, product_payment_cities, shop_payment_settings, orders, order_items, cart_items
 **互访圈**: circles, visits, notifications

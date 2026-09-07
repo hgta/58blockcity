@@ -4,7 +4,7 @@
  *
  * 解决库内两套城市维度字段并存的问题：
  *   - int  `city_id`   （blocks / nft_sales / city_profiles 等表）
- *   - str  城市名      （city_bct / circles / posts / users / models / authors 等表）
+ *   - str  城市名      （cities / circles / posts / users / models / authors / bct 等表）
  *
  * 用法：$key = new CityKey($pdo);
  *   $city    = $key->byPinyin('beijing');          // 取 cities 行

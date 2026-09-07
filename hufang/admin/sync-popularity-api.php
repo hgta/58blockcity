@@ -97,8 +97,7 @@ try {
                 throw new RuntimeException('未找到该城市的官方 areaId');
             }
 
-            $bal         = CitySyncer::fetchAreaBalance($areaId);
-            $circulating = max(0, $bal['points'] - $bal['consume']);
+            $bal = CitySyncer::fetchAreaBalance($areaId);
 
             $upd = $pdo->prepare(
                 "UPDATE cities
@@ -114,9 +113,6 @@ try {
                 $bal['pointsId'],
                 $cityId,
             ]);
-
-            $updBct = $pdo->prepare("UPDATE city_bct SET circulating_supply = ? WHERE city = ?");
-            $updBct->execute([$circulating, $city['name']]);
 
             $success = true;
             $msg     = $city['name'] . ' 人气值已更新';

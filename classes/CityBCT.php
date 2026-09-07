@@ -1,34 +1,50 @@
 <?php
 class CityBCT {
+    // 全词条统一总供给量（原 city_bct.total_supply 全表固定值，不再逐行存储）
+    const TOTAL_SUPPLY = 21000000;
+
     private $pdo;
     
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
-    
-    // 获取城市人气值信息（流通量 = cities.popularity - cities.popularity_consume）
-    public function getCityBCT($city) {
-        $stmt = $this->pdo->prepare("
-            SELECT cb.*,
-                GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) AS circulating_supply,
+
+    // BCT 行情统一出自 cities 表：单价取 bct_base_price/bct_current_price，
+    // 流通量 = popularity - popularity_consume（不再落库、不再依赖旧 city_bct）。
+    // 返回键与旧实现兼容：id/city/base_price/current_price/circulating_supply/
+    // total_supply/last_updated/city_popularity，便于各消费方无感切换。
+    private function bctSelect($where = '', $orderBy = 'c.name') {
+        return "
+            SELECT c.id,
+                c.name AS city,
+                c.bct_base_price AS base_price,
+                c.bct_current_price AS current_price,
+                GREATEST(COALESCE(c.popularity, 0) - COALESCE(c.popularity_consume, 0), 0) AS circulating_supply,
+                " . self::TOTAL_SUPPLY . " AS total_supply,
+                COALESCE(c.bct_price_updated, c.updated_at) AS last_updated,
                 c.popularity AS city_popularity
-            FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
-            WHERE cb.city = ?
-        ");
+            FROM cities c
+            {$where}
+            {$orderBy}
+        ";
+    }
+
+    // 获取单个词条的人气值行情（城市不存在返回 false）
+    public function getCityBCT($city) {
+        $stmt = $this->pdo->prepare($this->bctSelect('WHERE c.name = ?'));
         $stmt->execute([$city]);
         return $stmt->fetch();
     }
     
-    // 更新城市人气值价格
+    // 更新城市人气值当前价
     public function updatePrice($city, $newPrice) {
-        $stmt = $this->pdo->prepare("UPDATE city_bct SET current_price = ?, last_updated = NOW() WHERE city = ?");
+        $stmt = $this->pdo->prepare("UPDATE cities SET bct_current_price = ?, bct_price_updated = NOW(), updated_at = NOW() WHERE name = ?");
         return $stmt->execute([$newPrice, $city]);
     }
     
     // 更新城市人气值基础价
     public function updateBasePrice($city, $basePrice) {
-        $stmt = $this->pdo->prepare("UPDATE city_bct SET base_price = ? WHERE city = ?");
+        $stmt = $this->pdo->prepare("UPDATE cities SET bct_base_price = ?, updated_at = NOW() WHERE name = ?");
         return $stmt->execute([$basePrice, $city]);
     }
     
@@ -67,43 +83,11 @@ class CityBCT {
         }
     }
     
-    // 获取所有城市人气值信息（流通量 = cities.popularity - cities.popularity_consume）
+    // 获取所有词条人气值行情（= cities 全量，天然包含全部城市与品牌/数字资产词条）
     public function getAllCitiesBCT() {
-        $stmt = $this->pdo->prepare("
-            SELECT cb.*,
-                GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) AS circulating_supply,
-                c.popularity AS city_popularity
-            FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
-            ORDER BY cb.city
-        ");
+        $stmt = $this->pdo->prepare($this->bctSelect());
         $stmt->execute();
         return $stmt->fetchAll();
-    }
-
-    // 统计 cities 中尚未登记行情（不在 city_bct）的词条数量
-    public function countMissingMarketCities() {
-        return (int)$this->pdo->query("
-            SELECT COUNT(*)
-            FROM cities c
-            WHERE NOT EXISTS (SELECT 1 FROM city_bct cb WHERE cb.city = c.name)
-        ")->fetchColumn();
-    }
-
-    // 将 cities 中尚未登记行情的词条（城市/数字资产）全部补入 city_bct，幂等。
-    // 新词条使用表默认值：total_supply=21000000、circulating_supply=0、base_price=current_price=0.10。
-    public function openMarketForAllCities() {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO city_bct (city)
-            SELECT c.name
-            FROM cities c
-            WHERE NOT EXISTS (SELECT 1 FROM city_bct cb WHERE cb.city = c.name)
-        ");
-        $stmt->execute();
-        return [
-            'inserted' => $stmt->rowCount(),
-            'total'    => (int)$this->pdo->query('SELECT COUNT(*) FROM city_bct')->fetchColumn(),
-        ];
     }
 
     // 获取市场全局统计
@@ -124,11 +108,10 @@ class CityBCT {
         ");
         $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
 
-        // 总市值 = SUM(真实流通量 * city_bct.current_price)
+        // 总市值 = SUM(真实流通量 * cities.bct_current_price)
         $stmt = $this->pdo->query("
-            SELECT COALESCE(SUM(GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) * cb.current_price), 0) as cap
-            FROM city_bct cb
-            LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
+            SELECT COALESCE(SUM(GREATEST(COALESCE(c.popularity, 0) - COALESCE(c.popularity_consume, 0), 0) * c.bct_current_price), 0) as cap
+            FROM cities c
         ");
         $stats['total_market_cap'] = (float)$stmt->fetchColumn();
 
@@ -155,10 +138,10 @@ class CityBCT {
             SELECT t.city,
                 (t.current_price - COALESCE(t.prev_price, t.current_price)) / NULLIF(COALESCE(t.prev_price, t.current_price), 0) * 100 as change_pct
             FROM (
-                SELECT city,
-                    (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
-                    (SELECT price FROM bct_transactions WHERE city = cb.city AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
-                FROM city_bct cb
+                SELECT c.name AS city,
+                    (SELECT price FROM bct_transactions WHERE city = c.name AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
+                    (SELECT price FROM bct_transactions WHERE city = c.name AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
+                FROM cities c
             ) t
         ");
         while ($row = $stmt->fetch()) {

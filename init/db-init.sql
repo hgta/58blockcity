@@ -178,7 +178,10 @@ CREATE TABLE IF NOT EXISTS `cities` (
   `popularity` int(11) DEFAULT '0' COMMENT '已产生人气值',
   `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'active' COMMENT '状态',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `bct_base_price` decimal(10,2) NOT NULL DEFAULT '0.10' COMMENT 'BCT 基础单价（人气值市场底价）',
+  `bct_current_price` decimal(10,2) NOT NULL DEFAULT '0.10' COMMENT 'BCT 当前单价（人气值市场实时价）',
+  `bct_price_updated` datetime DEFAULT NULL COMMENT 'BCT 单价最近更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='城市数据表';
 
 -- --------------------------------------------------------
@@ -217,6 +220,10 @@ CREATE TABLE IF NOT EXISTS `city_profiles` (
 --
 -- 表的结构 `city_bct`
 --
+
+-- 注意：city_bct 已废弃——BCT 单价已并入 cities.bct_base_price / bct_current_price /
+-- bct_price_updated，流通量按 cities.popularity - cities.popularity_consume 实时计算，
+-- 总供给统一为常量 21000000。本表仅作历史参考/回滚备份，新代码不再读写。
 
 CREATE TABLE IF NOT EXISTS `city_bct` (
   `id` int(11) NOT NULL,

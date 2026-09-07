@@ -32,9 +32,9 @@ class UserBCTAccount {
      * 获取用户所有城市的BCT账户信息
      */
     public function getUserAccounts($userId) {
-        $sql = "SELECT uba.*, cb.current_price 
+        $sql = "SELECT uba.*, c.bct_current_price AS current_price 
                 FROM user_bct_account uba
-                JOIN city_bct cb ON uba.city = cb.city
+                JOIN cities c ON uba.city = c.name
                 WHERE uba.user_id = ?";
         
         $stmt = $this->pdo->prepare($sql);
