@@ -110,7 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $backSearch = trim($_GET['search'] ?? '');
+    $backPage = max(1, (int)($_GET['page'] ?? 1));
     header("Location: city_prices.php?sort=" . urlencode($_GET['sort'] ?? 'cap') . "&order=" . urlencode($_GET['order'] ?? 'desc')
+        . "&page=" . $backPage
         . ($backSearch !== '' ? "&search=" . urlencode($backSearch) : ''));
     exit();
 }
@@ -188,6 +190,26 @@ usort($allCities, function ($a, $b) use ($sortKey, $sort, $order) {
     return $va > $vb ? -1 : 1;
 });
 
+// ---- 分页：排序/搜索已在全量上完成，这里仅对结果集切片 ----
+$perPage = 100;
+$total = count($allCities);
+$totalPages = $total > 0 ? (int)ceil($total / $perPage) : 0;
+$page = max(1, (int)($_GET['page'] ?? 1));
+if ($totalPages > 0 && $page > $totalPages) {
+    $page = $totalPages; // 越界收敛到末页
+}
+$offset = ($page - 1) * $perPage;
+$pageCities = $total > 0 ? array_slice($allCities, $offset, $perPage) : [];
+
+// 统一构造带查询状态（sort/order/search/page）的页面 URL
+$buildUrl = function ($sortKey, $orderKey, $pageNo, $searchKw) {
+    $url = 'city_prices.php?sort=' . urlencode($sortKey) . '&order=' . urlencode($orderKey) . '&page=' . (int)$pageNo;
+    if ($searchKw !== '') {
+        $url .= '&search=' . urlencode($searchKw);
+    }
+    return $url;
+};
+
 $admin_site_config = ['site' => 'bct', 'page_title' => '城市人气值单价管理'];
 require_once '../../shared/admin/admin-header.php';
 ?>
@@ -264,8 +286,8 @@ require_once '../../shared/admin/admin-header.php';
                     $nextOrder = ($key === 'rank') ? 'asc' : 'desc';
                 }
                 $arrow = $active ? ($order === 'asc' ? ' ↑' : ' ↓') : '';
-                $sortHref = 'city_prices.php?sort=' . $key . '&order=' . $nextOrder
-                    . ($search !== '' ? '&search=' . urlencode($search) : '');
+                // 切换排序回到第 1 页
+                $sortHref = $buildUrl($key, $nextOrder, 1, $search);
             ?>
             <a href="<?= $sortHref ?>"
                class="admin-btn <?= $active ? 'admin-btn-primary' : '' ?> admin-btn-sm">
@@ -280,10 +302,11 @@ require_once '../../shared/admin/admin-header.php';
                        style="width:180px;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
                 <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm"><i class="fas fa-search"></i> 搜索</button>
                 <?php if ($search !== ''): ?>
-                    <a href="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?>"
+                    <a href="<?= $buildUrl($sort, $order, 1, '') ?>"
                        class="admin-btn admin-btn-secondary admin-btn-sm">重置</a>
                 <?php endif; ?>
             </form>
+            <span style="margin-left:auto;color:#64748b;font-size:13px;">共 <?= $total ?> 个城市</span>
         </div>
         <div style="overflow-x:auto;">
             <table class="admin-data-table">
@@ -301,11 +324,11 @@ require_once '../../shared/admin/admin-header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($allCities as $idx => $city): ?>
+                    <?php foreach ($pageCities as $idx => $city): ?>
                     <tr>
-                        <form method="POST" action="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?><?= $search !== '' ? '&search=' . urlencode($search) : '' ?>">
+                        <form method="POST" action="<?= $buildUrl($sort, $order, $page, $search) ?>">
                             <input type="hidden" name="city" value="<?= htmlspecialchars($city['city']) ?>">
-                            <td><?= $rankMap[$city['city']] ?? ($idx + 1) ?></td>
+                            <td><?= $rankMap[$city['city']] ?? ($offset + $idx + 1) ?></td>
                             <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
                             <td>
                                 <input type="number" name="current_price" step="0.01" min="0.01" required
@@ -331,11 +354,40 @@ require_once '../../shared/admin/admin-header.php';
                         </form>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($allCities)): ?>
+                    <?php if (empty($pageCities)): ?>
                     <tr><td colspan="9" style="text-align:center;padding:24px;color:#64748b;"><?= $search !== '' ? '未找到匹配「' . htmlspecialchars($search) . '」的城市' : '暂无城市数据' ?></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+        <div class="admin-pagination" style="justify-content:space-between;padding:12px 16px;border-top:1px solid #1e293b;">
+            <div class="admin-page-info">共 <?= $total ?> 个城市 · 第 <?= $page ?> / <?= $totalPages > 0 ? $totalPages : 1 ?> 页</div>
+            <?php if ($totalPages > 1): ?>
+            <div class="admin-page-buttons">
+                <?php if ($page > 1): ?>
+                    <a href="<?= $buildUrl($sort, $order, 1, $search) ?>">首页</a>
+                    <a href="<?= $buildUrl($sort, $order, $page - 1, $search) ?>">上一页</a>
+                <?php else: ?>
+                    <span class="disabled">首页</span>
+                    <span class="disabled">上一页</span>
+                <?php endif; ?>
+                <?php $start = max(1, $page - 2); $end = min($totalPages, $page + 2); ?>
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <?php if ($i === $page): ?>
+                        <span class="current"><?= $i ?></span>
+                    <?php else: ?>
+                        <a href="<?= $buildUrl($sort, $order, $i, $search) ?>"><?= $i ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?= $buildUrl($sort, $order, $page + 1, $search) ?>">下一页</a>
+                    <a href="<?= $buildUrl($sort, $order, $totalPages, $search) ?>">末页</a>
+                <?php else: ?>
+                    <span class="disabled">下一页</span>
+                    <span class="disabled">末页</span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -348,9 +400,10 @@ require_once '../../shared/admin/admin-header.php';
         <p style="color:#94a3b8;font-size:13px;line-height:1.9;margin:0 0 12px;">
             每行一条，格式：<code style="color:#e2e8f0;">城市 数量 价格</code>（空格或 Tab 分隔，支持全角空格；<code>#</code> 或 <code>//</code> 开头为注释行）。<br>
             「数量」仅做格式校验，不会写入任何字段；「价格」将写入该城市<strong>当前单价（current_price）</strong>，<strong>基础单价（base_price）保持不变</strong>。<br>
+            <span style="color:#e2e8f0;">本批量功能按输入行在<strong>全量城市</strong>中匹配（城市名或拼音），与上方列表当前页码、搜索词无关，不会只作用于当前页。</span><br>
             <span style="color:#fbbf24;">保护规则：若该城市现有单价 < 录入价，将提示并跳过，暂不更新。</span>
         </p>
-        <form method="POST" action="city_prices.php?sort=<?= htmlspecialchars($sort) ?>&order=<?= htmlspecialchars($order) ?><?= $search !== '' ? '&search=' . urlencode($search) : '' ?>">
+        <form method="POST" action="<?= $buildUrl($sort, $order, $page, $search) ?>">
             <input type="hidden" name="action" value="batch">
             <textarea id="batch_text" name="batch_text" rows="9" placeholder="例如：<?= htmlspecialchars("成都 10000 0.06\n哈尔滨 5000 0.05\n大理 7000 0.05") ?>"
                       style="width:100%;box-sizing:border-box;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;"></textarea>
@@ -373,7 +426,7 @@ require_once '../../shared/admin/admin-header.php';
         <p>4. 修改后点击「保存」即可生效，无需重启服务，保存后停留在当前排序。</p>
         <p>5. <strong>排序方式</strong>：顶部「市值 / 城市排名 / 当前单价 / 流通量」按钮可切换排序，再点一次可切换升/降序。</p>
         <p>6. <strong>排名</strong>列：取自 <code>cities.rank</code> 城市榜名次；若该城市不在榜单，则按当前排列序号显示。</p>
-        <p>7. <strong>批量设置</strong>：按「城市 数量 价格」每行一条；数量仅校验、价格只写入当前单价；若某城市现有单价低于录入价则提示并跳过，不会覆盖。</p>
+        <p>7. <strong>批量设置</strong>：按「城市 数量 价格」每行一条；数量仅校验、价格只写入当前单价；匹配范围为<strong>全量城市</strong>（支持城市名或拼音），与上方列表分页/搜索无关；若某城市现有单价低于录入价则提示并跳过，不会覆盖。</p>
     </div>
 </div>
 
