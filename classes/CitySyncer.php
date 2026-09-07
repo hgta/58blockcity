@@ -75,13 +75,14 @@ class CitySyncer
     /**
      * 通用匿名签名 POST 请求（body 为空，参数全在 URL query）
      *
-     * @param string $url      完整目标 URL
-     * @param int    $timeout  超时秒数
-     * @param string $referer  Referer 头
+     * @param string $url          完整目标 URL
+     * @param int    $timeout      超时秒数
+     * @param string $referer      Referer 头
+     * @param bool   $requireCode  是否要求返回体包含 code=200（默认 true）
      * @return array 解析后的 JSON 数组
      * @throws RuntimeException 网络失败 / HTTP 非 200 / code 非 200 / 无法解析
      */
-    private static function signedPost($url, $timeout = 30, $referer = self::API_REFERER)
+    private static function signedPost($url, $timeout = 30, $referer = self::API_REFERER, $requireCode = true)
     {
         $hdr = self::signHeaders();
 
@@ -119,7 +120,10 @@ class CitySyncer
         }
 
         $arr = json_decode($resp, true);
-        if (!is_array($arr) || (int)($arr['code'] ?? -1) !== 200) {
+        if (!is_array($arr)) {
+            throw new RuntimeException('接口响应无法解析为 JSON，签名配方可能需要更新');
+        }
+        if ($requireCode && (int)($arr['code'] ?? -1) !== 200) {
             $msg = is_array($arr) ? (string)($arr['msg'] ?? '') : '响应无法解析';
             throw new RuntimeException('接口返回异常（' . $msg . '），签名配方可能需要更新');
         }
@@ -134,8 +138,15 @@ class CitySyncer
      */
     public static function fetchAreaList()
     {
-        $arr = self::signedPost(self::AREA_LIST_URL, 60, self::API_REFERER);
-        $rows = (isset($arr['data']['rows']) && is_array($arr['data']['rows'])) ? $arr['data']['rows'] : null;
+        // /api/area/list 返回扁平结构 {"total":421,"rows":[...]}，没有 code 字段
+        $arr = self::signedPost(self::AREA_LIST_URL, 60, self::API_REFERER, false);
+
+        $rows = null;
+        if (isset($arr['data']['rows']) && is_array($arr['data']['rows'])) {
+            $rows = $arr['data']['rows'];
+        } elseif (isset($arr['rows']) && is_array($arr['rows'])) {
+            $rows = $arr['rows'];
+        }
         if (!$rows) {
             throw new RuntimeException('官方区域列表结构异常，签名配方可能需要更新');
         }
