@@ -13,7 +13,7 @@ class CityBCT {
     // 流通量 = popularity - popularity_consume（不再落库、不再依赖旧 city_bct）。
     // 返回键与旧实现兼容：id/city/base_price/current_price/circulating_supply/
     // total_supply/last_updated/city_popularity，便于各消费方无感切换。
-    private function bctSelect($where = '', $orderBy = 'c.name') {
+    private function bctSelect($where = '', $orderBy = 'ORDER BY c.name') {
         return "
             SELECT c.id,
                 c.name AS city,
