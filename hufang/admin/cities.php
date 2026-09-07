@@ -70,6 +70,9 @@ require_once '../../shared/admin/admin-header.php';
         <input type="hidden" name="action" value="sync">
         <button type="submit" class="admin-btn admin-btn-default" title="从 blockcity.vip 同步最新城市数据"><i class="fas fa-sync"></i> 同步数据</button>
     </form>
+    <button type="button" class="admin-btn admin-btn-primary" id="btn-sync-popularity-all">
+        <i class="fas fa-bolt"></i> 同步官方区域 + 人气值（全部）
+    </button>
     <a href="city_add.php" class="admin-btn admin-btn-primary"><i class="fas fa-plus"></i> 添加城市</a>
 </div>
 
@@ -112,7 +115,8 @@ require_once '../../shared/admin/admin-header.php';
                     <th>区域代码</th>
                     <th>居民数</th>
                     <th>区块数</th>
-                    <th>人气值</th>
+                    <th>已产生人气值</th>
+                    <th>已消耗</th>
                     <th>热门</th>
                     <th>操作</th>
                 </tr>
@@ -128,6 +132,7 @@ require_once '../../shared/admin/admin-header.php';
                         <td><?= number_format($cityItem['resident_count']) ?></td>
                         <td><?= number_format($cityItem['activated_blocks']) ?></td>
                         <td><?= number_format($cityItem['popularity']) ?></td>
+                        <td><?= number_format($cityItem['popularity_consume']) ?></td>
                         <td>
                             <?php if ($cityItem['is_hot']): ?>
                                 <span class="admin-badge success">是</span>
@@ -137,6 +142,11 @@ require_once '../../shared/admin/admin-header.php';
                         </td>
                         <td>
                             <div class="admin-btn-group">
+                                <button type="button" class="admin-btn admin-btn-sm admin-btn-default btn-sync-popularity"
+                                        data-id="<?= $cityItem['id'] ?>" data-name="<?= htmlspecialchars($cityItem['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                        title="同步人气值">
+                                    <i class="fas fa-bolt"></i>
+                                </button>
                                 <a href="city_edit.php?id=<?= $cityItem['id'] ?>" class="admin-btn admin-btn-sm admin-btn-default" title="编辑"><i class="fas fa-edit"></i></a>
                                 <a href="cities.php?delete=1&id=<?= $cityItem['id'] ?>" class="admin-btn admin-btn-sm admin-btn-danger" title="删除" onclick="return confirm('确定要删除这个城市吗？此操作不可恢复！')"><i class="fas fa-trash"></i></a>
                             </div>
@@ -165,5 +175,139 @@ require_once '../../shared/admin/admin-header.php';
     <?php endif; ?>
     <?php endif; ?>
 </div>
+
+<!-- 批量同步人气值弹窗 -->
+<div id="popSyncModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:560px;max-width:94vw;box-shadow:0 8px 30px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 16px;font-size:18px;"><i class="fas fa-bolt"></i> 同步官方区域 + 人气值</h3>
+        <div id="popSyncStatus" style="margin-bottom:12px;color:#666;font-size:14px;">准备中...</div>
+        <div style="background:#f0f0f0;border-radius:6px;height:20px;overflow:hidden;margin-bottom:16px;">
+            <div id="popSyncBar" style="width:0%;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .3s;"></div>
+        </div>
+        <div id="popSyncLog" style="max-height:240px;overflow:auto;background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:12px;line-height:1.7;color:#374151;">
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:16px;gap:10px;">
+            <button type="button" id="popSyncClose" class="admin-btn admin-btn-default" style="display:none;" onclick="closePopSyncModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const modal = document.getElementById('popSyncModal');
+const statusEl = document.getElementById('popSyncStatus');
+const barEl = document.getElementById('popSyncBar');
+const logEl = document.getElementById('popSyncLog');
+const closeBtn = document.getElementById('popSyncClose');
+const apiUrl = 'sync-popularity-api.php';
+
+function openPopSyncModal() {
+    modal.style.display = 'flex';
+    statusEl.textContent = '正在拉取官方区域列表...';
+    barEl.style.width = '0%';
+    logEl.innerHTML = '';
+    closeBtn.style.display = 'none';
+}
+
+function closePopSyncModal() {
+    modal.style.display = 'none';
+}
+
+function log(msg, type) {
+    const color = type === 'error' ? '#dc2626' : (type === 'success' ? '#16a34a' : '#374151');
+    logEl.innerHTML += '<div style="color:' + color + ';">' + msg + '</div>';
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function postApi(action, extra = {}) {
+    const fd = new FormData();
+    fd.append('action', action);
+    for (const k in extra) {
+        fd.append(k, extra[k]);
+    }
+    const r = await fetch(apiUrl, { method: 'POST', body: fd });
+    return r.json();
+}
+
+async function runChunk(total) {
+    const res = await postApi('chunk', { total: total });
+    if (!res.success) {
+        log('错误：' + res.msg, 'error');
+        statusEl.textContent = '同步中断：' + res.msg;
+        closeBtn.style.display = '';
+        return;
+    }
+
+    const pct = total ? Math.round((res.done / total) * 100) : 100;
+    barEl.style.width = pct + '%';
+    statusEl.textContent = `进度：${res.done} / ${res.total}（本批成功 ${res.updated}，失败 ${res.failed}）`;
+
+    if (res.errors && res.errors.length) {
+        res.errors.forEach(e => log(e, 'error'));
+    } else {
+        log(`第 ${Math.ceil(res.done / 25)} 批完成：成功 ${res.updated} 个城市`, 'success');
+    }
+
+    if (res.finished) {
+        statusEl.textContent = `全部完成：共处理 ${res.total} 个城市，成功 ${res.updated}，失败 ${res.failed}`;
+        closeBtn.style.display = '';
+    } else {
+        setTimeout(() => runChunk(total), 500);
+    }
+}
+
+async function startPopSyncAll() {
+    openPopSyncModal();
+    try {
+        const res = await postApi('prepare');
+        if (!res.success) {
+            log('准备失败：' + res.msg, 'error');
+            statusEl.textContent = '准备失败：' + res.msg;
+            closeBtn.style.display = '';
+            return;
+        }
+        log(res.msg, 'success');
+        statusEl.textContent = '准备完成，开始同步人气值...';
+        runChunk(res.total);
+    } catch (e) {
+        log('网络错误：' + e.message, 'error');
+        statusEl.textContent = '网络错误：' + e.message;
+        closeBtn.style.display = '';
+    }
+}
+
+document.getElementById('btn-sync-popularity-all').addEventListener('click', function() {
+    if (!confirm('将拉取 blockcity.vip 全部官方区域并同步人气值，耗时约 1~2 分钟，期间请勿关闭页面，继续？')) return;
+    startPopSyncAll();
+});
+
+// 单个城市同步
+function singleSync(cityId, cityName, btn) {
+    if (!confirm('同步「' + cityName + '」的人气值？')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    postApi('single', { city_id: cityId })
+        .then(res => {
+            if (res.success) {
+                alert(res.msg);
+                location.reload();
+            } else {
+                alert('失败：' + res.msg);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i>';
+            }
+        })
+        .catch(e => {
+            alert('网络错误：' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bolt"></i>';
+        });
+}
+
+document.querySelectorAll('.btn-sync-popularity').forEach(btn => {
+    btn.addEventListener('click', function() {
+        singleSync(this.dataset.id, this.dataset.name, this);
+    });
+});
+</script>
 
 <?php require_once '../../shared/admin/admin-footer.php'; ?>

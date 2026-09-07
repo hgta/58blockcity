@@ -6,10 +6,12 @@ class CityBCT {
         $this->pdo = $pdo;
     }
     
-    // 获取城市人气值信息（流通量取 cities.popularity）
+    // 获取城市人气值信息（流通量 = cities.popularity - cities.popularity_consume）
     public function getCityBCT($city) {
         $stmt = $this->pdo->prepare("
-            SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
+            SELECT cb.*,
+                GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) AS circulating_supply,
+                c.popularity AS city_popularity
             FROM city_bct cb
             LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
             WHERE cb.city = ?
@@ -65,10 +67,12 @@ class CityBCT {
         }
     }
     
-    // 获取所有城市人气值信息（流通量取 cities.popularity）
+    // 获取所有城市人气值信息（流通量 = cities.popularity - cities.popularity_consume）
     public function getAllCitiesBCT() {
         $stmt = $this->pdo->prepare("
-            SELECT cb.*, COALESCE(c.popularity, cb.circulating_supply) AS circulating_supply, c.popularity AS city_popularity
+            SELECT cb.*,
+                GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) AS circulating_supply,
+                c.popularity AS city_popularity
             FROM city_bct cb
             LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
             ORDER BY cb.city
@@ -95,9 +99,9 @@ class CityBCT {
         ");
         $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
 
-        // 总市值 = SUM(cities.popularity * city_bct.current_price)
+        // 总市值 = SUM(真实流通量 * city_bct.current_price)
         $stmt = $this->pdo->query("
-            SELECT COALESCE(SUM(COALESCE(c.popularity, cb.circulating_supply) * cb.current_price), 0) as cap
+            SELECT COALESCE(SUM(GREATEST(COALESCE(NULLIF(c.popularity, 0), cb.circulating_supply) - COALESCE(c.popularity_consume, 0), 0) * cb.current_price), 0) as cap
             FROM city_bct cb
             LEFT JOIN cities c ON cb.city = c.name COLLATE utf8mb4_unicode_ci
         ");
