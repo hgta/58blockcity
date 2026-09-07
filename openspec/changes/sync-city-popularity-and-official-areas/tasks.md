@@ -41,7 +41,7 @@
 
 ## 7. 提交与部署
 
-- [ ] 7.1 运行 `php -l` 或 IDE lint 检查所有改动文件，确保无语法错误。
+- [x] 7.1 运行 `php -l` 或 IDE lint 检查所有改动文件，确保无语法错误。
 - [ ] 7.2 在测试环境执行迁移 SQL 并验证。
-- [ ] 7.3 `git add` 所有改动，提交 `feat(hufang-admin): 同步 blockcity.vip 官方区域与人气值，BCT 流通量改为 points-consume`，并 `push origin main`。
+- [x] 7.3 `git add` 所有改动，提交 `feat(hufang-admin): 同步 blockcity.vip 官方区域与人气值，BCT 流通量改为 points-consume`，并 `push origin main`。
 - [ ] 7.4 线上 `v.58.tl/admin/cities.php` 执行首次「同步官方区域 + 人气值」，观察结果摘要与新增城市。
