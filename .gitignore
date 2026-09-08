@@ -53,5 +53,8 @@ city/cache/
 data/city-profiles/
 data/city-profiles/*.json
 
+# 任务广场凭证截图上传（运行时生成）
+task/uploads/
+
 # playwright-cli 会话快照
 .playwright-cli/

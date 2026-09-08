@@ -180,6 +180,7 @@ $letters = range('A', 'Z');
 				<a href="https://mall.58.tl/" class="nav-button">人气商城</a>
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
 				<a href="https://bid.58.tl/" class="nav-button">拍卖</a>
+				<a href="https://task.58.tl/" class="nav-button">任务广场</a>
 				<?php if (isset($_SESSION['user_id'])): ?>
 					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#ff6b00;color:#fff;">个人中心</a>
 					<a href="auth/logout.php" class="nav-button">退出</a>
@@ -311,6 +312,12 @@ $letters = range('A', 'Z');
                     <div class="eco-desc">同城圈子畅聊互动</div>
                     <span class="eco-go">进入 →</span>
                 </a>
+                <a href="https://task.58.tl/" class="eco-card">
+                    <div class="eco-icon">🧩</div>
+                    <div class="eco-name">任务广场</div>
+                    <div class="eco-desc">悬赏众包 帮做小任务</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
                 <a href="https://www.blockcity.pub/?iclc" class="eco-card">
                     <div class="eco-icon">🏛️</div>
                     <div class="eco-name">DAO治理</div>
@@ -389,6 +396,7 @@ $letters = range('A', 'Z');
                         <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
                         <li><a href="https://bid.58.tl/" style="color:#64748b;">拍卖</a></li>
                         <li><a href="https://club.58.tl/" style="color:#64748b;">社区</a></li>
+                        <li><a href="https://task.58.tl/" style="color:#64748b;">任务广场</a></li>
                     </ul>
                 </div>
                 <div>

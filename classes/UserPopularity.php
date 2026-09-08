@@ -93,27 +93,32 @@ class UserPopularity {
         if ($amount <= 0) {
             return false;
         }
-        
-        $this->pdo->beginTransaction();
-        
+
+        // 嵌套事务安全：若调用方已开启事务（如结算流程中锁定认领后统一提交），
+        // 则本方法只加入现有事务，不自行 commit/rollBack，保证划转与状态推进原子。
+        $nested = $this->pdo->inTransaction();
+        if (!$nested) {
+            $this->pdo->beginTransaction();
+        }
+
         try {
             // 检查转出用户是否有足够人气值
             $stmt = $this->pdo->prepare("SELECT popularity FROM user_city_popularity 
                                         WHERE user_id = ? AND city = ? FOR UPDATE");
             $stmt->execute([$fromUserId, $city]);
             $fromResult = $stmt->fetch();
-            
+
             if (!$fromResult || (int)$fromResult['popularity'] < $amount) {
-                $this->pdo->rollBack();
+                if (!$nested) $this->pdo->rollBack();
                 return false;
             }
-            
+
             // 减少转出用户的人气值
             $stmt = $this->pdo->prepare("UPDATE user_city_popularity 
                                         SET popularity = popularity - ?, updated_at = NOW() 
                                         WHERE user_id = ? AND city = ?");
             $stmt->execute([$amount, $fromUserId, $city]);
-            
+
             // 增加转入用户的人气值
             $stmt = $this->pdo->prepare("INSERT INTO user_city_popularity 
                                         (user_id, city, popularity) 
@@ -122,11 +127,11 @@ class UserPopularity {
                                         popularity = popularity + VALUES(popularity), 
                                         updated_at = NOW()");
             $stmt->execute([$toUserId, $city, $amount]);
-            
-            $this->pdo->commit();
+
+            if (!$nested) $this->pdo->commit();
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if (!$nested) $this->pdo->rollBack();
             error_log("转移人气值失败: " . $e->getMessage());
             return false;
         }

@@ -27,6 +27,9 @@ return [
         'bct'   => 'https://bct.58.tl',
         'nft'   => 'https://nft.58.tl',
         'v'     => 'https://v.58.tl',
+        'bid'   => 'https://bid.58.tl',
+        'club'  => 'https://club.58.tl',
+        'task'  => 'https://task.58.tl',
     ],
 
     // 是否开启自动推送（发布/更新内容时自动调用百度接口）

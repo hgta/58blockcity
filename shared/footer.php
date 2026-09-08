@@ -39,6 +39,10 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             <span style="font-size:28px;">💬</span>
             <div><div style="font-size:14px;font-weight:600;color:#333;">社区</div><div style="font-size:11px;color:#999;">发帖·分享心情</div></div>
         </a>
+        <a href="https://task.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-radius:10px;text-decoration:none;border:1px solid #ffb74d;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">🧩</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">任务广场</div><div style="font-size:11px;color:#999;">悬赏众包·代做小任务</div></div>
+        </a>
     </div>
 </div>
 
@@ -58,6 +62,7 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                     <li><a href="https://mall.58.tl/"><i class="fas fa-shopping-bag"></i> 人气商城</a></li>
                     <li><a href="https://bid.58.tl/"><i class="fas fa-gavel"></i> 拍卖</a></li>
                     <li><a href="https://club.58.tl/"><i class="fas fa-comments"></i> 社区</a></li>
+                    <li><a href="https://task.58.tl/"><i class="fas fa-tasks"></i> 任务广场</a></li>
                 </ul>
             </div>
             <div class="footer-col">

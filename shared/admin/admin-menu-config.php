@@ -36,6 +36,11 @@ $ADMIN_SITES = [
         'url'  => 'https://nft.58.tl/admin/dashboard.php',
         'icon' => 'fa-image',
     ],
+    'task' => [
+        'name' => '任务广场',
+        'url'  => 'https://task.58.tl/admin/dashboard.php',
+        'icon' => 'fa-tasks',
+    ],
 ];
 
 // 各站点菜单配置
@@ -81,6 +86,13 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-wallet',      'text' => '余额管理',        'url' => 'bct_management.php'],
         ['icon' => 'fa-tags',        'text' => '人气值单价管理',  'url' => 'city_prices.php'],
         ['icon' => 'fa-exchange-alt','text' => '触发匹配',        'url' => 'trigger_match.php'],
+    ],
+    'task' => [
+        ['icon' => 'fa-home',        'text' => '任务看板',    'url' => 'dashboard.php'],
+        ['icon' => 'fa-tags',        'text' => '类别管理',    'url' => 'categories.php'],
+        ['icon' => 'fa-tasks',       'text' => '任务列表',    'url' => 'tasks.php'],
+        ['icon' => 'fa-hand-paper',  'text' => '认领管理',    'url' => 'claims.php'],
+        ['icon' => 'fa-gavel',       'text' => '争议仲裁',    'url' => 'disputes.php'],
     ],
 ];
 
