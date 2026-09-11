@@ -1,17 +1,15 @@
 <?php
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
-require_once '../../classes/UserBCTAccount.php';
 require_once '../../classes/BCTOrder.php';
+require_once '../../classes/UserHoldings.php';
 
 checkLogin();
 $userId = $_SESSION['user_id'];
 
-$account = new UserBCTAccount($pdo);
 $order = new BCTOrder($pdo);
+$holdings = new UserHoldings($pdo);
 
-$userAccounts = $account->getUserAccounts($userId);
-$portfolio = $account->getPortfolioSummary($userId);
 $stats = $order->getUserOrderStats($userId);
 
 $tab = $_GET['tab'] ?? 'buy';
@@ -30,8 +28,46 @@ if ($tab === 'completed') {
 $totalPages = ceil($totalOrders / $perPage);
 
 $msg = '';
+if (isset($_SESSION['holdings_msg'])) {
+    $msg = $_SESSION['holdings_msg'];
+    unset($_SESSION['holdings_msg']);
+}
+
+// 用户持有区块的城市（持仓可编辑范围）
+$cityList = $holdings->getUserCities($userId);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $oid = intval($_POST['order_id'] ?? 0);
+
+    if ($_POST['action'] === 'save_holdings') {
+        // 表单以 city_id 为键，映射回城市名并交给数据层做白名单校验
+        $idToName = [];
+        foreach ($cityList as $c) {
+            $idToName[(string)$c['city_id']] = $c['name'];
+        }
+        $posted = $_POST['qty'] ?? [];
+        $input = [];
+        if (is_array($posted)) {
+            foreach ($posted as $cid => $val) {
+                $cid = (string)$cid;
+                if (!isset($idToName[$cid])) {
+                    continue; // 非持有城市：忽略（越权防护）
+                }
+                $input[$idToName[$cid]] = $val;
+            }
+        }
+        $res = $holdings->saveUserPopularities($userId, $input);
+        $errors = $res['errors'] ?? [];
+        if (!empty($errors)) {
+            $msg = '<div class="alert alert-danger">部分城市未保存：' . htmlspecialchars(implode('；', $errors)) . '</div>';
+        } else {
+            $msg = '<div class="alert alert-success">持仓已保存</div>';
+        }
+        $_SESSION['holdings_msg'] = $msg;
+        header('Location: dashboard.php?tab=' . urlencode($tab));
+        exit;
+    }
+
     if ($_POST['action'] === 'cancel' && $oid) {
         if ($order->cancelOrder($oid, $userId)) {
             $msg = '<div class="alert alert-success">订单已取消</div>';
@@ -42,6 +78,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 }
+
+// 人气值持仓模型（数量 × 城市单价）
+$popularityMap = $holdings->getUserPopularityMap($userId);
+$holdingRows = [];
+$totalAmount = 0.0;
+$totalPopularity = 0;
+foreach ($cityList as $c) {
+    $name = (string)$c['name'];
+    $price = (float)$c['bct_current_price'];
+    $qty = isset($popularityMap[$name]) ? (int)$popularityMap[$name] : 0;
+    $amount = $qty * $price;
+    $totalAmount += $amount;
+    $totalPopularity += $qty;
+    $holdingRows[] = [
+        'city_id' => (int)$c['city_id'],
+        'name'    => $name,
+        'price'   => $price,
+        'qty'     => $qty,
+        'amount'  => $amount,
+    ];
+}
+$cityCount = count($holdingRows);
+$showPie = $totalAmount > 0; // 无金额时不渲染饼图容器，避免脚本对空节点初始化
 
 require_once '../includes/header.php';
 ?>
@@ -62,20 +121,16 @@ require_once '../includes/header.php';
 
     <div class="bct-portfolio-summary">
         <div class="bct-portfolio-card">
-            <div class="label">总资产估值</div>
-            <div class="value">¥<?= number_format($portfolio['total_valuation'], 2) ?></div>
-        </div>
-        <div class="bct-portfolio-card">
-            <div class="label">可用余额</div>
-            <div class="value"><?= number_format($portfolio['total_balance']) ?> BCT</div>
-        </div>
-        <div class="bct-portfolio-card">
-            <div class="label">冻结中</div>
-            <div class="value"><?= number_format($portfolio['total_frozen']) ?> BCT</div>
+            <div class="label">总资产额</div>
+            <div class="value">¥<?= number_format($totalAmount, 2) ?></div>
         </div>
         <div class="bct-portfolio-card">
             <div class="label">持有城市</div>
-            <div class="value"><?= $portfolio['city_count'] ?></div>
+            <div class="value"><?= (int)$cityCount ?></div>
+        </div>
+        <div class="bct-portfolio-card">
+            <div class="label">总人气值</div>
+            <div class="value">Ⓟ <?= number_format($totalPopularity) ?></div>
         </div>
     </div>
 
@@ -83,41 +138,64 @@ require_once '../includes/header.php';
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-wallet"></i> 我的持仓</h3></div>
-                <?php if (empty($userAccounts)): ?>
+                <?php if (empty($holdingRows)): ?>
                 <div class="text-center" style="padding:40px;color:var(--bct-text-secondary);">
                     <i class="fas fa-wallet" style="font-size:48px;display:block;margin-bottom:16px;opacity:.3;"></i>
-                    <p>暂无 BCT 资产</p>
+                    <p>暂无可管理的城市</p>
+                    <p style="font-size:13px;">持有区块后即可在此登记该城市的人气值</p>
                     <a href="../market.php" class="btn btn-primary">去交易</a>
                 </div>
                 <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>城市</th>
-                                <th class="text-right">余额</th>
-                                <th class="text-right">当前价</th>
-                                <th class="text-right">估值</th>
-                                <th class="text-right">占比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $totalVal = $portfolio['total_valuation'] ?: 1;
-                            foreach ($userAccounts as $acc):
-                                $ratio = $acc['valuation'] / $totalVal * 100;
-                            ?>
-                            <tr>
-                                <td><strong><?= htmlspecialchars($acc['city']) ?></strong></td>
-                                <td class="text-right"><?= number_format($acc['balance']) ?> BCT</td>
-                                <td class="text-right">¥<?= number_format($acc['current_price'], 2) ?></td>
-                                <td class="text-right">¥<?= number_format($acc['valuation'], 2) ?></td>
-                                <td class="text-right"><?= number_format($ratio, 2) ?>%</td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                <form method="post">
+                    <input type="hidden" name="action" value="save_holdings">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>城市</th>
+                                    <th class="text-right">资产数量（人气值）</th>
+                                    <th class="text-right">城市单价</th>
+                                    <th class="text-right">资产金额</th>
+                                    <th class="text-right">占比</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($holdingRows as $row):
+                                    $ratio = $totalAmount > 0 ? $row['amount'] / $totalAmount * 100 : 0;
+                                ?>
+                                <tr>
+                                    <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                                    <td class="text-right">
+                                        <input type="number" min="0" step="1"
+                                               name="qty[<?= (int)$row['city_id'] ?>]"
+                                               value="<?= (int)$row['qty'] ?>"
+                                               class="form-control"
+                                               style="width:140px;display:inline-block;text-align:right;">
+                                    </td>
+                                    <td class="text-right">¥<?= number_format($row['price'], 2) ?></td>
+                                    <td class="text-right">¥<?= number_format($row['amount'], 2) ?></td>
+                                    <td class="text-right"><?= number_format($ratio, 2) ?>%</td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><strong>合计</strong></td>
+                                    <td class="text-right"><strong>Ⓟ <?= number_format($totalPopularity) ?></strong></td>
+                                    <td class="text-right">—</td>
+                                    <td class="text-right"><strong>¥<?= number_format($totalAmount, 2) ?></strong></td>
+                                    <td class="text-right">100.00%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div style="padding:0 16px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                        <span style="font-size:12px;color:var(--bct-text-secondary);">
+                            <i class="fas fa-info-circle"></i> 人气值为你的自管记录，真实交易以 blockcity.vip 为准
+                        </span>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 保存持仓</button>
+                    </div>
+                </form>
                 <?php endif; ?>
             </div>
         </div>
@@ -125,7 +203,7 @@ require_once '../includes/header.php';
             <div class="card">
                 <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-chart-pie"></i> 持仓分布</h3></div>
                 <div class="card-body">
-                    <?php if (count($userAccounts) < 1): ?>
+                    <?php if (!$showPie): ?>
                     <div class="text-center" style="padding:30px;color:var(--bct-text-secondary);">暂无数据</div>
                     <?php else: ?>
                     <div id="portfolioPie" style="width:100%;height:300px;"></div>
@@ -213,10 +291,10 @@ require_once '../includes/header.php';
 
 <script>
 $(function() {
-    <?php if (!empty($userAccounts)): ?>
-    var pieData = <?= json_encode(array_map(function($a) {
-        return ['name'=>$a['city'], 'value'=>round($a['valuation'],2)];
-    }, $userAccounts)) ?>;
+    <?php if ($showPie): ?>
+    var pieData = <?= json_encode(array_map(function($r) {
+        return ['name'=>$r['name'], 'value'=>round($r['amount'],2)];
+    }, $holdingRows)) ?>;
     BCTCharts.initPortfolioPie('portfolioPie', pieData);
     <?php endif; ?>
 });

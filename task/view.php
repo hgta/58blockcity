@@ -202,7 +202,7 @@ require_once 'includes/header.php';
                                 <button class="tk-btn primary small" type="submit">🔄 结算 / 重试结算</button>
                             </form>
                             <?php if ($task['reward_type'] === 'popularity'): ?>
-                                <span style="font-size:12px;color:#8b929a;">人气值任务：将从你在「<?= htmlspecialchars($task['city']) ?>」的余额划转，余额不足会提示补足后重试</span>
+                                <span style="font-size:12px;color:#8b929a;">人气值任务：结算仅推进状态，不扣减/划转人气值</span>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
@@ -284,9 +284,9 @@ require_once 'includes/header.php';
                     </form>
                 <?php endif; ?>
             <?php elseif ($myClaim['status'] === 'settling'): ?>
-                <p class="tk-text" style="margin:0;">已通过验收，结算处理中（现金任务请与雇主线下完成付款；人气值任务到账前请稍候）。</p>
+                <p class="tk-text" style="margin:0;">已通过验收，结算处理中（现金任务请与雇主线下完成付款）。</p>
             <?php elseif ($myClaim['status'] === 'completed'): ?>
-                <p class="tk-text" style="margin:0;">🎉 认领已完成。<?= $task['reward_type'] === 'cash' ? '请与雇主完成线下付款。' : '人气值已划转到账。' ?>完成后可与对方互评。</p>
+                <p class="tk-text" style="margin:0;">🎉 认领已完成。<?= $task['reward_type'] === 'cash' ? '请与雇主完成线下付款。' : '人气值任务已完成结算。' ?>完成后可与对方互评。</p>
             <?php elseif ($myClaim['status'] === 'cancelled'): ?>
                 <p class="tk-text" style="margin:0;">该认领已取消。</p>
             <?php endif; ?>

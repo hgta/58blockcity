@@ -2,11 +2,11 @@
 /**
  * 任务认领（task_claims）状态机
  *
- * 领取 accepted → 提交凭证 submitted → 验收通过 settling → 划转成功 completed
+ * 领取 accepted → 提交凭证 submitted → 验收通过 settling → completed
  *                                     └→ 驳回 rejected ─(补交)→ submitted
  *   任意未完结态可发起争议 disputed → admin 裁决 settle / cancel
- * 人气值结算复用 UserPopularity::transferPopularity（余额不足停在 settling 可重试）；
- * 现金结算仅状态推进（线下付款）。
+ * 人气值为用户自管记录，结算仅推进状态、不做扣减/划转；
+ * 现金结算同样仅状态推进（线下付款）。
  */
 require_once __DIR__ . '/../includes/functions.php';
 
@@ -275,12 +275,12 @@ class TaskClaim {
 
     /**
      * 尝试结算一份 settling 认领：
-     * 人气值 → UserPopularity::transferPopularity（雇主→接单人，任务城市）；
-     *          余额不足则保持 settling，返回需雇主补足并可在详情页重试。
+     * 人气值 → 人气值为用户自管记录，仅把状态推进为 completed，不做扣减/划转，
+     *          也不再因雇主人气值不足而停留在 settling。
      * 现金 → 仅状态推进为 completed（线下付款）。
      */
     public function settleOnce($claimId) {
-        // 事务化：认领行 FOR UPDATE 必须持锁到状态推进/划转完成，防止并发“重试结算”重复划转。
+        // 事务化：认领行 FOR UPDATE 必须持锁到状态推进完成，防止并发“重试结算”重复推进。
         // 若调用方已处于事务（如仲裁 settle 流程内），则加入现有事务由调用方统一提交。
         $outer = $this->pdo->inTransaction();
         if (!$outer) {
@@ -323,41 +323,21 @@ class TaskClaim {
                 return [true, '已完成（现金任务线下结算，请与雇主完成付款）'];
             }
 
-            // 人气值任务：同一事务内锁定认领并划转（transferPopularity 已做嵌套事务安全）
+            // 人气值任务：人气值为用户自管记录，结算仅推进状态，不做划转
             if ($claim['reward_type'] === 'popularity') {
-                $city = (string)$claim['task_city'];
-                if ($city === '') {
-                    if (!$outer) $this->pdo->rollBack();
-                    $this->notify((int)$claim['employer_id'], 'task_settle_error', (int)$claim['task_id'],
-                        '任务《' . $claim['task_title'] . '》缺少结算城市，无法划转，请联系管理员');
-                    return [false, '任务缺少结算城市，请先补全城市信息后重试'];
-                }
-                require_once __DIR__ . '/UserPopularity.php';
-                $up = new UserPopularity($this->pdo);
-                $ok = $up->transferPopularity((int)$claim['employer_id'], (int)$claim['worker_id'], $city, (int)$claim['reward_amount']);
-
-                if (!$ok) {
-                    // 余额不足：撤销本事务内任何部分写入，保持 settling 供补足后重试
-                    if (!$outer) $this->pdo->rollBack();
-                    $this->notify((int)$claim['employer_id'], 'task_settle_error', (int)$claim['task_id'],
-                        '任务《' . $claim['task_title'] . '》结算失败：你在「' . $city . '」的人气值不足以支付 ' . (int)$claim['reward_amount'] . '，请在个人中心补足后重试结算');
-                    return [false, '雇主在「' . $city . '」的人气值不足以支付该笔赏金，结算暂缓；补足余额后可在任务详情/我的发布中重试'];
-                }
-
                 $stmt = $this->pdo->prepare(
                     "UPDATE task_claims SET status = 'completed', settled_at = NOW()
                      WHERE id = ? AND status = 'settling'"
                 );
                 $stmt->execute([(int)$claimId]);
                 if ($stmt->rowCount() === 0) {
-                    // 状态已被并发改变：连同已发生的人气划转一并回滚，保证账实一致
                     if (!$outer) $this->pdo->rollBack();
                     return [false, '该认领不在待结算状态'];
                 }
                 if (!$outer) $this->pdo->commit();
                 $this->notify((int)$claim['worker_id'], 'task_settled', (int)$claim['task_id'],
-                    '任务《' . $claim['task_title'] . '》已结算：你在「' . $city . '」人气值 +' . (int)$claim['reward_amount'] . ' 已到账');
-                return [true, '结算成功，人气值已划转'];
+                    '任务《' . $claim['task_title'] . '》已结算');
+                return [true, '结算成功'];
             }
 
             if (!$outer) $this->pdo->rollBack();

@@ -222,7 +222,7 @@ require_once 'includes/header.php';
                     <div style="background:#fee9e7;color:#d4380d;font-size:13px;border-radius:8px;padding:8px 12px;margin-top:8px;">被驳回原因：<?= htmlspecialchars($cl['employer_note']) ?></div>
                 <?php endif; ?>
                 <?php if ($cl['status'] === 'settling'): ?>
-                    <div style="background:#fff2e8;color:#96611b;font-size:13px;border-radius:8px;padding:8px 12px;margin-top:8px;">验收已通过，结算处理中（人气值任务由雇主结算划转；现金任务请与雇主线下完成付款）。</div>
+                    <div style="background:#fff2e8;color:#96611b;font-size:13px;border-radius:8px;padding:8px 12px;margin-top:8px;">验收已通过，结算处理中（人气值任务结算即完成；现金任务请与雇主线下完成付款）。</div>
                 <?php endif; ?>
                 <div class="my-actions" style="margin-top:10px;">
                     <a class="my-btn primary" href="view.php?id=<?= (int)$cl['task_id'] ?>">进入任务处理</a>

@@ -66,24 +66,9 @@ class Transaction {
             $stmt->execute([$buyerId, $transactionId]);
             
             // 更新NFT所有者
+            // 人气值为用户自管记录：成交不扣减买方、不划转给卖方，仅保留交易状态与所有权变更
             $stmt = $this->pdo->prepare("UPDATE nft_avatars SET owner_id = ? WHERE id = ?");
             $stmt->execute([$buyerId, $transaction['nft_id']]);
-            
-            // 如果是人气值交易，转移人气值
-            if ($transaction['currency'] === 'popularity') {
-                $stmt = $this->pdo->prepare("SELECT city FROM nft_avatars WHERE id = ?");
-                $stmt->execute([$transaction['nft_id']]);
-                $nft = $stmt->fetch();
-                
-                if (!$nft) {
-                    throw new Exception("NFT信息获取失败");
-                }
-                
-                $popularity = new UserPopularity($this->pdo);
-                if (!$popularity->transferPopularity($buyerId, $transaction['seller_id'], $nft['city'], $transaction['price'])) {
-                    throw new Exception("人气值转移失败");
-                }
-            }
             
             $this->pdo->commit();
             return true;
@@ -508,46 +493,34 @@ class Transaction {
             $fee = $price * $feeRate;
             $sellerAmount = $price - $fee;
             
-            // 更新买家余额
+            // 人气值为用户自管记录：仅校验余额，不扣减买方、不增加卖方、不计平台人气值收入
             if ($currency === 'popularity') {
-                $updateBuyerStmt = $this->pdo->prepare(
-                    "UPDATE users SET popularity = popularity - ? WHERE id = ? AND popularity >= ?"
-                );
-                $updateBuyerStmt->execute([$price, $buyerId, $price]);
+                $chkStmt = $this->pdo->prepare("SELECT popularity FROM users WHERE id = ?");
+                $chkStmt->execute([$buyerId]);
+                if ((int)$chkStmt->fetchColumn() < $price) {
+                    throw new Exception("买家余额不足");
+                }
             } else {
+                // 现金：照常扣减买家、增加卖家与平台手续费
                 $updateBuyerStmt = $this->pdo->prepare(
                     "UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?"
                 );
                 $updateBuyerStmt->execute([$price, $buyerId, $price]);
-            }
-            
-            if ($updateBuyerStmt->rowCount() === 0) {
-                throw new Exception("买家余额不足");
-            }
-            
-            // 更新卖家余额
-            if ($currency === 'popularity') {
-                $updateSellerStmt = $this->pdo->prepare(
-                    "UPDATE users SET popularity = popularity + ? WHERE id = ?"
-                );
-            } else {
+
+                if ($updateBuyerStmt->rowCount() === 0) {
+                    throw new Exception("买家余额不足");
+                }
+
                 $updateSellerStmt = $this->pdo->prepare(
                     "UPDATE users SET balance = balance + ? WHERE id = ?"
                 );
-            }
-            $updateSellerStmt->execute([$sellerAmount, $sellerId]);
-            
-            // 更新平台收入（手续费）
-            if ($currency === 'popularity') {
-                $updatePlatformStmt = $this->pdo->prepare(
-                    "UPDATE system_settings SET value = value + ? WHERE name = 'platform_popularity_income'"
-                );
-            } else {
+                $updateSellerStmt->execute([$sellerAmount, $sellerId]);
+
                 $updatePlatformStmt = $this->pdo->prepare(
                     "UPDATE system_settings SET value = value + ? WHERE name = 'platform_balance_income'"
                 );
+                $updatePlatformStmt->execute([$fee]);
             }
-            $updatePlatformStmt->execute([$fee]);
             
             // 转移NFT所有权
             $updateNftStmt = $this->pdo->prepare(

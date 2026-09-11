@@ -164,7 +164,7 @@ require_once 'includes/header.php';
             <div class="ct-radio-row">
                 <div class="ct-radio <?= ($old['reward_type'] ?? 'popularity') === 'popularity' ? 'selected' : '' ?>" onclick="pickType('popularity')">
                     <b>Ⓟ 人气值</b>
-                    <p>从你在任务关联城市的人气值余额直接划转给接单人，验收通过后到账。</p>
+                    <p>记录你在任务关联城市的人气值，验收通过后完成结算（人气值为自管记录，站内不做扣减/划转）。</p>
                 </div>
                 <div class="ct-radio <?= ($old['reward_type'] ?? '') === 'cash' ? 'selected' : '' ?>" onclick="pickType('cash')">
                     <b>¥ 现金（线下）</b>
@@ -174,14 +174,14 @@ require_once 'includes/header.php';
             <input type="hidden" name="reward_type" id="reward_type" value="<?= htmlspecialchars($old['reward_type'] !== '' ? $old['reward_type'] : 'popularity') ?>">
 
             <div id="block-popularity">
-                <label>结算城市 <span class="req">*</span> <span class="sub">人气值账本按城市计，接单人将在该城市收到人气值</span></label>
+                <label>结算城市 <span class="req">*</span> <span class="sub">人气值账本按城市计，标记本任务关联的城市</span></label>
                 <select name="city" id="city-sel">
                     <option value="">请选择城市</option>
                     <?php foreach ($cities as $c): ?>
                         <option value="<?= htmlspecialchars($c['name']) ?>" <?= $old['city'] === $c['name'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <div class="ct-balance" id="pop-balance">当前你在该城市的人气值余额：—（发布无需冻结，结算时实时划转，余额不足会提示补足后重试）</div>
+                <div class="ct-balance" id="pop-balance">当前你在该城市的人气值余额：—（发布无需冻结，结算仅校验不扣减）</div>
 
                 <label>赏金额（人气值）<span class="req">*</span></label>
                 <input type="number" name="reward_amount" id="amount-input" min="1" step="1" value="<?= htmlspecialchars((string)$old['reward_amount']) ?>" placeholder="正整数，如 30">
@@ -253,7 +253,7 @@ function showBalance() {
     if (typeNow !== 'popularity' || !el.value) { return; }
     var v = myPop[el.value];
     if (typeof v === 'undefined') {
-        box.innerHTML = '当前你在 <b>' + el.value + '</b> 的人气值余额：0（人气值不足不影响发布，验收结算时需补足再划转）';
+        box.innerHTML = '当前你在 <b>' + el.value + '</b> 的人气值余额：0（人气值不足不影响发布，结算仅校验不扣减）';
     } else {
         box.innerHTML = '当前你在 <b>' + el.value + '</b> 的人气值余额：' + v;
     }

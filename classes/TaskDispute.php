@@ -89,7 +89,7 @@ class TaskDispute {
                 $stmt->execute([(int)$dispute['claim_id']]);
                 if ($stmt->rowCount() === 0) { $this->pdo->rollBack(); return [false, '认领状态已变化']; }
             } else {
-                // settle：现金任务直接完成；人气值任务先转 settling 再由结算流程划转
+                // settle：现金任务直接完成；人气值任务先转 settling 再由结算流程推进为完成（不划转）
                 if ($dispute['reward_type'] === 'cash') {
                     $stmt = $this->pdo->prepare(
                         "UPDATE task_claims SET status = 'completed', settled_at = NOW()

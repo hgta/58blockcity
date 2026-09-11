@@ -74,26 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tx && !isset($error)) {
                     throw new Exception('该 NFT 已被他人购买');
                 }
 
-                // 2. 扣买方人气值（按城市）
-                $stmt = $pdo->prepare("
-                    UPDATE user_city_popularity SET popularity = GREATEST(popularity - ?, 0)
-                    WHERE user_id = ? AND city = ?
-                ");
-                $stmt->execute([$tx['price'], $userId, $tx['city_name']]);
-
-                // 3. 加卖方气值（按城市）
-                $stmt = $pdo->prepare("
-                    INSERT INTO user_city_popularity (user_id, city, popularity)
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE popularity = popularity + VALUES(popularity)
-                ");
-                $stmt->execute([$tx['seller_id'], $tx['city_name'], $tx['price']]);
-
-                // 4. 转移 NFT 所有权
+                // 2. 转移 NFT 所有权
+                // 人气值为用户自管记录：成交只做余额校验（见上），不扣减买方、不增加卖方
                 $stmt = $pdo->prepare("UPDATE nft_avatars SET owner_id = ? WHERE id = ?");
                 $stmt->execute([$userId, $tx['nft_id']]);
 
-                // 5. 更新 nft_city_user 所有权
+                // 3. 更新 nft_city_user 所有权
                 $stmt = $pdo->prepare("
                     UPDATE nft_city_user SET user_id = ?, is_current = 1 
                     WHERE nft_id = ? AND city_id = ? AND is_current = 1
@@ -101,9 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tx && !isset($error)) {
                 $stmt->execute([$userId, $tx['nft_id'], $tx['city_id']]);
 
                 $pdo->commit();
-
-                // 刷新余额
-                $buyerPopularity -= $tx['price'];
 
                 header('Location: buy_success.php?tx=' . $tx['transaction_id'] . '&result=completed&code=' . urlencode($tx['code']));
                 exit;
@@ -314,11 +297,8 @@ require_once '../includes/header.php';
                 <span class="buy-info-label">我的余额（<?= htmlspecialchars($tx['city_name']) ?>）</span>
                 <span class="buy-info-value">Ⓟ <?= number_format($buyerPopularity) ?></span>
             </div>
-            <div class="buy-info-row">
-                <span class="buy-info-label">购买后余额</span>
-                <span class="buy-info-value" style="color:<?= ($buyerPopularity - $tx['price']) < 0 ? '#dc2626' : '#22c55e' ?>">
-                    Ⓟ <?= number_format(max(0, $buyerPopularity - $tx['price'])) ?>
-                </span>
+            <div style="font-size:12px;color:#999;margin-top:6px;">
+                人气值为你的自管记录，本次成交不会扣减该数值
             </div>
             <?php endif; ?>
 

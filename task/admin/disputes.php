@@ -124,7 +124,7 @@ if (isset($_SESSION['admin_msg'])) {
                                         </div>
                                     </form>
                                     <?php if ($d['reward_type'] !== 'cash'): ?>
-                                        <div style="font-size:11px;color:#b45309;margin-top:4px;">人气值任务：通过结算将即时划转；雇主余额不足时自动转“结算中”待补足。</div>
+                                        <div style="font-size:11px;color:#b45309;margin-top:4px;">人气值任务：通过结算即完成（人气值为自管记录，不发生划转）。</div>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span class="admin-badge <?= $d['resolution'] === 'settle' ? 'success' : 'default' ?>">
