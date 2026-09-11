@@ -188,9 +188,21 @@ if (!function_exists('city_portal_render')) {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<?= cp_e($meta['title']) ?>">
     <meta name="twitter:description" content="<?= cp_e($meta['desc']) ?>">
-    <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"City","name":"<?= cp_e($cityName) ?>区块城市","url":"<?= cp_e($pageUrl) ?>","address":{"@type":"PostalAddress","addressRegion":"<?= cp_e($addrRegion) ?>","addressCountry":"CN"}}
-    </script>
+    <?= SeoHelper::placeSchema([
+        'type' => ['Place', 'City'],
+        'name' => $cityName . '区块城市',
+        'url' => $pageUrl,
+        'description' => $meta['desc'],
+        'addressRegion' => $addrRegion,
+        'containedInPlace' => ['@type' => 'Country', 'name' => '中国'],
+        'additionalProperties' => [
+            '城市排名' => $rank,
+            '居民数' => $residents,
+            '激活区块数' => $blocksCnt,
+            '基金余额' => $fund,
+            '人气值' => $popularity,
+        ],
+    ]) ?>
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"58区块城市","item":"https://www.58.tl/"},{"@type":"ListItem","position":2,"name":"城市列表","item":"https://www.58.tl/all-cities.php"},{"@type":"ListItem","position":3,"name":"<?= cp_e($cityName) ?>区块城市"}]}
     </script>

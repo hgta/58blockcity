@@ -49,25 +49,19 @@ $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = $nftImage;
 $site_config['og_type']     = 'website';
 
-// NFT Product 结构化数据
+// NFT VisualArtwork 结构化数据
 $nftCanonicalUrl = SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? '');
-$nftJsonLd = '<script type="application/ld+json">' . json_encode([
-    '@context'    => 'https://schema.org',
-    '@type'       => 'Product',
-    'name'        => $nftName,
-    'description' => $nftDesc,
-    'url'         => $nftCanonicalUrl,
-    'image'       => $nftImage,
-    'category'    => 'DigitalArt',
-    'keywords'    => $tagStr,
-    'offers'      => [
-        '@type' => 'Offer',
-        'price' => number_format(floatval($nftInfo['price'] ?? 0), 2),
-        'priceCurrency' => 'BCT',
-        'availability'  => 'https://schema.org/InStock',
-        'url'   => $nftCanonicalUrl,
-    ],
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$nftJsonLd = SeoHelper::visualArtworkSchema([
+    'name' => $nftInfo['name'] ?? 'NFT头像',
+    'url' => $nftCanonicalUrl,
+    'image' => $nftImage,
+    'description' => $nftDesc . ($tagStr ? '｜标签：' . $tagStr : ''),
+    'artMedium' => '数字艺术 / NFT 头像',
+    'identifier' => $nftInfo['code'] ?? '',
+    'dateCreated' => !empty($nftInfo['created_at']) ? date('c', strtotime($nftInfo['created_at'])) : '',
+    'price' => number_format(floatval($nftInfo['price'] ?? 0), 2),
+    'currency' => 'BCT',
+]);
 
 // 面包屑
 $nftBreadcrumbJsonLd = SeoHelper::breadcrumbList([

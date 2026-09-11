@@ -329,6 +329,414 @@ class SeoHelper
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
     }
 
+    /* ========== 生成式引擎结构化数据（GEO） ========== */
+
+    /**
+     * 统一输出 JSON-LD 脚本标签（内部工具方法）
+     */
+    private static function jsonLd(array $data)
+    {
+        if (empty($data)) {
+            return '';
+        }
+        return '<script type="application/ld+json">'
+            . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            . '</script>';
+    }
+
+    /** 全局组织实体 @id（与 shared/organization.php 保持一致） */
+    const ORG_ID = 'https://www.58.tl/#organization';
+
+    /**
+     * Organization 结构化数据（通用构造，一般由 shared/organization.php 提供）
+     */
+    public static function organizationSchema(array $org)
+    {
+        $data = array_merge([
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+        ], $org);
+        return self::jsonLd($data);
+    }
+
+    /**
+     * WebSite 结构化数据（首页 / 站点级）
+     *
+     * @param array $site ['name'=>, 'url'=>, 'description'=>, 'alternateName'=>, 'search'=>, 'publisher_id'=>]
+     */
+    public static function webSiteSchema(array $site)
+    {
+        $url = $site['url'] ?? 'https://www.58.tl/';
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            '@id' => $site['id'] ?? (rtrim($url, '/') . '/#website'),
+            'name' => $site['name'] ?? '58区块城市',
+            'url' => $url,
+        ];
+        if (!empty($site['alternateName'])) {
+            $data['alternateName'] = $site['alternateName'];
+        }
+        if (!empty($site['description'])) {
+            $data['description'] = $site['description'];
+        }
+        if (!empty($site['search'])) {
+            $data['potentialAction'] = [
+                '@type' => 'SearchAction',
+                'target' => $site['search'],
+                'query-input' => 'required name=search_term_string',
+            ];
+        }
+        $data['publisher'] = $site['publisher_id']
+            ? ['@id' => $site['publisher_id']]
+            : ['@id' => self::ORG_ID];
+        return self::jsonLd($data);
+    }
+
+    /**
+     * Article / NewsArticle 结构化数据
+     *
+     * @param array $a ['headline'=>, 'description'=>, 'url'=>, 'image'=>, 'datePublished'=>,
+     *                  'dateModified'=>, 'author'=>, 'section'=>, 'keywords'=>, 'type'=>, 'publisher'=>]
+     */
+    public static function articleSchema(array $a)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => $a['type'] ?? 'Article',
+            'headline' => mb_substr(trim((string)($a['headline'] ?? '')), 0, 110),
+        ];
+        if (!empty($a['description'])) {
+            $data['description'] = (string)$a['description'];
+        }
+        if (!empty($a['url'])) {
+            $data['mainEntityOfPage'] = ['@type' => 'WebPage', '@id' => $a['url']];
+            $data['url'] = $a['url'];
+        }
+        if (!empty($a['image'])) {
+            $data['image'] = $a['image'];
+        }
+        if (!empty($a['datePublished'])) {
+            $data['datePublished'] = $a['datePublished'];
+        }
+        if (!empty($a['dateModified'])) {
+            $data['dateModified'] = $a['dateModified'];
+        }
+        if (!empty($a['author'])) {
+            $data['author'] = is_array($a['author'])
+                ? $a['author']
+                : ['@type' => 'Person', 'name' => (string)$a['author']];
+        }
+        $data['publisher'] = $a['publisher'] ?? ['@id' => self::ORG_ID];
+        if (!empty($a['section'])) {
+            $data['articleSection'] = $a['section'];
+        }
+        if (!empty($a['keywords'])) {
+            $data['keywords'] = $a['keywords'];
+        }
+        if (!empty($a['inLanguage'])) {
+            $data['inLanguage'] = $a['inLanguage'];
+        } else {
+            $data['inLanguage'] = 'zh-CN';
+        }
+        return self::jsonLd($data);
+    }
+
+    /**
+     * FAQPage 结构化数据
+     *
+     * @param array $qa [['question'=>'', 'answer'=>''], ...]
+     */
+    public static function faqPageSchema(array $qa)
+    {
+        $items = [];
+        foreach ($qa as $q) {
+            $question = trim((string)($q['question'] ?? ''));
+            $answer   = trim((string)($q['answer'] ?? ''));
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+            $items[] = [
+                '@type' => 'Question',
+                'name' => $question,
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $answer],
+            ];
+        }
+        if (empty($items)) {
+            return '';
+        }
+        return self::jsonLd([
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => $items,
+        ]);
+    }
+
+    /**
+     * HowTo 结构化数据
+     *
+     * @param array $how ['name'=>, 'description'=>, 'image'=>, 'totalTime'=>,
+     *                    'steps'=>[['name'=>, 'text'=>, 'url'=>, 'image'=>], ...]]
+     */
+    public static function howToSchema(array $how)
+    {
+        $steps = [];
+        $pos = 1;
+        foreach (($how['steps'] ?? []) as $s) {
+            $name = trim((string)($s['name'] ?? ''));
+            $text = trim((string)($s['text'] ?? ''));
+            if ($name === '' && $text === '') {
+                continue;
+            }
+            $step = [
+                '@type' => 'HowToStep',
+                'position' => $pos++,
+                'name' => $name !== '' ? $name : $text,
+                'text' => $text !== '' ? $text : $name,
+            ];
+            if (!empty($s['url'])) $step['url'] = $s['url'];
+            if (!empty($s['image'])) $step['image'] = $s['image'];
+            $steps[] = $step;
+        }
+        if (empty($steps)) {
+            return '';
+        }
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'HowTo',
+            'name' => $how['name'] ?? '',
+            'step' => $steps,
+        ];
+        if (!empty($how['description'])) $data['description'] = $how['description'];
+        if (!empty($how['image'])) $data['image'] = $how['image'];
+        if (!empty($how['totalTime'])) $data['totalTime'] = $how['totalTime'];
+        return self::jsonLd($data);
+    }
+
+    /**
+     * Product + Offer 结构化数据
+     *
+     * @param array $p ['name'=>, 'url'=>, 'image'=>, 'description'=>, 'sku'=>, 'category'=>,
+     *                  'brand'=>, 'price'=>, 'currency'=>, 'availability'=>, 'seller'=>,
+     *                  'rating'=>, 'reviewCount'=>]
+     */
+    public static function productSchema(array $p)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => (string)($p['name'] ?? ''),
+        ];
+        if (!empty($p['url'])) $data['url'] = $p['url'];
+        if (!empty($p['image'])) $data['image'] = $p['image'];
+        if (!empty($p['description'])) $data['description'] = (string)$p['description'];
+        if (!empty($p['sku'])) $data['sku'] = (string)$p['sku'];
+        if (!empty($p['category'])) $data['category'] = (string)$p['category'];
+        if (!empty($p['brand'])) {
+            $data['brand'] = ['@type' => 'Brand', 'name' => (string)$p['brand']];
+        }
+        $offer = [
+            '@type' => 'Offer',
+            'price' => (string)($p['price'] ?? ''),
+            'priceCurrency' => $p['currency'] ?? 'CNY',
+            'availability' => $p['availability'] ?? 'https://schema.org/InStock',
+        ];
+        if (!empty($p['url'])) $offer['url'] = $p['url'];
+        if (!empty($p['seller'])) {
+            $offer['seller'] = ['@type' => 'Organization', 'name' => (string)$p['seller']];
+        }
+        $data['offers'] = $offer;
+        if (!empty($p['rating']) && !empty($p['reviewCount'])) {
+            $data['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string)$p['rating'],
+                'reviewCount' => (int)$p['reviewCount'],
+            ];
+        }
+        return self::jsonLd($data);
+    }
+
+    /**
+     * Store 结构化数据
+     *
+     * @param array $s ['name'=>, 'url'=>, 'image'=>, 'description'=>, 'telephone'=>,
+     *                  'addressRegion'=>, 'addressLocality'=>, 'streetAddress'=>,
+     *                  'rating'=>, 'reviewCount'=>]
+     */
+    public static function storeSchema(array $s)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Store',
+            'name' => (string)($s['name'] ?? ''),
+        ];
+        if (!empty($s['url'])) $data['url'] = $s['url'];
+        if (!empty($s['image'])) $data['image'] = $s['image'];
+        if (!empty($s['description'])) $data['description'] = (string)$s['description'];
+        if (!empty($s['telephone'])) $data['telephone'] = (string)$s['telephone'];
+        $addr = [];
+        if (!empty($s['streetAddress']))   $addr['streetAddress']   = (string)$s['streetAddress'];
+        if (!empty($s['addressLocality'])) $addr['addressLocality'] = (string)$s['addressLocality'];
+        if (!empty($s['addressRegion']))   $addr['addressRegion']   = (string)$s['addressRegion'];
+        if (!empty($addr)) {
+            $addr['@type'] = 'PostalAddress';
+            $addr['addressCountry'] = $s['addressCountry'] ?? 'CN';
+            $data['address'] = $addr;
+        }
+        if (!empty($s['rating']) && !empty($s['reviewCount'])) {
+            $data['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string)$s['rating'],
+                'reviewCount' => (int)$s['reviewCount'],
+            ];
+        }
+        $data['parentOrganization'] = ['@id' => self::ORG_ID];
+        return self::jsonLd($data);
+    }
+
+    /**
+     * Person 结构化数据（模特 / 作者 / 用户）
+     *
+     * @param array $p ['name'=>, 'url'=>, 'image'=>, 'description'=>, 'jobTitle'=>, 'worksFor'=>, 'sameAs'=>]
+     */
+    public static function personSchema(array $p)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Person',
+            'name' => (string)($p['name'] ?? ''),
+        ];
+        if (!empty($p['url'])) $data['url'] = $p['url'];
+        if (!empty($p['image'])) $data['image'] = $p['image'];
+        if (!empty($p['description'])) $data['description'] = (string)$p['description'];
+        if (!empty($p['jobTitle'])) $data['jobTitle'] = (string)$p['jobTitle'];
+        $data['worksFor'] = $p['worksFor'] ?? ['@id' => self::ORG_ID];
+        if (!empty($p['sameAs'])) $data['sameAs'] = (array)$p['sameAs'];
+        if (!empty($p['extra']) && is_array($p['extra'])) {
+            foreach ($p['extra'] as $k => $v) {
+                if ($v === '' || $v === null || $v === []) continue;
+                $data[$k] = $v;
+            }
+        }
+        return self::jsonLd($data);
+    }
+
+    /**
+     * Place / AdministrativeArea 结构化数据（城市）
+     *
+     * @param array $pl ['name'=>, 'url'=>, 'description'=>, 'image'=>, 'type'=>,
+     *                   'addressRegion'=>, 'addressCountry'=>, 'containedInPlace'=>,
+     *                   'geo'=>['lat'=>,'lng'=>], 'additionalProperties'=>['名称'=>'值']]
+     */
+    public static function placeSchema(array $pl)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => $pl['type'] ?? 'Place',
+            'name' => (string)($pl['name'] ?? ''),
+        ];
+        if (!empty($pl['url'])) $data['url'] = $pl['url'];
+        if (!empty($pl['description'])) $data['description'] = (string)$pl['description'];
+        if (!empty($pl['image'])) $data['image'] = $pl['image'];
+        if (!empty($pl['addressRegion']) || !empty($pl['addressCountry'])) {
+            $addr = ['@type' => 'PostalAddress'];
+            if (!empty($pl['addressRegion'])) $addr['addressRegion'] = (string)$pl['addressRegion'];
+            $addr['addressCountry'] = $pl['addressCountry'] ?? 'CN';
+            $data['address'] = $addr;
+        }
+        if (!empty($pl['containedInPlace'])) {
+            $data['containedInPlace'] = $pl['containedInPlace'];
+        }
+        if (!empty($pl['geo']['lat']) && !empty($pl['geo']['lng'])) {
+            $data['geo'] = [
+                '@type' => 'GeoCoordinates',
+                'latitude' => $pl['geo']['lat'],
+                'longitude' => $pl['geo']['lng'],
+            ];
+        }
+        if (!empty($pl['additionalProperties']) && is_array($pl['additionalProperties'])) {
+            $props = [];
+            foreach ($pl['additionalProperties'] as $k => $v) {
+                if ($v === '' || $v === null) continue;
+                $props[] = ['@type' => 'PropertyValue', 'name' => (string)$k, 'value' => (string)$v];
+            }
+            if ($props) $data['additionalProperty'] = $props;
+        }
+        return self::jsonLd($data);
+    }
+
+    /**
+     * DefinedTermSet 结构化数据（术语表）
+     *
+     * @param array $set ['name'=>, 'description'=>, 'url'=>,
+     *                    'terms'=>[['name'=>, 'description'=>, 'url'=>], ...]]
+     */
+    public static function definedTermSetSchema(array $set)
+    {
+        $terms = [];
+        foreach (($set['terms'] ?? []) as $t) {
+            $name = trim((string)($t['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $term = ['@type' => 'DefinedTerm', 'name' => $name];
+            if (!empty($t['description'])) $term['description'] = (string)$t['description'];
+            if (!empty($t['url'])) $term['url'] = $t['url'];
+            if (!empty($t['inDefinedTermSet'])) $term['inDefinedTermSet'] = $t['inDefinedTermSet'];
+            $terms[] = $term;
+        }
+        if (empty($terms)) {
+            return '';
+        }
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'DefinedTermSet',
+            'name' => $set['name'] ?? '术语表',
+            'hasDefinedTerm' => $terms,
+        ];
+        if (!empty($set['description'])) $data['description'] = (string)$set['description'];
+        if (!empty($set['url'])) $data['url'] = $set['url'];
+        return self::jsonLd($data);
+    }
+
+    /**
+     * VisualArtwork 结构化数据（NFT）
+     *
+     * @param array $n ['name'=>, 'url'=>, 'image'=>, 'description'=>, 'artMedium'=>,
+     *                  'dateCreated'=>, 'creator'=>, 'identifier'=>,
+     *                  'price'=>, 'currency'=>, 'availability'=>]
+     */
+    public static function visualArtworkSchema(array $n)
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'VisualArtwork',
+            'name' => (string)($n['name'] ?? ''),
+        ];
+        if (!empty($n['url'])) $data['url'] = $n['url'];
+        if (!empty($n['image'])) $data['image'] = $n['image'];
+        if (!empty($n['description'])) $data['description'] = (string)$n['description'];
+        if (!empty($n['artMedium'])) $data['artMedium'] = (string)$n['artMedium'];
+        if (!empty($n['dateCreated'])) $data['dateCreated'] = $n['dateCreated'];
+        if (!empty($n['identifier'])) $data['identifier'] = (string)$n['identifier'];
+        if (!empty($n['creator'])) {
+            $data['creator'] = is_array($n['creator'])
+                ? $n['creator']
+                : ['@type' => 'Person', 'name' => (string)$n['creator']];
+        }
+        if (!empty($n['price'])) {
+            $offer = [
+                '@type' => 'Offer',
+                'price' => (string)$n['price'],
+                'priceCurrency' => $n['currency'] ?? 'CNY',
+                'availability' => $n['availability'] ?? 'https://schema.org/InStock',
+            ];
+            if (!empty($n['url'])) $offer['url'] = $n['url'];
+            $data['offers'] = $offer;
+        }
+        return self::jsonLd($data);
+    }
+
     /**
      * 对 URL 的中文/特殊字符进行安全编码，同时保留 :// / ? & = 等 URL 结构字符
      */

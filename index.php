@@ -30,6 +30,8 @@
 session_start();
 require_once 'config/database.php';
 require_once 'classes/City.php';
+require_once 'classes/SeoHelper.php';
+require_once 'shared/organization.php';
 $city = new City($pdo);
 $hotCities = $city->getHotCitiesList(18);
 $citiesByLetter = $city->getCitiesByLetter();
@@ -146,21 +148,8 @@ $letters = range('A', 'Z');
             .footer-grid{grid-template-columns:1fr!important}
         }
     </style>
-    <!-- Organization 结构化数据 -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "58区块城市",
-      "alternateName": "BlockCity",
-      "url": "https://www.58.tl",
-      "logo": "https://58.tl/assets/images/logo.png",
-      "sameAs": [
-        "https://www.58.tl"
-      ],
-      "description": "基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理"
-    }
-    </script>
+    <!-- Organization 结构化数据（全局实体单一来源 shared/organization.php） -->
+    <?= organization_json_ld() ?>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -441,21 +430,13 @@ $letters = range('A', 'Z');
         };
     </script>
     
-    <!-- JSON-LD结构化数据 -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "58区块城市",
-      "url": "https://www.58.tl",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://www.58.tl/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      },
-      "description": "基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。",
-      "keywords": "58,区块城市,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市"
-    }
-    </script>
+    <!-- JSON-LD结构化数据：WebSite（挂接到全局组织实体） -->
+    <?= SeoHelper::webSiteSchema([
+        'name'        => '58区块城市',
+        'url'         => 'https://www.58.tl/',
+        'search'      => 'https://www.58.tl/search?q={search_term_string}',
+        'description' => '基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。',
+        'publisher_id' => 'https://www.58.tl/#organization',
+    ]) ?>
 </body>
 </html>

@@ -133,7 +133,7 @@ if ($p['type'] === 'post') {
         'headline' => mb_substr($p['title'] ?: $p['content'], 0, 100),
         'description' => SeoHelper::excerpt($p['content'], 120),
         'author' => ['@type' => 'Person', 'name' => $p['username'] ?? '用户#' . $p['user_id']],
-        'publisher' => ['@type' => 'Organization', 'name' => '58区块城市'],
+        'publisher' => ['@id' => 'https://www.58.tl/#organization'],
         'datePublished' => $p['created_at'],
         'dateModified' => $p['updated_at'] ?? $p['created_at'],
         'mainEntityOfPage' => $canonical,

@@ -1,0 +1,17 @@
+# 58人气值商城（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的人气值购物商城子站，主站实体为 https://www.58.tl/ 。本站基于 BlockCity 生态，支持 BCT 人气值支付、多种商品分类、免费开店上架商品，并提供模特库与作者库。
+
+## 本站主要入口
+
+- [商城首页](https://mall.58.tl/): 人气值商城总入口
+- [商品浏览](https://mall.58.tl/product/list.php)
+- [店铺列表](https://mall.58.tl/shop/list.php)
+- [模特库](https://mall.58.tl/model/list.php)
+- [作者库](https://mall.58.tl/author/list.php)
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)

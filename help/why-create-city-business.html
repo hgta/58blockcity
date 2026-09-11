@@ -156,6 +156,18 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 文章结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"如果你是企业/品牌，为什么要创建城市？","description":"了解企业/品牌在58区块城市平台创建专属城市的商业价值和营销优势","url":"https://www.58.tl/help/why-create-city-business.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.58.tl/help/why-create-city-business.html"},"inLanguage":"zh-CN","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"},"isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"}}
+    </script>
+    <!-- 常见问题结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"企业创建城市有什么商业价值？","acceptedAnswer":{"@type":"Answer","text":"获得真实反馈渠道、直接沟通平台、深度客户关系、价值共享机制与社群自治生态，效果超越传统广告投放。"}},{"@type":"Question","name":"企业如何开始创建城市？","acceptedAnswer":{"@type":"Answer","text":"免费创建专属城市，安排少量员工购买区块成为首批居民，再邀请合作伙伴与核心客户加入。"}},{"@type":"Question","name":"创建企业城市需要技术开发吗？","acceptedAnswer":{"@type":"Answer","text":"不需要。无需开发网站或系统，直接使用 BlockCity 统一的功能、规则与治理工具。"}}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -184,6 +196,10 @@
         </div>
         
         <div class="help-content">
+            <!-- 直答段落（GEO：可被生成式引擎直接引用的独立答案） -->
+            <div class="direct-answer" style="background:#fff8f5;border-left:4px solid #ff6b00;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 25px;font-size:16px;color:#444;line-height:1.8;">
+                <strong>直答：</strong>企业/品牌创建城市，是为了在元宇宙中建立专属客户社群与数字阵地，把广告式的单向触达升级为平等互信、利益与共的长期关系，从而沉淀真实的用户资产与品牌护城河。
+            </div>
             <div class="intro-question">
                 谁不想与客户的互动更频繁、交往更深入？
             </div>
@@ -257,6 +273,23 @@
             <div class="value-section">
                 <h2>共创共享的新范式</h2>
                 <p>我们都知道，你让用户获得更多，用户也会回报你更多；而你现在更应该明白的是：你让他们在一起，你就会和他们在一起。</p>
+            </div>
+            
+            <!-- 常见问题（与页面 FAQPage 结构化数据一致） -->
+            <div class="faq-section" style="margin-top:30px;">
+                <h2>常见问题</h2>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">企业创建城市有什么商业价值？</h3>
+                    <p style="color:#555;margin:0;">获得真实反馈渠道、直接沟通平台、深度客户关系、价值共享机制与社群自治生态，效果超越传统广告投放。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">企业如何开始创建城市？</h3>
+                    <p style="color:#555;margin:0;">免费创建专属城市，安排少量员工购买区块成为首批居民，再邀请合作伙伴与核心客户加入。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">创建企业城市需要技术开发吗？</h3>
+                    <p style="color:#555;margin:0;">不需要。无需开发网站或系统，直接使用 BlockCity 统一的功能、规则与治理工具。</p>
+                </div>
             </div>
             
             <div class="cta-section">

@@ -1,0 +1,15 @@
+# 58区块社区（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的社区交流子站，主站实体为 https://www.58.tl/ 。本站提供同城帖子发布、心情分享与话题交流（聊区块、聊头像、聊人气值、聊城市）。
+
+## 本站主要入口
+
+- [社区首页](https://club.58.tl/): 帖子与心情流
+- [发帖](https://club.58.tl/create.php)
+- [社区搜索](https://club.58.tl/search.php?q={query})
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)

@@ -156,6 +156,18 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 文章结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"大型企业/学校/小区等，为什么要创建城市？","description":"了解大型企业/学校/小区在58区块城市平台创建专属城市的组织管理新方案","url":"https://www.58.tl/help/why-create-city-organization.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.58.tl/help/why-create-city-organization.html"},"inLanguage":"zh-CN","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"},"isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"}}
+    </script>
+    <!-- 常见问题结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"组织创建城市适用于哪些场景？","acceptedAnswer":{"@type":"Answer","text":"大型企业、学校机构、住宅小区、工厂车间等都可以使用。"}},{"@type":"Question","name":"需要技术开发和系统维护吗？","acceptedAnswer":{"@type":"Answer","text":"不需要。即开即用，零维护成本。"}},{"@type":"Question","name":"组织创建城市有什么价值？","acceptedAnswer":{"@type":"Answer","text":"去中心化治理、成员深度互动、信息安全、零维护成本和组织文化沉淀。"}}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -184,6 +196,10 @@
         </div>
         
         <div class="help-content">
+            <!-- 直答段落（GEO：可被生成式引擎直接引用的独立答案） -->
+            <div class="direct-answer" style="background:#fff8f5;border-left:4px solid #ff6b00;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 25px;font-size:16px;color:#444;line-height:1.8;">
+                <strong>直答：</strong>大型企业、学校、小区等组织创建城市，是为了用去中心化方式重塑内部管理与互动。它即开即用、零维护，能实现成员深度互动、信息安全与组织文化沉淀，让管理更透明高效。
+            </div>
             <div class="intro-question">
                 谁不想提升组织成员的归属感和凝聚力？
             </div>
@@ -258,6 +274,23 @@
             <div class="value-section">
                 <h2>组织发展的新范式</h2>
                 <p>在BlockCity的城市里，组织管理不再是单向的指令传达，而是双向的价值共创；成员关系不再是冰冷的上下级，而是温暖的共同体；组织文化不再是墙上的标语，而是每天的真实互动。</p>
+            </div>
+            
+            <!-- 常见问题（与页面 FAQPage 结构化数据一致） -->
+            <div class="faq-section" style="margin-top:30px;">
+                <h2>常见问题</h2>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">组织创建城市适用于哪些场景？</h3>
+                    <p style="color:#555;margin:0;">大型企业、学校机构、住宅小区、工厂车间等都可以使用。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">需要技术开发和系统维护吗？</h3>
+                    <p style="color:#555;margin:0;">不需要。即开即用，零维护成本。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">组织创建城市有什么价值？</h3>
+                    <p style="color:#555;margin:0;">去中心化治理、成员深度互动、信息安全、零维护成本和组织文化沉淀。</p>
+                </div>
             </div>
             
             <div class="cta-section">

@@ -1,0 +1,61 @@
+# 58区块城市（58 BlockCity）
+
+> 58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群（www / block / bct / mall / nft / v / bid / club 八个子域，同属「58区块城市」这一组织实体）。
+
+## 核心入口
+
+- [58区块城市首页](https://www.58.tl/): 平台总入口、城市导航与生态介绍
+- [城市列表](https://www.58.tl/all-cities.php): 全国 300+ 区块城市门户
+- [城市排行榜](https://www.58.tl/top200city.php): 按人气值排列的热门区块城市
+
+## 城市
+
+- [城市门户](https://www.58.tl/city/{pinyin}.html): 每个城市的排名、居民、区块数、基金余额、BCT 行情、NFT 挂售与同城动态
+- [全国城市一览](https://www.58.tl/top100city.html): 区块城市 TOP100 数据
+
+## 区块
+
+- [区块交易市场](https://block.58.tl/): 城市地块认领、相邻区块合并、区块买卖
+- [区块售卖](https://block.58.tl/sale_list.php) / [区块求购](https://block.58.tl/purchase_list.php) / [区块认领](https://block.58.tl/claim_list.php)
+
+## 人气值 / BCT
+
+- [BCT 行情市场](https://bct.58.tl/market.php): BCT 现价、基础价、流通量与总供给
+- [人气值商城](https://mall.58.tl/): 支持 BCT 人气值支付的购物商城，可免费开店上架商品
+
+## NFT 头像
+
+- [NFT 头像市场](https://nft.58.tl/): NFT 头像浏览、认领、买卖与求购
+- [NFT 排行榜](https://nft.58.tl/ranking/index.php)
+
+## 商城与人物
+
+- [商品浏览](https://mall.58.tl/product/list.php) / [店铺列表](https://mall.58.tl/shop/list.php)
+- [模特库](https://mall.58.tl/model/list.php) / [作者库](https://mall.58.tl/author/list.php)
+
+## 社区与互动
+
+- [58区块社区](https://club.58.tl/): 同城帖子、心情与话题交流（聊区块、聊头像、聊人气值）
+- [互访圈](https://v.58.tl/): 同城互访、拓展人脉的圈层社交
+- [拍卖](https://bid.58.tl/): 稀缺数字资产竞价
+
+## 帮助与知识
+
+- [帮助中心](https://www.58.tl/help/help.html): 新手指南与常见问题
+- [区块购买指南](https://www.58.tl/help/buy-blocks-guide.html): 分步操作教程
+- [如何创建城市](https://www.58.tl/help/create-city.html): 创建与运营一个城市
+- [为什么要创建城市](https://www.58.tl/help/why-create-city.html): 创建城市对组织与个人的价值
+- [术语表](https://www.58.tl/help/glossary.html): 人气值、BCT、区块、互访圈、区块城市等核心概念定义
+- [区块城市新闻](https://www.58.tl/news.php): 平台动态与元宇宙资讯
+- [排行榜数据](https://www.58.tl/rankings/rankings.html): 城市与区块的数据排行
+
+## 关于本站
+
+- [GitHub 仓库](https://github.com/hgta/58blockcity): 本站开源代码仓库
+- 生态关联：本站为独立第三方工具站，服务并关联 [BlockCity.vip](https://www.blockcity.vip/) 生态
+- 联系方式：support@58.tl
+
+## Optional
+
+- [Sitemap](https://www.58.tl/sitemap.xml): 全站 URL 清单
+- [robots.txt](https://www.58.tl/robots.txt): 爬虫抓取规则（对主流 AI 爬虫全部放行）

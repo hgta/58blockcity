@@ -185,6 +185,18 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 文章结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"58区块城市帮助中心","description":"58区块城市帮助中心，汇总区块购买、城市创建、人气值（BCT）、NFT 头像与社交功能的操作指南与常见问题","url":"https://www.58.tl/help/help.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.58.tl/help/help.html"},"inLanguage":"zh-CN","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"},"isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"}}
+    </script>
+    <!-- 常见问题结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"帮助中心包含哪些内容？","acceptedAnswer":{"@type":"Answer","text":"覆盖城市创建与管理、AI分身与形象、社交与聊天、市政厅与公共事务、账户与设置等主要功能。"}},{"@type":"Question","name":"如何购买区块？","acceptedAnswer":{"@type":"Answer","text":"参见区块购买指南，按选购、结算、支付、记录创始密码等步骤完成。"}},{"@type":"Question","name":"遇到问题如何联系客服？","acceptedAnswer":{"@type":"Answer","text":"可通过微信客服（BitPFP）或帮助中心页脚的在线客服入口联系我们。"}}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -210,6 +222,11 @@
         <div class="help-header">
             <h1>帮助中心</h1>
             <p>在这里找到您需要的所有帮助信息</p>
+        </div>
+        
+        <!-- 直答段落（GEO：可被生成式引擎直接引用的独立答案） -->
+        <div class="direct-answer" style="background:#fff8f5;border-left:4px solid #ff6b00;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 25px;font-size:16px;color:#444;line-height:1.8;">
+            <strong>直答：</strong>58区块城市帮助中心汇总了区块购买、城市创建、人气值（BCT）、NFT 头像、社交聊天、市政厅与账户设置等功能的操作指南与常见问题，帮助你快速上手并解决使用中的疑问。
         </div>
         
         <div class="help-search">
@@ -244,6 +261,9 @@
                 </div>
                 <div class="quick-link-item">
                     <a href="#nft">NFT头像</a>
+                </div>
+                <div class="quick-link-item">
+                    <a href="glossary.html">术语表（人气值/BCT/区块）</a>
                 </div>
             </div>
         </div>
@@ -332,6 +352,23 @@
                     <li><a href="partner-platforms.html">关联平台介绍</a></li>
                     <li><a href="slow-mailbox.html">慢信箱使用指南</a></li>
                 </ul>
+            </div>
+            
+            <!-- 常见问题（与页面 FAQPage 结构化数据一致） -->
+            <div class="faq-section" style="margin-top:30px;">
+                <h2>常见问题</h2>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">帮助中心包含哪些内容？</h3>
+                    <p style="color:#555;margin:0;">覆盖城市创建与管理、AI分身与形象、社交与聊天、市政厅与公共事务、账户与设置等主要功能。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">如何购买区块？</h3>
+                    <p style="color:#555;margin:0;">参见区块购买指南，按选购、结算、支付、记录创始密码等步骤完成。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">遇到问题如何联系客服？</h3>
+                    <p style="color:#555;margin:0;">可通过微信客服（BitPFP）或帮助中心页脚的在线客服入口联系我们。</p>
+                </div>
             </div>
         </div>
     </div>

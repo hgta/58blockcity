@@ -313,6 +313,14 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 热门城市榜单结构化数据 ItemList -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"ItemList","name":"全国TOP100热门城市","description":"基于居民人数和开启区块数量综合排序的城市榜单，数据实时更新","url":"https://www.58.tl/top100city.html","numberOfItems":100,"itemListOrder":"https://schema.org/ItemListOrderDescending","inLanguage":"zh-CN","publisher":{"@id":"https://www.58.tl/#organization"},"itemListElement":[{"@type":"ListItem","position":1,"name":"北京","description":"居民人数 2200，开启区块 2811"},{"@type":"ListItem","position":2,"name":"上海","description":"居民人数 1274，开启区块 1698"},{"@type":"ListItem","position":3,"name":"深圳","description":"居民人数 1145，开启区块 1633"},{"@type":"ListItem","position":4,"name":"杭州","description":"居民人数 1170，开启区块 1571"},{"@type":"ListItem","position":5,"name":"中国数藏","description":"居民人数 1019，开启区块 1436"}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->

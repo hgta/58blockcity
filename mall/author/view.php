@@ -99,14 +99,13 @@ $site_config['og_image']    = $ogImage;
 $site_config['og_type']     = 'profile';
 
 // Person JSON-LD（不含身高体重，作者无身体数据）
-$personJsonLd = '<script type="application/ld+json">' . json_encode([
-    '@context' => 'https://schema.org',
-    '@type'    => 'Person',
-    'name'     => $nickname,
-    'url'      => $canonicalUrl,
+$personJsonLd = SeoHelper::personSchema([
+    'name' => $authorInfo['nickname'] ?? '',
+    'url' => $canonicalUrl,
+    'image' => $ogImage,
     'jobTitle' => '图案作者',
-    'description' => !empty($authorInfo['bio']) ? $authorInfo['bio'] : null,
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    'description' => !empty($authorInfo['bio']) ? $authorInfo['bio'] : '',
+]);
 
 // BreadcrumbList
 $breadcrumbJsonLd = SeoHelper::breadcrumbList([

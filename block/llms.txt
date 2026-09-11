@@ -1,0 +1,17 @@
+# BlockCity 区块市场（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的区块交易子站，主站实体为 https://www.58.tl/ 。本站提供城市地块认领、相邻区块合并、区块买卖交易与 200+ 城市区块地图浏览。
+
+## 本站主要入口
+
+- [区块市场首页](https://block.58.tl/): 城市区块地图与交易总览
+- [区块售卖](https://block.58.tl/sale_list.php)
+- [区块求购](https://block.58.tl/purchase_list.php)
+- [区块认领](https://block.58.tl/claim_list.php)
+- [城市排行](https://block.58.tl/top200city.php)
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)

@@ -56,6 +56,10 @@ if (isset($_SESSION['user_id']) && isset($pdo) && !isset($message_unread_compute
 $nav_links = $site_config['nav_links'] ?? [];
 $extra_head = $site_config['extra_head'] ?? '';
 $theme = $site_config['theme_color'] ?? '#ff6b00';
+
+// 全局品牌实体（单一来源）：所有子域引用同一 @id，聚合为一个组织实体
+require_once __DIR__ . '/organization.php';
+$orgJsonLd = organization_json_ld();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -105,6 +109,7 @@ $theme = $site_config['theme_color'] ?? '#ff6b00';
       <?php endif; ?>
     }
     </script>
+    <?= $orgJsonLd ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://58.tl/assets/css/main.css">

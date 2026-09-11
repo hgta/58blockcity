@@ -211,6 +211,22 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 文章结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"区块购买指南","description":"58区块城市平台区块购买完整指南，了解购买流程和注意事项","url":"https://www.58.tl/help/buy-blocks-guide.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.58.tl/help/buy-blocks-guide.html"},"inLanguage":"zh-CN","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"},"isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"}}
+    </script>
+    <!-- 教程结构化数据 HowTo -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"HowTo","name":"58区块城市区块购买流程","description":"在58区块城市选购并购买区块的六个步骤","step":[{"@type":"HowToStep","position":1,"name":"选购区块","text":"浏览城市地图，选择心仪的区块编号"},{"@type":"HowToStep","position":2,"name":"进入结算","text":"确认选择后进入支付结算页面"},{"@type":"HowToStep","position":3,"name":"完成支付","text":"完成支付后获取创始密码"},{"@type":"HowToStep","position":4,"name":"记录密码","text":"务必妥善保存创始密码，这是找回账号的唯一凭证"},{"@type":"HowToStep","position":5,"name":"购买成功","text":"获得区块所有权，成为城市居民"},{"@type":"HowToStep","position":6,"name":"设置管理密码（可选）","text":"为账号设置管理密码，便于日常登录"}]}
+    </script>
+    <!-- 常见问题结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"购买区块需要注册或实名吗？","acceptedAnswer":{"@type":"Answer","text":"不需要。购买无需提供手机、邮箱或实名信息。"}},{"@type":"Question","name":"区块编号有什么用？","acceptedAnswer":{"@type":"Answer","text":"你购买的区块编号就是你的用户账号，区块一经购买永久拥有、无需续费。"}},{"@type":"Question","name":"区块可以转让吗？","acceptedAnswer":{"@type":"Answer","text":"可以。区块支持自行定价转让，转让交易需通过密码验证确认。"}}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -240,6 +256,10 @@
         </div>
         
         <div class="help-content">
+            <!-- 直答段落（GEO：可被生成式引擎直接引用的独立答案） -->
+            <div class="direct-answer" style="background:#fff8f5;border-left:4px solid #ff6b00;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 25px;font-size:16px;color:#444;line-height:1.8;">
+                <strong>直答：</strong>在 BlockCity 购买区块共六步：选购区块 → 进入结算 → 完成支付 → 记录创始密码 → 购买成功成为居民 → 可选设置管理密码。区块无需注册或实名，编号即账号，一经购买永久拥有、无需续费。
+            </div>
             <div class="info-section">
                 <h2>购买指南入口</h2>
                 <p>进入购买页面后，在页面底部右下角会有"购买指南"入口，点击即可查看以下内容：</p>
@@ -339,6 +359,23 @@
                     <li>转让交易需通过密码验证确认</li>
                     <li>历史交易可追溯，确保资产安全</li>
                 </ul>
+            </div>
+            
+            <!-- 常见问题（与页面 FAQPage 结构化数据一致） -->
+            <div class="faq-section" style="margin-top:30px;">
+                <h2>常见问题</h2>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">购买区块需要注册或实名吗？</h3>
+                    <p style="color:#555;margin:0;">不需要。购买无需提供手机、邮箱或实名信息。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">区块编号有什么用？</h3>
+                    <p style="color:#555;margin:0;">你购买的区块编号就是你的用户账号，区块一经购买永久拥有、无需续费。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">区块可以转让吗？</h3>
+                    <p style="color:#555;margin:0;">可以。区块支持自行定价转让，转让交易需通过密码验证确认。</p>
+                </div>
             </div>
             
             <p class="purchase-tip">立即开启你的元宇宙地产投资之旅！</p>

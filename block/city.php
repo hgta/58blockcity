@@ -241,15 +241,20 @@ $cityBreadcrumbJsonLd = SeoHelper::breadcrumbList([
     ['name' => $cityName, 'url' => null],
 ]);
 
-// City 结构化数据 (Schema.org City)
-$cityJsonLd = '<script type="application/ld+json">' . json_encode([
-    '@context'      => 'https://schema.org',
-    '@type'         => 'City',
-    'name'          => $cityName,
-    'url'           => $canonicalUrl,
+// Place / City 结构化数据（Schema.org Place + City，City 属于 AdministrativeArea）
+$cityJsonLd = SeoHelper::placeSchema([
+    'type' => ['Place', 'City'],
+    'name' => $city_info['name'] ?? $city_name,
+    'url' => $canonicalUrl,
+    'description' => "{$city_info['name']}区块城市详情页，展示{$city_info['name']}市区块地图、居民数与已激活区块等数据，是了解{$city_info['name']}数字经济与元宇宙发展的重要门户。",
+    'addressRegion' => $city_info['name'] ?? $city_name,
     'containedInPlace' => ['@type' => 'Country', 'name' => '中国'],
-    'description'   => "{$cityName}区块链城市元宇宙服务平台",
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    'additionalProperties' => [
+        '居民数' => number_format($cityResident),
+        '已激活区块' => number_format($cityBlocks),
+        '总区块数' => $blockCount,
+    ],
+]);
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrumbJsonLd . $cityJsonLd;
 ?>
 

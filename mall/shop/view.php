@@ -81,24 +81,18 @@ $site_config['canonical_url'] = $canonicalUrl;
 $site_config['og_image']    = strpos($shopLogo, '://') !== false ? $shopLogo : 'https://mall.58.tl/' . ltrim($shopLogo, '/');
 $site_config['og_type']     = 'website';
 
-// 店铺 Store/LocalBusiness 结构化数据
+// 店铺 Store 结构化数据
 $shopName = htmlspecialchars($shopInfo['shop_name'] ?? '');
 $shopDesc = SeoHelper::excerpt($shopInfo['shop_description'] ?? '', 150);
-$storeJsonLd = '<script type="application/ld+json">' . json_encode([
-    '@context'  => 'https://schema.org',
-    '@type'     => 'Store',
-    'name'      => $shopName,
+$shopLogoAbs = strpos($shopLogo, '://') !== false ? $shopLogo : 'https://mall.58.tl/' . ltrim($shopLogo, '/');
+$storeJsonLd = SeoHelper::storeSchema([
+    'name' => $shopInfo['shop_name'] ?? '',
+    'url' => $canonicalUrl,
+    'image' => $shopLogoAbs,
     'description' => $shopDesc,
-    'url'       => $canonicalUrl,
-    'image'     => $shopLogo,
-    'aggregateRating' => [
-        '@type' => 'AggregateRating',
-        'ratingValue' => number_format(floatval($shopInfo['rating'] ?? 0), 1),
-        'reviewCount' => intval($shopInfo['review_count'] ?? 0),
-        'bestRating'  => 5,
-        'worstRating' => 0,
-    ],
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+    'rating' => floatval($shopInfo['rating'] ?? 0) > 0 ? number_format(floatval($shopInfo['rating']), 1) : '',
+    'reviewCount' => intval($shopInfo['review_count'] ?? 0),
+]);
 
 // 面包屑
 $shopBreadcrumbJsonLd = SeoHelper::breadcrumbList([

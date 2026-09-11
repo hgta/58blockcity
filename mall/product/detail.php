@@ -144,40 +144,35 @@ if (isset($_SESSION['user_id'])) {
 require_once '../../classes/SeoHelper.php';
 $productName = htmlspecialchars($productDetail['name'] ?? '商品详情');
 $productDesc = SeoHelper::excerpt($productDetail['description'] ?? '', 100);
-$mainImageUrl = SeoHelper::fullUrl($mainImagePath ?? '/assets/images/default-product.jpg');
+$mainImagePath = $productDetail['main_image'] ?: 'assets/images/default-product.jpg';
+$mainImageUrl = SeoHelper::fullUrl($mainImagePath);
 $canonicalUrl = SeoHelper::productUrl($productId, $productDetail['name']);
 $avgRating = round($reviewStats['avg_rating'] ?? 0, 1);
 
-// Product JSON-LD 结构化数据
-$productSchema = [
-    '@context' => 'https://schema.org',
-    '@type' => 'Product',
-    'name' => $productName,
+// Product + Offer JSON-LD：价格与页面展示保持一致（优先人气值/BCT，其次人民币）
+$bctPrice = (float)($productDetail['price_bct'] ?? 0);
+$cnyPrice = (float)($productDetail['price_cny'] ?? 0);
+if ($bctPrice > 0) {
+    $schemaPrice    = rtrim(rtrim(number_format($bctPrice, 2, '.', ''), '0'), '.');
+    $schemaCurrency = 'BCT';
+} else {
+    $schemaPrice    = number_format($cnyPrice, 2, '.', '');
+    $schemaCurrency = 'CNY';
+}
+$productSchema = SeoHelper::productSchema([
+    'name' => $productDetail['name'] ?? '',
+    'url' => $canonicalUrl,
     'image' => $mainImageUrl,
     'description' => $productDesc,
-    'url' => $canonicalUrl,
-    'brand' => [
-        '@type' => 'Brand',
-        'name' => htmlspecialchars($shopInfo['shop_name'] ?? '58人气值商城'),
-    ],
-    'offers' => [
-        '@type' => 'Offer',
-        'price' => $productDetail['price'] ?? '0',
-        'priceCurrency' => 'CNY',
-        'availability' => 'https://schema.org/InStock',
-        'seller' => [
-            '@type' => 'Store',
-            'name' => htmlspecialchars($shopInfo['shop_name'] ?? '58人气值商城'),
-        ],
-    ],
-];
-if ($reviewCount > 0) {
-    $productSchema['aggregateRating'] = [
-        '@type' => 'AggregateRating',
-        'ratingValue' => (string)$avgRating,
-        'reviewCount' => (string)$reviewCount,
-    ];
-}
+    'sku' => (string)$productId,
+    'category' => $productDetail['category_name'] ?? '',
+    'brand' => $shopInfo['shop_name'] ?? '58人气值商城',
+    'price' => $schemaPrice,
+    'currency' => $schemaCurrency,
+    'seller' => $shopInfo['shop_name'] ?? '58人气值商城',
+    'rating' => $reviewCount > 0 ? $avgRating : '',
+    'reviewCount' => $reviewCount > 0 ? $reviewCount : '',
+]);
 ?>
 
 <!DOCTYPE html>
@@ -196,7 +191,7 @@ if ($reviewCount > 0) {
     <meta property="og:image" content="<?php echo $mainImageUrl; ?>">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
-    <script type="application/ld+json"><?php echo json_encode($productSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+    <?php echo $productSchema; ?>
     <!-- BreadcrumbList 结构化数据 -->
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',

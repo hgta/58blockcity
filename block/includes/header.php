@@ -7,6 +7,9 @@ $site_config['description'] = 'BlockCity区块城市区块交易平台，支持2
 $site_config['keywords']    = '58,区块,区块城市,BlockCity,DAO,区块交易,区块认领';
 $site_config['canonical_url'] = 'https://block.58.tl/';
 $site_config['og_image']    = 'https://58.tl/assets/images/og-block.jpg';
+// 全局品牌实体（与主域共用同一 @id，聚合为同一组织）
+require_once __DIR__ . '/../../shared/organization.php';
+$orgJsonLd = organization_json_ld();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -24,6 +27,7 @@ $site_config['og_image']    = 'https://58.tl/assets/images/og-block.jpg';
     <meta property="og:title" content="BlockCity区块市场">
     <meta property="og:description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta property="og:image" content="<?= $site_config['og_image'] ?>">
+    <?= $orgJsonLd ?>
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">

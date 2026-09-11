@@ -1,0 +1,14 @@
+# BCT 交易市场（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的 BCT（人气值）交易子站，主站实体为 https://www.58.tl/ 。本站提供 BCT 现价、基础价、流通量与总供给等行情数据与交易功能。
+
+## 本站主要入口
+
+- [BCT 行情市场](https://bct.58.tl/market.php): BCT 实时行情与交易
+- [BCT 交易首页](https://bct.58.tl/)
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [术语表（含人气值 / BCT 定义）](https://www.58.tl/help/glossary.html)

@@ -98,15 +98,18 @@ $site_config['og_image']    = $ogImage;
 $site_config['og_type']     = 'profile';
 
 // Person JSON-LD
-$personJsonLd = '<script type="application/ld+json">' . json_encode([
-    '@context' => 'https://schema.org',
-    '@type'    => 'Person',
-    'name'     => $nickname,
-    'url'      => $canonicalUrl,
-    'gender'   => ($modelInfo['gender'] === '男') ? 'Male' : (($modelInfo['gender'] === '女') ? 'Female' : null),
-    'height'   => $modelInfo['height'] ? ['@type' => 'QuantitativeValue', 'value' => (float)$modelInfo['height'], 'unitCode' => 'CMT'] : null,
-    'weight'   => $modelInfo['weight'] ? ['@type' => 'QuantitativeValue', 'value' => (float)$modelInfo['weight'], 'unitCode' => 'KGM'] : null,
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$personJsonLd = SeoHelper::personSchema([
+    'name' => $modelInfo['nickname'] ?? '',
+    'url' => $canonicalUrl,
+    'image' => $ogImage,
+    'jobTitle' => '模特',
+    'description' => "58模特库模特{$modelInfo['nickname']}的专属展示页，展示其模特作品与关联商品。",
+    'extra' => [
+        'gender' => ($modelInfo['gender'] === '男') ? 'Male' : (($modelInfo['gender'] === '女') ? 'Female' : ''),
+        'height' => $modelInfo['height'] ? ['@type' => 'QuantitativeValue', 'value' => (float)$modelInfo['height'], 'unitCode' => 'CMT'] : [],
+        'weight' => $modelInfo['weight'] ? ['@type' => 'QuantitativeValue', 'value' => (float)$modelInfo['weight'], 'unitCode' => 'KGM'] : [],
+    ],
+]);
 
 // BreadcrumbList
 $breadcrumbJsonLd = SeoHelper::breadcrumbList([

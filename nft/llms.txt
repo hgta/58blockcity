@@ -1,0 +1,17 @@
+# 58头像市场（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的 NFT 头像交易子站，主站实体为 https://www.58.tl/ 。本站提供 NFT 头像浏览、认领、买卖交易与求购发布。
+
+## 本站主要入口
+
+- [NFT 头像市场](https://nft.58.tl/): NFT 头像总入口
+- [NFT 认领](https://nft.58.tl/nft/claim_list.php)
+- [NFT 售卖](https://nft.58.tl/nft/sale_list.php)
+- [NFT 求购](https://nft.58.tl/nft/purchase_list.php)
+- [NFT 排行榜](https://nft.58.tl/ranking/index.php)
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)

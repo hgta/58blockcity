@@ -437,6 +437,15 @@
             }
         }
     </style>
+    <link rel="canonical" href="https://www.58.tl/news.php" />
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 资讯列表结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"CollectionPage","name":"区块城市新闻","url":"https://www.58.tl/news.php","description":"58区块城市最新新闻动态，包含综合新闻、城市新闻、元宇宙资讯等内容","inLanguage":"zh-CN","isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"},"publisher":{"@id":"https://www.58.tl/#organization"},"mainEntity":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"NewsArticle","headline":"重磅升级！BlockCity品牌Slogan正式变更为“来做元宇宙的先行者”","url":"https://www.58.tl/news/blockcity-slogan-upgrade-metaverse-pioneer.html","datePublished":"2025-04-15","articleSection":"综合新闻","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"}}},{"@type":"ListItem","position":2,"item":{"@type":"NewsArticle","headline":"杭州A区创纪录售罄！区块城市杭州首区48小时抢购一空","url":"https://www.58.tl/news.php","datePublished":"2025-04-20","articleSection":"杭州新闻","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"}}}]}}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->

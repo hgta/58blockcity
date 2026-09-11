@@ -147,6 +147,18 @@
       ]
     }
     </script>
+    <!-- 全局品牌实体 Organization（与 shared/organization.php 一致，@id 固定） -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://www.58.tl/#organization","name":"58区块城市","alternateName":["58 BlockCity","BlockCity 58","BlockCity DAO"],"url":"https://www.58.tl/","logo":{"@type":"ImageObject","url":"https://58.tl/apple-touch-icon.png","width":180,"height":180},"description":"58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。","sameAs":["https://github.com/hgta/58blockcity"],"contactPoint":[{"@type":"ContactPoint","contactType":"customer service","email":"support@58.tl","identifier":"BitPFP","name":"微信客服（BitPFP）","availableLanguage":["zh-CN"]}],"isRelatedTo":[{"@type":"Organization","name":"BlockCity.vip","url":"https://www.blockcity.vip/","description":"本站所服务的独立第三方平台生态"}]}
+    </script>
+    <!-- 文章结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"为什么要创建城市","description":"了解在58区块城市平台创建城市的价值和意义，不同用户群体创建城市的独特优势","url":"https://www.58.tl/help/why-create-city.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.58.tl/help/why-create-city.html"},"inLanguage":"zh-CN","author":{"@id":"https://www.58.tl/#organization"},"publisher":{"@id":"https://www.58.tl/#organization"},"isPartOf":{"@type":"WebSite","name":"58区块城市","url":"https://www.58.tl/"}}
+    </script>
+    <!-- 常见问题结构化数据 -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"创建城市需要付费吗？","acceptedAnswer":{"@type":"Answer","text":"不需要。每位居民都可免费创建 1 个城市，只需提交城市命名与所属类别。"}},{"@type":"Question","name":"创建城市能得到什么？","acceptedAnswer":{"@type":"Answer","text":"获得一个可长期运营的专属数字空间，用于聚集客户、粉丝或社群成员，并借助统一的治理工具构建利益共享的共同体。"}},{"@type":"Question","name":"哪些人适合创建城市？","acceptedAnswer":{"@type":"Answer","text":"企业/品牌、组织/社群、明星/名人、大V/UP主，以及大型企业、学校、小区等组织都适合。"}}]}
+    </script>
 </head>
 <body>
     <!-- 头部区域 -->
@@ -175,6 +187,10 @@
         </div>
         
         <div class="help-content">
+            <!-- 直答段落（GEO：可被生成式引擎直接引用的独立答案） -->
+            <div class="direct-answer" style="background:#fff8f5;border-left:4px solid #ff6b00;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 25px;font-size:16px;color:#444;line-height:1.8;">
+                <strong>直答：</strong>创建城市，就是免费发起并运营一个属于你的去中心化组织（DAO）。它为你聚集客户、粉丝或社群成员，通过区块与统一治理工具实现共建、自治与价值共享，让人和利益真正连在一起。
+            </div>
             <div class="dao-section">
                 <h2>创建城市就是发起和运营一个组织</h2>
                 <p>创建一个城市，就是发起成立一个组织。在BlockCity（区块城市），一个城市的居民不仅可对应为真实地域的用户，也可以是某个线上或线下组织的成员；即一个城市，可能就是一个协会、商会、同乡会、学生会、校友会、业主委员会、工会、研究会或基金会，也可能是一个公益组织、明星粉丝团、游戏社团、行业/职业/专业联盟，以及企业/品牌客户群、同好/同姓/交友群、个性/特长/互助社群等。</p>
@@ -246,6 +262,23 @@
                     <li><strong>服务集成入口</strong> - 集成各类服务的一站式入口</li>
                     <li><strong>社区治理工具</strong> - 提升社区治理效率和透明度</li>
                 </ul>
+            </div>
+            
+            <!-- 常见问题（与页面 FAQPage 结构化数据一致） -->
+            <div class="faq-section" style="margin-top:30px;">
+                <h2>常见问题</h2>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">创建城市需要付费吗？</h3>
+                    <p style="color:#555;margin:0;">不需要。每位居民都可免费创建 1 个城市，只需提交城市命名与所属类别。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">创建城市能得到什么？</h3>
+                    <p style="color:#555;margin:0;">获得一个可长期运营的专属数字空间，用于聚集客户、粉丝或社群成员，并借助统一的治理工具构建利益共享的共同体。</p>
+                </div>
+                <div class="faq-item" style="border-bottom:1px solid #eee;padding:12px 0;">
+                    <h3 style="font-size:16px;color:#222;margin-bottom:6px;">哪些人适合创建城市？</h3>
+                    <p style="color:#555;margin:0;">企业/品牌、组织/社群、明星/名人、大V/UP主，以及大型企业、学校、小区等组织都适合。</p>
+                </div>
             </div>
             
             <div class="cta-section">
