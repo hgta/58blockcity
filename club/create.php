@@ -39,35 +39,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_FILES['images']['name'][0])) {
         $uploadDir = __DIR__ . '/assets/uploads/posts';
         $relPrefix = 'assets/uploads/posts/';
-        if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        foreach ($_FILES['images']['name'] as $i => $name) {
-            if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
-            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowed)) continue;
-            $fname = uniqid() . '_' . time() . '.' . $ext;
-            if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $uploadDir . '/' . $fname)) {
-                $images[] = $relPrefix . $fname;
+        if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0777, true)) {
+            $err = '图片上传目录创建失败，请联系管理员检查 club/assets/uploads/ 目录权限';
+        } elseif (!is_writable($uploadDir)) {
+            $err = '图片上传目录不可写，请联系管理员检查 club/assets/uploads/posts/ 目录权限';
+        } else {
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            foreach ($_FILES['images']['name'] as $i => $name) {
+                if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                if (!in_array($ext, $allowed)) continue;
+                $fname = uniqid() . '_' . time() . '.' . $ext;
+                if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $uploadDir . '/' . $fname)) {
+                    $images[] = $relPrefix . $fname;
+                }
             }
         }
     }
 
-    $data = [
-        'city'    => $_POST['city'] ?? '',
-        'title'   => $_POST['title'] ?? '',
-        'content' => $_POST['content'] ?? '',
-        'images'  => $images,
-        'topic'   => $_POST['topic'] ?? '',
-    ];
+    if ($err === '') {
+        $data = [
+            'city'    => $_POST['city'] ?? '',
+            'title'   => $_POST['title'] ?? '',
+            'content' => $_POST['content'] ?? '',
+            'images'  => $images,
+            'topic'   => $_POST['topic'] ?? '',
+        ];
 
-    $result = $post->create($userId, $type, $data);
-    if (is_int($result)) {
-        // 跳转伪静态详情页
-        $title = $type === 'post' ? $data['title'] : $data['content'];
-        header('Location: ' . SeoHelper::postUrl($result, $title));
-        exit;
+        $result = $post->create($userId, $type, $data);
+        if (is_int($result)) {
+            // 跳转伪静态详情页
+            $title = $type === 'post' ? $data['title'] : $data['content'];
+            if (!headers_sent()) {
+                header('Location: ' . SeoHelper::postUrl($result, $title));
+            }
+            exit;
+        }
+        $err = $result;
     }
-    $err = $result;
 }
 
 $site_config['title'] = ($type === 'moment' ? '发心情' : '发帖') . ' - 58区块社区';
