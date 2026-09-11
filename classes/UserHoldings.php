@@ -19,17 +19,24 @@ class UserHoldings {
     }
 
     /**
-     * 取用户持有区块的城市（去重），附带城市名与城市单价
+     * 取用户持有区块的城市（去重），附带城市名、城市单价与城市排名
+     *
+     * 排序：按城市排名升序（rank 数字越小越靠前），未设置排名的城市（rank 为 0/NULL）排在最后。
      *
      * @param int $userId
-     * @return array [['city_id'=>int,'name'=>string,'bct_current_price'=>float], ...]
+     * @return array [['city_id'=>int,'name'=>string,'bct_current_price'=>float,'rank'=>int], ...]
      */
     public function getUserCities($userId) {
-        $sql = "SELECT DISTINCT c.id AS city_id, c.name AS name, c.bct_current_price AS bct_current_price
+        $sql = "SELECT DISTINCT
+                    c.id AS city_id,
+                    c.name AS name,
+                    c.bct_current_price AS bct_current_price,
+                    c.rank AS rank,
+                    CASE WHEN c.rank IS NULL OR c.rank = 0 THEN 1 ELSE 0 END AS rank_unset
                 FROM blocks b
                 JOIN cities c ON c.id = b.city_id
                 WHERE b.owner_id = ? AND b.status = 'sold'
-                ORDER BY c.name ASC";
+                ORDER BY rank_unset ASC, c.rank ASC, c.name ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([(int)$userId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
