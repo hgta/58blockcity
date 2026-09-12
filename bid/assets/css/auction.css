@@ -5,11 +5,8 @@
    ========================================================================== */
 
 body.auction-body {
-    background: #0A0B0F;
-    color: #EDEFF5;
-}
-
-.auction-shell {
+    /* 暗场 token 提升到 body：共享头部/底部（在 main 之外）也能继承，
+       仅带 auction-body 的 bid 子站生效，其他子站不受影响 */
     --bg:            #0A0B0F;
     --surface:       #14161C;
     --surface-2:     #1C1F27;
@@ -24,6 +21,12 @@ body.auction-body {
     --lead:          #2BD97C;   /* 我正领先 */
     --lead-dim:      rgba(43, 217, 124, .14);
 
+    background: var(--bg);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.auction-shell {
     background: var(--bg);
     color: var(--text);
     padding-bottom: 48px;
@@ -369,3 +372,71 @@ body.auction-body {
     .ac-row-side { align-items: flex-start; text-align: left; }
     .ac-stats { gap: 14px; }
 }
+
+/* ==========================================================================
+   共享头部 / 底部 · 拍卖站暗场覆盖
+   作用域：body.auction-body（由 bid/includes/header.php 注入，仅 bid 子站带此类）
+   目的：让共享导航与暗场内容同一色系，且完全不影响其他子站。
+   注：共享组件内含行内样式，个别处需 !important 覆盖。
+   ========================================================================== */
+
+/* ---------- 顶栏 ---------- */
+body.auction-body > header {
+    background: rgba(10, 11, 15, .92);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+}
+body.auction-body .logo                  { color: var(--text); }
+body.auction-body .logo-img              { background: linear-gradient(135deg, var(--brand), #FF8A00); color: #1A1205; }
+body.auction-body .logo-text strong      { color: var(--text); }
+body.auction-body .logo-text span        { color: var(--muted); }
+body.auction-body .nav-button            { color: var(--muted); }
+body.auction-body .nav-button:hover      { background: rgba(255, 176, 32, .12); color: var(--brand); }
+body.auction-body .menu-toggle           { color: var(--text); }
+body.auction-body .menu-toggle:hover     { background: var(--surface-2); }
+/* 注册 CTA（共享组件用行内 #ff6b00）对齐琥珀主色 */
+body.auction-body .nav-button[style*="ff6b00"] { background: var(--brand) !important; color: #1A1205 !important; }
+
+/* 移动端展开菜单 */
+@media (max-width: 768px) {
+    body.auction-body .header-actions {
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+    }
+}
+
+/* 通知下拉 */
+body.auction-body .dropdown-menu      { background: var(--surface); border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
+body.auction-body .dropdown-item      { color: var(--text); }
+body.auction-body .dropdown-item:hover{ background: var(--surface-2); color: var(--brand); }
+body.auction-body .dropdown-divider   { background: var(--line); }
+
+/* ---------- 城市定位条 ---------- */
+body.auction-body .city-location-bar   { background: rgba(255, 176, 32, .10); color: var(--brand); border-bottom: 1px solid var(--line); }
+body.auction-body .city-location-bar a { color: var(--brand); }
+
+/* ---------- 跨子站引流（卡片为行内浅色，需 !important） ---------- */
+body.auction-body .cross-site-links h3                          { color: var(--text) !important; }
+body.auction-body .cross-site-links a                           { background: var(--surface-2) !important; border-color: var(--line-strong) !important; }
+body.auction-body .cross-site-links a > div > div:first-child   { color: var(--text) !important; }
+body.auction-body .cross-site-links a > div > div:last-child    { color: var(--muted) !important; }
+
+/* ---------- 页脚（对齐内容区底色，替换主站深蓝） ---------- */
+body.auction-body .site-footer              { background: #06070A; color: var(--muted); border-top: 1px solid var(--line); }
+body.auction-body .site-footer::before      { background: linear-gradient(90deg, transparent, rgba(255, 176, 32, .35), transparent); }
+body.auction-body .footer-col h4,
+body.auction-body .footer-col h3            { color: var(--text); }
+body.auction-body .footer-about p           { color: var(--muted); }
+body.auction-body .footer-col ul li a       { color: var(--muted); }
+body.auction-body .footer-col ul li a:hover { color: var(--brand); }
+body.auction-body .footer-col ul li i       { color: #5B6270; }
+body.auction-body .footer-col ul li a:hover i { color: var(--brand); }
+body.auction-body .footer-contact ul li     { color: var(--muted); }
+body.auction-body .footer-contact ul li i   { color: #5B6270; }
+body.auction-body .qr-item span             { color: var(--muted); }
+body.auction-body .footer-bottom            { border-top-color: var(--line); }
+
+/* ---------- 回到顶部（行内深橙，需 !important） ---------- */
+body.auction-body #back-to-top { background: var(--brand) !important; color: #1A1205 !important; }

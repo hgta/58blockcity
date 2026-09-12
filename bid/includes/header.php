@@ -22,6 +22,6 @@ $site_config['url_register']  = '/auth/register.php';
 $site_config['body_class'] = trim(($site_config['body_class'] ?? '') . ' auction-body');
 $site_config['main_class'] = trim(($site_config['main_class'] ?? '') . ' auction-shell');
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '')
-    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260912">';
+    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260913">';
 
 require_once __DIR__ . '/../../shared/header.php';
