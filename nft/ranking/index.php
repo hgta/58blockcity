@@ -56,13 +56,13 @@ function avatarUrl($avatar) {
     <div class="ranking-tabs">
         <ul class="nav nav-tabs" id="rankingTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="city-tab" data-toggle="tab" href="#city" role="tab">城市榜</a>
+                <a class="nav-link active" id="city-tab" href="#city" role="tab" data-tab="city">城市榜</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="nft-tab" data-toggle="tab" href="#nft" role="tab">头像榜</a>
+                <a class="nav-link" id="nft-tab" href="#nft" role="tab" data-tab="nft">头像榜</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="user-tab" data-toggle="tab" href="#user" role="tab">收藏家榜</a>
+                <a class="nav-link" id="user-tab" href="#user" role="tab" data-tab="user">收藏家榜</a>
             </li>
         </ul>
         
@@ -292,5 +292,39 @@ function avatarUrl($avatar) {
     margin-top: 20px;
 }
 </style>
+
+<script>
+/* 排行榜标签切换（原生实现，不依赖 Bootstrap JS，避免 CDN 加载失败导致点击无效） */
+(function () {
+    var wrap = document.querySelector('.ranking-tabs');
+    if (!wrap) return;
+    var links = wrap.querySelectorAll('.nav-link');
+    var panes = wrap.querySelectorAll('.tab-pane');
+
+    function activate(id) {
+        links.forEach(function (l) {
+            l.classList.toggle('active', l.getAttribute('data-tab') === id);
+        });
+        panes.forEach(function (p) {
+            var on = p.id === id;
+            p.classList.toggle('active', on);
+            p.classList.toggle('show', on);
+        });
+    }
+
+    links.forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            activate(link.getAttribute('data-tab'));
+        });
+    });
+
+    // 支持带 hash 直达（如 index.php#nft）
+    var hash = (location.hash || '').replace('#', '');
+    if (hash && wrap.querySelector('.nav-link[data-tab="' + hash + '"]')) {
+        activate(hash);
+    }
+})();
+</script>
 
 <?php require_once '../includes/footer.php'; ?>
