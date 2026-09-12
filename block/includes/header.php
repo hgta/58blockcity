@@ -20,6 +20,7 @@ $orgJsonLd = organization_json_ld();
     <meta name="description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta name="keywords" content="<?= htmlspecialchars($site_config['keywords']) ?>">
     <link rel="canonical" href="<?= htmlspecialchars($site_config['canonical_url']) ?>" />
+    <!-- Favicon（block.58.tl 根目录为 /block，图标文件已随子站部署） -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -28,8 +29,6 @@ $orgJsonLd = organization_json_ld();
     <meta property="og:description" content="<?= htmlspecialchars($site_config['description']) ?>">
     <meta property="og:image" content="<?= $site_config['og_image'] ?>">
     <?= $orgJsonLd ?>
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css">
