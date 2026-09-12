@@ -1,0 +1,95 @@
+/* ===== NFT 排行榜公共 UI：一栏式信息栏 + 紧凑筛选 ===== */
+.rk-hero {
+    background: linear-gradient(135deg, #ff6b00, #e55a00);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    box-shadow: 0 3px 15px rgba(255, 107, 0, 0.2);
+}
+.rk-hero h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+}
+.rk-desc {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.92;
+    font-weight: 300;
+}
+
+/* 紧凑筛选胶囊 */
+.rk-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.rk-tab {
+    padding: 6px 14px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    color: #666;
+    font-size: 13px;
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.rk-tab:hover {
+    border-color: #ff6b00;
+    color: #ff6b00;
+    text-decoration: none;
+}
+.rk-tab.active {
+    background: linear-gradient(135deg, #ff6b00, #f97316);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Bootstrap tabs 紧凑化（排行榜总览） */
+.ranking-tabs .nav-tabs {
+    border-bottom: 1px solid #eee;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.ranking-tabs .nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-radius: 20px;
+    color: #666;
+    font-size: 14px;
+    padding: 7px 16px;
+}
+.ranking-tabs .nav-tabs .nav-link:hover {
+    border-color: #ffd8b3;
+    color: #ff6b00;
+}
+.ranking-tabs .nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #ff6b00, #f97316);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+.ranking-tabs .tab-content { padding-top: 4px; }
+
+@media (max-width: 768px) {
+    .rk-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px 16px;
+    }
+    .rk-hero h1 { font-size: 16px; }
+    .rk-desc { font-size: 12px; }
+}

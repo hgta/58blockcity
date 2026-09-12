@@ -45,10 +45,12 @@ function avatarUrl($avatar) {
 
 <?php require_once '../includes/header.php'; ?>
 
+<link rel="stylesheet" href="ui.css">
+
 <div class="container">
-    <div class="page-header">
+    <div class="rk-hero">
         <h1><i class="fas fa-trophy"></i> NFT头像排行榜</h1>
-        <p>发现最热门的NFT头像、城市和收藏家</p>
+        <p class="rk-desc">发现最热门的NFT头像、城市和收藏家</p>
     </div>
 
     <div class="ranking-tabs">

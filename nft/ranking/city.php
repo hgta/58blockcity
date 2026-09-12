@@ -82,22 +82,21 @@ switch ($type) {
 
 <?php require_once '../includes/header.php'; ?>
 
+<link rel="stylesheet" href="ui.css">
+
 <div class="container">
-    <div class="page-header">
+    <div class="rk-hero">
         <h1><i class="fas fa-city"></i> <?= htmlspecialchars($currentRanking['title']) ?></h1>
-        <p class="text-muted"><?= htmlspecialchars($currentRanking['description']) ?></p>
-        
-        <div class="ranking-filter">
-            <div class="btn-group flex-wrap">
-                <?php foreach ($rankingTypes as $key => $ranking): ?>
-                    <a href="?type=<?= $key ?>" 
-                       class="btn btn-sm <?= $type === $key ? 'btn-primary' : 'btn-outline-primary' ?>">
-                        <?= htmlspecialchars($ranking['title']) ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
+        <p class="rk-desc"><?= htmlspecialchars($currentRanking['description']) ?></p>
     </div>
+
+    <nav class="rk-tabs">
+        <?php foreach ($rankingTypes as $key => $ranking): ?>
+            <a href="?type=<?= $key ?>" class="rk-tab <?= $type === $key ? 'active' : '' ?>">
+                <?= htmlspecialchars($ranking['title']) ?>
+            </a>
+        <?php endforeach; ?>
+    </nav>
 
     <div class="ranking-table">
         <div class="card">

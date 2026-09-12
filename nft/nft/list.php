@@ -4,62 +4,282 @@ require_once '../includes/auth.php';
 require_once '../../classes/NFT.php';
 
 $nft = new NFT($pdo);
+
+// 筛选参数
+$searchCode = trim($_GET['code'] ?? '');
 $tag = $_GET['tag'] ?? '';
 $page = max(1, intval($_GET['page'] ?? 1));
-$perPage = 24;
+$perPage = 48;
 
-$nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, '', $tag);
+// 数据
+$nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, $searchCode, $tag);
+$total = $nft->getTotalNftCount($searchCode, $tag);
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page = max(1, min($page, $totalPages));
+
+$allTags = $nft->getAllTags();
+
+// 分页基址（保留筛选参数）
+$keep = $_GET;
+unset($keep['page']);
+$qs = http_build_query($keep);
+$baseUrl = '?' . ($qs ? $qs . '&' : '');
 ?>
 <?php require_once '../includes/header.php'; ?>
 
 <style>
-.container { max-width:1200px; margin:0 auto; padding:20px; }
-.page-title { font-size:22px; font-weight:bold; margin-bottom:16px; color:#1a1a2e; display:flex; align-items:center; gap:10px; }
-.tag-badge { display:inline-block; background:#ff6b00; color:white; padding:4px 14px; border-radius:20px; font-size:13px; margin-bottom:16px; }
-.nft-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
-.nft-card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06); text-decoration:none; color:inherit; transition:all .2s; display:flex; flex-direction:column; }
-.nft-card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.1); }
-.nft-card img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#f5f5f5; }
-.nft-info { padding:10px 12px; flex:1; }
-.nft-info h3 { font-size:14px; margin-bottom:4px; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.nft-meta { font-size:11px; color:#999; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.nft-price { font-size:14px; color:#ff6b00; font-weight:600; margin-top:4px; }
-.empty-state { text-align:center; padding:60px; color:#999; }
-@media(max-width:992px){ .nft-grid{grid-template-columns:repeat(4,1fr)} }
-@media(max-width:768px){ .nft-grid{grid-template-columns:repeat(3,1fr)} }
-@media(max-width:480px){ .nft-grid{grid-template-columns:repeat(2,1fr); gap:8px } .nft-info{padding:8px 10px} .nft-info h3{font-size:12px} }
+/* ===== 顶部一栏式信息栏 ===== */
+.ls-hero {
+    background: linear-gradient(135deg, #ff6b00, #e55a00);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    box-shadow: 0 3px 15px rgba(255,107,0,0.2);
+}
+.ls-hero h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ls-stats { display: flex; gap: 18px; flex-wrap: wrap; }
+.ls-stat { font-size: 13px; opacity: 0.95; }
+.ls-stat strong { font-size: 17px; font-weight: 800; margin-right: 2px; }
+
+/* ===== 紧凑筛选栏 ===== */
+.ls-search {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.ls-search input,
+.ls-search select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+    color: #333;
+}
+.ls-search input:focus,
+.ls-search select:focus {
+    border-color: #ff6b00;
+    box-shadow: 0 0 0 3px rgba(255,107,0,0.08);
+}
+.ls-search input { flex: 1; min-width: 160px; }
+.ls-btn {
+    padding: 8px 18px;
+    background: #ff6b00;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ls-btn:hover { background: #e55a00; }
+.ls-reset {
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    color: #666;
+    font-size: 14px;
+    text-decoration: none;
+}
+.ls-reset:hover { border-color: #ff6b00; color: #ff6b00; text-decoration: none; }
+
+/* ===== 卡片网格 ===== */
+.nft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.nft-card {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    text-decoration: none;
+    color: inherit;
+    transition: all .2s;
+    display: flex;
+    flex-direction: column;
+}
+.nft-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    color: inherit;
+    text-decoration: none;
+}
+.nft-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: #f5f5f5;
+}
+.nft-info { padding: 10px 12px; flex: 1; }
+.nft-info h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nft-meta {
+    font-size: 11px;
+    color: #999;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== 分页 ===== */
+.ls-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 26px 0 40px;
+}
+.ls-pagination a,
+.ls-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #555;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.ls-pagination a:hover {
+    background: #fff3f0;
+    border-color: #ff6b00;
+    color: #ff6b00;
+    text-decoration: none;
+}
+.ls-pagination .active {
+    background: linear-gradient(135deg, #ff6b00, #f97316);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 700;
+}
+.ls-pagination .disabled { color: #ccc; background: #fafafa; pointer-events: none; }
+
+/* ===== 空状态 ===== */
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+
+@media (max-width: 480px) {
+    .nft-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .nft-info { padding: 8px 10px; }
+    .nft-info h3 { font-size: 12px; }
+    .ls-search input { min-width: 100%; }
+}
 </style>
 
 <div class="container">
-    <h1 class="page-title">
-        <i class="fas fa-list"></i>
-        <?= $tag ? "标签: " : "全部NFT头像" ?>
-    </h1>
-    
-    <?php if ($tag): ?>
-        <span class="tag-badge"><?= htmlspecialchars($tag) ?></span>
-    <?php endif; ?>
-    
+    <!-- 顶部信息栏 -->
+    <div class="ls-hero">
+        <h1>
+            <i class="fas fa-list"></i>
+            <?= $tag ? '标签：' . htmlspecialchars($tag) : '全部NFT头像' ?>
+        </h1>
+        <div class="ls-stats">
+            <div class="ls-stat"><strong><?= number_format($total) ?></strong> 个头像</div>
+            <div class="ls-stat"><strong><?= $totalPages ?></strong> 页</div>
+        </div>
+    </div>
+
+    <!-- 搜索筛选 -->
+    <form method="get" class="ls-search">
+        <input type="text" name="code" placeholder="🔍 搜索编号..." value="<?= htmlspecialchars($searchCode) ?>">
+        <select name="tag">
+            <option value="">全部标签</option>
+            <?php foreach ($allTags as $tagItem): ?>
+            <option value="<?= htmlspecialchars($tagItem) ?>" <?= $tag === $tagItem ? 'selected' : '' ?>><?= htmlspecialchars($tagItem) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit" class="ls-btn"><i class="fas fa-search"></i> 搜索</button>
+        <?php if ($searchCode || $tag): ?>
+        <a href="list.php" class="ls-reset"><i class="fas fa-sync-alt"></i> 重置</a>
+        <?php endif; ?>
+    </form>
+
     <?php if (empty($nfts)): ?>
         <div class="empty-state">
-            <i class="fas fa-images" style="font-size:48px;display:block;margin-bottom:15px;"></i>
+            <i class="fas fa-images" style="font-size:48px;display:block;margin-bottom:15px;opacity:.35;"></i>
             <p>暂无相关NFT头像</p>
-            <a href="claim_list.php" style="display:inline-block;margin-top:15px;padding:10px 20px;background:#ff6b00;color:white;border-radius:6px;text-decoration:none;">浏览可认领头像</a>
+            <a href="claim_list.php" style="display:inline-block;margin-top:15px;padding:10px 20px;background:#ff6b00;color:white;border-radius:8px;text-decoration:none;">浏览可认领头像</a>
         </div>
     <?php else: ?>
         <div class="nft-grid">
             <?php foreach ($nfts as $item): ?>
-                <a href="view.php?id=<?= $item['id'] ?>" class="nft-card">
-                    <img src="../avatar/<?= htmlspecialchars($item['base_image']) ?>" 
-                         alt="<?= htmlspecialchars($item['name']) ?>"
+                <a href="view.php?id=<?= (int)$item['id'] ?>" class="nft-card">
+                    <img src="../avatar/<?= htmlspecialchars($item['base_image']) ?>"
+                         alt="NFT <?= htmlspecialchars($item['code'] ?? '') ?>"
                          loading="lazy">
                     <div class="nft-info">
-                        <h3><?= htmlspecialchars($item['name'] ?? $item['code'] ?? '') ?></h3>
-                        <div class="nft-meta">#<?= htmlspecialchars($item['code'] ?? '') ?></div>
+                        <h3><?= htmlspecialchars($item['code'] ?? '') ?></h3>
+                        <div class="nft-meta">查看详情</div>
                     </div>
                 </a>
             <?php endforeach; ?>
         </div>
+
+        <!-- 分页 -->
+        <?php if ($totalPages > 1): ?>
+        <nav class="ls-pagination">
+            <?php if ($page > 1): ?>
+            <a href="<?= $baseUrl ?>page=<?= $page - 1 ?>"><i class="fas fa-chevron-left"></i></a>
+            <?php else: ?>
+            <span class="disabled"><i class="fas fa-chevron-left"></i></span>
+            <?php endif; ?>
+
+            <?php
+            $last = 0;
+            $window = 2;
+            for ($i = 1; $i <= $totalPages; $i++) {
+                if ($i == 1 || $i == $totalPages || abs($i - $page) <= $window) {
+                    if ($last && $i - $last > 1) echo '<span class="disabled">…</span>';
+                    $last = $i;
+                    if ($i == $page) echo '<span class="active">' . $i . '</span>';
+                    else echo '<a href="' . $baseUrl . 'page=' . $i . '">' . $i . '</a>';
+                }
+            }
+            ?>
+
+            <?php if ($page < $totalPages): ?>
+            <a href="<?= $baseUrl ?>page=<?= $page + 1 ?>"><i class="fas fa-chevron-right"></i></a>
+            <?php else: ?>
+            <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+            <?php endif; ?>
+        </nav>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
