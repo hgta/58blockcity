@@ -18,10 +18,15 @@ $site_config['url_logout']    = '/auth/logout.php';
 $site_config['url_login']     = '/auth/login.php';
 $site_config['url_register']  = '/auth/register.php';
 
-// 拍卖站暗场主题（仅作用于内容区，共享导航保持统一）
+// 拍卖站主题（仅 bid 子站）：默认暗场，用户可切「明亮」；共享导航在暗场下同步换肤
 $site_config['body_class'] = trim(($site_config['body_class'] ?? '') . ' auction-body');
 $site_config['main_class'] = trim(($site_config['main_class'] ?? '') . ' auction-shell');
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '')
-    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260913">';
+    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260914">'
+    // 首屏即应用主题，避免闪烁：优先读取用户选择，否则跟随系统偏好
+    . '<script>(function(){try{var t=localStorage.getItem("ac_theme");'
+    . 'if(t!=="light"&&t!=="dark"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}'
+    . 'document.documentElement.setAttribute("data-ac-theme",t);}catch(e){'
+    . 'document.documentElement.setAttribute("data-ac-theme","dark");}})();</script>';
 
 require_once __DIR__ . '/../../shared/header.php';

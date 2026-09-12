@@ -2,17 +2,21 @@
    58拍卖 · 暗场聚光灯主题（auction-hall-redesign）
    作用域：body.auction-body / main.auction-shell
    颜色纪律：琥珀=价值，红=时间紧迫，绿=领先，其余一律中性色
+   主题：默认「暗场」，用户可切「明亮」→ html[data-ac-theme="light"]
    ========================================================================== */
 
+/* ---------- 主题 token · 暗场（默认） ---------- */
 body.auction-body {
-    /* 暗场 token 提升到 body：共享头部/底部（在 main 之外）也能继承，
+    /* token 放在 body：共享头部/底部（在 main 之外）也能继承；
        仅带 auction-body 的 bid 子站生效，其他子站不受影响 */
     --bg:            #0A0B0F;
     --surface:       #14161C;
     --surface-2:     #1C1F27;
+    --inset:         #0E1015;   /* 媒体井/输入框等内凹面 */
     --line:          rgba(255, 255, 255, .08);
     --line-strong:   rgba(255, 255, 255, .16);
     --text:          #EDEFF5;
+    --text-2:        #C3C8D4;   /* 正文次级文字 */
     --muted:         #8A90A0;
     --brand:         #FFB020;   /* 价值/价格 */
     --brand-dim:     rgba(255, 176, 32, .14);
@@ -20,10 +24,45 @@ body.auction-body {
     --live-dim:      rgba(255, 77, 61, .14);
     --lead:          #2BD97C;   /* 我正领先 */
     --lead-dim:      rgba(43, 217, 124, .14);
+    --soft:          rgba(255, 255, 255, .04);
+    --hl:            rgba(255, 255, 255, .12);   /* 图片占位高光 */
+    --shadow:        0 10px 28px rgba(0, 0, 0, .45);
+    --shadow-lg:     0 12px 32px rgba(0, 0, 0, .6);
+    --on-brand:      #1A1205;   /* 琥珀底之上的文字色 */
 
     background: var(--bg);
     color: var(--text);
     font-variant-numeric: tabular-nums;
+    color-scheme: dark;
+    transition: background .2s ease, color .2s ease;
+}
+
+/* ---------- 主题 token · 明亮（用户切换） ---------- */
+html[data-ac-theme="light"] body.auction-body {
+    --bg:            #F4F5F7;
+    --surface:       #FFFFFF;
+    --surface-2:     #F0F2F5;
+    --inset:         #EDEFF3;
+    --line:          rgba(16, 20, 32, .10);
+    --line-strong:   rgba(16, 20, 32, .18);
+    --text:          #14161C;
+    --text-2:        #454B57;
+    --muted:         #6B7280;
+    --brand:         #E08900;   /* 浅底需更深琥珀以保证对比 */
+    --brand-dim:     rgba(224, 137, 0, .12);
+    --live:          #E23B2B;
+    --live-dim:      rgba(226, 59, 43, .12);
+    --lead:          #12A45C;
+    --lead-dim:      rgba(18, 164, 92, .12);
+    --soft:          rgba(16, 20, 32, .04);
+    --hl:            rgba(16, 20, 32, .10);
+    --shadow:        0 10px 28px rgba(16, 20, 32, .10);
+    --shadow-lg:     0 12px 32px rgba(16, 20, 32, .16);
+    --on-brand:      #FFFFFF;
+
+    background: var(--bg);
+    color: var(--text);
+    color-scheme: light;
 }
 
 .auction-shell {
@@ -53,7 +92,7 @@ body.auction-body {
 }
 .ac-btn:hover { transform: translateY(-1px); }
 .ac-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-.ac-btn-primary { background: var(--brand); color: #1A1205; }
+.ac-btn-primary { background: var(--brand); color: var(--on-brand); }
 .ac-btn-primary:hover { filter: brightness(1.08); }
 .ac-btn-live    { background: var(--live); color: #fff; }
 .ac-btn-ghost   { background: transparent; border-color: var(--line-strong); color: var(--text); }
@@ -67,11 +106,11 @@ body.auction-body {
     padding: 3px 9px; border-radius: 999px;
     background: var(--surface-2); color: var(--muted); border: 1px solid var(--line);
 }
-.ac-badge-live   { background: var(--live-dim);  color: var(--live);  border-color: rgba(255,77,61,.35); }
-.ac-badge-hot    { background: var(--brand-dim); color: var(--brand); border-color: rgba(255,176,32,.35); }
-.ac-badge-lead   { background: var(--lead-dim);  color: var(--lead);  border-color: rgba(43,217,124,.35); }
-.ac-badge-sold   { background: rgba(255,176,32,.10); color: var(--brand); border-color: rgba(255,176,32,.3); }
-.ac-badge-soft   { background: rgba(255,255,255,.04); }
+.ac-badge-live   { background: var(--live-dim);  color: var(--live);  border-color: color-mix(in srgb, var(--live) 35%, transparent); }
+.ac-badge-hot    { background: var(--brand-dim); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 35%, transparent); }
+.ac-badge-lead   { background: var(--lead-dim);  color: var(--lead);  border-color: color-mix(in srgb, var(--lead) 35%, transparent); }
+.ac-badge-sold   { background: var(--brand-dim); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 30%, transparent); }
+.ac-badge-soft   { background: var(--soft); }
 
 .ac-live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: ac-pulse 1.4s infinite; }
 
@@ -102,9 +141,9 @@ body.auction-body {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(60% 90% at 18% 12%, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 60%);
 }
-.ac-hero-media { position: relative; min-height: 320px; background: #0E1015; overflow: hidden; }
+.ac-hero-media { position: relative; min-height: 320px; background: var(--inset); overflow: hidden; }
 .ac-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ac-hero-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 56px; color: rgba(255,255,255,.12); }
+.ac-hero-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 56px; color: var(--hl); }
 .ac-hero-info { padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; }
 .ac-hero-title { font-size: 26px; font-weight: 800; line-height: 1.25; margin: 0; }
 .ac-hero-foot { display: flex; gap: 10px; align-items: center; margin-top: auto; }
@@ -151,7 +190,7 @@ body.auction-body {
     transition: all .15s;
 }
 .ac-chip:hover { color: var(--text); border-color: var(--line-strong); }
-.ac-chip.active { background: var(--brand-dim); color: var(--brand); border-color: rgba(255,176,32,.4); }
+.ac-chip.active { background: var(--brand-dim); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 40%, transparent); }
 
 /* ---------- 拍品卡 ---------- */
 .ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 16px; }
@@ -160,17 +199,17 @@ body.auction-body {
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
     transition: transform .18s, border-color .18s, box-shadow .18s;
 }
-.ac-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 10px 28px rgba(0,0,0,.45); }
-.ac-card.is-hot    { border-color: rgba(255,176,32,.32); }
-.ac-card.is-urgent { border-color: rgba(255,77,61,.4); }
+.ac-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow); }
+.ac-card.is-hot    { border-color: color-mix(in srgb, var(--brand) 32%, transparent); }
+.ac-card.is-urgent { border-color: color-mix(in srgb, var(--live) 40%, transparent); }
 .ac-card.is-urgent::before {
     content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
     background: var(--live); animation: ac-pulse 1.2s infinite; z-index: 2;
 }
-.ac-card-media { position: relative; aspect-ratio: 1 / 1; background: #0E1015; overflow: hidden; }
+.ac-card-media { position: relative; aspect-ratio: 1 / 1; background: var(--inset); overflow: hidden; }
 .ac-card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
 .ac-card:hover .ac-card-media img { transform: scale(1.04); }
-.ac-card-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; color: rgba(255,255,255,.12); }
+.ac-card-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; color: var(--hl); }
 .ac-card-corner { position: absolute; top: 9px; left: 9px; z-index: 2; }
 .ac-card-body { padding: 12px 13px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .ac-card-title { font-size: 14px; font-weight: 700; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -184,7 +223,7 @@ body.auction-body {
     flex: 0 0 210px; display: flex; gap: 10px; align-items: center;
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
 }
-.ac-sold-thumb { width: 46px; height: 46px; border-radius: 8px; background: #0E1015; overflow: hidden; flex: 0 0 46px; }
+.ac-sold-thumb { width: 46px; height: 46px; border-radius: 8px; background: var(--inset); overflow: hidden; flex: 0 0 46px; }
 .ac-sold-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ac-sold-item .t { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ac-sold-item .p { font-size: 14px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
@@ -192,9 +231,9 @@ body.auction-body {
 /* ---------- 详情页布局 ---------- */
 .ac-lot { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr); gap: 22px; align-items: start; }
 .ac-stage { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
-.ac-stage-media { position: relative; aspect-ratio: 1 / 1; background: #0E1015; }
+.ac-stage-media { position: relative; aspect-ratio: 1 / 1; background: var(--inset); }
 .ac-stage-media img { width: 100%; height: 100%; object-fit: cover; }
-.ac-stage-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 60px; color: rgba(255,255,255,.12); }
+.ac-stage-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 60px; color: var(--hl); }
 .ac-stage-meta { padding: 16px 18px; border-top: 1px solid var(--line); }
 
 .ac-panel {
@@ -203,8 +242,8 @@ body.auction-body {
     position: sticky; top: 76px;
 }
 .ac-panel-price {
-    background: linear-gradient(180deg, rgba(255,176,32,.10), rgba(255,176,32,0));
-    border: 1px solid rgba(255,176,32,.22); border-radius: 12px; padding: 14px;
+    background: linear-gradient(180deg, var(--brand-dim), transparent);
+    border: 1px solid color-mix(in srgb, var(--brand) 22%, transparent); border-radius: 12px; padding: 14px;
 }
 .ac-panel-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ac-panel-label { font-size: 12px; color: var(--muted); letter-spacing: .06em; }
@@ -214,8 +253,8 @@ body.auction-body {
     display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 10px;
     font-size: 13px; font-weight: 700; border: 1px solid var(--line);
 }
-.ac-verdict-lead   { background: var(--lead-dim); color: var(--lead); border-color: rgba(43,217,124,.35); }
-.ac-verdict-outbid { background: var(--live-dim); color: var(--live); border-color: rgba(255,77,61,.35); }
+.ac-verdict-lead   { background: var(--lead-dim); color: var(--lead); border-color: color-mix(in srgb, var(--lead) 35%, transparent); }
+.ac-verdict-outbid { background: var(--live-dim); color: var(--live); border-color: color-mix(in srgb, var(--live) 35%, transparent); }
 .ac-verdict-none   { background: var(--surface-2); color: var(--muted); }
 
 /* 快捷加价 */
@@ -224,10 +263,10 @@ body.auction-body {
 .ac-bid-form { display: flex; gap: 8px; }
 .ac-input {
     flex: 1; min-width: 0; padding: 11px 12px; border-radius: 10px;
-    background: #0E1015; border: 1px solid var(--line-strong); color: var(--text);
+    background: var(--inset); border: 1px solid var(--line-strong); color: var(--text);
     font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
-.ac-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,176,32,.15); }
+.ac-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-dim); }
 .ac-hint { font-size: 12px; color: var(--muted); line-height: 1.6; }
 
 /* 底价进度 */
@@ -262,7 +301,7 @@ body.auction-body {
 .ac-sections { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .ac-section { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 16px 18px; }
 .ac-section h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; letter-spacing: .04em; }
-.ac-section p, .ac-section li { font-size: 13px; color: #C3C8D4; line-height: 1.75; }
+.ac-section p, .ac-section li { font-size: 13px; color: var(--text-2); line-height: 1.75; }
 .ac-section ul { margin: 0; padding-left: 18px; }
 
 /* ---------- 我的拍卖看板 ---------- */
@@ -282,8 +321,8 @@ body.auction-body {
     padding: 12px; margin-bottom: 10px; transition: border-color .15s;
 }
 .ac-row:hover { border-color: var(--line-strong); }
-.ac-row.is-outbid { border-color: rgba(255,77,61,.32); }
-.ac-row-thumb { width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: #0E1015; flex: 0 0 72px; }
+.ac-row.is-outbid { border-color: color-mix(in srgb, var(--live) 32%, transparent); }
+.ac-row-thumb { width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--inset); flex: 0 0 72px; }
 .ac-row-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ac-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .ac-row-side { text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
@@ -305,12 +344,12 @@ body.auction-body {
 .ac-toast {
     min-width: 220px; max-width: 340px; padding: 12px 15px; border-radius: 11px;
     background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text);
-    font-size: 13px; font-weight: 600; box-shadow: 0 12px 32px rgba(0,0,0,.5);
+    font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg);
     animation: ac-toast-in .3s ease;
 }
-.ac-toast-ok   { border-color: rgba(43,217,124,.45); }
-.ac-toast-err  { border-color: rgba(255,77,61,.45); }
-.ac-toast-live { border-color: rgba(255,77,61,.45); background: linear-gradient(180deg, rgba(255,77,61,.16), var(--surface-2)); }
+.ac-toast-ok   { border-color: color-mix(in srgb, var(--lead) 45%, transparent); }
+.ac-toast-err  { border-color: color-mix(in srgb, var(--live) 45%, transparent); }
+.ac-toast-live { border-color: color-mix(in srgb, var(--live) 45%, transparent); background: linear-gradient(180deg, var(--live-dim), var(--surface-2)); }
 @keyframes ac-toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 
 /* ---------- 表单（发布页） ---------- */
@@ -318,14 +357,14 @@ body.auction-body {
 .ac-form label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 7px; }
 .ac-form .ac-field { margin-bottom: 16px; }
 .ac-form select, .ac-form textarea, .ac-form input[type=text], .ac-form input[type=datetime-local] {
-    width: 100%; padding: 11px 12px; border-radius: 10px; background: #0E1015;
+    width: 100%; padding: 11px 12px; border-radius: 10px; background: var(--inset);
     border: 1px solid var(--line-strong); color: var(--text); font-size: 14px;
 }
 .ac-form select:focus, .ac-form textarea:focus, .ac-form input:focus { outline: none; border-color: var(--brand); }
 .ac-form .ac-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ac-alert { padding: 11px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; border: 1px solid var(--line); }
-.ac-alert-ok  { background: var(--lead-dim);  color: var(--lead);  border-color: rgba(43,217,124,.35); }
-.ac-alert-err { background: var(--live-dim);  color: var(--live);  border-color: rgba(255,77,61,.35); }
+.ac-alert-ok  { background: var(--lead-dim);  color: var(--lead);  border-color: color-mix(in srgb, var(--lead) 35%, transparent); }
+.ac-alert-err { background: var(--live-dim);  color: var(--live);  border-color: color-mix(in srgb, var(--live) 35%, transparent); }
 
 /* ---------- 发布页：拍品选择 ---------- */
 .ac-item-grid {
@@ -343,7 +382,7 @@ body.auction-body {
 .ac-item-opt.active .lbl { color: var(--text); }
 .ac-guide-empty {
     text-align: center; padding: 28px 16px; color: var(--muted);
-    background: rgba(255,176,32,.06); border: 1px dashed rgba(255,176,32,.35); border-radius: 12px;
+    background: var(--brand-dim); border: 1px dashed color-mix(in srgb, var(--brand) 35%, transparent); border-radius: 12px;
 }
 .ac-guide-empty i { font-size: 34px; color: var(--brand); opacity: .75; margin-bottom: 10px; display: block; }
 .ac-guide-empty .t { font-size: 14px; margin-bottom: 12px; }
@@ -375,68 +414,93 @@ body.auction-body {
 
 /* ==========================================================================
    共享头部 / 底部 · 拍卖站暗场覆盖
-   作用域：body.auction-body（由 bid/includes/header.php 注入，仅 bid 子站带此类）
-   目的：让共享导航与暗场内容同一色系，且完全不影响其他子站。
+   作用域：html:not([data-ac-theme="light"]) body.auction-body —— 仅「暗场」生效
+     · body.auction-body / .auction-shell 由 bid/includes/header.php 注入，仅 bid 子站带
+     · 切到明亮时不套用，回到站点默认（白底）导航，与其他子站一致
    注：共享组件内含行内样式，个别处需 !important 覆盖。
    ========================================================================== */
 
 /* ---------- 顶栏 ---------- */
-body.auction-body > header {
+html:not([data-ac-theme="light"]) body.auction-body > header {
     background: rgba(10, 11, 15, .92);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
     color: var(--text);
 }
-body.auction-body .logo                  { color: var(--text); }
-body.auction-body .logo-img              { background: linear-gradient(135deg, var(--brand), #FF8A00); color: #1A1205; }
-body.auction-body .logo-text strong      { color: var(--text); }
-body.auction-body .logo-text span        { color: var(--muted); }
-body.auction-body .nav-button            { color: var(--muted); }
-body.auction-body .nav-button:hover      { background: rgba(255, 176, 32, .12); color: var(--brand); }
-body.auction-body .menu-toggle           { color: var(--text); }
-body.auction-body .menu-toggle:hover     { background: var(--surface-2); }
+html:not([data-ac-theme="light"]) body.auction-body .logo       { color: var(--text); }
+html:not([data-ac-theme="light"]) body.auction-body .logo-img   { background: linear-gradient(135deg, var(--brand), #FF8A00); color: var(--on-brand); }
+html:not([data-ac-theme="light"]) body.auction-body .logo-text strong { color: var(--text); }
+html:not([data-ac-theme="light"]) body.auction-body .logo-text span   { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .nav-button       { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .nav-button:hover { background: rgba(255, 176, 32, .12); color: var(--brand); }
+html:not([data-ac-theme="light"]) body.auction-body .menu-toggle      { color: var(--text); }
+html:not([data-ac-theme="light"]) body.auction-body .menu-toggle:hover { background: var(--surface-2); }
 /* 注册 CTA（共享组件用行内 #ff6b00）对齐琥珀主色 */
-body.auction-body .nav-button[style*="ff6b00"] { background: var(--brand) !important; color: #1A1205 !important; }
+html:not([data-ac-theme="light"]) body.auction-body .nav-button[style*="ff6b00"] { background: var(--brand) !important; color: var(--on-brand) !important; }
 
 /* 移动端展开菜单 */
 @media (max-width: 768px) {
-    body.auction-body .header-actions {
+    html:not([data-ac-theme="light"]) body.auction-body .header-actions {
         background: var(--bg);
         border-bottom: 1px solid var(--line);
     }
 }
 
 /* 通知下拉 */
-body.auction-body .dropdown-menu      { background: var(--surface); border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
-body.auction-body .dropdown-item      { color: var(--text); }
-body.auction-body .dropdown-item:hover{ background: var(--surface-2); color: var(--brand); }
-body.auction-body .dropdown-divider   { background: var(--line); }
+html:not([data-ac-theme="light"]) body.auction-body .dropdown-menu       { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+html:not([data-ac-theme="light"]) body.auction-body .dropdown-item       { color: var(--text); }
+html:not([data-ac-theme="light"]) body.auction-body .dropdown-item:hover { background: var(--surface-2); color: var(--brand); }
+html:not([data-ac-theme="light"]) body.auction-body .dropdown-divider    { background: var(--line); }
 
 /* ---------- 城市定位条 ---------- */
-body.auction-body .city-location-bar   { background: rgba(255, 176, 32, .10); color: var(--brand); border-bottom: 1px solid var(--line); }
-body.auction-body .city-location-bar a { color: var(--brand); }
+html:not([data-ac-theme="light"]) body.auction-body .city-location-bar   { background: rgba(255, 176, 32, .10); color: var(--brand); border-bottom: 1px solid var(--line); }
+html:not([data-ac-theme="light"]) body.auction-body .city-location-bar a { color: var(--brand); }
 
 /* ---------- 跨子站引流（卡片为行内浅色，需 !important） ---------- */
-body.auction-body .cross-site-links h3                          { color: var(--text) !important; }
-body.auction-body .cross-site-links a                           { background: var(--surface-2) !important; border-color: var(--line-strong) !important; }
-body.auction-body .cross-site-links a > div > div:first-child   { color: var(--text) !important; }
-body.auction-body .cross-site-links a > div > div:last-child    { color: var(--muted) !important; }
+html:not([data-ac-theme="light"]) body.auction-body .cross-site-links h3                        { color: var(--text) !important; }
+html:not([data-ac-theme="light"]) body.auction-body .cross-site-links a                         { background: var(--surface-2) !important; border-color: var(--line-strong) !important; }
+html:not([data-ac-theme="light"]) body.auction-body .cross-site-links a > div > div:first-child { color: var(--text) !important; }
+html:not([data-ac-theme="light"]) body.auction-body .cross-site-links a > div > div:last-child  { color: var(--muted) !important; }
 
 /* ---------- 页脚（对齐内容区底色，替换主站深蓝） ---------- */
-body.auction-body .site-footer              { background: #06070A; color: var(--muted); border-top: 1px solid var(--line); }
-body.auction-body .site-footer::before      { background: linear-gradient(90deg, transparent, rgba(255, 176, 32, .35), transparent); }
-body.auction-body .footer-col h4,
-body.auction-body .footer-col h3            { color: var(--text); }
-body.auction-body .footer-about p           { color: var(--muted); }
-body.auction-body .footer-col ul li a       { color: var(--muted); }
-body.auction-body .footer-col ul li a:hover { color: var(--brand); }
-body.auction-body .footer-col ul li i       { color: #5B6270; }
-body.auction-body .footer-col ul li a:hover i { color: var(--brand); }
-body.auction-body .footer-contact ul li     { color: var(--muted); }
-body.auction-body .footer-contact ul li i   { color: #5B6270; }
-body.auction-body .qr-item span             { color: var(--muted); }
-body.auction-body .footer-bottom            { border-top-color: var(--line); }
+html:not([data-ac-theme="light"]) body.auction-body .site-footer              { background: #06070A; color: var(--muted); border-top: 1px solid var(--line); }
+html:not([data-ac-theme="light"]) body.auction-body .site-footer::before      { background: linear-gradient(90deg, transparent, rgba(255, 176, 32, .35), transparent); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-col h4,
+html:not([data-ac-theme="light"]) body.auction-body .footer-col h3            { color: var(--text); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-about p           { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-col ul li a       { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-col ul li a:hover { color: var(--brand); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-col ul li i       { color: #5B6270; }
+html:not([data-ac-theme="light"]) body.auction-body .footer-col ul li a:hover i { color: var(--brand); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-contact ul li     { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-contact ul li i   { color: #5B6270; }
+html:not([data-ac-theme="light"]) body.auction-body .qr-item span             { color: var(--muted); }
+html:not([data-ac-theme="light"]) body.auction-body .footer-bottom            { border-top-color: var(--line); }
 
 /* ---------- 回到顶部（行内深橙，需 !important） ---------- */
-body.auction-body #back-to-top { background: var(--brand) !important; color: #1A1205 !important; }
+html:not([data-ac-theme="light"]) body.auction-body #back-to-top { background: var(--brand) !important; color: var(--on-brand) !important; }
+
+/* ==========================================================================
+   主题切换按钮（悬浮，随页脚渲染；所有 bid 页面可用）
+   ========================================================================== */
+.ac-theme-toggle {
+    position: fixed; right: 24px; bottom: 88px; z-index: 1500;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 14px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--line-strong);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform .15s, border-color .15s, background .15s, color .15s;
+}
+.ac-theme-toggle:hover { transform: translateY(-1px); border-color: var(--brand); }
+.ac-theme-toggle .ac-theme-ico { font-size: 15px; line-height: 1; }
+/* 暗场时显示「太阳」（点了去明亮）；明亮时显示「月牙」 */
+.ac-theme-toggle[data-ac-theme="dark"]  .ac-theme-ico[data-ico="dark"],
+.ac-theme-toggle[data-ac-theme="light"] .ac-theme-ico[data-ico="light"] { display: none; }
+
+@media (max-width: 560px) {
+    .ac-theme-toggle { right: 16px; bottom: 80px; padding: 9px 12px; }
+    .ac-theme-toggle .ac-theme-label { display: none; }
+}

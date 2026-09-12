@@ -389,9 +389,35 @@
         });
     };
 
+    /* ---------------- 主题切换（明亮 / 暗场） ---------------- */
+    AuctionUI.initTheme = function () {
+        var btn = document.getElementById('acThemeToggle');
+        if (!btn) return;
+        var root = document.documentElement;
+
+        function apply(theme) {
+            theme = (theme === 'light') ? 'light' : 'dark';
+            root.setAttribute('data-ac-theme', theme);
+            btn.setAttribute('data-ac-theme', theme);
+            var label = btn.querySelector('.ac-theme-label');
+            if (label) label.textContent = (theme === 'light') ? '明亮' : '暗场';
+            var title = (theme === 'light') ? '切换到暗场模式' : '切换到明亮模式';
+            btn.setAttribute('title', title);
+            btn.setAttribute('aria-label', title);
+            try { localStorage.setItem('ac_theme', theme); } catch (e) { /* 隐私模式忽略 */ }
+        }
+
+        apply(root.getAttribute('data-ac-theme') || 'dark');
+
+        btn.addEventListener('click', function () {
+            apply(root.getAttribute('data-ac-theme') === 'light' ? 'dark' : 'light');
+        });
+    };
+
     /* ---------------- 启动 ---------------- */
     function boot() {
         if (typeof window.AC_SERVER_NOW !== 'undefined') AuctionUI.setServerNow(window.AC_SERVER_NOW);
+        AuctionUI.initTheme();
         refreshCountdowns();
         setInterval(refreshCountdowns, 1000);
 
