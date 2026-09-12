@@ -21,11 +21,13 @@ $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
 // 热门城市
 $hotCities = [];
-$stmt = $pdo->query("SELECT name, pinyin, rank, resident_count FROM cities WHERE is_hot=1 ORDER BY rank LIMIT 9");
+$stmt = $pdo->query("SELECT name, pinyin, rank, resident_count, activated_blocks FROM cities WHERE is_hot=1 ORDER BY rank LIMIT 9");
 $hotCities = $stmt->fetchAll();
 
-// 每个热门城市的 A 区区块统计数据（取前12行12列的样本）
+// 每个热门城市的 A 区区块预览图（取前12行12列的样本）
 // block_number 格式: 0305 = col=03, row=05
+// 进度条口径：开启区块数 / 区块总数(9999)
+$CITY_TOTAL_BLOCKS = 9999;
 foreach ($hotCities as &$c) {
     $stmt = $pdo->prepare("
         SELECT b.block_number, b.status 
@@ -35,21 +37,20 @@ foreach ($hotCities as &$c) {
     $stmt->execute([$c['name']]);
     $allBlocks = $stmt->fetchAll();
     $grid = [];
-    $soldCount = 0;
-    $totalCount = 0;
     foreach ($allBlocks as $b) {
         $col = intval(substr($b['block_number'], 0, 2));
         $row = intval(substr($b['block_number'], 2, 2));
         if ($row >= 1 && $row <= 12 && $col >= 1 && $col <= 12) {
             $grid[$row][$col] = $b['status'];
-            if ($b['status'] === 'sold') $soldCount++;
-            $totalCount++;
         }
     }
     $c['grid'] = $grid;
-    $c['sold_count'] = $soldCount;
-    $c['total'] = $totalCount;
-    $c['percent'] = $totalCount > 0 ? round($soldCount / $totalCount * 100) : 0;
+
+    // 开启区块数（来自 cities.activated_blocks），占比 = 开启 / 9999
+    $activated = (int)($c['activated_blocks'] ?? 0);
+    $c['opened']  = $activated;
+    $c['total']   = $CITY_TOTAL_BLOCKS;
+    $c['percent'] = $CITY_TOTAL_BLOCKS > 0 ? round($activated / $CITY_TOTAL_BLOCKS * 100) : 0;
 }
 unset($c);
 
@@ -201,8 +202,8 @@ require_once 'includes/header.php';
             </table>
             <?php endif; ?>
             <div class="block-city-meta">
-                <span>已售 <?= $c['sold_count'] ?>/<?= $c['total'] ?></span>
-                <div class="progress"><div class="progress-bar" style="width:<?= $c['percent'] ?>%"></div></div>
+                <span>开启 <?= number_format($c['opened']) ?>/<?= number_format($c['total']) ?></span>
+                <div class="progress"><div class="progress-bar" style="width:<?= min(100, $c['percent']) ?>%"></div></div>
                 <span><strong><?= $c['percent'] ?>%</strong></span>
             </div>
             <a href="city.php?name=<?= $c['pinyin'] ?>" class="block-city-btn">查看 101×99 完整区块地图 →</a>
