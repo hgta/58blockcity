@@ -303,7 +303,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         .city-header {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: white;
-            padding: 20px 0 16px;
+            padding: 26px 0 22px;
             margin-bottom: 16px;
             position: relative;
             overflow: hidden;
@@ -318,33 +318,117 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             background: radial-gradient(circle, rgba(255,107,0,0.12) 0%, transparent 70%);
             pointer-events: none;
         }
+        .city-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff6b00 30%, #ff9500 70%, transparent);
+            opacity: .8;
+        }
 
         .city-title {
             font-size: 26px;
             font-weight: 800;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             position: relative;
             letter-spacing: -0.5px;
+        }
+
+        .city-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            margin: 0;
+            position: relative;
+            letter-spacing: .3px;
         }
 
         .city-stats {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 20px;
-            font-size: 13px;
+            gap: 10px;
+            margin-top: 14px;
             position: relative;
         }
 
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: rgba(255,255,255,0.7);
+            gap: 10px;
+            padding: 9px 16px 9px 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(6px);
+            transition: background .2s, border-color .2s, transform .2s;
             white-space: nowrap;
         }
+        .stat-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,149,0,0.4);
+            transform: translateY(-1px);
+        }
         .stat-item i {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            font-size: 13px;
             color: #ff9500;
-            font-size: 12px;
+            background: rgba(255,149,0,0.14);
+        }
+        .stat-item .stat-body {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+        }
+        .stat-item .stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: .3px;
+        }
+        .stat-item .stat-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-item .stat-value small {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            margin-left: 2px;
+        }
+
+        /* 认领比例卡片：带进度条 */
+        .stat-item.stat-ratio {
+            position: relative;
+            padding-bottom: 14px;
+        }
+        .stat-item.stat-ratio .stat-progress {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 8px;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.12);
+            overflow: hidden;
+        }
+        .stat-item.stat-ratio .stat-progress > span {
+            display: block;
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #ff9500, #ff6b00);
+        }
+        .stat-item.stat-highlight i {
+            color: #4ade80;
+            background: rgba(74,222,128,0.14);
         }
 
         /* 区域选择器 */
@@ -762,8 +846,32 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         
         @media (max-width: 768px) {
             .city-stats {
-                flex-direction: column;
-                gap: 10px;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-top: 12px;
+            }
+            .stat-item {
+                padding: 8px 10px;
+            }
+            .stat-item i {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+            }
+            .stat-item .stat-value {
+                font-size: 14px;
+            }
+            .stat-item.stat-ratio {
+                padding-bottom: 12px;
+            }
+            .stat-item.stat-ratio .stat-progress {
+                left: 10px;
+                right: 10px;
+                bottom: 6px;
+            }
+            .city-title {
+                font-size: 21px;
             }
 
             .zone-tabs {
@@ -1257,21 +1365,43 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 <div class="city-header">
     <div class="container">
         <h1 class="city-title"><?= htmlspecialchars($city_name) ?>区块城市</h1>
+        <p class="city-subtitle">认领城市区块 · 共建元宇宙城市版图</p>
         <div class="city-stats">
             <div class="stat-item">
-                <span>居民数: <?= number_format($city_info['resident_count'] ?? 0) ?>人</span>
+                <i class="fas fa-users"></i>
+                <div class="stat-body">
+                    <span class="stat-label">居民数</span>
+                    <span class="stat-value"><?= number_format($city_info['resident_count'] ?? 0) ?><small>人</small></span>
+                </div>
             </div>
             <div class="stat-item">
-                <span>开启区块: <?= number_format($city_open_blocks) ?>个</span>
+                <i class="fas fa-th-large"></i>
+                <div class="stat-body">
+                    <span class="stat-label">开启区块</span>
+                    <span class="stat-value"><?= number_format($city_open_blocks) ?><small>个</small></span>
+                </div>
+            </div>
+            <div class="stat-item stat-highlight">
+                <i class="fas fa-flag-checkered"></i>
+                <div class="stat-body">
+                    <span class="stat-label">已认领区块</span>
+                    <span class="stat-value"><?= number_format($city_claimed_blocks) ?><small>个</small></span>
+                </div>
+            </div>
+            <div class="stat-item stat-ratio">
+                <i class="fas fa-chart-pie"></i>
+                <div class="stat-body">
+                    <span class="stat-label">认领比例</span>
+                    <span class="stat-value"><?= number_format($city_claim_ratio, 1) ?><small>%</small></span>
+                </div>
+                <div class="stat-progress"><span style="width:<?= min(100, max(0, $city_claim_ratio)) ?>%"></span></div>
             </div>
             <div class="stat-item">
-                <span>已认领区块: <?= number_format($city_claimed_blocks) ?>个</span>
-            </div>
-            <div class="stat-item">
-                <span>认领比例: <?= number_format($city_claim_ratio, 1) ?>%</span>
-            </div>
-            <div class="stat-item">
-                <span>城市人气值: <?= number_format($city_info['popularity'] ?? 0) ?>点</span>
+                <i class="fas fa-fire"></i>
+                <div class="stat-body">
+                    <span class="stat-label">城市人气值</span>
+                    <span class="stat-value"><?= number_format($city_info['popularity'] ?? 0) ?><small>点</small></span>
+                </div>
             </div>
         </div>
     </div>
