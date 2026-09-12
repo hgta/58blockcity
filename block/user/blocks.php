@@ -36,7 +36,7 @@ $voteCount = count($userBlocks); // 投票数口径（合并组拆开后的单�
 // 总价值：普通区块 + 合并组（合并组的子块不再单独计入，避免重复）
 $totalValue = 0;
 foreach ($userBlocks as $b) {
-    if (isset($mergedNumSet[$b['city_id'] . '|' . $b['zone'] . '|' . $b['block_number']])) continue;
+    if (isset($mergedNumSet[$block->normalizeBlockKey($b['city_id'], $b['zone'], $b['block_number'])])) continue;
     $totalValue += $b['calc_price'] ?? 0;
 }
 foreach ($userMerged as $mg) {
@@ -141,7 +141,7 @@ foreach ($userMerged as $mg) {
         $grouped = [];
         foreach ($userBlocks as $b) {
             // 合并块的子块已在合并组卡片中展示，这里跳过避免拆散
-            if (isset($mergedNumSet[$b['city_id'] . '|' . $b['zone'] . '|' . $b['block_number']])) continue;
+            if (isset($mergedNumSet[$block->normalizeBlockKey($b['city_id'], $b['zone'], $b['block_number'])])) continue;
             $cityId = $b['city_id'] ?? 0;
             $cityName = $b['city_name'] ?? '未知城市';
             $cityPinyin = $b['city_pinyin'] ?? '';
