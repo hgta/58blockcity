@@ -1,10 +1,14 @@
 <?php
+/**
+ * 58拍卖 · 拍品详情（竞价台）
+ */
 require_once '../config/database.php';
 require_once '../classes/Auction.php';
 require_once '../includes/auth.php';
+require_once '../includes/lot_helpers.php';
 
-$auction = new Auction($pdo);
-$userId = $_SESSION['user_id'] ?? 0;
+$auction  = new Auction($pdo);
+$userId   = intval($_SESSION['user_id'] ?? 0);
 
 $auctionId = intval($_GET['id'] ?? 0);
 if ($auctionId <= 0) {
@@ -16,16 +20,17 @@ if ($auctionId <= 0) {
 // 惰性推进状态机：激活到点的 pending 并结算到点的 active
 $auction->tick();
 
-// 出价处理
 $bidMsg = '';
 $bidErr = '';
+
+// 无 JS 降级：表单直投
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_bid'])) {
-    $amount = floatval($_POST['amount'] ?? 0);
-    $r = $auction->placeBid($auctionId, $userId, $amount);
-    if ($r['ok']) {
-        $bidMsg = '出价成功';
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $bidErr = '会话已过期，请刷新页面后重试';
     } else {
-        $bidErr = $r['msg'];
+        $r = $auction->placeBid($auctionId, $userId, floatval($_POST['amount'] ?? 0));
+        if (!empty($r['ok'])) $bidMsg = $r['msg'];
+        else $bidErr = $r['msg'];
     }
 }
 
@@ -35,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_cancel'])) {
         $bidErr = 'CSRF令牌验证失败';
     } else {
         $r = $auction->cancelAuction($auctionId, $userId);
-        if ($r['ok']) $bidMsg = $r['msg'];
+        if (!empty($r['ok'])) $bidMsg = $r['msg'];
         else $bidErr = $r['msg'];
     }
 }
@@ -47,176 +52,273 @@ if (!$a) {
     exit;
 }
 
-$bids = $auction->getBids($auctionId, 50);
-$isSeller = intval($a['seller_id']) === $userId;
-$isCurrentBidder = intval($a['current_bidder_id'] ?? 0) === $userId;
+$snap      = $auction->getAuctionSnapshot($auctionId, $userId);
+$bids      = $auction->getBids($auctionId, 30, 'time');
+$symbol    = ac_currency_symbol($a['currency']);
+$isSeller  = intval($a['seller_id']) === $userId;
+$isCurrent = intval($a['current_bidder_id'] ?? 0) === $userId;
+$myState   = $snap['my_state'] ?? 'none';
+$isWatching = $myState === 'watching' || $auction->isWatching($auctionId, $userId);
+$minBid    = $snap['next_min'];
+$delta     = ac_price_delta($a);
+$img       = ac_auction_img($a);
+$isActive  = $a['status'] === 'active';
+$isOver    = in_array($a['status'], ['sold', 'ended', 'canceled'], true);
+$reserve   = $a['reserve_price'] !== null ? floatval($a['reserve_price']) : null;
+$reserveRatio = $reserve ? min(100, round(floatval($a['current_price'] ?? $a['start_price']) / $reserve * 100)) : 0;
 
-// 子站详情页链接与图片回退
+// 子站详情链接
 $detailUrl = '';
-$displayImage = $a['item_image'] ?? '';
 if ($a['item_type'] === 'nft' && !empty($a['nft_id'])) {
     $detailUrl = 'https://nft.58.tl/nft/view.php?id=' . intval($a['nft_id']);
 } elseif ($a['item_type'] === 'block' && !empty($a['block_id'])) {
     $detailUrl = 'https://block.58.tl/block/view.php?id=' . intval($a['block_id']);
 }
-// 区块无图时显示默认占位图
-if ($a['item_type'] === 'block' && empty($displayImage)) {
-    $displayImage = '/assets/images/default-block.png';
-}
 
-// 当前最小可出价
-$currentPrice = floatval($a['current_price'] ?? $a['start_price']);
-$minBid = $a['current_bidder_id'] === null ? floatval($a['start_price']) : $currentPrice + floatval($a['bid_increment']);
+$extendWindow  = intval($a['extend_window_seconds'] ?? 0) ?: 120;
+$extendStep    = intval($a['auto_extend_seconds'] ?? 0) ?: 120;
+$maxExtend     = intval($a['max_extend_times'] ?? 0) ?: 10;
 
-$site_config['title'] = ($a['item_title'] ?? '拍卖详情') . ' - 58拍卖';
+$site_config['title'] = ($a['item_title'] ?? '拍卖详情') . ' - ' . ac_lot_no($a['id']) . ' | 58拍卖';
+$site_config['description'] = '正在拍卖：' . ($a['item_title'] ?? '') . '，当前价 ' . $symbol . number_format(floatval($a['current_price'] ?? $a['start_price']), 2) . '，价高者得。';
 require_once 'includes/header.php';
 ?>
-<style>
-.view-wrap { max-width: 900px; margin: 24px auto; padding: 0 15px; }
-.view-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
-@media (max-width: 700px) { .view-grid { grid-template-columns: 1fr; } }
-.view-img { background: #f5f5f5; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; position: relative; }
-.view-img img { width: 100%; height: 100%; object-fit: cover; }
-.view-img .ph { color: #ccc; font-size: 60px; }
-.view-img-link-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity .2s; text-align: center; padding: 10px; pointer-events: none; }
-.view-img:hover .view-img-link-hint { opacity: 1; }
-.view-ext-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; pointer-events: none; }
-.view-title-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: inherit; }
-.view-title-link:hover { color: #ff6b00; }
-.view-title-link:hover .view-title { text-decoration: underline; }
-.view-info { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-.view-title { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 8px; }
-.view-tag { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 4px; background: #eef2ff; color: #4f46e5; margin-bottom: 12px; }
-.view-tag.nft { background: #fce7f3; color: #db2777; }
-.view-price { font-size: 28px; font-weight: bold; color: #e74c3c; margin-bottom: 12px; }
-.view-status { font-size: 13px; color: #666; margin-bottom: 16px; }
-.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f2f2f2; font-size: 14px; }
-.info-label { color: #999; }
-.bid-form { margin-top: 20px; display: flex; gap: 10px; }
-.bid-input { flex: 1; padding: 11px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-.btn-primary { background: #ff6b00; color: #fff; border: none; border-radius: 8px; padding: 11px 24px; font-size: 15px; cursor: pointer; font-weight: bold; white-space: nowrap; }
-.btn-primary:hover { background: #e05d00; }
-.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-.alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
-.alert-ok { background: #d4edda; color: #155724; }
-.alert-err { background: #f8d7da; color: #721c24; }
-.bids-section { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-top: 24px; }
-.bids-section h2 { font-size: 18px; margin-bottom: 16px; }
-.bid-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f2; font-size: 14px; }
-.bid-row .bidder { color: #555; }
-.bid-row .amount { font-weight: bold; color: #e74c3c; }
-.bid-row .time { color: #999; font-size: 12px; }
-.status-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-.st-active { background: #e8f4ff; color: #337be6; }
-.st-pending { background: #fff3e0; color: #ff6b00; }
-.st-sold { background: #d4edda; color: #155724; }
-.st-ended { background: #f0f0f0; color: #999; }
-</style>
 
-<div class="view-wrap">
-    <div class="view-grid">
-        <div class="view-img">
-            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" style="display:flex;width:100%;height:100%;"><?php endif; ?>
-            <?php if (!empty($displayImage)):
-                $imgUrl = preg_match('#^https?://#', $displayImage) ? $displayImage : '/' . ltrim($displayImage, '/');
-            ?>
-                <img src="<?= htmlspecialchars($imgUrl) ?>" alt="">
-            <?php else: ?>
-                <span class="ph"><i class="fas fa-image"></i></span>
-            <?php endif; ?>
-            <?php if ($detailUrl): ?>
-                <span class="view-img-link-hint">点击查看<?= $a['item_type'] === 'nft' ? '头像' : '区块' ?>详情<i class="fas fa-external-link-alt" style="margin-left:6px;"></i></span>
-                <span class="view-ext-badge"><i class="fas fa-external-link-alt"></i> <?= $a['item_type'] === 'nft' ? 'NFT详情' : '区块详情' ?></span>
-            <?php endif; ?>
-            <?php if ($detailUrl): ?></a><?php endif; ?>
-        </div>
-        <div class="view-info">
-            <span class="view-tag <?= $a['item_type'] === 'nft' ? 'nft' : '' ?>"><?= $a['item_type'] === 'nft' ? 'NFT头像' : '区块' ?></span>
-            <?php if ($detailUrl): ?><a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" class="view-title-link"><?php endif; ?>
-            <div class="view-title"><?= htmlspecialchars($a['item_title'] ?? ('拍卖 #' . $a['id'])) ?></div>
-            <?php if ($detailUrl): ?><i class="fas fa-external-link-alt" style="font-size:13px;color:#999;"></i></a><?php endif; ?>
+<div class="ac-wrap">
 
-            <div class="view-status">
-                <?php
-                $statusMap = [
-                    'pending' => ['未开始', 'st-pending'],
-                    'active'  => ['竞拍中', 'st-active'],
-                    'sold'    => ['已成交', 'st-sold'],
-                    'ended'   => ['已流拍', 'st-ended'],
-                    'canceled'=> ['已取消', 'st-ended'],
-                ];
-                $st = $statusMap[$a['status']] ?? ['未知', 'st-ended'];
-                ?>
-                <span class="status-tag <?= $st[1] ?>"><?= $st[0] ?></span>
-                <?php if ($a['status'] === 'active'): ?>
-                <span style="margin-left:8px;">距截止 <?= $a['end_time'] ?></span>
-                <?php endif; ?>
+    <div style="display:flex;align-items:center;gap:12px;margin:6px 0 16px;flex-wrap:wrap;">
+        <a class="ac-muted" style="font-size:13px;" href="index.php"><i class="fas fa-chevron-left"></i> 竞价大厅</a>
+        <span class="ac-lotno"><?= ac_lot_no($a['id']) ?></span>
+        <?php ac_status_badge($a); ?>
+        <?php if (!empty($a['extend_count'])): ?>
+            <span class="ac-badge ac-badge-hot">已顺延 <?= intval($a['extend_count']) ?> 次</span>
+        <?php endif; ?>
+    </div>
+
+    <div class="ac-lot">
+        <!-- 陈列 -->
+        <div>
+            <div class="ac-stage">
+                <div class="ac-stage-media">
+                    <?php if ($detailUrl): ?>
+                        <a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" rel="noopener" style="display:block;width:100%;height:100%;">
+                    <?php endif; ?>
+                    <?php if ($img): ?>
+                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($a['item_title'] ?? '') ?>">
+                    <?php else: ?>
+                        <span class="ph"><i class="fas fa-image"></i></span>
+                    <?php endif; ?>
+                    <?php if ($detailUrl): ?></a><?php endif; ?>
+                </div>
+                <div class="ac-stage-meta">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div style="min-width:0;">
+                            <h1 style="font-size:20px;font-weight:800;margin:0 0 6px;"><?= htmlspecialchars($a['item_title'] ?? ('拍品 #' . $a['id'])) ?></h1>
+                            <div class="ac-muted" style="font-size:12px;">
+                                <?= $a['item_type'] === 'nft' ? 'NFT 头像' : '区块' ?> ·
+                                卖家 <?= htmlspecialchars($a['seller_name'] ?? ('用户#' . $a['seller_id'])) ?>
+                            </div>
+                        </div>
+                        <?php if ($detailUrl): ?>
+                            <a class="ac-btn ac-btn-ghost" style="font-size:13px;padding:8px 14px;" href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" rel="noopener">
+                                <i class="fas fa-external-link-alt"></i> 查看<?= $a['item_type'] === 'nft' ? '头像' : '区块' ?>详情
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
-            <div class="view-price"><?= $a['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ' ?><?= number_format($currentPrice, 2) ?></div>
+            <!-- 竞拍数据 -->
+            <div class="ac-stats" style="margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px;">
+                <div class="ac-stat"><b data-live="bid_count"><?= intval($snap['bid_count']) ?></b><span>出价次数</span></div>
+                <div class="ac-stat"><b data-live="bidder_count"><?= intval($snap['bidder_count']) ?></b><span>竞拍人数</span></div>
+                <div class="ac-stat"><b data-live="watch_count"><?= intval($snap['watch_count']) ?></b><span>关注</span></div>
+                <div class="ac-stat"><b class="ac-num"><?= number_format(floatval($a['bid_increment']), 0) ?></b><span>加价幅度</span></div>
+            </div>
+        </div>
 
-            <div class="info-row"><span class="info-label">卖家</span><span><?= htmlspecialchars($a['seller_name'] ?? '用户#' . $a['seller_id']) ?></span></div>
-            <div class="info-row"><span class="info-label">起拍价</span><span><?= number_format($a['start_price'], 2) ?></span></div>
-            <div class="info-row"><span class="info-label">加价幅度</span><span><?= number_format($a['bid_increment'], 2) ?></span></div>
-            <div class="info-row"><span class="info-label">开始时间</span><span><?= $a['start_time'] ?></span></div>
-            <div class="info-row"><span class="info-label">截止时间</span><span><?= $a['end_time'] ?></span></div>
-            <?php if ($a['accept_cities']): ?><div class="info-row"><span class="info-label">接受城市</span><span>已指定</span></div><?php endif; ?>
-            <?php if ($a['current_bidder_id']): ?><div class="info-row"><span class="info-label">当前最高出价人</span><span><?= $isCurrentBidder ? '您' : '用户#' . $a['current_bidder_id'] ?></span></div><?php endif; ?>
+        <!-- 竞价台 -->
+        <div class="ac-panel">
+            <div class="ac-panel-row">
+                <span class="ac-eyebrow"><?= $isOver ? '落槌结果' : ($a['status'] === 'pending' ? '距开拍' : '距落槌') ?></span>
+                <?php ac_render_countdown($a, '距落槌', 'acCountdown'); ?>
+            </div>
 
-            <?php if ($bidMsg): ?><div class="alert alert-ok"><?= htmlspecialchars($bidMsg) ?></div><?php endif; ?>
-            <?php if ($bidErr): ?><div class="alert alert-err"><?= htmlspecialchars($bidErr) ?></div><?php endif; ?>
+            <div class="ac-panel-price">
+                <div class="ac-panel-row" style="align-items:flex-end;">
+                    <div>
+                        <div class="ac-eyebrow"><?= $isOver ? '成交价' : '当前价' ?></div>
+                        <div class="ac-price ac-price-lg">
+                            <span class="ac-price-unit"><?= $symbol ?></span><span data-live="price"><?= number_format(floatval($a['current_price'] ?? $a['start_price']), 2) ?></span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <?php if ($delta !== null): ?><div class="ac-delta ac-delta-up"><?= number_format($delta, 1) ?>%</div><?php endif; ?>
+                        <div class="ac-muted" style="font-size:11px;">起拍 <?= ac_money($a['start_price'], $a['currency']) ?></div>
+                    </div>
+                </div>
+            </div>
 
-            <?php if ($a['status'] === 'active' && $userId && !$isSeller): ?>
-            <form method="POST" class="bid-form">
-                <input type="hidden" name="action_bid" value="1">
-                <input type="number" name="amount" class="bid-input" step="0.01" min="<?= $minBid ?>" value="<?= $minBid ?>" required>
-                <button type="submit" class="btn-primary">出价</button>
-            </form>
-            <?php elseif ($a['status'] === 'active' && !$userId): ?>
-            <div style="margin-top:20px;"><a href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $auctionId) ?>" style="color:#ff6b00;">登录</a>后即可出价</div>
-            <?php elseif ($a['status'] === 'active' && $isSeller): ?>
-            <div style="margin-top:20px;color:#999;">您是卖家，不能出价自己的拍卖</div>
+            <?php if ($reserve !== null): ?>
+            <div id="acReserve">
+                <div class="ac-panel-row">
+                    <span class="ac-panel-label">底价</span>
+                    <span class="ac-muted" style="font-size:12px;" data-reserve-text>
+                        <?= floatval($a['current_price'] ?? $a['start_price']) >= $reserve ? '已过底价 · 保证成交' : '底价未达（' . $reserveRatio . '%）' ?>
+                    </span>
+                </div>
+                <div class="ac-reserve-track">
+                    <div class="ac-reserve-bar <?= floatval($a['current_price'] ?? $a['start_price']) >= $reserve ? 'passed' : '' ?>" style="width:<?= $reserveRatio ?>%;"></div>
+                </div>
+            </div>
             <?php endif; ?>
 
+            <?php if ($isActive): ?>
+                <div class="ac-verdict ac-verdict-<?= $myState === 'leading' ? 'lead' : ($myState === 'outbid' ? 'outbid' : 'none') ?>" id="acVerdict" data-state="<?= htmlspecialchars($myState) ?>">
+                    <?php if ($myState === 'leading'): ?><i class="fas fa-crown"></i> 你正领先
+                    <?php elseif ($myState === 'outbid'): ?><i class="fas fa-triangle-exclamation"></i> 你已被超越，快夺回领先
+                    <?php elseif ($myState === 'watching'): ?><i class="fas fa-star"></i> 你已关注这场拍卖
+                    <?php else: ?><i class="fas fa-eye"></i> 你尚未参与这口竞价<?php endif; ?>
+                </div>
+
+                <div class="ac-panel-row">
+                    <span class="ac-panel-label">下一口价</span>
+                    <span class="ac-price" style="font-size:18px;"><span class="ac-price-unit"><?= $symbol ?></span><span data-live="next_min"><?= number_format($minBid, 2) ?></span></span>
+                </div>
+
+                <?php if ($userId && !$isSeller): ?>
+                <div class="ac-quick">
+                    <button type="button" class="ac-btn ac-btn-ghost" data-quick="1">+1 档</button>
+                    <button type="button" class="ac-btn ac-btn-ghost" data-quick="3">+3 档</button>
+                    <button type="button" class="ac-btn ac-btn-ghost" data-quick="5">+5 档</button>
+                </div>
+                <form class="ac-bid-form" id="acBidForm" method="POST"
+                      data-price="<?= floatval($a['current_price'] ?? $a['start_price']) ?>"
+                      data-increment="<?= floatval($a['bid_increment']) ?>"
+                      data-next-min="<?= floatval($minBid) ?>"
+                      data-start-price="<?= floatval($a['start_price']) ?>">
+                    <input type="hidden" name="action_bid" value="1">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                    <input class="ac-input" type="number" name="amount" step="0.01" min="<?= $minBid ?>" value="<?= $minBid ?>" required>
+                    <button type="submit" class="ac-btn ac-btn-primary"><i class="fas fa-gavel"></i> 出价</button>
+                </form>
+                <div class="ac-hint">
+                    出价即代表接受拍卖规则。最后 <?= intval($extendWindow / 60) ?> 分钟内出价将自动顺延 <?= intval($extendStep / 60) ?> 分钟（最多 <?= $maxExtend ?> 次）。
+                </div>
+                <?php elseif (!$userId): ?>
+                    <a class="ac-btn ac-btn-primary ac-btn-block" href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $auctionId) ?>">
+                        <i class="fas fa-sign-in-alt"></i> 登录后出价
+                    </a>
+                <?php elseif ($isSeller): ?>
+                    <div class="ac-hint">您是卖家，不能出价自己的拍卖品。</div>
+                <?php endif; ?>
+            <?php else: ?>
+                <div class="ac-verdict ac-verdict-none">
+                    <?php if ($a['status'] === 'sold'): ?>
+                        <i class="fas fa-gavel"></i> 已落槌成交 <?= ac_money($a['final_price'] ?? $a['current_price'], $a['currency']) ?>
+                    <?php elseif ($a['status'] === 'pending'): ?>
+                        <i class="fas fa-clock"></i> 拍卖尚未开始，收藏后等待开拍
+                    <?php elseif ($a['status'] === 'canceled'): ?>
+                        <i class="fas fa-ban"></i> 该拍卖已被卖家取消
+                    <?php else: ?>
+                        <i class="fas fa-info-circle"></i> 已流拍（未达成交条件）
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <div style="display:flex;gap:8px;">
+                <button type="button" class="ac-btn ac-btn-ghost ac-btn-block" id="acWatchBtn" data-watching="<?= $isWatching ? '1' : '0' ?>">
+                    <i class="<?= $isWatching ? 'fas' : 'far' ?> fa-star"></i> <?= $isWatching ? '已关注' : '关注' ?>
+                </button>
+            </div>
+
+            <?php if ($bidMsg): ?><div class="ac-alert ac-alert-ok"><?= htmlspecialchars($bidMsg) ?></div><?php endif; ?>
+            <?php if ($bidErr): ?><div class="ac-alert ac-alert-err"><?= htmlspecialchars($bidErr) ?></div><?php endif; ?>
+
             <?php if ($isSeller): ?>
-            <div style="margin-top:20px;padding-top:16px;border-top:1px dashed #eee;">
+            <div style="border-top:1px dashed var(--line);padding-top:12px;">
                 <?php if ($a['status'] === 'pending'): ?>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <a href="create.php?edit=<?= $auctionId ?>" style="display:inline-block;background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;text-decoration:none;">✏️ 编辑拍卖</a>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <a class="ac-btn ac-btn-ghost" href="create.php?edit=<?= $auctionId ?>"><i class="fas fa-pen"></i> 编辑拍卖</a>
                         <form method="POST" onsubmit="return confirm('确定取消该拍卖吗？取消后物品将解除锁定。');" style="margin:0;">
                             <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                             <input type="hidden" name="action_cancel" value="1">
-                            <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;">🗑 取消拍卖</button>
+                            <button type="submit" class="ac-btn ac-btn-ghost" style="color:var(--live);border-color:rgba(255,77,61,.4);"><i class="fas fa-trash"></i> 取消拍卖</button>
                         </form>
                     </div>
                 <?php elseif ($a['status'] === 'active' && empty($a['current_bidder_id'])): ?>
                     <form method="POST" onsubmit="return confirm('确定取消该拍卖吗？取消后物品将解除锁定。');" style="margin:0;">
                         <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                         <input type="hidden" name="action_cancel" value="1">
-                        <button type="submit" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:bold;">🗑 取消拍卖</button>
+                        <button type="submit" class="ac-btn ac-btn-ghost" style="color:var(--live);border-color:rgba(255,77,61,.4);"><i class="fas fa-trash"></i> 取消拍卖</button>
                     </form>
                 <?php elseif ($a['status'] === 'active'): ?>
-                    <div style="color:#999;font-size:13px;"><i class="fas fa-info-circle"></i> 拍卖进行中，如遇问题请联系管理员处理。</div>
+                    <div class="ac-hint"><i class="fas fa-info-circle"></i> 拍卖进行中已有人出价，如需处理请联系管理员。</div>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="bids-section">
-        <h2>📜 出价记录（<?= count($bids) ?>）</h2>
-        <?php if (empty($bids)): ?>
-            <div style="color:#999;padding:20px;text-align:center;">暂无出价</div>
-        <?php else: ?>
-            <?php foreach ($bids as $b): ?>
-            <div class="bid-row">
-                <span class="bidder"><?= htmlspecialchars($b['bidder_name'] ?? ('用户#' . $b['bidder_id'])) ?></span>
-                <span class="amount"><?= number_format($b['amount'], 2) ?></span>
-                <span class="time"><?= date('m-d H:i:s', strtotime($b['created_at'])) ?></span>
-            </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+    <!-- 实时叫价 -->
+    <div class="ac-section" style="margin-top:22px;">
+        <div class="ac-rail-head">
+            <h3 style="margin:0;"><i class="fas fa-scroll" style="color:var(--brand);"></i> 实时叫价
+                <span class="ac-muted" style="font-weight:500;font-size:12px;">
+                    <span data-live="bid_count"><?= intval($snap['bid_count']) ?></span> 次 ·
+                    <span data-live="bidder_count"><?= intval($snap['bidder_count']) ?></span> 人竞拍
+                </span>
+            </h3>
+            <span class="ac-muted" style="font-size:11px;">每 3 秒自动刷新</span>
+        </div>
+        <div class="ac-bids" id="acBids">
+            <?php ac_render_bids($bids, $userId, $symbol); ?>
+        </div>
+    </div>
+
+    <!-- 信息区 -->
+    <div class="ac-sections">
+        <div class="ac-section">
+            <h3><i class="fas fa-cube" style="color:var(--brand);"></i> 拍品信息</h3>
+            <ul style="padding-left:0;list-style:none;">
+                <li>类型：<?= $a['item_type'] === 'nft' ? 'NFT 头像' : '区块' ?></li>
+                <li>编号：<?= ac_lot_no($a['id']) ?></li>
+                <li>起拍价：<?= ac_money($a['start_price'], $a['currency']) ?></li>
+                <li>加价幅度：<?= ac_money($a['bid_increment'], $a['currency']) ?></li>
+                <?php if ($reserve !== null): ?><li>底价：<?= ac_money($reserve, $a['currency']) ?>（未达底价则不成交）</li><?php endif; ?>
+                <li>开拍：<?= date('Y-m-d H:i', strtotime($a['start_time'])) ?></li>
+                <li>落槌：<?= date('Y-m-d H:i', strtotime($a['end_time'])) ?></li>
+            </ul>
+        </div>
+
+        <div class="ac-section">
+            <h3><i class="fas fa-user" style="color:var(--brand);"></i> 卖家</h3>
+            <p style="margin:0 0 6px;"><?= htmlspecialchars($a['seller_name'] ?? ('用户#' . $a['seller_id'])) ?></p>
+            <p class="ac-muted" style="margin:0;font-size:12px;">成交后物品所有权将直接转移给得标者。</p>
+        </div>
+
+        <div class="ac-section">
+            <h3><i class="fas fa-gavel" style="color:var(--brand);"></i> 拍卖规则</h3>
+            <ul>
+                <li>出价需 ≥ 下一口价，价高者得。</li>
+                <li>最后 <?= intval($extendWindow / 60) ?> 分钟内出价将自动顺延 <?= intval($extendStep / 60) ?> 分钟，最多顺延 <?= $maxExtend ?> 次，杜绝最后时刻狙击。</li>
+                <li><?= $reserve !== null ? '当前价需达到底价方可成交，未达底价将流拍。' : '无底价拍卖，最高出价者即成交。' ?></li>
+                <li>落槌后系统自动转移物品所有权并通知买卖双方。</li>
+            </ul>
+        </div>
     </div>
 </div>
 
+<script>
+window.AC_PAGE = {
+    auctionId: <?= $auctionId ?>,
+    myId: <?= $userId ?>,
+    csrf: '<?= generateCsrfToken() ?>',
+    poll: <?= $isActive ? 'true' : 'false' ?>,
+    apiLot: '/api/lot.php',
+    apiBid: '/api/bid.php',
+    apiWatch: '/api/watch.php'
+};
+window.AC_SERVER_NOW = <?= time() ?>;
+</script>
 <?php require_once 'includes/footer.php'; ?>

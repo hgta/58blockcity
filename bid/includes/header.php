@@ -17,4 +17,11 @@ $site_config['url_dashboard'] = '/user/dashboard.php';
 $site_config['url_logout']    = '/auth/logout.php';
 $site_config['url_login']     = '/auth/login.php';
 $site_config['url_register']  = '/auth/register.php';
+
+// 拍卖站暗场主题（仅作用于内容区，共享导航保持统一）
+$site_config['body_class'] = trim(($site_config['body_class'] ?? '') . ' auction-body');
+$site_config['main_class'] = trim(($site_config['main_class'] ?? '') . ' auction-shell');
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '')
+    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260912">';
+
 require_once __DIR__ . '/../../shared/header.php';
