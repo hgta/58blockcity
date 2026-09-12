@@ -6,7 +6,7 @@
 require_once '../config/database.php';
 require_once '../classes/Auction.php';
 require_once '../includes/auth.php';
-require_once '../includes/lot_helpers.php';
+require_once __DIR__ . '/../includes/lot_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

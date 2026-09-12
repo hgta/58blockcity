@@ -5,7 +5,7 @@
 require_once '../config/database.php';
 require_once '../classes/Auction.php';
 require_once '../includes/auth.php';
-require_once '../includes/lot_helpers.php';
+require_once __DIR__ . '/includes/lot_helpers.php';
 
 $auction  = new Auction($pdo);
 $viewerId = intval($_SESSION['user_id'] ?? 0);

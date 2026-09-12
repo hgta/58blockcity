@@ -4,7 +4,7 @@ require_once '../classes/Auction.php';
 require_once '../classes/Block.php';
 require_once '../classes/City.php';
 require_once '../includes/auth.php';
-require_once '../includes/lot_helpers.php';
+require_once __DIR__ . '/includes/lot_helpers.php';
 checkLogin();
 
 $auction = new Auction($pdo);
