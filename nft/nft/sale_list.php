@@ -57,33 +57,38 @@ require_once '../includes/header.php';
 .sale-hero {
     background: linear-gradient(135deg, #ff6b00, #e55a00);
     color: #fff;
-    padding: 24px 20px;
+    padding: 12px 18px;
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    box-shadow: 0 3px 15px rgba(255,107,0,0.2);
 }
 .sale-hero h1 {
-    font-size: 22px;
-    margin: 0 0 4px;
-    font-weight: 700;
-}
-.sale-hero p {
-    font-size: 13px;
-    opacity: 0.85;
+    font-size: 18px;
     margin: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 .sale-stats {
     display: flex;
-    gap: 28px;
-    margin-top: 14px;
+    gap: 18px;
+    margin: 0;
     flex-wrap: wrap;
 }
 .sale-stat {
     font-size: 13px;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 .sale-stat strong {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 800;
+    margin-right: 2px;
 }
 
 /* ===== 筛选栏 ===== */
@@ -374,7 +379,6 @@ require_once '../includes/header.php';
     <!-- 顶部统计栏 -->
     <div class="sale-hero">
         <h1>🏷 NFT 销售市场</h1>
-        <p>发现心仪头像，立即入手收藏</p>
         <div class="sale-stats">
             <div class="sale-stat">
                 <strong><?= number_format($totalSales) ?></strong> 个在售

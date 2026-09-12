@@ -21,6 +21,7 @@ $perPage = 80;
 
 // 数据
 $allCities = $city->getAllCities();
+$allTags = $nft->getAllTags();
 $nfts = $nft->getAllNfts($perPage, ($page - 1) * $perPage, $searchCode, $searchTag);
 $totalNfts = $nft->getTotalNftCount($searchCode, $searchTag);
 $totalPages = ceil($totalNfts / $perPage);
@@ -45,12 +46,11 @@ $loginUrl = '/auth/login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']);
 <?php require_once '../includes/header.php'; ?>
 
 <style>
-.purchase-hero{background:linear-gradient(135deg,#ff6b00,#e55a00);color:#fff;padding:32px 0;margin-bottom:24px}
-.purchase-hero h1{font-size:26px;margin:0 0 6px;font-weight:bold}
-.purchase-hero p{font-size:14px;opacity:0.9;margin:0}
-.purchase-stats{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap}
-.purchase-stat{font-size:13px;opacity:0.85}
-.purchase-stat strong{font-size:18px}
+.purchase-hero{background:linear-gradient(135deg,#ff6b00,#e55a00);color:#fff;border-radius:12px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 3px 15px rgba(255,107,0,0.2)}
+.purchase-hero h1{font-size:18px;margin:0;font-weight:700;display:flex;align-items:center;gap:8px}
+.purchase-stats{display:flex;gap:18px;margin:0;flex-wrap:wrap}
+.purchase-stat{font-size:13px;opacity:0.95}
+.purchase-stat strong{font-size:17px;font-weight:800;margin-right:2px}
 
 .search-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 0}
 .search-bar input,.search-bar select{padding:8px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none}
@@ -82,26 +82,27 @@ $loginUrl = '/auth/login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']);
 .pagination-simple .disabled{color:#ccc;pointer-events:none}
 </style>
 
-<div class="purchase-hero">
-    <div class="container">
+<div class="container">
+    <!-- 顶部信息栏 -->
+    <div class="purchase-hero">
         <h1>🛒 NFT 求购市场</h1>
-        <p>发现你喜欢的头像，向持有者发起求购</p>
         <div class="purchase-stats">
             <div class="purchase-stat">📝 <strong><?= number_format($totalPurchases) ?></strong> 个求购</div>
             <div class="purchase-stat">🖼 <strong><?= number_format($totalNfts) ?></strong> 个 NFT</div>
         </div>
     </div>
-</div>
 
-<div class="container">
     <!-- 搜索 -->
     <form method="get" class="search-bar">
         <input type="text" name="code" placeholder="🔍 搜索编号..." value="<?= htmlspecialchars($searchCode) ?>">
         <select name="tag">
             <option value="">全部标签</option>
+            <?php foreach ($allTags as $tag): ?>
+            <option value="<?= htmlspecialchars($tag) ?>" <?= $searchTag === $tag ? 'selected' : '' ?>><?= htmlspecialchars($tag) ?></option>
+            <?php endforeach; ?>
         </select>
         <button type="submit" class="search-btn">搜索</button>
-        <?php if ($searchCode): ?>
+        <?php if ($searchCode || $searchTag): ?>
         <a href="purchase_list.php" class="reset-btn">重置</a>
         <?php endif; ?>
     </form>

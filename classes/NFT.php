@@ -1153,9 +1153,24 @@ public function getRecentActivities($nftId, $limit = 10) {
     /**
      * 获取分页的排名NFT数据
      * 修改现有的getTopRankedNfts方法，添加分页支持
+     *
+     * @param int    $offset 偏移量
+     * @param int    $limit  每页数量
+     * @param string $sort   排序方式：score(综合) / claim(认领) / sale(挂售) / purchase(求购) / comment(评论) / newest(最新)
      */
-    public function getPaginatedTopNfts(int $offset = 0, int $limit = 20): array {
+    public function getPaginatedTopNfts(int $offset = 0, int $limit = 20, string $sort = 'score'): array {
         try {
+            // 白名单排序，避免SQL注入
+            $orderMap = [
+                'claim'    => 'claim_city_count DESC, total_score DESC, na.created_at DESC',
+                'sale'     => 'sale_city_count DESC, total_score DESC, na.created_at DESC',
+                'purchase' => 'purchase_count DESC, total_score DESC, na.created_at DESC',
+                'comment'  => 'comment_count DESC, total_score DESC, na.created_at DESC',
+                'newest'   => 'na.created_at DESC, total_score DESC',
+                'score'    => 'total_score DESC, na.created_at DESC',
+            ];
+            $orderBy = $orderMap[$sort] ?? $orderMap['score'];
+
             $sql = "
                 SELECT 
                     na.id,
@@ -1195,7 +1210,7 @@ public function getRecentActivities($nftId, $limit = 10) {
                 FROM nft_avatars na
                 WHERE na.id IS NOT NULL
                 HAVING total_score > 0
-                ORDER BY total_score DESC, na.created_at DESC
+                ORDER BY $orderBy
                 LIMIT :limit OFFSET :offset
             ";
             

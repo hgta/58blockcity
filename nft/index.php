@@ -22,6 +22,18 @@ $stats = $nft->getGlobalStats(); // 需要添加此方法到NFT类
 $nftsPerPage = 90; // 修改：每页显示90个NFT (15行 × 6个/行)
 $page = max(1, (int)($_GET['page'] ?? 1));
 
+// 排序方式（白名单）
+$sortOptions = [
+    'score'    => '🏆 综合排名',
+    'claim'    => '🏙 认领最多',
+    'sale'     => '🏷 挂售最多',
+    'purchase' => '💰 求购最多',
+    'comment'  => '💬 评论最多',
+    'newest'   => '🆕 最新加入',
+];
+$sort = $_GET['sort'] ?? 'score';
+if (!isset($sortOptions[$sort])) $sort = 'score';
+
 // 获取分页的NFT数据
 $totalNfts = $nft->getTotalTopNftsCount(); // 需要添加此方法到NFT类
 $totalPages = ceil($totalNfts / $nftsPerPage);
@@ -29,7 +41,7 @@ $page = max(1, min($page, $totalPages));
 $offset = ($page - 1) * $nftsPerPage;
 
 // 获取当前页的NFT数据
-$topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此方法
+$topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage, $sort); // 需要修改此方法
 ?>
 
 <?php require_once 'includes/header.php'; ?>
@@ -78,54 +90,70 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     position: relative;
 }
 
-/* 全局统计卡片样式 */
+/* 全局统计卡片样式（紧凑横向布局） */
 .global-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
-.stat-card {
+.global-stats .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     background: white;
-    border-radius: 16px;
-    padding: 25px 20px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     border: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 }
 
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+.global-stats .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
 }
 
-.stat-card i {
-    font-size: 2.5rem;
-    margin-bottom: 15px;
-    display: block;
+.global-stats .stat-card > i {
+    font-size: 1.05rem;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
 }
 
-.stat-card.claim-stat i { color: #48bb78; }
-.stat-card.sale-stat i { color: #667eea; }
-.stat-card.purchase-stat i { color: #ed8936; }
-.stat-card.comment-stat i { color: #9f7aea; }
+.global-stats .stat-card.claim-stat > i { color: #48bb78; background: #f0fff4; }
+.global-stats .stat-card.sale-stat > i { color: #667eea; background: #ebf4ff; }
+.global-stats .stat-card.purchase-stat > i { color: #ed8936; background: #fffaf0; }
+.global-stats .stat-card.comment-stat > i { color: #9f7aea; background: #faf5ff; }
 
-.stat-value {
-    font-size: 2rem;
+.global-stats .stat-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.15;
+}
+
+.global-stats .stat-num {
+    font-size: 1.25rem;
     font-weight: 800;
     color: #2d3748;
     display: block;
-    line-height: 1.2;
 }
 
-.stat-label {
-    font-size: 1rem;
+.global-stats .stat-name {
+    font-size: 0.75rem;
     color: #718096;
     display: block;
-    margin-top: 8px;
+    margin-top: 2px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 /* 修改网格布局为6列 */
@@ -133,7 +161,7 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     display: grid;
     grid-template-columns: repeat(6, 1fr); /* 固定6列 */
     gap: 15px; /* 减小间隙以适应更多列 */
-    margin-bottom: 40px;
+    margin-bottom: 24px;
 }
 
 /* 调整卡片尺寸以适应6列 */
@@ -231,7 +259,7 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     transform: translateY(-2px);
 }
 
-.stat-value {
+.nft-stats .stat-value {
     font-size: 0.9rem; /* 减小字体 */
     font-weight: 800;
     color: #2d3748;
@@ -239,7 +267,7 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     line-height: 1.1;
 }
 
-.stat-label {
+.nft-stats .stat-label {
     font-size: 0.7rem; /* 减小字体 */
     color: #718096;
     display: block;
@@ -300,12 +328,157 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     color: white;
 }
 
+/* 排序工具栏 */
+.list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.list-toolbar .result-count {
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.list-toolbar .result-count strong {
+    color: #ff6b00;
+    font-weight: 700;
+}
+
+.sort-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sort-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.sort-chip:hover {
+    border-color: #667eea;
+    color: #667eea;
+    text-decoration: none;
+}
+
+.sort-chip.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+/* 计算标准（可折叠） */
+.criteria-wrap {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.criteria-wrap summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 14px 20px;
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.criteria-wrap summary::-webkit-details-marker { display: none; }
+
+.criteria-wrap summary::after {
+    content: '\f078';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-left: auto;
+    color: #718096;
+    transition: transform 0.2s ease;
+}
+
+.criteria-wrap[open] summary::after { transform: rotate(180deg); }
+
+.criteria-inner { padding: 0 20px 20px; }
+
+/* 为你推荐 */
+.recommend-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.recommend-box h3 {
+    font-size: 1rem;
+    margin: 0 0 12px;
+    color: #2d3748;
+    font-weight: 700;
+}
+
+.recommend-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.recommend-item {
+    flex-shrink: 0;
+    width: 92px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.recommend-item .recommend-avatar {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #f0f0f0;
+    transition: border-color 0.2s ease;
+}
+
+.recommend-item:hover .recommend-avatar { border-color: #ff6b00; }
+
+.recommend-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recommend-item .recommend-code {
+    font-size: 12px;
+    color: #333;
+    margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* 分页样式 */
 .pagination-section {
     background: #f8fafc;
-    padding: 25px;
-    border-radius: 16px;
-    margin-bottom: 40px;
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 24px;
     border: 1px solid #e2e8f0;
 }
 
@@ -374,33 +547,17 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     margin-top: 10px;
 }
 
-.ranking-criteria {
-    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-    padding: 30px;
-    border-radius: 16px;
-    margin-bottom: 40px;
-    border: 1px solid #e2e8f0;
-}
-
-.ranking-criteria h3 {
-    color: #2d3748;
-    margin-bottom: 25px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.5rem;
-}
-
 .criteria-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
+    gap: 12px;
 }
 
 .criteria-item {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
+    gap: 12px;
+    padding: 12px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -412,15 +569,15 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
 }
 
 .criteria-icon {
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
@@ -520,26 +677,17 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     }
     
     .nft-stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
     }
     
     .global-stats {
         grid-template-columns: repeat(2, 1fr); /* 手机显示2列统计卡片 */
-        gap: 15px;
-    }
-    
-    .stat-card {
-        padding: 20px 15px;
-    }
-    
-    .stat-value {
-        font-size: 1.8rem;
+        gap: 10px;
     }
     
     .pagination-container {
-        flex-direction: column;
-        gap: 15px;
+        gap: 12px;
     }
 }
 
@@ -570,12 +718,24 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
         padding: 10px 8px;
     }
     
-    .stat-value {
-        font-size: 1.1rem;
+    .global-stats {
+        grid-template-columns: repeat(2, 1fr); /* 小手机显示2列统计卡片 */
+        gap: 8px;
     }
     
-    .global-stats {
-        grid-template-columns: 1fr; /* 小手机显示1列统计卡片 */
+    .global-stats .stat-card {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+    
+    .global-stats .stat-card > i {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .global-stats .stat-num {
+        font-size: 1.05rem;
     }
 }
 
@@ -594,10 +754,6 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     
     .stat-item {
         padding: 8px 6px;
-    }
-    
-    .stat-value {
-        font-size: 1rem;
     }
 }
 
@@ -618,60 +774,45 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
     <div class="global-stats">
         <div class="stat-card claim-stat">
             <i class="fas fa-city"></i>
-            <span class="stat-label">全站头像认领 </span>
-            <span class="stat-value"><?= $stats['total_claims'] ?? 0 ?></span>
+            <div class="stat-info">
+                <span class="stat-num"><?= $stats['total_claims'] ?? 0 ?></span>
+                <span class="stat-name">全站头像认领</span>
+            </div>
         </div>
         <div class="stat-card sale-stat">
             <i class="fas fa-store"></i>
-            <span class="stat-label">全站头像挂售 </span>
-            <span class="stat-value"><?= $stats['total_sales'] ?? 0 ?></span>
+            <div class="stat-info">
+                <span class="stat-num"><?= $stats['total_sales'] ?? 0 ?></span>
+                <span class="stat-name">全站头像挂售</span>
+            </div>
         </div>
         <div class="stat-card purchase-stat">
             <i class="fas fa-hand-holding-usd"></i>
-            <span class="stat-label">全站头像求购 </span>
-            <span class="stat-value"><?= $stats['total_purchases'] ?? 0 ?></span>
+            <div class="stat-info">
+                <span class="stat-num"><?= $stats['total_purchases'] ?? 0 ?></span>
+                <span class="stat-name">全站头像求购</span>
+            </div>
         </div>
         <div class="stat-card comment-stat">
             <i class="fas fa-comments"></i>
-            <span class="stat-label">全站评论 </span>
-            <span class="stat-value"><?= $stats['total_comments'] ?? 0 ?></span>
+            <div class="stat-info">
+                <span class="stat-num"><?= $stats['total_comments'] ?? 0 ?></span>
+                <span class="stat-name">全站评论</span>
+            </div>
         </div>
     </div>
 
-    <!-- 分页导航 -->
-    <?php if ($totalPages > 1): ?>
-        <div class="pagination-section">
-            <div class="pagination-container">
-                <!-- 上一页 -->
-                <a href="?page=<?= $page - 1 ?>" 
-                   class="btn-pagination <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <i class="fas fa-chevron-left"></i> 上一页
-                </a>
-                
-                <!-- 页码信息 -->
-                <div class="page-info">
-                    <span>第</span>
-                    <select class="form-select page-select" onchange="location.href='?page='+this.value">
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <option value="<?= $i ?>" <?= $i == $page ? 'selected' : '' ?>><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <span>页，共 <?= $totalPages ?> 页</span>
-                </div>
-                
-                <!-- 下一页 -->
-                <a href="?page=<?= $page + 1 ?>" 
-                   class="btn-pagination <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    下一页 <i class="fas fa-chevron-right"></i>
-                </a>
-            </div>
-            
-            <!-- 统计信息 -->
-            <div class="stats-summary">
-                显示 <?= min(($page - 1) * $nftsPerPage + 1, $totalNfts) ?>-<?= min($page * $nftsPerPage, $totalNfts) ?> 个头像，共 <?= $totalNfts ?> 个头像
-            </div>
+    <!-- 排序工具栏 -->
+    <div class="list-toolbar">
+        <div class="result-count">
+            共 <strong><?= number_format($totalNfts) ?></strong> 个上榜头像<?php if ($totalPages > 1): ?>，第 <?= $page ?>/<?= $totalPages ?> 页<?php endif; ?>
         </div>
-    <?php endif; ?>
+        <div class="sort-chips">
+            <?php foreach ($sortOptions as $key => $label): ?>
+                <a href="?sort=<?= $key ?>" class="sort-chip <?= $sort === $key ? 'active' : '' ?>"><?= $label ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
 
     <!-- NFT网格 -->
     <div class="nfts-grid">
@@ -748,13 +889,75 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
-    
+
+    <!-- 为你推荐 -->
+    <?php $recommendNfts = $nft->getAllNfts(8, rand(0, 50), '', ''); if ($recommendNfts): ?>
+    <div class="recommend-box">
+        <h3>🎯 为你推荐</h3>
+        <div class="recommend-scroll">
+            <?php foreach ($recommendNfts as $rn): ?>
+            <a href="nft/view.php?id=<?= $rn['id'] ?>" class="recommend-item">
+                <div class="recommend-avatar">
+                    <img src="../avatar/<?= htmlspecialchars($rn['base_image']) ?>" loading="lazy">
+                </div>
+                <div class="recommend-code"><?= htmlspecialchars($rn['code'] ?? $rn['name'] ?? '') ?></div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- 排名标准说明（可折叠） -->
+    <details class="criteria-wrap">
+        <summary>📊 NFT头像综合排行榜计算标准</summary>
+        <div class="criteria-inner">
+            <div class="criteria-list">
+                <div class="criteria-item">
+                    <div class="criteria-icon">
+                        <i class="fas fa-city"></i>
+                    </div>
+                    <div>
+                        <strong>认领城市数</strong>
+                        <div class="text-muted">被认领的不同城市数量 × 3倍权重</div>
+                    </div>
+                </div>
+                <div class="criteria-item">
+                    <div class="criteria-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div>
+                        <strong>售卖城市数</strong>
+                        <div class="text-muted">正在售卖的城市数量 × 2倍权重</div>
+                    </div>
+                </div>
+                <div class="criteria-item">
+                    <div class="criteria-icon">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div>
+                        <strong>求购数量</strong>
+                        <div class="text-muted">用户求购的总次数 × 1.5倍权重</div>
+                    </div>
+                </div>
+                <div class="criteria-item">
+                    <div class="criteria-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div>
+                        <strong>评论数量</strong>
+                        <div class="text-muted">用户评价的总条数 × 1倍权重</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
+
     <!-- 底部分页导航 -->
     <?php if ($totalPages > 1): ?>
         <div class="pagination-section">
             <div class="pagination-container">
                 <!-- 上一页 -->
-                <a href="?page=<?= $page - 1 ?>" 
+                <a href="?sort=<?= $sort ?>&page=<?= $page - 1 ?>" 
                    class="btn-pagination <?= $page <= 1 ? 'disabled' : '' ?>">
                     <i class="fas fa-chevron-left"></i> 上一页
                 </a>
@@ -762,7 +965,7 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
                 <!-- 页码信息 -->
                 <div class="page-info">
                     <span>第</span>
-                    <select class="form-select page-select" onchange="location.href='?page='+this.value">
+                    <select class="form-select page-select" onchange="location.href='?sort=<?= $sort ?>&page='+this.value">
                         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                             <option value="<?= $i ?>" <?= $i == $page ? 'selected' : '' ?>><?= $i ?></option>
                         <?php endfor; ?>
@@ -771,7 +974,7 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
                 </div>
                 
                 <!-- 下一页 -->
-                <a href="?page=<?= $page + 1 ?>" 
+                <a href="?sort=<?= $sort ?>&page=<?= $page + 1 ?>" 
                    class="btn-pagination <?= $page >= $totalPages ? 'disabled' : '' ?>">
                     下一页 <i class="fas fa-chevron-right"></i>
                 </a>
@@ -783,66 +986,6 @@ $topNfts = $nft->getPaginatedTopNfts($offset, $nftsPerPage); // 需要修改此�
             </div>
         </div>
     <?php endif; ?>
-	
-	<!-- 为你推荐 -->
-    <?php $recommendNfts = $nft->getAllNfts(8, rand(0, 50), '', ''); if ($recommendNfts): ?>
-    <div style="max-width:1200px;margin:30px auto;padding:0 15px;">
-        <h3 style="font-size:20px;margin-bottom:15px;color:#333;">🎯 为你推荐</h3>
-        <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;">
-            <?php foreach ($recommendNfts as $rn): ?>
-            <a href="nft/view.php?id=<?= $rn['id'] ?>" style="flex-shrink:0;width:100px;text-align:center;text-decoration:none;">
-                <div style="width:80px;height:80px;margin:0 auto;border-radius:50%;overflow:hidden;border:2px solid #eee;">
-                    <img src="../avatar/<?= htmlspecialchars($rn['base_image']) ?>" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
-                </div>
-                <div style="font-size:12px;color:#333;margin-top:6px;"><?= htmlspecialchars($rn['code'] ?? $rn['name'] ?? '') ?></div>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-
-	<!-- 排名标准说明 -->
-    <div class="ranking-criteria">
-        <h3>📊 NFT头像综合排行榜计算标准</h3>
-        <div class="criteria-list">
-            <div class="criteria-item">
-                <div class="criteria-icon">
-                    <i class="fas fa-city"></i>
-                </div>
-                <div>
-                    <strong>认领城市数</strong>
-                    <div class="text-muted">被认领的不同城市数量 × 3倍权重</div>
-                </div>
-            </div>
-            <div class="criteria-item">
-                <div class="criteria-icon">
-                    <i class="fas fa-store"></i>
-                </div>
-                <div>
-                    <strong>售卖城市数</strong>
-                    <div class="text-muted">正在售卖的城市数量 × 2倍权重</div>
-                </div>
-            </div>
-            <div class="criteria-item">
-                <div class="criteria-icon">
-                    <i class="fas fa-hand-holding-usd"></i>
-                </div>
-                <div>
-                    <strong>求购数量</strong>
-                    <div class="text-muted">用户求购的总次数 × 1.5倍权重</div>
-                </div>
-            </div>
-            <div class="criteria-item">
-                <div class="criteria-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <div>
-                    <strong>评论数量</strong>
-                    <div class="text-muted">用户评价的总条数 × 1倍权重</div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>

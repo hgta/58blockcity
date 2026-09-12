@@ -56,6 +56,20 @@ $allTags = $nft->getAllTags();
     font-weight: 300;
 }
 
+@media (max-width: 576px) {
+    .page-header-one-line {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px 16px;
+    }
+    .page-header-one-line .lead {
+        margin-left: 0;
+        font-size: 0.82rem;
+    }
+    .cl-search input { min-width: 100%; }
+}
+
 /* 每行固定8个头像 */
 .nft-grid-10 {
     display: grid;
@@ -218,18 +232,62 @@ $allTags = $nft->getAllTags();
     margin-top: 6px;
 }
 
-/* 搜索栏样式 */
-.search-card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-    margin-bottom: 25px;
+/* 搜索栏样式（紧凑单行） */
+.cl-search {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 14px;
     background: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    margin-bottom: 16px;
 }
 
-.search-card .card-body {
-    padding: 20px;
+.cl-search input,
+.cl-search select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+    color: #333;
 }
+
+.cl-search input:focus,
+.cl-search select:focus {
+    border-color: #ff6b00;
+    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.08);
+}
+
+.cl-search input { flex: 1; min-width: 160px; }
+
+.cl-btn {
+    padding: 8px 18px;
+    background: #ff6b00;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cl-btn:hover { background: #e55a00; }
+
+.cl-reset {
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    color: #666;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.cl-reset:hover { border-color: #ff6b00; color: #ff6b00; text-decoration: none; }
 
 /* 统计信息样式 */
 .stats-header {
@@ -294,37 +352,23 @@ $allTags = $nft->getAllTags();
     </div>
     
     <!-- 搜索和筛选栏 -->
-    <div class="card search-card">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="codeSearch" class="form-label">编号查询</label>
-                    <input type="text" class="form-control" id="codeSearch" name="code" 
-                           placeholder="输入编号(如AB01)" value="<?= htmlspecialchars($searchCode) ?>">
-                </div>
-                <div class="col-md-4">
-                    <label for="tagFilter" class="form-label">标签筛选</label>
-                    <select class="form-select" id="tagFilter" name="tag">
-                        <option value="">所有标签</option>
-                        <?php foreach ($allTags as $tag): ?>
-                            <option value="<?= htmlspecialchars($tag) ?>" 
-                                <?= $searchTag === $tag ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($tag) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="fas fa-search"></i> 搜索
-                    </button>
-                    <a href="claim_list.php" class="btn btn-outline-secondary">
-                        <i class="fas fa-sync-alt"></i> 重置
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+    <form method="get" class="cl-search">
+        <input type="text" name="code" placeholder="🔍 输入编号(如AB01)"
+               value="<?= htmlspecialchars($searchCode) ?>">
+        <select name="tag">
+            <option value="">全部标签</option>
+            <?php foreach ($allTags as $tag): ?>
+                <option value="<?= htmlspecialchars($tag) ?>"
+                    <?= $searchTag === $tag ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($tag) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit" class="cl-btn"><i class="fas fa-search"></i> 搜索</button>
+        <?php if ($searchCode || $searchTag): ?>
+            <a href="claim_list.php" class="cl-reset"><i class="fas fa-sync-alt"></i> 重置</a>
+        <?php endif; ?>
+    </form>
     
     <!-- 统计信息 -->
     <div class="stats-header">
@@ -343,42 +387,6 @@ $allTags = $nft->getAllTags();
         <?php endif; ?>
     </div>
     
-    <!-- 顶部分页导航 -->
-    <?php if ($totalPages > 1  && false): ?>
-        <div class="pagination-section">
-            <div class="pagination-container">
-                <!-- 上一页 -->
-                <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
-                   class="btn-pagination <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <i class="fas fa-chevron-left"></i> 上一页
-                </a>
-                
-                <!-- 页码信息 -->
-                <div class="page-info">
-                    <span>第</span>
-                    <select class="form-select page-select" onchange="location.href='?<?= 
-                        http_build_query(array_diff_key($_GET, ['page' => ''])) ?>&page='+this.value">
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <option value="<?= $i ?>" <?= $i == $page ? 'selected' : '' ?>><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <span>页，共 <?= $totalPages ?> 页</span>
-                </div>
-                
-                <!-- 下一页 -->
-                <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
-                   class="btn-pagination <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    下一页 <i class="fas fa-chevron-right"></i>
-                </a>
-            </div>
-            
-            <!-- 统计信息 -->
-            <div class="stats-summary">
-                显示 <?= min(($page - 1) * $perPage + 1, $totalNfts) ?>-<?= min($page * $perPage, $totalNfts) ?> 个头像，共 <?= $totalNfts ?> 个头像
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- NFT列表 - 一行显示10个头像，圆形边框 -->
     <div class="nft-grid-10">
         <?php if (empty($nfts)): ?>
