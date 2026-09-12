@@ -88,7 +88,7 @@ $(document).ready(function() {
     
     // 分享用户个人主页
     $('#shareProfileBtn').click(function() {
-        const shareUrl = `https://v.58.tl/hufang/circles/circles.php?user_id=<?= $userId ?>`;
+        const shareUrl = `https://v.58.tl/circles/circles.php?user_id=<?= $userId ?>`;
         copyToClipboard(shareUrl);
         $(this).attr('data-original-title', '链接已复制').tooltip('show');
         setTimeout(() => {
@@ -99,7 +99,7 @@ $(document).ready(function() {
     // 分享单个互访圈
     $('.share-circle-btn').click(function() {
         const circleId = $(this).data('circle-id');
-        const shareUrl = `https://v.58.tl/hufang/circles/view.php?id=${circleId}`;
+        const shareUrl = `https://v.58.tl/circles/view.php?id=${circleId}`;
         copyToClipboard(shareUrl);
         $(this).attr('data-original-title', '链接已复制').tooltip('show');
         setTimeout(() => {

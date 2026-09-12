@@ -248,9 +248,9 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                                 <?php
                                 $link = $n['related_url'] ?? '../user/notifications.php';
                                 if ($n['type'] === 'visit_request') {
-                                    $link = "https://v.58.tl/hufang/user/visits.php?circle_id=" . intval($n['related_id']);
+                                    $link = "https://v.58.tl/user/visits.php?circle_id=" . intval($n['related_id']);
                                 } elseif (in_array($n['type'], ['visit_confirm', 'return_confirm'])) {
-                                    $link = "https://v.58.tl/hufang/user/visit_detail.php?id=" . intval($n['related_id']);
+                                    $link = "https://v.58.tl/user/visit_detail.php?id=" . intval($n['related_id']);
                                 } elseif ($n['type'] === 'order_paid') {
                                     $link = 'https://mall.58.tl/shop/orders.php?id=' . intval($n['related_id']);
                                 } elseif ($n['type'] === 'order_shipped' || $n['type'] === 'order_done') {

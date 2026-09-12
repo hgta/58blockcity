@@ -23,7 +23,7 @@ $ADMIN_SITES = [
     ],
     'hufang' => [
         'name' => '互访圈',
-        'url'  => 'https://v.58.tl/hufang/admin/dashboard.php',
+        'url'  => 'https://v.58.tl/admin/dashboard.php',
         'icon' => 'fa-users',
     ],
     'mall' => [

@@ -27,7 +27,7 @@ if ($argc > 1) {
         'https://mall.58.tl/shop/list.php',
         'https://nft.58.tl/',
         'https://v.58.tl/',
-        'https://v.58.tl/hufang/circles/all.php',
+        'https://v.58.tl/circles/all.php',
     ];
 }
 
