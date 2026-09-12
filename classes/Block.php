@@ -23,7 +23,7 @@ class Block {
     }*/
     
     public function getUserBlocks($userId) {
-        $stmt = $this->pdo->prepare("SELECT b.*, c.name as city_name 
+        $stmt = $this->pdo->prepare("SELECT b.*, c.name as city_name, c.pinyin as city_pinyin
                                     FROM blocks b 
                                     JOIN cities c ON b.city_id = c.id 
                                     WHERE b.owner_id = ? 
