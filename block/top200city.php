@@ -2,6 +2,7 @@
 require_once '../config/database.php';
 require_once 'includes/auth.php';
 require_once '../config/block_prices.php';
+require_once '../classes/Block.php';
 
 $sort = $_GET['sort'] ?? 'activated';
 $allowed = ['activated', 'resident', 'popularity', 'claimed', 'sale', 'purchase', 'my_blocks'];
@@ -16,7 +17,7 @@ if ($myMode && $currentUserId) {
     $stmt = $pdo->prepare("
         SELECT c.id, c.name, c.pinyin, c.area_code,
                c.activated_blocks, c.resident_count, c.popularity,
-               b.block_number, b.zone
+               b.city_id, b.block_number, b.zone
         FROM blocks b
         JOIN cities c ON b.city_id = c.id
         WHERE b.owner_id = ? AND b.status = 'sold'
@@ -24,6 +25,11 @@ if ($myMode && $currentUserId) {
     ");
     $stmt->execute([$currentUserId]);
     $allMy = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 合并组：整体只计 1 块，组内子块不重复计入（实际区块数口径）
+    $block = new Block($pdo);
+    $mergedIdx = $block->getUserMergedBlockIndex($currentUserId);
+    $mergedKeys = $mergedIdx['keys'];
 
     // 按城市聚合
     $byCity = [];
@@ -34,12 +40,38 @@ if ($myMode && $currentUserId) {
                 'id' => $b['id'], 'name' => $b['name'], 'pinyin' => $b['pinyin'],
                 'area_code' => $b['area_code'], 'activated_blocks' => $b['activated_blocks'],
                 'resident_count' => $b['resident_count'], 'popularity' => $b['popularity'],
-                'my_blocks' => 0, 'my_value' => 0,
+                'my_blocks' => 0, 'my_value' => 0, 'my_votes' => 0,
             ];
+        }
+
+        // 投票数口径：合并组拆开后的单块也各计 1 票
+        $byCity[$cid]['my_votes']++;
+
+        // 合并组的子块跳过，不单独计数/计价（实际区块数口径）
+        $key = $block->normalizeBlockKey($b['city_id'], $b['zone'], $b['block_number']);
+        if (isset($mergedKeys[$key])) {
+            continue;
         }
         $byCity[$cid]['my_blocks']++;
         $byCity[$cid]['my_value'] += calculateBlockPriceNew((string)$b['zone'], (string)$b['block_number']);
     }
+
+    // 合并在该城市的组：每组计 1 块，价值按组内子块价格之和累加
+    foreach ($mergedIdx['rows'] as $mg) {
+        $cid = (int)$mg['city_id'];
+        if (!isset($byCity[$cid])) {
+            continue;
+        }
+        $byCity[$cid]['my_blocks']++;
+        foreach (explode(',', (string)$mg['merged_blocks']) as $mn) {
+            $mn = trim($mn);
+            if ($mn === '') {
+                continue;
+            }
+            $byCity[$cid]['my_value'] += calculateBlockPriceNew((string)$mg['zone'], $mn);
+        }
+    }
+
     // 按拥有数降序
     uasort($byCity, function($a, $b) { return $b['my_blocks'] - $a['my_blocks']; });
     $rows = array_slice(array_values($byCity), 0, 200);
@@ -138,12 +170,10 @@ if ($currentUserId) {
 .empty-state i { font-size:40px; display:block; margin-bottom:12px; }
 
 @media(max-width:768px) {
-    .rank-table th:nth-child(6),
-    .rank-table td:nth-child(6),
+    .rank-table th:nth-child(5),
+    .rank-table td:nth-child(5),
     .rank-table th:nth-child(7),
-    .rank-table td:nth-child(7),
-    .rank-table th:nth-child(8),
-    .rank-table td:nth-child(8) { display:none; }
+    .rank-table td:nth-child(7) { display:none; }
     .rank-table td, .rank-table th { padding:10px 8px; font-size:13px; }
 }
 </style>
@@ -179,11 +209,12 @@ if ($currentUserId) {
                 <tr>
                     <th style="width:60px;">排名</th>
                     <th style="text-align:left;">城市</th>
-                    <th class="sort-active">我的区块</th>
+                    <th class="sort-active">我的区块<small style="display:block;font-weight:400;color:#aaa;">合并按 1 块计</small></th>
                     <th>总价值</th>
                     <th>开启区块</th>
                     <th>人口</th>
                     <th>人气</th>
+                    <th>投票数</th>
                 </tr>
             </thead>
             <tbody>
@@ -206,6 +237,7 @@ if ($currentUserId) {
                     <td><span class="rank-val"><?= number_format($c['activated_blocks']) ?></span></td>
                     <td><span class="rank-val"><?= number_format($c['resident_count']) ?></span></td>
                     <td><span class="rank-val"><?= number_format($c['popularity']) ?></span></td>
+                    <td><span class="rank-val"><?= number_format($c['my_votes'] ?? 0) ?></span></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -216,7 +248,7 @@ if ($currentUserId) {
         <table class="rank-table">
             <thead>
                 <tr>
-                    <th style="width:56px;">排名</th>
+                    <th style="width:52px;">排名</th>
                     <th style="text-align:left;">城市</th>
                     <th class="<?= $sort==='activated'?'sort-active':'' ?>">开启区块</th>
                     <th class="<?= $sort==='resident'?'sort-active':'' ?>">人口</th>

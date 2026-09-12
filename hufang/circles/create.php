@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($name) || empty($city)) {
         $error = '互访圈名称和所在城市是必填项';
     } else {
-        // 后端兜底：区块数未回填（空）或非法（负数）时，按所选城市重新计算已认领区块数
+        // 后端兜底：区块数未回填（空）或非法（负数）时，按所选城市重新计算实际拥有区块数（多块合并的按 1 块计）
         if ($blockCountRaw === '' || $blockCount < 0) {
             $cityId = 0;
             $stmt = $pdo->prepare("SELECT id FROM cities WHERE name = ? LIMIT 1");
@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($cityId) {
                 $block = new Block($pdo);
-                $blockCount = $block->countUserBlocksByCity($userId, $cityId);
+                // 实际拥有区块数（多块合并的按 1 块计）
+                $blockCount = $block->countUserActualBlocksByCity($userId, $cityId);
             }
         }
 
@@ -128,7 +129,7 @@ $categories = ['BlockCity'];
                     <input type="number" class="form-control" id="block_count" name="block_count" 
                            min="0" value="<?= htmlspecialchars($_POST['block_count'] ?? '0') ?>" 
                            readonly required>
-                    <small class="form-text text-muted">根据 block 子站认领数自动计算，选择城市后自动更新，无需手动填写</small>
+                    <small class="form-text text-muted">根据 block 子站自动计算实际拥有区块数（多块合并的按 1 块计），选择城市后自动更新，无需手动填写</small>
                     <small class="form-text text-muted" id="block_count_hint" style="display:none;"></small>
                 </div>
 
@@ -179,13 +180,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const blockCountInput = document.getElementById('block_count');
     const blockCountHint = document.getElementById('block_count_hint');
 
-    // 根据所选城市，从 block 子站认领数自动计算拥有区块总数
+    // 根据所选城市，从 block 子站自动计算实际拥有区块数（多块合并的按 1 块计）
     function fetchBlockCount(cityName) {
         if (!cityName) {
             blockCountInput.value = 0;
             return;
         }
-        blockCountHint.textContent = '正在根据认领记录计算…';
+        blockCountHint.textContent = '正在计算实际拥有区块数…';
         blockCountHint.style.display = 'block';
         const body = new URLSearchParams();
         body.append('city', cityName);

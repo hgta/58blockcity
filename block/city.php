@@ -116,12 +116,16 @@ if ($view_mode === 'panorama') {
     }
 }
 
-// 个人在全景（9区）中拥有的区块总数
-$user_total_owned = 0;
+// 个人在全景（9区）中拥有的区块数：
+//  - $user_total_votes ：投票数（把合并组拆开后的单块总数）
+//  - $user_total_actual：实际区块数（多块合并的按 1 块计）
+$user_total_votes = 0;
+$user_total_actual = 0;
 if ($current_user_id) {
     $utStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks WHERE city_id = ? AND owner_id = ? AND status IN ('sold','reserved')");
     $utStmt->execute([$city_id, $current_user_id]);
-    $user_total_owned = (int)$utStmt->fetchColumn();
+    $user_total_votes = (int)$utStmt->fetchColumn();
+    $user_total_actual = $block->countUserActualBlocksByCity($current_user_id, $city_id, null, ['sold', 'reserved']);
 }
 
 // 单区模式：加载指定区域数据
@@ -144,12 +148,14 @@ if ($view_mode === 'zone') {
         }
     }
 
-    // 个人在当前区拥有的区块数
-    $user_zone_owned = 0;
+    // 个人在当前区拥有的区块数：投票数（拆分）/ 实际区块数（合并按 1 块计）
+    $user_zone_votes = 0;
+    $user_zone_actual = 0;
     if ($current_user_id) {
         $uzStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks WHERE city_id = ? AND zone = ? AND owner_id = ? AND status IN ('sold','reserved')");
         $uzStmt->execute([$city_id, $current_zone, $current_user_id]);
-        $user_zone_owned = (int)$uzStmt->fetchColumn();
+        $user_zone_votes = (int)$uzStmt->fetchColumn();
+        $user_zone_actual = $block->countUserActualBlocksByCity($current_user_id, $city_id, $current_zone, ['sold', 'reserved']);
     }
 }
 
@@ -1418,7 +1424,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         <div class="pano-header">
             <h2 class="pano-title"><?= htmlspecialchars($city_name) ?> · 九区全景</h2>
             <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 9999 个区块</span>
-            <span class="pano-total">我拥有: <strong><?= number_format($user_total_owned) ?></strong> 个区块</span>
+            <span class="pano-total">我拥有: <strong><?= number_format($user_total_actual) ?></strong> 个区块 · 投票数 <strong><?= number_format($user_total_votes) ?></strong></span>
         </div>
         
         <!-- 全城九区合并大网格 -->
@@ -1562,7 +1568,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     ?>
     <div class="row">
                                 <div class="col-md-9">
-            <div class="single-zone-title"><?= $current_zone ?>区 · 我拥有 <strong style="color:#ff6b00;"><?= number_format($user_zone_owned) ?></strong> 个区块</div>
+            <div class="single-zone-title"><?= $current_zone ?>区 · 我拥有 <strong style="color:#ff6b00;"><?= number_format($user_zone_actual) ?></strong> 个区块 · 投票数 <strong style="color:#ff6b00;"><?= number_format($user_zone_votes) ?></strong></div>
             <!-- 桌面端：网格地图 -->
             <div class="block-map-container" id="desktopMap">
                 <div class="map-controls" style="margin-bottom:8px;">

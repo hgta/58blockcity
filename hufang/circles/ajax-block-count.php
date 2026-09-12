@@ -37,5 +37,6 @@ if (!$cityId) {
 }
 
 $block = new Block($pdo);
-$count = $block->countUserBlocksByCity($userId, $cityId);
+// 实际拥有区块数（多块合并的按 1 块计），而非把合并组拆开后的投票数
+$count = $block->countUserActualBlocksByCity($userId, $cityId);
 echo json_encode(['success' => true, 'count' => $count]);

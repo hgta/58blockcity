@@ -18,15 +18,20 @@ $mergedStmt = $pdo->prepare("SELECT * FROM merged_blocks WHERE owner_id = ?");
 $mergedStmt->execute([$userId]);
 $userMerged = $mergedStmt->fetchAll(PDO::FETCH_ASSOC);
 
-$mergedNumSet = [];   // key: city_id|zone|block_number
+$mergedNumSet = [];   // key: city_id|zone|block_number（实际区块数口径：合并子块跳过）
 $mergedByCity = [];  // city_id => [ merged group ... ]
 foreach ($userMerged as $mg) {
     $nums = array_map('trim', explode(',', $mg['merged_blocks']));
     $mergedByCity[$mg['city_id']][] = $mg;
     foreach ($nums as $n) {
-        $mergedNumSet[$mg['city_id'] . '|' . $mg['zone'] . '|' . $n] = true;
+        $mergedNumSet[$block->normalizeBlockKey($mg['city_id'], $mg['zone'], $n)] = true;
     }
 }
+
+// 拥有区块数：实际区块数口径（多块合并的按 1 块计）
+$actualStats = $block->getUserActualBlockStats($userId);
+$actualBlockCount = $actualStats['block_count'];
+$voteCount = count($userBlocks); // 投票数口径（合并组拆开后的单块数）
 
 // 总价值：普通区块 + 合并组（合并组的子块不再单独计入，避免重复）
 $totalValue = 0;
@@ -105,12 +110,7 @@ foreach ($userMerged as $mg) {
         }
     ?>
         <div class="summary">
-            <?php
-            $normalBlockCount = 0;
-            foreach ($grouped as $c) { $normalBlockCount += count($c['blocks']); }
-            $mergedGroupCount = count($userMerged);
-            ?>
-            <span>共 <?= $normalBlockCount ?> 个区块 + <?= $mergedGroupCount ?> 个合并组，覆盖 <?= count($grouped) ?> 个城市</span>
+            <span>我拥有 <strong><?= $actualBlockCount ?></strong> 个区块（合并按 1 块计）· 投票数 <strong><?= $voteCount ?></strong>，覆盖 <?= count($grouped) ?> 个城市</span>
             <span class="total">总价值 ¥<?= number_format($totalValue, 2) ?></span>
         </div>
 

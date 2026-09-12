@@ -16,9 +16,11 @@ foreach ($userBlocks as &$b) {
     $b['calc_price'] = calculateBlockPriceNew((string)($b['zone'] ?? 'A'), (string)($b['block_number'] ?? '0101'));
 }
 unset($b);
-$blockCount = count($userBlocks);
-$totalValue = 0;
-foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
+// 拥有区块数/总价值：实际区块数口径（多块合并的按 1 块计）
+$actualStats = $block->getUserActualBlockStats($userId);
+$blockCount = $actualStats['block_count'];
+$voteCount  = count($userBlocks); // 投票数口径：合并组拆开后的单块总数
+$totalValue = $actualStats['total_value'];
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -62,7 +64,7 @@ foreach ($userBlocks as $b) { $totalValue += $b['calc_price'] ?? 0; }
         <div class="stat-grid">
             <div class="stat-item">
                 <div class="stat-value"><?= $blockCount ?></div>
-                <div class="stat-label">拥有区块</div>
+                <div class="stat-label">拥有区块（投票数 <?= number_format($voteCount) ?>）</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">¥<?= number_format($totalValue) ?></div>

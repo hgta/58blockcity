@@ -431,10 +431,13 @@ class Block {
     }
 
     /**
-     * 统计用户在某城市已认领（status='sold'）的区块总数
+     * 统计用户在某城市已认领（status='sold'）的区块总数（投票数口径）
      *
      * 合并块（merged_blocks）在认领时已把组内每个单块写入 blocks 表并标记为 sold，
      * 因此直接统计 blocks 表即可，不会重复计数。
+     *
+     * 注意：此口径会“把合并组拆开”逐块计数，适合作为“投票权/投票数”，
+     * 并不等于用户实际拥有的区块数。实际区块数请用 countUserActualBlocksByCity()。
      *
      * @param int $userId 用户 ID
      * @param int $cityId 城市 ID
@@ -449,6 +452,189 @@ class Block {
             error_log("统计用户城市区块失败: " . $e->getMessage());
             return 0;
         }
+    }
+
+    /**
+     * 统一区块键格式（城市 + 区 + 编号），用于合并组子块与单块比对
+     *
+     * 去除前后空白并抹平编号的零填充差异（如 0101 与 101 视为同一块）。
+     *
+     * @param mixed  $cityId 城市 ID
+     * @param string $zone   区
+     * @param mixed  $number 区块编号
+     * @return string 统一键
+     */
+    public function normalizeBlockKey($cityId, $zone, $number) {
+        $number = trim((string)$number);
+        if ($number !== '' && ctype_digit($number)) {
+            $number = (string)intval($number);
+        }
+        return (int)$cityId . '|' . trim((string)$zone) . '|' . $number;
+    }
+
+    /**
+     * 获取用户全部合并组，并返回用于“避免子块重复计数”的索引
+     *
+     * @param int $userId 用户 ID
+     * @return array{rows: array, keys: array} rows 为合并组记录，keys 为子块统一键集合
+     */
+    public function getUserMergedBlockIndex($userId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM merged_blocks WHERE owner_id = ?");
+        $stmt->execute([(int)$userId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $keys = [];
+        foreach ($rows as $mg) {
+            foreach (explode(',', (string)$mg['merged_blocks']) as $num) {
+                if (trim($num) === '') {
+                    continue;
+                }
+                $keys[$this->normalizeBlockKey($mg['city_id'], $mg['zone'], $num)] = true;
+            }
+        }
+
+        return ['rows' => $rows, 'keys' => $keys];
+    }
+
+    /**
+     * 统计用户在某城市“实际拥有”的区块数（多块合并的按 1 块计）
+     *
+     * 口径：
+     *  - 用户在 blocks 表中拥有、且不属于任何合并组的单块，各计 1 块；
+     *  - 用户拥有的每个合并组（merged_blocks.owner_id），整体只计 1 块，组内子块不重复计数。
+     *
+     * 与 countUserBlocksByCity() 的区别：后者把合并组拆开逐块计数（投票数口径），数值偏大。
+     *
+     * @param int         $userId   用户 ID
+     * @param int         $cityId   城市 ID
+     * @param string|null $zone     仅统计指定区；传 null 表示统计全城
+     * @param array       $statuses 计入的区块状态，默认与 countUserBlocksByCity 一致（sold）
+     * @return int 实际拥有的区块数
+     */
+    public function countUserActualBlocksByCity($userId, $cityId, $zone = null, array $statuses = ['sold']) {
+        try {
+            $userId = (int)$userId;
+            $cityId = (int)$cityId;
+
+            // 只允许已知状态，避免拼接非法值
+            $statuses = array_values(array_intersect($statuses, ['sold', 'reserved']));
+            if (empty($statuses)) {
+                $statuses = ['sold'];
+            }
+
+            // 1. 用户在该城市的合并组：每组计 1 块，并记录组内子块，避免重复计数
+            $sql = "SELECT zone, merged_blocks FROM merged_blocks WHERE owner_id = ? AND city_id = ?";
+            $params = [$userId, $cityId];
+            if ($zone !== null) {
+                $sql .= " AND zone = ?";
+                $params[] = $zone;
+            }
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $mergedRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $mergedCount = count($mergedRows);
+            $mergedKeys = [];
+            foreach ($mergedRows as $mg) {
+                foreach (explode(',', $mg['merged_blocks']) as $num) {
+                    if (trim($num) === '') {
+                        continue;
+                    }
+                    $mergedKeys[$this->normalizeBlockKey($cityId, $mg['zone'], $num)] = true;
+                }
+            }
+
+            // 2. 用户在该城市的单块：不属于任何合并组的各计 1 块
+            $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+            $sql2 = "SELECT zone, block_number FROM blocks WHERE owner_id = ? AND city_id = ? AND status IN ($placeholders)";
+            $params2 = array_merge([$userId, $cityId], $statuses);
+            if ($zone !== null) {
+                $sql2 .= " AND zone = ?";
+                $params2[] = $zone;
+            }
+            $stmt2 = $this->pdo->prepare($sql2);
+            $stmt2->execute($params2);
+
+            $singleCount = 0;
+            while ($b = $stmt2->fetch(PDO::FETCH_ASSOC)) {
+                if (isset($mergedKeys[$this->normalizeBlockKey($cityId, $b['zone'], $b['block_number'])])) {
+                    continue;
+                }
+                $singleCount++;
+            }
+
+            return $singleCount + $mergedCount;
+        } catch (PDOException $e) {
+            error_log("统计用户实际区块数失败: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 统计用户“实际拥有”的区块总数（跨城市；多块合并的按 1 块计）
+     *
+     * 口径说明：
+     *  - 合并组整体计 1 块，组内子块不重复计数；
+     *  - 非合并的单块各计 1 块；
+     *  - 总价值按“实际块数”口径累加：单块按其价格，合并组按组内子块价格之和（同一块只计一次）。
+     *
+     * @param int   $userId   用户 ID
+     * @param array $statuses 计入的区块状态，默认与 countUserBlocksByCity 一致（sold）
+     * @return array{block_count:int, merged_group_count:int, single_count:int, total_value:float}
+     */
+    public function getUserActualBlockStats($userId, array $statuses = ['sold']) {
+        $stats = ['block_count' => 0, 'merged_group_count' => 0, 'single_count' => 0, 'total_value' => 0.0];
+
+        try {
+            $userId = (int)$userId;
+
+            $statuses = array_values(array_intersect($statuses, ['sold', 'reserved']));
+            if (empty($statuses)) {
+                $statuses = ['sold'];
+            }
+
+            $merged = $this->getUserMergedBlockIndex($userId);
+            $mergedKeys = $merged['keys'];
+
+            // 单块：不属于任何合并组的各计 1 块
+            $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+            $stmt = $this->pdo->prepare("SELECT city_id, zone, block_number FROM blocks WHERE owner_id = ? AND status IN ($placeholders)");
+            $stmt->execute(array_merge([$userId], $statuses));
+
+            $singleCount = 0;
+            while ($b = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (isset($mergedKeys[$this->normalizeBlockKey($b['city_id'], $b['zone'], $b['block_number'])])) {
+                    continue;
+                }
+                $singleCount++;
+
+                if (function_exists('calculateBlockPriceNew')) {
+                    $stats['total_value'] += (float)calculateBlockPriceNew((string)$b['zone'], (string)$b['block_number']);
+                }
+            }
+
+            // 合并组：每组计 1 块，价值按组内子块价格之和累加
+            $mergedGroupCount = count($merged['rows']);
+            foreach ($merged['rows'] as $mg) {
+                foreach (explode(',', (string)$mg['merged_blocks']) as $mn) {
+                    $mn = trim($mn);
+                    if ($mn === '') {
+                        continue;
+                    }
+                    if (function_exists('calculateBlockPriceNew')) {
+                        $stats['total_value'] += (float)calculateBlockPriceNew((string)$mg['zone'], $mn);
+                    }
+                }
+            }
+
+            $stats['single_count'] = $singleCount;
+            $stats['merged_group_count'] = $mergedGroupCount;
+            $stats['block_count'] = $singleCount + $mergedGroupCount;
+        } catch (PDOException $e) {
+            error_log("统计用户实际区块总数失败: " . $e->getMessage());
+        }
+
+        return $stats;
     }
 	
 	/**

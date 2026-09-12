@@ -74,12 +74,14 @@ $zoneStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks WHERE city_id = ? AND zon
 $zoneStmt->execute([$blockInfo['city_id'], $blockInfo['zone']]);
 $zoneSoldCount = (int)$zoneStmt->fetchColumn();
 
-// 所有者区块数
+// 所有者区块数（实际区块数口径：多块合并的按 1 块计）
 $ownerBlockCount = 0;
+$ownerVoteCount = 0;
 if ($ownerInfo) {
     $ocStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks WHERE owner_id = ? AND status = 'sold'");
     $ocStmt->execute([$blockInfo['owner_id']]);
-    $ownerBlockCount = (int)$ocStmt->fetchColumn();
+    $ownerVoteCount = (int)$ocStmt->fetchColumn();
+    $ownerBlockCount = $block->getUserActualBlockStats((int)$blockInfo['owner_id'])['block_count'];
 }
 
 // 皮肤相关
@@ -252,7 +254,7 @@ $pageTitle = ($blockInfo['city_name'] ?? '') . ' ' . $blockInfo['zone'] . '区 #
                 <div class="vw-owner-avatar"><?= mb_substr($ownerInfo['username'], 0, 2) ?></div>
                 <div class="vw-owner-meta">
                     <div class="vw-owner-name"><?= htmlspecialchars($ownerInfo['username']) ?></div>
-                    <div>拥有 <?= $ownerBlockCount ?> 个区块 · <?= htmlspecialchars($ownerInfo['city'] ?? '') ?></div>
+                    <div>拥有 <?= $ownerBlockCount ?> 个区块（投票数 <?= $ownerVoteCount ?>）· <?= htmlspecialchars($ownerInfo['city'] ?? '') ?></div>
                 </div>
             </div>
             <?php endif; ?>
