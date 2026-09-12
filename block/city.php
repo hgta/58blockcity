@@ -116,6 +116,17 @@ if ($view_mode === 'panorama') {
     }
 }
 
+// 全城「已认领区块数」：本站在该城市被认领（sold/reserved）的区块总数（各区各视图通用）
+//  - $city_claimed_blocks：已认领区块数（把合并组拆开的单块数，与认领操作一致）
+//  - $city_open_blocks   ：开启区块数（来自 cities.activated_blocks，即全城可认领总量）
+//  - $city_claim_ratio   ：认领比例 = 已认领 / 开启
+$city_open_blocks = (int)($city_info['activated_blocks'] ?? 0);
+$city_claimed_blocks = 0;
+$cchStmt = $pdo->prepare("SELECT COUNT(*) FROM blocks WHERE city_id = ? AND status IN ('sold','reserved')");
+$cchStmt->execute([$city_id]);
+$city_claimed_blocks = (int)$cchStmt->fetchColumn();
+$city_claim_ratio = $city_open_blocks > 0 ? ($city_claimed_blocks / $city_open_blocks * 100) : 0;
+
 // 个人在全景（9区）中拥有的区块数：
 //  - $user_total_votes ：投票数（把合并组拆开后的单块总数）
 //  - $user_total_actual：实际区块数（多块合并的按 1 块计）
@@ -231,7 +242,7 @@ $canonicalUrl  = SeoHelper::cityUrl($cityPinyin);
 
 $site_config['title']       = SeoHelper::title("{$cityName}区块城市 - 58区块城市");
 $site_config['description'] = SeoHelper::description(
-    "{$cityName}区块城市详情页，提供{$cityName}市人口{$cityResident}万、激活{$cityBlocks}个区块等关键数据，展示{$cityName}{$blockCount}大区块地图，是了解{$cityName}数字经济与元宇宙发展的重要门户。",
+    "{$cityName}区块城市详情页，提供{$cityName}市人口{$cityResident}万、开启{$cityBlocks}个区块等关键数据，展示{$cityName}{$blockCount}大区块地图，是了解{$cityName}数字经济与元宇宙发展的重要门户。",
     '58区块城市'
 );
 $site_config['keywords']    = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},{$cityName}数字经济,{$cityName}区块地图" . ($cityArea ? ",{$cityArea}" : '');
@@ -252,12 +263,14 @@ $cityJsonLd = SeoHelper::placeSchema([
     'type' => ['Place', 'City'],
     'name' => $city_info['name'] ?? $city_name,
     'url' => $canonicalUrl,
-    'description' => "{$city_info['name']}区块城市详情页，展示{$city_info['name']}市区块地图、居民数与已激活区块等数据，是了解{$city_info['name']}数字经济与元宇宙发展的重要门户。",
+    'description' => "{$city_info['name']}区块城市详情页，展示{$city_info['name']}市区块地图、居民数、开启区块与已认领区块等数据，是了解{$city_info['name']}数字经济与元宇宙发展的重要门户。",
     'addressRegion' => $city_info['name'] ?? $city_name,
     'containedInPlace' => ['@type' => 'Country', 'name' => '中国'],
     'additionalProperties' => [
         '居民数' => number_format($cityResident),
-        '已激活区块' => number_format($cityBlocks),
+        '开启区块' => number_format($cityBlocks),
+        '已认领区块' => number_format($city_claimed_blocks),
+        '认领比例' => number_format($city_claim_ratio, 1) . '%',
         '总区块数' => $blockCount,
     ],
 ]);
@@ -316,7 +329,8 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
 
         .city-stats {
             display: flex;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 8px 20px;
             font-size: 13px;
             position: relative;
         }
@@ -326,6 +340,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
             align-items: center;
             gap: 8px;
             color: rgba(255,255,255,0.7);
+            white-space: nowrap;
         }
         .stat-item i {
             color: #ff9500;
@@ -1247,10 +1262,16 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
                 <span>居民数: <?= number_format($city_info['resident_count'] ?? 0) ?>人</span>
             </div>
             <div class="stat-item">
-                <span>已激活区块: <?= number_format($city_info['activated_blocks'] ?? 0) ?>个</span>
+                <span>开启区块: <?= number_format($city_open_blocks) ?>个</span>
             </div>
             <div class="stat-item">
-                <span>城市人气: <?= number_format($city_info['popularity'] ?? 0) ?>点</span>
+                <span>已认领区块: <?= number_format($city_claimed_blocks) ?>个</span>
+            </div>
+            <div class="stat-item">
+                <span>认领比例: <?= number_format($city_claim_ratio, 1) ?>%</span>
+            </div>
+            <div class="stat-item">
+                <span>城市人气值: <?= number_format($city_info['popularity'] ?? 0) ?>点</span>
             </div>
         </div>
     </div>
@@ -1423,7 +1444,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
     <div class="pano-container">
         <div class="pano-header">
             <h2 class="pano-title"><?= htmlspecialchars($city_name) ?> · 九区全景</h2>
-            <span class="pano-total">已激活: <strong><?= number_format($total_sold_all) ?></strong> / 9999 个区块</span>
+            <span class="pano-total">已认领: <strong><?= number_format($total_sold_all) ?></strong> / <?= number_format($city_open_blocks ?: 9999) ?> 个区块（<?= number_format($city_claim_ratio, 1) ?>%）</span>
             <span class="pano-total">我拥有: <strong><?= number_format($user_total_actual) ?></strong> 个区块 · 投票数 <strong><?= number_format($user_total_votes) ?></strong></span>
         </div>
         
