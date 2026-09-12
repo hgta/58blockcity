@@ -27,7 +27,7 @@ if (isset($_SESSION['user_id'])) {
 $site_config['title']       = e($selectedCity) . '全部互访圈 - 58互访圈';
 $site_config['description'] = '浏览 ' . e($selectedCity) . ' 的全部互访圈，发现城市间互访交流的机会。';
 $site_config['keywords']    = '58,互访圈,' . e($selectedCity) . ',城市互访,BlockCity';
-$site_config['canonical_url'] = 'https://v.58.tl/circles/all.php';
+$site_config['canonical_url'] = 'https://v.58.tl/hufang/circles/all.php';
 $site_config['extra_head']  = '<link rel="stylesheet" href="../assets/css/main.css">';
 
 require_once '../includes/header.php';

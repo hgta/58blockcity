@@ -126,9 +126,9 @@ function renderCircleCard($circle, $visitStatus = null, $extraActions = '', $ext
     }
     $html .= '</div>';
     $html .= '<div class="circle-actions">';
-    $html .= '<a href="circles/view.php?id=' . (int)$circle['id'] . '" class="btn btn-primary"><i class="fas fa-eye"></i> 详情</a>';
+    $html .= '<a href="/hufang/circles/view.php?id=' . (int)$circle['id'] . '" class="btn btn-primary"><i class="fas fa-eye"></i> 详情</a>';
     if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != ($circle['user_id'] ?? 0)) {
-        $html .= '<a href="circles/view.php?id=' . (int)$circle['id'] . '" class="btn btn-outline-primary"><i class="fas fa-handshake"></i> 互访</a>';
+        $html .= '<a href="/hufang/circles/view.php?id=' . (int)$circle['id'] . '" class="btn btn-outline-primary"><i class="fas fa-handshake"></i> 互访</a>';
     }
     $html .= $extraActions;
     $html .= '</div></div>';

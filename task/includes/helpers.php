@@ -44,7 +44,7 @@ function task_target_link($task) {
     }
     if ($type === 'circle' && $id > 0) {
         return [
-            'url'   => 'https://v.58.tl/circles/view.php?id=' . $id,
+            'url'   => 'https://v.58.tl/hufang/circles/view.php?id=' . $id,
             'label' => '前往该互访圈',
             'name'  => '关联互访圈',
         ];
