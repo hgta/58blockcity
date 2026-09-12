@@ -16,7 +16,10 @@ $cityPreviewImages = [
 
 // 统计数据
 $totalCities = $pdo->query("SELECT COUNT(*) FROM cities")->fetchColumn();
-$totalSold = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status='sold'")->fetchColumn();
+// 已认领区块：已售 + 已预定
+$totalClaimed = $pdo->query("SELECT COUNT(*) FROM blocks WHERE status IN ('sold','reserved')")->fetchColumn();
+// 已开启区块总数：各城市 activated_blocks 之和
+$totalOpened = $pdo->query("SELECT COALESCE(SUM(activated_blocks),0) FROM cities")->fetchColumn();
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
 // 热门城市
@@ -77,20 +80,23 @@ require_once 'includes/header.php';
 ?>
 
 <style>
-.block-hero{text-align:center;padding:30px 0 20px}
-.block-hero h1{font-size:28px;font-weight:800;margin-bottom:6px}
-.block-hero p{color:#888;font-size:15px;margin-bottom:20px}
-.block-stats{display:flex;justify-content:center;gap:30px;margin-bottom:16px;flex-wrap:wrap}
-.block-stat{text-align:center}
-.block-stat .val{font-size:26px;font-weight:800;color:#ff6b00}
-.block-stat .lbl{font-size:13px;color:#999}
+.block-hero{text-align:center;padding:20px 0 12px}
+.block-hero h1{font-size:26px;font-weight:800;margin-bottom:4px}
+.block-hero p{color:#888;font-size:14px;margin-bottom:14px}
+.block-stats{display:flex;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.block-stat{flex:1 1 130px;max-width:180px;padding:10px 14px;background:#fff;border:1px solid #f0f0f0;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04);transition:.2s}
+.block-stat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.07);border-color:#ffe0c2}
+.block-stat .val{font-size:22px;font-weight:800;color:#ff6b00;line-height:1.2}
+.block-stat .lbl{font-size:12px;color:#999;margin-top:2px}
+.block-stat.highlight{background:linear-gradient(135deg,#fff6ec,#fff);border-color:#ffe0c2}
+.block-stat.highlight .val{color:#1a1a2e}
 
-.block-search{display:flex;justify-content:center;margin-bottom:10px}
-.block-search input{padding:12px 16px;border:2px solid #e0e0e0;border-radius:8px 0 0 8px;font-size:15px;width:300px;outline:none;transition:.2s}
+.block-search{display:flex;justify-content:center;margin-bottom:8px}
+.block-search input{padding:10px 16px;border:2px solid #e0e0e0;border-radius:8px 0 0 8px;font-size:14px;width:320px;outline:none;transition:.2s}
 .block-search input:focus{border-color:#ff6b00}
-.block-search button{padding:12px 24px;background:#ff6b00;color:#fff;border:none;border-radius:0 8px 8px 0;font-size:15px;cursor:pointer;font-weight:700}
-.block-hot-links{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:30px}
-.block-hot-links a{display:inline-block;padding:5px 14px;background:#fff;border:1px solid #ddd;border-radius:20px;font-size:13px;color:#666;text-decoration:none;transition:.15s}
+.block-search button{padding:10px 22px;background:#ff6b00;color:#fff;border:none;border-radius:0 8px 8px 0;font-size:14px;cursor:pointer;font-weight:700}
+.block-hot-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.block-hot-links a{display:inline-block;padding:4px 12px;background:#fff;border:1px solid #ddd;border-radius:20px;font-size:12px;color:#666;text-decoration:none;transition:.15s}
 .block-hot-links a:hover{border-color:#ff6b00;color:#ff6b00}
 
 .block-grids{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:30px}
@@ -141,7 +147,13 @@ require_once 'includes/header.php';
 .block-city-group-inner a:hover{color:#ff6b00}
 
 @media(max-width:768px){
-    .block-hero h1{font-size:22px}
+    .block-hero{padding:14px 0 10px}
+    .block-hero h1{font-size:20px}
+    .block-hero p{font-size:13px;margin-bottom:10px}
+    .block-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .block-stat{max-width:none;padding:8px 10px}
+    .block-stat .val{font-size:19px}
+    .block-stat .lbl{font-size:11px}
     .block-grids{grid-template-columns:repeat(2,1fr);gap:10px}
     .block-search input{width:200px}
 }
@@ -155,7 +167,8 @@ require_once 'includes/header.php';
     <p>200+城市 · 9区布局 · 实时可视 · 一键认领</p>
     <div class="block-stats">
         <div class="block-stat"><div class="val"><?= number_format($totalCities) ?></div><div class="lbl">城市数</div></div>
-        <div class="block-stat"><div class="val"><?= number_format($totalSold) ?></div><div class="lbl">已售区块</div></div>
+        <div class="block-stat highlight"><div class="val"><?= number_format($totalOpened) ?></div><div class="lbl">已开启区块总数</div></div>
+        <div class="block-stat"><div class="val"><?= number_format($totalClaimed) ?></div><div class="lbl">已认领区块</div></div>
         <div class="block-stat"><div class="val"><?= number_format($totalUsers) ?></div><div class="lbl">注册用户</div></div>
     </div>
     <form class="block-search" action="city.php" method="get">
