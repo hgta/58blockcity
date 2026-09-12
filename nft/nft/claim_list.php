@@ -25,21 +25,23 @@ $allTags = $nft->getAllTags();
 <?php require_once '../includes/header.php'; ?>
 
 <style>
-/* 一行显示的头部样式 */
-.page-header-one-line {
+/* ===== 顶部一栏式信息栏 ===== */
+.cl-hero {
+    background: linear-gradient(135deg, #ff6b00, #e55a00);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
-    color: white;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 3px 15px rgba(255, 107, 0, 0.2);
+    gap: 12px;
+    flex-wrap: wrap;
+    box-shadow: 0 3px 15px rgba(255,107,0,0.2);
 }
 
-.page-header-one-line h1 {
-    font-size: 1.5rem;
+.cl-hero h1 {
+    font-size: 18px;
     margin: 0;
     font-weight: 700;
     display: flex;
@@ -47,26 +49,24 @@ $allTags = $nft->getAllTags();
     gap: 8px;
 }
 
-.page-header-one-line .lead {
-    font-size: 0.9rem;
-    margin: 0;
-    opacity: 0.9;
-    flex-grow: 1;
-    margin-left: 15px;
-    font-weight: 300;
+.cl-stats { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.cl-stat { font-size: 13px; opacity: 0.95; }
+.cl-stat strong { font-size: 17px; font-weight: 800; margin-right: 2px; }
+
+.cl-hero-link {
+    font-size: 13px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 4px 12px;
+    border-radius: 16px;
+    text-decoration: none;
+    transition: background 0.2s;
 }
+.cl-hero-link:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
 @media (max-width: 576px) {
-    .page-header-one-line {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-        padding: 12px 16px;
-    }
-    .page-header-one-line .lead {
-        margin-left: 0;
-        font-size: 0.82rem;
-    }
+    .cl-hero { padding: 12px 16px; }
+    .cl-stats { gap: 14px; }
     .cl-search input { min-width: 100%; }
 }
 
@@ -289,32 +289,6 @@ $allTags = $nft->getAllTags();
 
 .cl-reset:hover { border-color: #ff6b00; color: #ff6b00; text-decoration: none; }
 
-/* 统计信息样式 */
-.stats-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    background: white;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #e9ecef;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.stats-count {
-    color: #495057;
-    font-weight: 500;
-}
-
-.stats-count .badge {
-    background: linear-gradient(135deg, #ff6b00, #ff8c00);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-}
-
 /* 空状态样式 */
 .empty-state {
     grid-column: 1 / -1;
@@ -345,10 +319,16 @@ $allTags = $nft->getAllTags();
 /* 固定每行8个，不因屏幕放大而增加 */</style>
 
 <div class="container">
-    <!-- 一行显示的头部 -->
-    <div class="page-header-one-line">
+    <!-- 顶部一栏式信息栏 -->
+    <div class="cl-hero">
         <h1><i class="fas fa-hand-holding-heart"></i> NFT头像认领列表</h1>
-        <p class="lead">寻找您在BlockCity拥有的NFT头像，填入区块信息认领后可挂售展示并接收求购信息。</p>
+        <div class="cl-stats">
+            <div class="cl-stat"><strong><?= number_format($totalNfts) ?></strong> 个头像</div>
+            <div class="cl-stat"><strong><?= $totalPages ?></strong> 页</div>
+            <?php if (isset($_SESSION['user_id'])): ?>
+            <a href="/user/collection.php" class="cl-hero-link"><i class="fas fa-user"></i> 我的收藏</a>
+            <?php endif; ?>
+        </div>
     </div>
     
     <!-- 搜索和筛选栏 -->
@@ -370,22 +350,6 @@ $allTags = $nft->getAllTags();
         <?php endif; ?>
     </form>
     
-    <!-- 统计信息 -->
-    <div class="stats-header">
-        <div class="stats-count">
-            <i class="fas fa-image me-1"></i> 共 <span class="badge"><?= number_format($totalNfts) ?></span> 个NFT头像
-            <?php if ($searchCode || $searchTag): ?>
-                <span class="text-primary ms-2">
-                    (筛选结果: <?= count($nfts) ?>)
-                </span>
-            <?php endif; ?>
-        </div>
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <a href="/user/collection.php" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-user me-1"></i> 我的收藏
-            </a>
-        <?php endif; ?>
-    </div>
     
     <!-- NFT列表 - 一行显示10个头像，圆形边框 -->
     <div class="nft-grid-10">
