@@ -1568,7 +1568,8 @@ CREATE TABLE IF NOT EXISTS `dramas` (
 
 CREATE TABLE IF NOT EXISTS `model_dramas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `model_id` int(11) NOT NULL,
+  `model_id` int(11) DEFAULT NULL COMMENT '关联模特ID（非模特演员时为NULL）',
+  `actor_name` varchar(100) DEFAULT NULL COMMENT '非模特演员姓名（纯文本展示，不跳转）',
   `drama_id` int(11) NOT NULL,
   `role_name` varchar(100) DEFAULT NULL COMMENT '饰演角色名',
   `is_lead` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否主演',
@@ -1576,9 +1577,11 @@ CREATE TABLE IF NOT EXISTS `model_dramas` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `model_drama` (`model_id`, `drama_id`),
+  UNIQUE KEY `uniq_drama_actor` (`drama_id`, `actor_name`),
   KEY `idx_drama_id` (`drama_id`),
-  KEY `idx_model_id` (`model_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模特参演短剧关联';
+  KEY `idx_model_id` (`model_id`),
+  KEY `idx_drama_lead_sort` (`drama_id`, `is_lead`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧参演人员关联（模特库成员 或 普通演员）';
 
 -- --------------------------------------------------------
 -- 作者（Author）：商品图案原创作者，平行模特功能

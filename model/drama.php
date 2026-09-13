@@ -23,14 +23,21 @@ if (!$drama || $drama['status'] !== 'active') {
 $canonicalUrl = SeoHelper::dramaUrl($dramaId, $drama['title']);
 SeoHelper::redirectIfNotCanonical($canonicalUrl);
 
-$cast   = $dramaObj->getModelsByDrama($dramaId, true);
-$userId = $modelUserId;
+// 完整演职人员（模特 + 非模特演员），主演优先 + 番位排序
+$cast      = $dramaObj->getCastByDrama($dramaId, 0, true);
+$castCount = count($cast);
+$userId    = $modelUserId;
 
-// 关注态
+// 关注态（仅模特库成员可关注）
 $followedIds = [];
-$castIds = array_column($cast, 'id');
-if ($userId && $castIds) {
-    $ph = implode(',', array_map('intval', $castIds));
+$castModelIds = [];
+foreach ($cast as $c) {
+    if (!empty($c['model_id'])) {
+        $castModelIds[] = intval($c['model_id']);
+    }
+}
+if ($userId && $castModelIds) {
+    $ph = implode(',', array_map('intval', $castModelIds));
     $stmt = $pdo->prepare("SELECT model_id FROM model_follows WHERE user_id = ? AND model_id IN ($ph)");
     $stmt->execute([$userId]);
     $followedIds = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
@@ -52,10 +59,11 @@ $workJsonLd = SeoHelper::tvSeriesSchema([
     'episodes'    => $episodes,
     'genre'       => $tags,
     'actors'      => array_map(function ($c) {
-        return [
-            'name' => $c['nickname'],
-            'url'  => SeoHelper::modelUrl($c['id'], $c['nickname']),
-        ];
+        $actor = ['name' => $c['name']];
+        if (!empty($c['link'])) {
+            $actor['url'] = $c['link'];
+        }
+        return $actor;
     }, $cast),
 ]);
 
@@ -96,7 +104,7 @@ require_once __DIR__ . '/includes/header.php';
             <h1><?= $title ?></h1>
             <div class="m-drama-facts">
                 <?php if ($episodes > 0): ?><span><i class="fas fa-list-ol"></i> 共 <b><?= $episodes ?></b> 集</span><?php endif; ?>
-                <span><i class="fas fa-users"></i> <b><?= count($cast) ?></b> 位模特参演</span>
+                <span><i class="fas fa-users"></i> <b><?= $castCount ?></b> 位演职人员</span>
             </div>
 
             <?php if (!empty($tags)): ?>
@@ -115,36 +123,121 @@ require_once __DIR__ . '/includes/header.php';
                         <i class="fas fa-play"></i> 前往红果观看
                     </a>
                 <?php endif; ?>
-                <?php if (!empty($cast)): ?>
-                    <a class="m-btn m-btn-ghost" href="#cast">查看参演模特</a>
+                <?php if ($castCount > 0): ?>
+                    <a class="m-btn m-btn-ghost" href="#cast">查看演员阵容</a>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
+    <!-- ============ 主要演员（红果风格横向卡片） ============ -->
+    <?php if (!empty($cast)): ?>
     <section class="m-sec" id="cast">
         <div class="m-sec-head">
             <div>
-                <h2><span class="bar"></span>参演阵容</h2>
-                <p class="sub">主演优先展示，点击进入模特主页</p>
+                <h2><span class="bar"></span>主要演员</h2>
+                <p class="sub">共 <?= $castCount ?> 位演职人员<?= $castCount > 5 ? '，按番位展示前 5 位' : '' ?></p>
+            </div>
+            <?php if ($castCount > 5): ?>
+                <a class="m-more" href="#cast-all">全部演员 <i class="fas fa-chevron-right"></i></a>
+            <?php endif; ?>
+        </div>
+        <div class="m-cast-rail">
+            <?php foreach (array_slice($cast, 0, 5) as $c): ?>
+            <div class="m-cast-person<?= $c['link'] ? ' is-model' : '' ?>">
+                <?php if ($c['link']): ?>
+                <a class="cp-avatar" href="<?= htmlspecialchars($c['link']) ?>">
+                <?php else: ?>
+                <span class="cp-avatar">
+                <?php endif; ?>
+                    <?php if (!empty($c['avatar'])): ?>
+                        <img src="<?= htmlspecialchars(model_media($c['avatar'])) ?>" alt="<?= htmlspecialchars($c['name']) ?>" loading="lazy">
+                    <?php else: ?>
+                        <span class="cp-initial"><?= htmlspecialchars(mb_substr($c['name'], 0, 1)) ?></span>
+                    <?php endif; ?>
+                <?php if ($c['link']): ?></a><?php else: ?></span><?php endif; ?>
+
+                <div class="cp-name">
+                    <?= htmlspecialchars($c['name']) ?>
+                    <?php if ($c['link']): ?><i class="fas fa-check-circle cp-badge" title="58 模特库成员"></i><?php endif; ?>
+                </div>
+                <?php if (!empty($c['role_name'])): ?>
+                    <div class="cp-role">饰 <?= htmlspecialchars($c['role_name']) ?><?= !empty($c['is_lead']) ? '（主要演员）' : '' ?></div>
+                <?php elseif (!empty($c['is_lead'])): ?>
+                    <div class="cp-role">主要演员</div>
+                <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- ============ 全部演职人员（含非模特演员） ============ -->
+    <?php if ($castCount > 5): ?>
+    <section class="m-sec" id="cast-all">
+        <div class="m-sec-head">
+            <div>
+                <h2><span class="bar"></span>全部演职人员</h2>
+                <p class="sub">共 <?= $castCount ?> 位</p>
             </div>
         </div>
-        <?php if (empty($cast)): ?>
-            <div class="m-empty"><i class="fas fa-user-slash"></i>该剧暂未关联参演模特</div>
-        <?php else: ?>
-            <div class="m-grid">
-                <?php foreach ($cast as $cm): ?>
-                    <?= renderModelCard(
-                        $cm,
-                        [],
-                        isset($followedIds[$cm['id']]),
-                        $userId,
-                        ['role_name' => $cm['role_name'] ?? '', 'is_lead' => $cm['is_lead'] ?? 0]
-                    ) ?>
-                <?php endforeach; ?>
+        <div class="m-cast-list">
+            <?php foreach ($cast as $i => $c): ?>
+            <div class="m-cast-row">
+                <span class="cr-no"><?= $i + 1 ?></span>
+                <?php if (!empty($c['avatar'])): ?>
+                    <img class="cr-av" src="<?= htmlspecialchars(model_media($c['avatar'])) ?>" alt="" loading="lazy">
+                <?php else: ?>
+                    <span class="cr-av cr-initial"><?= htmlspecialchars(mb_substr($c['name'], 0, 1)) ?></span>
+                <?php endif; ?>
+                <span class="cr-name">
+                    <?php if ($c['link']): ?>
+                        <a href="<?= htmlspecialchars($c['link']) ?>"><?= htmlspecialchars($c['name']) ?></a>
+                        <i class="fas fa-check-circle cp-badge" title="58 模特库成员"></i>
+                    <?php else: ?>
+                        <?= htmlspecialchars($c['name']) ?>
+                    <?php endif; ?>
+                </span>
+                <span class="cr-role">
+                    <?= !empty($c['role_name']) ? '饰 ' . htmlspecialchars($c['role_name']) : '' ?>
+                    <?php if (!empty($c['is_lead'])): ?><span class="m-lead-tag">主要演员</span><?php endif; ?>
+                </span>
             </div>
-        <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
     </section>
+    <?php endif; ?>
+
+    <!-- ============ 参演模特（可关注，导流入口） ============ -->
+    <?php
+    $castModels = [];
+    foreach ($cast as $c) {
+        if ($c['model_id']) {
+            $castModels[] = $c['raw'];
+        }
+    }
+    ?>
+    <?php if (!empty($castModels)): ?>
+    <section class="m-sec">
+        <div class="m-sec-head">
+            <div>
+                <h2><span class="bar"></span>参演模特</h2>
+                <p class="sub">点击进入模特主页，可关注 TA 的最新动态</p>
+            </div>
+        </div>
+        <div class="m-grid">
+            <?php foreach ($castModels as $cm): ?>
+                <?= renderModelCard(
+                    $cm,
+                    [],
+                    isset($followedIds[$cm['id']]),
+                    $userId,
+                    ['role_name' => $cm['role_name'] ?? '', 'is_lead' => $cm['is_lead'] ?? 0]
+                ) ?>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

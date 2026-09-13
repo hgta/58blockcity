@@ -181,7 +181,7 @@ if (!function_exists('renderDramaCard')) {
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
-                    <span class="cnt"><?= $count ?> 位模特参演</span>
+                    <span class="cnt"><?= $count ?> 位演职人员</span>
                 </div>
                 <?php elseif (!$rail): ?>
                     <?php if (!empty($d['role_name'])): ?>
