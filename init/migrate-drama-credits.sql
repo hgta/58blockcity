@@ -30,7 +30,7 @@ SET @sql := IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'model_dramas' AND COLUMN_NAME = 'actor_name') = 0,
     'ALTER TABLE `model_dramas` ADD COLUMN `actor_name` varchar(100) DEFAULT NULL COMMENT ''非模特演员姓名（纯文本展示，不跳转）'' AFTER `model_id`',
-    'SELECT ''model_dramas.actor_name 已存在'' AS msg
+    'SELECT ''model_dramas.actor_name 已存在'' AS msg'
 );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
