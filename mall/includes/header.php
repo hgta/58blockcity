@@ -11,7 +11,6 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../index.php','icon'=>'home','text'=>'首页'],
     ['url'=>'../product/list.php','icon'=>'shopping-bag','text'=>'商品浏览'],
     ['url'=>'../rankings/','icon'=>'trophy','text'=>'排行榜'],
-    ['url'=>'https://model.58.tl/','icon'=>'camera','text'=>'模特库'],
     ['url'=>'../author/list.php','icon'=>'palette','text'=>'作者库'],
     ['url'=>'../shop/list.php','icon'=>'store','text'=>'店铺列表'],
 ];
