@@ -43,10 +43,17 @@
 
 ## 5. 子域验证接入（P2，需人工配合）
 
-- [x] 5.1 编写 `docs/baidu-subsite-onboarding.md`：验证方式（DNS/HTML/CNAME）、token 获取、配置填写、启用开关、排查手册 ✅
-- [ ] 5.2 逐个在百度搜索资源平台验证子域（建议顺序：`mall` → `model` → `club` → `block` → 其余）；验证：各子域平台状态为已验证
-- [ ] 5.3 每验证一个子域即填入 token 并 `enabled = true`，间隔数天；验证：配置中已启用项与平台已验证项一致
-- [ ] 5.4 每个子域启用后检查推送日志确认 `success` 或明确错误；验证：error log 无 `not_same_site` 类错误
+- [x] 5.1 编写 `docs/baidu-subsite-onboarding.md`：验证方式、token 获取、配置填写、启用开关、排查手册、**实测结论**（token 通用 + 配额按站点独立）✅
+- [x] 5.2 已验证子域：`www.58.tl` / `mall.58.tl` / `block.58.tl` / `model.58.tl` / `nft.58.tl` ✅
+- [x] 5.3 **实测 token 通用性**：同一 token 以不同 `site` 参数推送 mall / block / www，均返回 `success:1` ✅
+- [x] 5.4 **实测配额维度**：`site=mall` 消耗后 `remain` 变 8，`block` 与 `www` 独立显示 9 → 配额按站点独立 ✅
+- [ ] 5.5 在服务器将已验证的 4 个子域 `enabled` 置为 `true`；验证：配置与平台已验证列表一致
+- [ ] 5.6 每个子域启用后检查推送日志确认 `success` 或明确错误；验证：error log 无 `not_same_site` 类错误
+- [ ] 5.7 **`bct.58.tl` / `v.58.tl` 保持 `enabled=false`**（canonical 已收口到一级域名，推送子域会浪费配额）；验证：配置中为关闭
+- [ ] 5.8 待 `renqizhi.com` / `hufangquan.com` 验证后，改为推送一级域名；验证：推送目标与 canonical 一致
+
+> **重要限制**：单站点配额约 10 条/天（实测）→ 推送只能作「新内容提示」，
+> 不能批量提交内页。内页收录依赖 sitemap + 内链 + 内容质量。
 
 ## 6. 验证与风险监控（P2）
 
