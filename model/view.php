@@ -79,12 +79,33 @@ if ($modelUserId && $userId) {
 
 /* ---------- 主视觉 ---------- */
 $modelAvatar = model_img($modelInfo, false);
-$heroCover   = !empty($modelInfo['video_cover']) ? model_media($modelInfo['video_cover']) : $modelAvatar;
 $videoKind   = Model::videoKind($modelInfo['video_url'] ?? '');
 $shareUrl    = $canonicalUrl;
 
+// 视频封面：有配则用，无则留空（不再回退头像，避免无视频时渲染出难看的大图）
+$videoCover = !empty($modelInfo['video_cover']) ? model_media($modelInfo['video_cover']) : '';
+
+// 日常照片（OG 图回退与页面展示均需要，须在使用前解析）
+$dailyPhotos = [];
+if (!empty($modelInfo['daily_photos'])) {
+    $decoded = json_decode($modelInfo['daily_photos'], true);
+    if (is_array($decoded)) $dailyPhotos = array_values(array_filter($decoded));
+}
+
 /* ---------- SEO ---------- */
-$ogImage = $heroCover ?: 'https://58.tl/assets/images/default.jpg';
+// 社交分享图优先级：视频封面 → 作品图集首图 → 日常照片首图 → 头像 → 默认图
+$ogImage = '';
+if ($videoCover !== '') {
+    $ogImage = $videoCover;
+} elseif (!empty($galleryImages)) {
+    $ogImage = model_media($galleryImages[0]);
+} elseif (!empty($dailyPhotos)) {
+    $ogImage = model_media($dailyPhotos[0]);
+} elseif ($modelAvatar !== '') {
+    $ogImage = $modelAvatar;
+} else {
+    $ogImage = 'https://58.tl/assets/images/default.jpg';
+}
 
 $personExtra = [
     'gender' => ($modelInfo['gender'] === '男') ? 'Male' : (($modelInfo['gender'] === '女') ? 'Female' : ''),
@@ -137,13 +158,6 @@ $site_config = model_site_config([
     'extra_head'  => $personJsonLd . $breadcrumbJsonLd,
 ]);
 require_once __DIR__ . '/includes/header.php';
-
-// 日常照片
-$dailyPhotos = [];
-if (!empty($modelInfo['daily_photos'])) {
-    $decoded = json_decode($modelInfo['daily_photos'], true);
-    if (is_array($decoded)) $dailyPhotos = array_values(array_filter($decoded));
-}
 ?>
 
 <div class="model-wrap">
@@ -226,7 +240,7 @@ if (!empty($modelInfo['daily_photos'])) {
     <div class="m-stage">
         <span class="m-stage-tag">▶ 视频出镜</span>
         <video id="stageVideo" src="<?= htmlspecialchars($modelInfo['video_url']) ?>"
-               poster="<?= htmlspecialchars($heroCover) ?>" controls muted loop playsinline preload="metadata"></video>
+               poster="<?= htmlspecialchars($videoCover) ?>" controls muted loop playsinline preload="metadata"></video>
     </div>
     <?php elseif ($videoKind === 'embed'): ?>
     <div class="m-stage">
@@ -234,11 +248,8 @@ if (!empty($modelInfo['daily_photos'])) {
         <iframe src="<?= htmlspecialchars($modelInfo['video_url']) ?>" loading="lazy"
                 allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
-    <?php elseif ($heroCover): ?>
-    <div class="m-stage">
-        <img src="<?= htmlspecialchars($heroCover) ?>" alt="<?= $nickname ?>">
-    </div>
     <?php endif; ?>
+    <?php /* 无视频时不渲染主视觉大图：头像放大成 16:9 反而难看，资料区已有头像 */ ?>
 
     <!-- ============ 参演短剧 ============ -->
     <?php if (!empty($dramas)): ?>

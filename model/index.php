@@ -43,10 +43,33 @@ require_once __DIR__ . '/includes/header.php';
 
 // ---------- Hero 渲染 ----------
 $heroAvatar = $heroModel ? model_img($heroModel, true) : '';
-$heroCover  = $heroModel && !empty($heroModel['video_cover']) ? model_media($heroModel['video_cover']) : $heroAvatar;
 $heroKind   = $heroModel ? Model::videoKind($heroModel['video_url'] ?? '') : '';
 $heroUrl    = $heroModel ? SeoHelper::modelUrl($heroModel['id'], $heroModel['nickname'] ?? '') : '';
 $heroFans   = $heroModel ? Model::formatFollower(intval($heroModel['follower_count'] ?? 0)) : '0';
+
+// Hero 大图：视频封面 → 作品图集首图 → 日常照片首图 → 头像
+// （Hero 是全屏展示位，需要足够大的视觉主体，不能只有小头像）
+$heroCover = '';
+if ($heroModel) {
+    if (!empty($heroModel['video_cover'])) {
+        $heroCover = model_media($heroModel['video_cover']);
+    }
+    if ($heroCover === '') {
+        $heroStrips = $modelObj->getModelImageStrips([intval($heroModel['id'])], 1);
+        if (!empty($heroStrips[$heroModel['id']][0])) {
+            $heroCover = model_media($heroStrips[$heroModel['id']][0]);
+        }
+    }
+    if ($heroCover === '' && !empty($heroModel['daily_photos'])) {
+        $daily = json_decode($heroModel['daily_photos'], true);
+        if (is_array($daily) && !empty($daily[0])) {
+            $heroCover = model_media($daily[0]);
+        }
+    }
+    if ($heroCover === '' && $heroAvatar !== '') {
+        $heroCover = $heroAvatar;
+    }
+}
 ?>
 
 <?php if ($heroModel): ?>
