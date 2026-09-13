@@ -9,8 +9,10 @@ if (!function_exists('renderModelCard')) {
      * @param array $imgStrip     作品图集缩略（最多 4 张），路径为相对仓库根
      * @param bool  $isFollowed   当前用户是否已关注
      * @param int   $userId       当前用户 ID（0 = 未登录）
+     * @param array $credit       可选。短剧参演信息 ['role_name'=>, 'is_lead'=>]，
+     *                            有值时在卡片上展示「饰 XX / 主演」徽标（短剧详情页用）
      */
-    function renderModelCard($m, $imgStrip = [], $isFollowed = false, $userId = 0)
+    function renderModelCard($m, $imgStrip = [], $isFollowed = false, $userId = 0, $credit = null)
     {
         $id       = intval($m['id']);
         $nickname = htmlspecialchars($m['nickname'] ?? '模特');
@@ -81,6 +83,16 @@ if (!function_exists('renderModelCard')) {
                     <?= $btn ?>
                 </div>
                 <?php if ($metaStr): ?><div class="mc-meta"><?= $metaStr ?></div><?php endif; ?>
+                <?php if (is_array($credit) && (!empty($credit['role_name']) || !empty($credit['is_lead']))): ?>
+                    <div class="mc-credit">
+                        <?php if (!empty($credit['role_name'])): ?>
+                            <span class="mc-role">饰 <?= htmlspecialchars($credit['role_name']) ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($credit['is_lead'])): ?>
+                            <span class="mc-lead">主演</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if ($dramaCnt > 0): ?>
                     <span class="mc-drama-tag"><i class="fas fa-film"></i> 参演 <?= $dramaCnt ?> 部短剧</span>
                 <?php endif; ?>

@@ -125,7 +125,7 @@ require_once __DIR__ . '/includes/header.php';
     <section class="m-sec" id="cast">
         <div class="m-sec-head">
             <div>
-                <h2><span class="bar"></span>参演模特</h2>
+                <h2><span class="bar"></span>参演阵容</h2>
                 <p class="sub">主演优先展示，点击进入模特主页</p>
             </div>
         </div>
@@ -134,7 +134,13 @@ require_once __DIR__ . '/includes/header.php';
         <?php else: ?>
             <div class="m-grid">
                 <?php foreach ($cast as $cm): ?>
-                    <?= renderModelCard($cm, [], isset($followedIds[$cm['id']]), $userId) ?>
+                    <?= renderModelCard(
+                        $cm,
+                        [],
+                        isset($followedIds[$cm['id']]),
+                        $userId,
+                        ['role_name' => $cm['role_name'] ?? '', 'is_lead' => $cm['is_lead'] ?? 0]
+                    ) ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

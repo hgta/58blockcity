@@ -207,6 +207,26 @@ class Drama
      * 关联模特到短剧（幂等：已存在则更新角色名/主演/排序）
      * @return bool
      */
+    /**
+     * 按参演关系 ID 更新角色名 / 主演 / 排序
+     */
+    public function updateCredit($creditId, $roleName, $isLead, $sortOrder)
+    {
+        $creditId = intval($creditId);
+        if ($creditId <= 0) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            "UPDATE model_dramas SET role_name = ?, is_lead = ?, sort_order = ? WHERE id = ?"
+        );
+        return $stmt->execute([
+            mb_substr((string)$roleName, 0, 100),
+            $isLead ? 1 : 0,
+            intval($sortOrder),
+            $creditId,
+        ]);
+    }
+
     public function attachModel($dramaId, $modelId, $roleName = '', $isLead = 0, $sortOrder = 0)
     {
         $dramaId = intval($dramaId);
