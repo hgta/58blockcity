@@ -54,7 +54,9 @@ urlNode('https://bct.58.tl/market.php', '0.8', 'hourly', $now);
 urlNode('https://mall.58.tl/', '0.9', 'daily', $now);
 urlNode('https://mall.58.tl/product/list.php', '0.8', 'daily', $now);
 urlNode('https://mall.58.tl/shop/list.php', '0.8', 'weekly', $now);
-urlNode('https://mall.58.tl/model/list.php', '0.8', 'daily', $now);
+urlNode('https://model.58.tl/list.php', '0.8', 'daily', $now);
+urlNode('https://model.58.tl/rankings.php', '0.7', 'daily', $now);
+urlNode('https://model.58.tl/dramas.php', '0.7', 'daily', $now);
 urlNode('https://mall.58.tl/author/list.php', '0.8', 'daily', $now);
 urlNode('https://nft.58.tl/', '0.8', 'daily', $now);
 urlNode('https://v.58.tl/', '0.8', 'daily', $now);
@@ -120,7 +122,7 @@ while ($nft = $stmt->fetch(PDO::FETCH_ASSOC)) {
     urlNode(SeoHelper::nftUrl($nft['id'], $name), '0.6', 'weekly', $lastmod);
 }
 
-// 7. 模特页
+// 7. 模特页（子站 model.58.tl）
 try {
     $stmt = $pdo->query("SELECT id, nickname, updated_at FROM models WHERE status='active' ORDER BY id DESC LIMIT 2000");
     while ($model = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -129,6 +131,17 @@ try {
     }
 } catch (Exception $e) {
     // models 表尚未创建，跳过
+}
+
+// 7b. 短剧页（子站 model.58.tl）
+try {
+    $stmt = $pdo->query("SELECT id, title, updated_at FROM dramas WHERE status='active' ORDER BY id DESC LIMIT 2000");
+    while ($drama = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $lastmod = $drama['updated_at'] ? date('Y-m-d', strtotime($drama['updated_at'])) : $now;
+        urlNode(SeoHelper::dramaUrl($drama['id'], $drama['title']), '0.6', 'weekly', $lastmod);
+    }
+} catch (Exception $e) {
+    // dramas 表尚未创建，跳过
 }
 
 // 8. 作者页

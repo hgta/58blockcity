@@ -691,7 +691,7 @@ if ($userId && $topAuthorIds) {
         <div class="section">
             <div class="section-header">
                 <h2>📸 人气模特</h2>
-                <a href="model/list.php" class="more-link">查看模特库 &gt;</a>
+                <a href="https://model.58.tl/" class="more-link">查看模特库 &gt;</a>
             </div>
             <div class="model-mini-grid">
                 <?php foreach ($topModels as $m): 
@@ -704,6 +704,8 @@ if ($userId && $topAuthorIds) {
                         $mAvatar = User::avatarUrl($m['user_avatar']);
                     }
                     $mFollowed = isset($topModelFollowed[$mId]);
+                    // 模特已迁移至独立子站，登录回跳需走子站登录入口
+                    $mLoginUrl = 'https://model.58.tl/login.php?redirect=' . urlencode($mUrl);
                 ?>
                 <div class="mini-card">
                     <a class="mini-avatar" href="<?= htmlspecialchars($mUrl) ?>">
@@ -717,11 +719,11 @@ if ($userId && $topAuthorIds) {
                     <div class="mini-meta"><?= Model::formatFollower(intval($m['follower_count'] ?? 0)) ?> 粉丝</div>
                     <?php if ($userId): ?>
                     <button class="model-follow-btn <?= $mFollowed ? 'followed' : '' ?>" data-model-id="<?= $mId ?>"
-                            data-logged-in="1" data-login-url="auth/login.php?redirect=<?= urlencode($mUrl) ?>">
+                            data-logged-in="1" data-login-url="<?= htmlspecialchars($mLoginUrl) ?>">
                         <?= $mFollowed ? '已关注' : '+ 关注' ?>
                     </button>
                     <?php else: ?>
-                    <a class="model-follow-btn" href="auth/login.php?redirect=<?= urlencode($mUrl) ?>">+ 关注</a>
+                    <a class="model-follow-btn" href="<?= htmlspecialchars($mLoginUrl) ?>">+ 关注</a>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -857,7 +859,49 @@ if ($userId && $topAuthorIds) {
     </div>
     
     <?php include 'includes/footer.php'; ?>
-    <script src="model/follow.js"></script>
     <script src="author/follow.js"></script>
+    <script>
+    // 模特库已迁移至子站 model.58.tl，关注按钮跨域提交到子站接口
+    (function () {
+        document.querySelectorAll('.model-follow-btn[data-model-id]').forEach(function (btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!btn.dataset.loggedIn) { window.location.href = btn.dataset.loginUrl; return; }
+                var fd = new FormData();
+                fd.append('model_id', btn.dataset.modelId);
+                fetch('https://model.58.tl/follow.php', {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'include',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.error) {
+                        if (res.error === 'unauthorized') { window.location.href = btn.dataset.loginUrl; return; }
+                        alert('操作失败，请重试');
+                        return;
+                    }
+                    if (res.action === 'followed') {
+                        btn.textContent = '已关注';
+                        btn.classList.add('followed');
+                    } else {
+                        btn.textContent = '+ 关注';
+                        btn.classList.remove('followed');
+                    }
+                    var card = btn.closest('.model-mini-card');
+                    var fc = card && card.querySelector('.follower-count');
+                    if (fc && typeof res.follower_count !== 'undefined') {
+                        var n = parseInt(res.follower_count, 10) || 0;
+                        fc.textContent = n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '万' : String(n);
+                    }
+                })
+                .catch(function () { alert('操作失败，请重试'); });
+            });
+        });
+    })();
+    </script>
 </body>
 </html> 

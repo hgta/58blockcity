@@ -62,7 +62,7 @@ require_once '../includes/header.php';
                     <span class="ico"><i class="fas fa-file-signature"></i></span>
                     <p>您还没有提交过申请</p>
                     <p style="font-size:13px;margin-top:6px;">
-                        <a href="../apply/model.php" style="color:#ff6b00;">我要当模特</a> · 
+                        <a href="https://model.58.tl/apply.php" style="color:#ff6b00;">我要当模特</a> · 
                         <a href="../apply/author.php" style="color:#6c5ce7;">我是作者，我要合作</a>
                     </p>
                 </div>
@@ -92,7 +92,7 @@ require_once '../includes/header.php';
                             <div class="my-reject"><i class="fas fa-times-circle"></i> 驳回原因：<?= htmlspecialchars($row['reject_reason']) ?></div>
                         <?php endif; ?>
                         <?php if ($row['status'] === 'approved' && !empty($row['model_id'])): ?>
-                            <a class="my-link" href="../model/view.php?id=<?= (int)$row['model_id'] ?>"><i class="fas fa-arrow-right"></i> 查看我的模特主页</a>
+                            <a class="my-link" href="https://model.58.tl/view.php?id=<?= (int)$row['model_id'] ?>"><i class="fas fa-arrow-right"></i> 查看我的模特主页</a>
                         <?php elseif ($row['status'] === 'approved' && !empty($row['author_id'])): ?>
                             <a class="my-link" href="../author/view.php?id=<?= (int)$row['author_id'] ?>"><i class="fas fa-arrow-right"></i> 查看我的作者主页</a>
                         <?php endif; ?>

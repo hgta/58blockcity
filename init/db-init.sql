@@ -1483,15 +1483,19 @@ CREATE TABLE IF NOT EXISTS `models` (
   `xiaohongshu` varchar(200) DEFAULT NULL COMMENT '小红书',
   `city` varchar(100) DEFAULT NULL COMMENT '所在城市',
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像',
+  `video_url` varchar(500) DEFAULT NULL COMMENT '模特视频地址（直链或外链，管理员维护）',
+  `video_cover` varchar(255) DEFAULT NULL COMMENT '视频封面图（Hero 兜底）',
   `height` decimal(5,1) DEFAULT NULL COMMENT '身高 cm',
   `weight` decimal(4,1) DEFAULT NULL COMMENT '体重 kg',
   `measurements` varchar(50) DEFAULT NULL COMMENT '三围',
   `hobbies` text DEFAULT NULL COMMENT '爱好',
+  `intro` varchar(255) DEFAULT NULL COMMENT '一句话个人简介',
   `zodiac` varchar(20) DEFAULT NULL COMMENT '星座',
   `follower_count` varchar(20) DEFAULT NULL COMMENT '粉丝数',
   `like_count` int(11) DEFAULT 0 COMMENT '点赞数',
   `product_count` int(11) DEFAULT 0 COMMENT '关联商品数',
   `review_count` int(11) DEFAULT 0 COMMENT '关联评论数',
+  `drama_count` int(11) NOT NULL DEFAULT 0 COMMENT '参演短剧数（冗余）',
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1499,6 +1503,8 @@ CREATE TABLE IF NOT EXISTS `models` (
   UNIQUE KEY `user_id` (`user_id`),
   KEY `idx_like_count` (`like_count`),
   KEY `idx_product_count` (`product_count`),
+  KEY `idx_follower_count` (`follower_count`),
+  KEY `idx_drama_count` (`drama_count`),
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -1537,6 +1543,42 @@ CREATE TABLE IF NOT EXISTS `model_follows` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_model_id` (`model_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+-- 短剧（Drama）：模特参演的短剧作品，支撑「模特 × 短剧」双向导流
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `dramas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL COMMENT '剧名',
+  `slug` varchar(200) DEFAULT NULL COMMENT 'URL slug',
+  `cover` varchar(255) DEFAULT NULL COMMENT '封面图',
+  `episodes` int(11) DEFAULT NULL COMMENT '总集数',
+  `tags` text DEFAULT NULL COMMENT '题材标签 JSON 数组',
+  `hg_url` varchar(500) DEFAULT NULL COMMENT '红果等外部观看地址',
+  `synopsis` text DEFAULT NULL COMMENT '剧情简介',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_title` (`title`),
+  KEY `idx_updated_at` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧主表';
+
+CREATE TABLE IF NOT EXISTS `model_dramas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `model_id` int(11) NOT NULL,
+  `drama_id` int(11) NOT NULL,
+  `role_name` varchar(100) DEFAULT NULL COMMENT '饰演角色名',
+  `is_lead` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否主演',
+  `sort_order` int(11) NOT NULL DEFAULT 0 COMMENT '排序（小在前）',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `model_drama` (`model_id`, `drama_id`),
+  KEY `idx_drama_id` (`drama_id`),
+  KEY `idx_model_id` (`model_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模特参演短剧关联';
 
 -- --------------------------------------------------------
 -- 作者（Author）：商品图案原创作者，平行模特功能

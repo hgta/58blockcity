@@ -6,7 +6,6 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Model.php';
 require_once '../../classes/Author.php';
 require_once '../../classes/SeoHelper.php';
-require_once '../model/card.php';
 require_once '../author/card.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -53,8 +52,20 @@ $site_config['title'] = '我的关注 - 58人气值商城';
 require_once '../includes/header.php';
 ?>
 
-<link rel="stylesheet" href="../model/style.css">
 <link rel="stylesheet" href="../author/style.css">
+<style>
+/* 模特卡片样式（模特子站抽取后，商城侧仅保留关注列表所需最小样式） */
+.model-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+.model-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.06); display:flex; flex-direction:column; }
+.model-card .mc-avatar { display:block; aspect-ratio:1/1; overflow:hidden; background:#f3f3f3; }
+.model-card .mc-avatar img { width:100%; height:100%; object-fit:cover; }
+.model-card .mc-body { padding:10px 12px 12px; flex:1; display:flex; flex-direction:column; }
+.model-card .mc-name-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.model-card .mc-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; font-weight:bold; color:#222; text-decoration:none; }
+.model-card .mc-meta { font-size:12px; color:#999; margin:4px 0; }
+.model-card .mc-stats { font-size:12px; color:#777; display:flex; gap:10px; margin-top:auto; padding-top:8px; }
+.model-card .mc-stats b { color:#ff6b00; }
+</style>
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-3">
@@ -126,16 +137,49 @@ require_once '../includes/header.php';
                     <div class="model-empty">
                         <i class="fas fa-heart fa-2x mb-3"></i>
                         <p>你还没有关注任何模特</p>
-                        <a href="../model/list.php" class="btn btn-primary">去模特库逛逛 →</a>
+                        <a href="https://model.58.tl/list.php" class="btn btn-primary">去模特库逛逛 →</a>
                     </div>
                 <?php else: ?>
                     <div class="section-header">
                         <h5><i class="fas fa-heart text-primary mr-2"></i>关注的模特</h5>
-                        <a href="../model/list.php" class="more-link">发现更多模特 &gt;</a>
+                        <a href="https://model.58.tl/list.php" class="more-link">发现更多模特 &gt;</a>
                     </div>
                     <div class="model-grid" style="margin-top:16px;">
                         <?php foreach ($list as $m): ?>
-                            <?= renderModelCard($m, $strips[$m['id']] ?? [], true, $userId) ?>
+                            <div class="model-card">
+                                <a class="mc-avatar" href="<?= htmlspecialchars(SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '')) ?>">
+                                    <?php
+                                    $mAvatar = '';
+                                    if (!empty($m['avatar'])) {
+                                        $mAvatar = '../' . $m['avatar'];
+                                    } elseif (!empty($m['user_avatar'])) {
+                                        $mAvatar = User::avatarUrl($m['user_avatar']);
+                                    }
+                                    if ($mAvatar):
+                                    ?>
+                                        <img src="<?= htmlspecialchars($mAvatar) ?>" alt="<?= htmlspecialchars($m['nickname']) ?>" loading="lazy">
+                                    <?php else: ?>
+                                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:40px;"><i class="fas fa-user"></i></div>
+                                    <?php endif; ?>
+                                </a>
+                                <div class="mc-body">
+                                    <div class="mc-name-row">
+                                        <a class="mc-name" href="<?= htmlspecialchars(SeoHelper::modelUrl($m['id'], $m['nickname'] ?? '')) ?>"><?= htmlspecialchars($m['nickname'] ?? '模特') ?></a>
+                                        <span style="flex-shrink:0;font-size:12px;color:#94a3b8;">已关注</span>
+                                    </div>
+                                    <?php if (!empty($m['city']) || !empty($m['zodiac'])): ?>
+                                    <div class="mc-meta">
+                                        <?= !empty($m['city']) ? '📍' . htmlspecialchars($m['city']) : '' ?>
+                                        <?= !empty($m['zodiac']) ? ' ★' . htmlspecialchars($m['zodiac']) : '' ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <div class="mc-stats">
+                                        <span>❤ <b><?= intval($m['like_count'] ?? 0) ?></b></span>
+                                        <span>👥 <b><?= Model::formatFollower(intval($m['follower_count'] ?? 0)) ?></b></span>
+                                        <span>🎬 <b><?= intval($m['drama_count'] ?? 0) ?></b></span>
+                                    </div>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -209,7 +253,6 @@ require_once '../includes/header.php';
 }
 </style>
 
-<script src="../model/follow.js"></script>
 <script src="../author/follow.js"></script>
 
 <?php require_once '../includes/footer.php'; ?>

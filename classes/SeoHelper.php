@@ -99,9 +99,69 @@ class SeoHelper
         return 'https://club.58.tl/post/' . intval($id) . '-' . $slug . '.html';
     }
 
+    /**
+     * 模特详情页规范 URL（已迁移至独立子站 model.58.tl）
+     * 旧格式 https://mall.58.tl/model/{id}-{slug}.html 由 nginx 301 到此处
+     */
     public static function modelUrl($id, $nickname)
     {
-        return 'https://mall.58.tl/model/' . intval($id) . '-' . self::slug($nickname) . '.html';
+        return 'https://model.58.tl/m/' . intval($id) . '-' . self::slug($nickname) . '.html';
+    }
+
+    /**
+     * 模特库列表页 URL（带可选筛选参数）
+     */
+    public static function modelListUrl($params = [])
+    {
+        $url = 'https://model.58.tl/list.php';
+        $params = array_filter((array)$params, function ($v) {
+            return $v !== '' && $v !== null && $v !== 0;
+        });
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
+        return $url;
+    }
+
+    /**
+     * 模特子站首页 URL
+     */
+    public static function modelHomeUrl()
+    {
+        return 'https://model.58.tl/';
+    }
+
+    /**
+     * 短剧详情页规范 URL
+     */
+    public static function dramaUrl($id, $title)
+    {
+        $slug = self::slug($title);
+        return 'https://model.58.tl/drama/' . intval($id) . ($slug ? '-' . $slug : '') . '.html';
+    }
+
+    /**
+     * 短剧列表页 URL
+     */
+    public static function dramaListUrl($tag = '')
+    {
+        $url = 'https://model.58.tl/dramas.php';
+        if ($tag !== '' && $tag !== null) {
+            $url .= '?tag=' . urlencode($tag);
+        }
+        return $url;
+    }
+
+    /**
+     * 模特排行榜 URL
+     */
+    public static function modelRankingUrl($type = 'follower')
+    {
+        $url = 'https://model.58.tl/rankings.php';
+        if ($type !== '' && $type !== null) {
+            $url .= '?type=' . urlencode($type);
+        }
+        return $url;
     }
 
     public static function authorUrl($id, $nickname)

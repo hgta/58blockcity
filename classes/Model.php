@@ -71,7 +71,7 @@ class Model
             $values[] = intval($data['user_id']);
         }
 
-        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'zodiac', 'follower_count', 'daily_photos'];
+        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'daily_photos'];
         foreach ($optional as $f) {
             if (isset($data[$f]) && $data[$f] !== '') {
                 $fields[] = $f;
@@ -92,7 +92,7 @@ class Model
     {
         $sets = [];
         $values = [];
-        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'height', 'weight', 'measurements', 'hobbies', 'zodiac', 'follower_count', 'status', 'daily_photos'];
+        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'status', 'daily_photos'];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $data)) {
                 $sets[] = "$f = ?";
@@ -554,6 +554,132 @@ class Model
     {
         $this->pdo->prepare("UPDATE models SET view_count = view_count + 1 WHERE id = ?")
                   ->execute([intval($modelId)]);
+    }
+
+    /* ============================================================
+     * 以下是模特子站（model.58.tl）新增能力
+     * ============================================================ */
+
+    /**
+     * 首页 Hero 主推模特：「有视频优先，其次粉丝数」
+     * 视频判定：video_url 非空
+     */
+    public function getHeroModel()
+    {
+        $stmt = $this->pdo->query(
+            "SELECT m.*, u.username, u.avatar as user_avatar
+             FROM models m LEFT JOIN users u ON m.user_id = u.id
+             WHERE m.status = 'active'
+             ORDER BY (m.video_url IS NOT NULL AND m.video_url <> '') DESC,
+                      m.follower_count DESC, m.id DESC
+             LIMIT 1"
+        );
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /**
+     * 首页「本期主推模特」：同样遵循「有视频优先，其次粉丝数」
+     */
+    public function getFeaturedModels($limit = 6)
+    {
+        $limit = max(1, intval($limit));
+        $stmt = $this->pdo->query(
+            "SELECT m.*, u.username, u.avatar as user_avatar
+             FROM models m LEFT JOIN users u ON m.user_id = u.id
+             WHERE m.status = 'active'
+             ORDER BY (m.video_url IS NOT NULL AND m.video_url <> '') DESC,
+                      m.follower_count DESC, m.id DESC
+             LIMIT {$limit}"
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 排行榜查询（子站四维）
+     * @param string $type follower | like | drama | product
+     */
+    public function getRankingBy($type = 'follower', $limit = 50)
+    {
+        $map = [
+            'follower' => ['follower_count', 'm.follower_count'],
+            'like'     => ['like_count', 'm.like_count'],
+            'drama'    => ['drama_count', 'm.drama_count'],
+            'product'  => ['product_count', 'm.product_count'],
+        ];
+        if (!isset($map[$type])) {
+            $type = 'follower';
+        }
+        [$col, $orderCol] = $map[$type];
+        $limit = max(1, intval($limit));
+
+        $stmt = $this->pdo->query(
+            "SELECT m.id, m.nickname, m.gender, m.city, m.zodiac, m.avatar,
+                    m.follower_count, m.like_count, m.drama_count, m.product_count,
+                    m.{$col} AS sort_value,
+                    u.username, u.avatar as user_avatar
+             FROM models m LEFT JOIN users u ON m.user_id = u.id
+             WHERE m.status = 'active'
+             ORDER BY {$orderCol} DESC, m.id ASC
+             LIMIT {$limit}"
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 各维度榜首数值（排行榜页顶部摘要用）
+     */
+    public function getRankingSummary()
+    {
+        $stmt = $this->pdo->query(
+            "SELECT COUNT(*) AS total,
+                    COALESCE(MAX(follower_count), 0) AS max_follower,
+                    COALESCE(MAX(like_count), 0) AS max_like,
+                    COALESCE(SUM(drama_count > 0), 0) AS with_drama
+             FROM models WHERE status = 'active'"
+        );
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'max_follower' => 0, 'max_like' => 0, 'with_drama' => 0];
+    }
+
+    /**
+     * 批量查询多个模特的视频字段（避免 N+1）
+     * @return array [model_id => ['video_url'=>, 'video_cover'=>]]
+     */
+    public function getVideoMap($modelIds)
+    {
+        $ids = array_filter(array_map('intval', (array)$modelIds));
+        if (empty($ids)) {
+            return [];
+        }
+        $ph = implode(',', $ids);
+        $stmt = $this->pdo->query(
+            "SELECT id, video_url, video_cover FROM models WHERE id IN ({$ph})"
+        );
+        $map = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $map[(int)$row['id']] = [
+                'video_url'   => $row['video_url'],
+                'video_cover' => $row['video_cover'],
+            ];
+        }
+        return $map;
+    }
+
+    /**
+     * 视频形态判定：直链 / 外链 / 无
+     * @return string 'file' | 'embed' | ''
+     */
+    public static function videoKind($url)
+    {
+        $url = trim((string)$url);
+        if ($url === '') {
+            return '';
+        }
+        $path = strtolower(parse_url($url, PHP_URL_PATH) ?: '');
+        if (preg_match('/\.(mp4|webm|ogg|m3u8)$/', $path)) {
+            return 'file';
+        }
+        return 'embed';
     }
 
 }

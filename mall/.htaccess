@@ -10,8 +10,11 @@ RewriteRule ^shop/([0-9]+)-.*\.html$ shop/view.php?id=$1 [B,L,QSA]
 # 商品列表分类页（可选）
 RewriteRule ^product/category/([0-9]+)-.*\.html$ product/list.php?category=$1 [B,L,QSA]
 
-# 模特详情伪静态
-RewriteRule ^model/([0-9]+)-.*\.html$ model/view.php?id=$1 [B,L,QSA]
+# ===== 模特库已抽取为独立子站 model.58.tl，旧地址 301 =====
+RewriteRule ^model/list\.php$ https://model.58.tl/list.php [R=301,L]
+RewriteRule ^model/([0-9]+)-.*\.html$ https://model.58.tl/m/$1 [R=301,L]
+RewriteRule ^apply/model\.php$ https://model.58.tl/apply.php [R=301,L]
+RewriteRule ^apply/my\.php$ https://model.58.tl/my.php [R=301,L]
 
 # 作者详情伪静态
 RewriteRule ^author/([0-9]+)-.*\.html$ author/view.php?id=$1 [B,L,QSA]

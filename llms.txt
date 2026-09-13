@@ -1,6 +1,6 @@
 # 58区块城市（58 BlockCity）
 
-> 58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群（www / block / bct / mall / nft / v / bid / club 八个子域，同属「58区块城市」这一组织实体）。
+> 58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群（www / block / bct / mall / model / nft / v / bid / club 九个子域，同属「58区块城市」这一组织实体）。
 
 ## 核心入口
 
@@ -31,7 +31,11 @@
 ## 商城与人物
 
 - [商品浏览](https://mall.58.tl/product/list.php) / [店铺列表](https://mall.58.tl/shop/list.php)
-- [模特库](https://mall.58.tl/model/list.php) / [作者库](https://mall.58.tl/author/list.php)
+- [模特库](https://model.58.tl/): 模特个人主页、作品图集与短视频展示，支持关注与在线申请加入
+- [模特排行榜](https://model.58.tl/rankings.php): 按粉丝、人气、参演短剧、作品数排名
+- [短剧库](https://model.58.tl/dramas.php): 模特参演的短剧作品与参演阵容
+- [我要当模特](https://model.58.tl/apply.php): 在线提交资料与照片申请加入模特库
+- [作者库](https://mall.58.tl/author/list.php)
 
 ## 社区与互动
 

@@ -2,7 +2,7 @@
 /**
  * 全局品牌实体 Organization JSON-LD —— 单一来源（Single Source of Truth）
  *
- * 用途：把 www / block / bct / mall / nft / v / bid / club 八个子域在结构化数据层面
+ * 用途：把 www / block / bct / mall / model / nft / v / bid / club 九个子域在结构化数据层面
  *      聚合为「同一个组织实体」，供生成式引擎做实体归因。
  *
  * 用法：
@@ -45,7 +45,7 @@ if (!function_exists('organization_json_ld')) {
                 'width'  => 180,
                 'height' => 180,
             ],
-            'description' => '58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、nft、v、bid、club 八个子域。',
+            'description' => '58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、model、nft、v、bid、club 九个子域。',
             // 自有跨平台主页（同一实体的另一 URL）
             'sameAs'      => [
                 'https://github.com/hgta/58blockcity',

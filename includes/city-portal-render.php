@@ -167,7 +167,7 @@ if (!function_exists('city_portal_render')) {
             'nft'     => 'https://nft.58.tl/',
             'club'    => 'https://club.58.tl/index.php?city=' . $cityEnc,
             'circles' => 'https://v.58.tl/?city=' . $cityEnc,
-            'mall'    => 'https://mall.58.tl/model/list.php?city=' . $cityEnc,
+            'mall'    => 'https://model.58.tl/list.php?city=' . $cityEnc,
         ];
 
         ob_start();

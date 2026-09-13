@@ -6,6 +6,7 @@ require_once '../../classes/User.php';
 require_once '../../classes/City.php';
 require_once '../../classes/SeoHelper.php';
 require_once '../../classes/Application.php';
+require_once '../../classes/Drama.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: ../auth/login.php');
@@ -17,6 +18,7 @@ $user = new User($pdo);
 $city = new City($pdo);
 $allCities = $city->getAllCities();
 $app = new Application($pdo);
+$drama = new Drama($pdo);
 
 // 粉丝数规范化：兼容 "5.4万" / "1.2w" / "1k" / "5,400" 等写法，统一转为整数
 // （follower_count 列已由 varchar 迁移为 int，直接写入非数值字符串会触发 1265 Data truncated）
@@ -71,9 +73,52 @@ function uploadModelAvatar($file) {
     return null;
 }
 
+/**
+ * 同步模特的「参演短剧」关系
+ * 表单结构：
+ *   drama_ids[]        已勾选的短剧 ID
+ *   credit_role[<id>]  角色名
+ *   credit_lead[<id>]  是否主演
+ *   credit_sort[<id>]  排序
+ * 未勾选的将解除关联
+ */
+function saveModelDramaCredits($drama, $modelId, $post)
+{
+    $modelId = intval($modelId);
+    if ($modelId <= 0) {
+        return;
+    }
+    $selected = array_map('intval', (array)($post['drama_ids'] ?? []));
+    $selected = array_values(array_unique(array_filter($selected)));
+
+    // 解除未勾选的关联
+    $current = $drama->getDramasByModel($modelId, false);
+    foreach ($current as $d) {
+        if (!in_array(intval($d['id']), $selected, true)) {
+            $drama->detachModel(intval($d['id']), $modelId);
+        }
+    }
+
+    // 建立 / 更新已勾选的关联
+    foreach ($selected as $did) {
+        $role = trim((string)($post['credit_role'][$did] ?? ''));
+        $lead = !empty($post['credit_lead'][$did]) ? 1 : 0;
+        $sort = intval($post['credit_sort'][$did] ?? 0);
+        $drama->attachModel($did, $modelId, mb_substr($role, 0, 100), $lead, $sort);
+    }
+}
+
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $perPage = 20;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+// 申请预填：apply_id 指定来自模特申请的录入
+// 注意：必须在 POST 保存之前解析，保存成功时用于回写申请状态
+$fromApply = null;
+if (isset($_GET['apply_id'])) {
+    $fromApply = $app->getById(intval($_GET['apply_id']));
+    if (!$fromApply || $fromApply['type'] !== 'model') $fromApply = null;
+}
 
 $actionMsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -100,8 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'weight'    => $_POST['weight'] !== '' ? $_POST['weight'] : null,
                 'measurements' => trim($_POST['measurements'] ?? ''),
                 'hobbies'   => trim($_POST['hobbies'] ?? ''),
+                'intro'     => trim(mb_substr($_POST['intro'] ?? '', 0, 255)),
                 'zodiac'    => trim($_POST['zodiac'] ?? ''),
                 'follower_count' => normalizeFollowerCount($_POST['follower_count'] ?? ''),
+                // 模特子站：视频由管理员挂 URL（直链 mp4 或第三方外链）
+                'video_url'   => trim($_POST['video_url'] ?? ''),
+                'video_cover' => trim($_POST['video_cover'] ?? ''),
             ];
 
             // 只有实际上传了文件才设置 avatar，避免覆盖旧头像
@@ -139,6 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $actionMsg = '<div class="admin-alert admin-alert-success">模特信息已更新</div>';
                     // 推送更新后的模特页 URL 给百度
                     SeoHelper::pushContentUrl(SeoHelper::modelUrl($modelId, $data['nickname'] ?? ''));
+                    // 同步编辑态的短剧参演关系
+                    saveModelDramaCredits($drama, $modelId, $_POST);
                 }
             } else {
                 if (empty($data['nickname'])) {
@@ -151,6 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $app->updateStatus($fromApply['id'], 'approved', ['model_id' => $newId]);
                     }
                     SeoHelper::pushContentUrl(SeoHelper::modelUrl($newId, $data['nickname'] ?? ''));
+                    // 新建时也可直接关联参演短剧
+                    saveModelDramaCredits($drama, $newId, $_POST);
                 } else {
                     $actionMsg = '<div class="admin-alert admin-alert-error">创建失败</div>';
                 }
@@ -167,13 +220,6 @@ $totalPages = $listData['pages'];
 $editModel = null;
 if (isset($_GET['edit'])) {
     $editModel = $model->getById(intval($_GET['edit']));
-}
-
-// 申请预填：apply_id 指定来自模特申请的录入
-$fromApply = null;
-if (isset($_GET['apply_id'])) {
-    $fromApply = $app->getById(intval($_GET['apply_id']));
-    if (!$fromApply || $fromApply['type'] !== 'model') $fromApply = null;
 }
 
 $admin_site_config = [
@@ -317,6 +363,82 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                 <div style="margin-bottom:16px;">
                     <label style="<?= $labelStyle ?>">爱好</label>
                     <textarea name="hobbies" rows="3" style="<?= $inputStyle ?>resize:vertical;"><?= htmlspecialchars($formData['hobbies'] ?? '') ?></textarea>
+                </div>
+
+                <!-- ===== 模特子站：个人简介 + 视频（管理员挂 URL） ===== -->
+                <div style="border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:16px;background:#0b1220;">
+                    <div style="font-size:13px;color:#f472b6;font-weight:600;margin-bottom:10px;">
+                        <i class="fas fa-video"></i> 模特子站展示（model.58.tl）
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="<?= $labelStyle ?>">一句话简介</label>
+                        <input type="text" name="intro" maxlength="255" value="<?= htmlspecialchars($formData['intro'] ?? '') ?>"
+                               placeholder="例：爱笑的南方女孩，擅长街拍与古风" style="<?= $inputStyle ?>">
+                        <small style="color:#64748b;">展示在首页 Hero 与个人页资料区；留空则回退展示「爱好」</small>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="<?= $labelStyle ?>">视频地址</label>
+                        <input type="text" name="video_url" maxlength="500" value="<?= htmlspecialchars($formData['video_url'] ?? '') ?>"
+                               placeholder="直链 https://…/xx.mp4 或第三方播放页链接" style="<?= $inputStyle ?>">
+                        <small style="color:#64748b;">置顶优先级：配置了视频的模特会优先出现在首页 Hero 与「本期主推」</small>
+                    </div>
+                    <div>
+                        <label style="<?= $labelStyle ?>">视频封面图</label>
+                        <input type="text" name="video_cover" maxlength="255" value="<?= htmlspecialchars($formData['video_cover'] ?? '') ?>"
+                               placeholder="assets/uploads/models/202601/xxx.jpg 或完整 URL" style="<?= $inputStyle ?>">
+                        <small style="color:#64748b;">务必填写：视频加载失败或移动端省流时作为兜底大图，避免首屏空白</small>
+                    </div>
+                </div>
+
+                <?php
+                // ===== 参演短剧 =====
+                $allDramas = $drama->getList(1, 200, '', 'active')['list'];
+                $myCredits = [];
+                if ($isEdit) {
+                    foreach ($drama->getDramasByModel($formData['id'], false) as $cd) {
+                        $myCredits[intval($cd['id'])] = $cd;
+                    }
+                }
+                ?>
+                <div style="border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:16px;background:#0b1220;">
+                    <div style="font-size:13px;color:#facc15;font-weight:600;margin-bottom:10px;">
+                        <i class="fas fa-film"></i> 参演短剧
+                    </div>
+                    <?php if (empty($allDramas)): ?>
+                        <div style="color:#64748b;font-size:13px;">
+                            暂无短剧数据。请先到 <a href="dramas.php" style="color:#7dd3fc;">短剧管理</a> 添加短剧，再回来关联。
+                        </div>
+                    <?php else: ?>
+                        <div style="max-height:320px;overflow-y:auto;">
+                            <?php foreach ($allDramas as $dr):
+                                $did = intval($dr['id']);
+                                $checked = isset($myCredits[$did]);
+                                $cr = $myCredits[$did] ?? null;
+                            ?>
+                            <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #1e293b;flex-wrap:wrap;">
+                                <label style="display:flex;align-items:center;gap:8px;min-width:200px;color:#e2e8f0;font-size:13.5px;cursor:pointer;">
+                                    <input type="checkbox" name="drama_ids[]" value="<?= $did ?>" <?= $checked ? 'checked' : '' ?>>
+                                    <?php if (!empty($dr['cover'])): ?>
+                                        <img src="../<?= htmlspecialchars($dr['cover']) ?>" style="width:32px;height:42px;object-fit:cover;border-radius:4px;">
+                                    <?php endif; ?>
+                                    <?= htmlspecialchars($dr['title']) ?>
+                                    <?php if (!empty($dr['episodes'])): ?>
+                                        <small style="color:#64748b;"><?= intval($dr['episodes']) ?>集</small>
+                                    <?php endif; ?>
+                                </label>
+                                <input type="text" name="credit_role[<?= $did ?>]" maxlength="100"
+                                       value="<?= htmlspecialchars($cr['role_name'] ?? '') ?>" placeholder="角色名"
+                                       style="padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;width:140px;">
+                                <label style="display:flex;align-items:center;gap:5px;color:#94a3b8;font-size:13px;cursor:pointer;">
+                                    <input type="checkbox" name="credit_lead[<?= $did ?>]" value="1" <?= !empty($cr['is_lead']) ? 'checked' : '' ?>> 主演
+                                </label>
+                                <input type="number" name="credit_sort[<?= $did ?>]" value="<?= intval($cr['sort_order'] ?? 0) ?>" title="排序（小在前）"
+                                       style="padding:6px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;width:70px;">
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <small style="display:block;color:#64748b;margin-top:8px;">勾选即建立参演关系；主演会在模特页与短剧页优先展示。未勾选的将被解除关联。</small>
+                    <?php endif; ?>
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
