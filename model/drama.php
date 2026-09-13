@@ -44,22 +44,20 @@ $tags         = $drama['tags_arr'] ?? [];
 $synopsis     = trim((string)($drama['synopsis'] ?? ''));
 $hgUrl        = trim((string)($drama['hg_url'] ?? ''));
 
-$workJsonLd = SeoHelper::jsonLd([
-    '@context'    => 'https://schema.org',
-    '@type'       => 'TVSeries',
-    'name'        => $drama['title'],
+$workJsonLd = SeoHelper::tvSeriesSchema([
+    'title'       => $drama['title'],
     'url'         => $canonicalUrl,
     'image'       => $ogImage,
     'description' => $synopsis !== '' ? $synopsis : ($drama['title'] . ' - 58 模特库收录的短剧作品'),
-] + (!empty($tags) ? ['genre' => array_values($tags)] : [])
-  + ($episodes > 0 ? ['numberOfEpisodes' => $episodes] : [])
-  + (!empty($cast) ? ['actor' => array_map(function ($c) {
+    'episodes'    => $episodes,
+    'genre'       => $tags,
+    'actors'      => array_map(function ($c) {
         return [
-            '@type' => 'Person',
-            'name'  => $c['nickname'],
-            'url'   => SeoHelper::modelUrl($c['id'], $c['nickname']),
+            'name' => $c['nickname'],
+            'url'  => SeoHelper::modelUrl($c['id'], $c['nickname']),
         ];
-    }, $cast)] : []));
+    }, $cast),
+]);
 
 $breadcrumbJsonLd = SeoHelper::breadcrumbList([
     ['name' => '58 模特库', 'url' => MODEL_BASE_URL . '/'],

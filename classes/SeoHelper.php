@@ -408,6 +408,48 @@ class SeoHelper
     const ORG_ID = 'https://www.58.tl/#organization';
 
     /**
+     * 短剧 / 影视作品结构化数据（TVSeries）
+     *
+     * @param array $d ['title'=>, 'url'=>, 'image'=>, 'description'=>, 'episodes'=>,
+     *                 'genre'=>[], 'actors'=>[['name'=>,'url'=>], ...]]
+     */
+    public static function tvSeriesSchema(array $d)
+    {
+        if (empty($d['title'])) {
+            return '';
+        }
+        $data = [
+            '@context'    => 'https://schema.org',
+            '@type'       => 'TVSeries',
+            'name'        => $d['title'],
+        ];
+        if (!empty($d['url']))         $data['url'] = $d['url'];
+        if (!empty($d['image']))       $data['image'] = $d['image'];
+        if (!empty($d['description'])) $data['description'] = $d['description'];
+        if (!empty($d['episodes']))    $data['numberOfEpisodes'] = intval($d['episodes']);
+        if (!empty($d['genre']) && is_array($d['genre'])) {
+            $data['genre'] = array_values($d['genre']);
+        }
+        if (!empty($d['actors']) && is_array($d['actors'])) {
+            $actors = [];
+            foreach ($d['actors'] as $a) {
+                if (empty($a['name'])) {
+                    continue;
+                }
+                $actor = ['@type' => 'Person', 'name' => $a['name']];
+                if (!empty($a['url'])) {
+                    $actor['url'] = $a['url'];
+                }
+                $actors[] = $actor;
+            }
+            if ($actors) {
+                $data['actor'] = $actors;
+            }
+        }
+        return self::jsonLd($data);
+    }
+
+    /**
      * Organization 结构化数据（通用构造，一般由 shared/organization.php 提供）
      */
     public static function organizationSchema(array $org)
