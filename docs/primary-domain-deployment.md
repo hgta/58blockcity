@@ -87,42 +87,127 @@ server {
 
 ---
 
-## 二、新增 .cn 301 规则
+## 二、新增别名域 301 规则
+
+每个业务的**所有非主域变体**（`.cn` 及其 www、`.com` 的 www）统一 301 到主域：
 
 ```nginx
-# renqizhi.cn → renqizhi.com
+# === renqizhi 业务：所有别名域 → renqizhi.com ===
 server {
     listen 80;
     listen 443 ssl;
-    server_name renqizhi.cn www.renqizhi.cn;
+    server_name renqizhi.cn www.renqizhi.cn www.renqizhi.com;
 
     return 301 https://renqizhi.com$request_uri;
 }
 
-# hufangquan.cn → hufangquan.com
+# === hufangquan 业务：所有别名域 → hufangquan.com ===
 server {
     listen 80;
     listen 443 ssl;
-    server_name hufangquan.cn www.hufangquan.cn;
+    server_name hufangquan.cn www.hufangquan.cn www.hufangquan.com;
 
     return 301 https://hufangquan.com$request_uri;
 }
 ```
 
-> 注意：**DNS 必须保留 .cn 的解析记录**，否则 301 无法生效（域名无法到达服务器）。
+> 关键点：
+> - `return 301` 的目标必须是**不带 www 的主域**，不能写成 `https://www.renqizhi.com`。
+>   写错会导致二次跳转（`.cn → www.com → com`）或死链（若 www 版本未部署）。
+> - `server_name` 要覆盖**全部**别名变体，漏掉的那个会落到默认 vhost，可能返回错误内容。
+> - **DNS 必须保留这些域名的解析记录**，否则 301 无法生效（域名无法到达服务器）。
+> - 301 server 块需要 SSL 证书，否则 `listen 443 ssl` 会失败；可用多域证书或单域证书各配一份。
+
+---
+
+## 二·补、关于 www 与不带 www
+
+### 它们是两个独立的域名
+
+`renqizhi.com` 和 `www.renqizhi.com` **没有技术上的隶属关系**，是两个独立域名：
+
+```
+  对 DNS：
+    renqizhi.com      → A 记录 → 服务器 IP
+    www.renqizhi.com  → A 记录 → 服务器 IP   （单独一条记录）
+
+  对 nginx：
+    server_name renqizhi.com;        ← 需显式声明
+    server_name www.renqizhi.com;    ← 需另声明（或与上者写在一行）
+
+  对百度：
+    视为两个不同的站点，构成「重复内容」判定对象
+```
+
+### 为什么必须二选一
+
+若两个都能访问、内容相同、都返回 200，搜索引擎会困惑：
+
+```
+  ✗ 错误状态
+  ┌─────────────────────────────────────────────────┐
+  │  https://renqizhi.com/market.php      → 200 OK  │
+  │  https://www.renqizhi.com/market.php  → 200 OK  │
+  │                                                 │
+  │  百度：内容一样，该收录哪个？                     │
+  │       → 可能各收一部分                          │
+  │       → 可能判重复内容                          │
+  │       → 权重被切成两份                          │
+  └─────────────────────────────────────────────────┘
+
+  ✓ 正确状态（本项目的选择：不带 www 为主域）
+  ┌─────────────────────────────────────────────────┐
+  │  renqizhi.com          → 200（主域，正常收录）    │
+  │  www.renqizhi.com      → 301 → renqizhi.com     │
+  │                                                 │
+  │  百度：所有信号汇总到 renqizhi.com               │
+  └─────────────────────────────────────────────────┘
+```
+
+> 选带不带 www 没有硬性对错：国外习惯不带 www，国内习惯带 www。
+> 本项目统一采用**不带 www** 作为主域（与 `bct.58.tl` 等子域体系风格一致）。
+
+### 实务惯例：两个都注册、只用一个
+
+```
+  1. 注册两个（防止 www 版本被他人抢注）
+  2. 两个都解析到服务器
+  3. 只选一个作为收录主域
+  4. 另一个 301 到主域
+```
+
+### 完整的收口规则
+
+每个业务需要覆盖 **4 个域名**，全部指向同一个主域：
+
+| 域名 | 期望行为 |
+|------|---------|
+| `renqizhi.com` | 200（主域） |
+| `www.renqizhi.com` | 301 → `renqizhi.com` |
+| `renqizhi.cn` | 301 → `renqizhi.com` |
+| `www.renqizhi.cn` | 301 → `renqizhi.com` |
+
+对应的 nginx 配置（两个 301 server 块）已在第二、二·补节给出。
+
+> 若 `www.renqizhi.com` 未做 DNS 解析，也要去 DNS 加一条 A 记录指向服务器，
+> 否则无法在 nginx 中接管它，且存在被他人抢注的风险。
 
 ---
 
 ## 三、确认 DNS 解析
 
-四个一级域名都需解析到服务器 IP：
+四个一级域名及其 www 变体都需解析到服务器 IP：
 
 | 域名 | 类型 | 指向 |
 |------|------|------|
 | `renqizhi.com` | A | 服务器 IP |
+| `www.renqizhi.com` | A | 服务器 IP |
 | `renqizhi.cn` | A | 服务器 IP |
+| `www.renqizhi.cn` | A | 服务器 IP |
 | `hufangquan.com` | A | 服务器 IP |
+| `www.hufangquan.com` | A | 服务器 IP |
 | `hufangquan.cn` | A | 服务器 IP |
+| `www.hufangquan.cn` | A | 服务器 IP |
 
 ---
 
@@ -136,14 +221,41 @@ curl -I https://hufangquan.com/
 # 期望：HTTP 200
 ```
 
-### 2. .cn 正确 301
+### 2. 别名域全部 301 到主域
+
+`renqizhi` 业务：
 
 ```bash
 curl -I https://renqizhi.cn/
 # 期望：301，Location: https://renqizhi.com/
 
+curl -I https://www.renqizhi.cn/
+# 期望：301，Location: https://renqizhi.com/
+
+curl -I https://www.renqizhi.com/
+# 期望：301，Location: https://renqizhi.com/
+# 若返回 200 → 说明 www 版本未做 301，需补 server 块
+# 若连接失败 → DNS 未解析，需补 A 记录后接管
+```
+
+`hufangquan` 业务：
+
+```bash
 curl -I https://hufangquan.cn/
-# 期望：301，Location: https://hufangquan.com/
+curl -I https://www.hufangquan.cn/
+curl -I https://www.hufangquan.com/
+# 期望：均为 301，Location: https://hufangquan.com/
+```
+
+> 判定要点：**`Location` 必须是不带 www 的主域**。
+> 若跳到 `www.renqizhi.com` 之类的地址，属于配置错误（会造成二次跳转或死链）。
+
+### 2·补、主域自身为 200
+
+```bash
+curl -I https://renqizhi.com/
+curl -I https://hufangquan.com/
+# 期望：HTTP 200（不应是 301）
 ```
 
 ### 3. canonical 正确收口（核心验证）
