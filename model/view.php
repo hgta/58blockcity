@@ -536,9 +536,9 @@ require_once __DIR__ . '/includes/header.php';
             <h2><span class="bar"></span>相关模特</h2>
             <a class="m-more" href="/list.php">更多模特 <i class="fas fa-chevron-right"></i></a>
         </div>
-        <div class="m-grid">
+        <div class="m-cmodels">
             <?php foreach ($relatedModels as $rm): ?>
-                <?= renderModelCard($rm, [], isset($relFollowed[$rm['id']]), $userId) ?>
+                <?= renderCompactModelCard($rm, isset($relFollowed[$rm['id']]), $userId) ?>
             <?php endforeach; ?>
         </div>
     </section>

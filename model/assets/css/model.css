@@ -256,6 +256,52 @@
     flex-shrink: 0;
 }
 
+/* ---------- 紧凑横卡（相关模特等次要推荐位） ---------- */
+.m-cmodels {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;
+}
+.m-cmodel {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+    transition: transform .16s, box-shadow .16s;
+}
+.m-cmodel:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.cm-av {
+    position: relative; flex-shrink: 0;
+    width: 64px; height: 64px; border-radius: 50%; overflow: hidden;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+}
+.cm-av img { width: 100%; height: 100%; object-fit: cover; }
+.cm-av i { color: #d6d2ca; font-size: 24px; }
+.cm-video {
+    position: absolute; right: 0; bottom: 0;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--brand); color: #fff;
+    font-size: 8px; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--surface);
+}
+
+.cm-info { flex: 1; min-width: 0; }
+.cm-name {
+    display: block; font-size: 15px; font-weight: 700; color: var(--text);
+    text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cm-name:hover { color: var(--brand-ink); text-decoration: none; }
+.cm-meta {
+    font-size: 12.5px; color: var(--muted); margin-top: 3px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.cm-stat b { color: var(--brand-ink); font-weight: 700; }
+.cm-drama {
+    display: inline-block; margin-top: 5px; padding: 1px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; background: var(--gold-soft); color: #8a6d10;
+}
+.cm-action { flex-shrink: 0; }
+
 /* ---------- 筛选条 ---------- */
 .m-filters {
     background: var(--surface); border-radius: var(--radius); padding: 18px 20px;
@@ -738,4 +784,9 @@
     .m-cast-row { padding: 10px 14px; gap: 10px; font-size: 13.5px; }
     .cr-av { width: 34px; height: 34px; }
     .cr-role { font-size: 12px; }
+    .m-cmodels { grid-template-columns: 1fr; gap: 10px; }
+    .m-cmodel { padding: 12px 14px; gap: 12px; }
+    .cm-av { width: 54px; height: 54px; }
+    .cm-name { font-size: 14px; }
+    .cm-meta { font-size: 12px; gap: 8px; }
 }
