@@ -84,7 +84,7 @@ $videoKind   = Model::videoKind($modelInfo['video_url'] ?? '');
 $shareUrl    = $canonicalUrl;
 
 /* ---------- SEO ---------- */
-$ogImage = $heroCover ? (preg_match('#^https?://#i', $heroCover) ? $heroCover : 'https://58.tl/' . ltrim($heroCover, '/')) : 'https://58.tl/assets/images/og-mall.jpg';
+$ogImage = $heroCover ?: 'https://58.tl/assets/images/default.jpg';
 
 $personExtra = [
     'gender' => ($modelInfo['gender'] === '男') ? 'Male' : (($modelInfo['gender'] === '女') ? 'Female' : ''),

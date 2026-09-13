@@ -38,7 +38,7 @@ if ($userId && $castIds) {
 
 $title        = htmlspecialchars($drama['title']);
 $coverUrl     = !empty($drama['cover']) ? model_media($drama['cover']) : '';
-$ogImage      = $coverUrl ?: 'https://58.tl/assets/images/og-mall.jpg';
+$ogImage      = $coverUrl ?: 'https://58.tl/assets/images/default.jpg';
 $episodes     = intval($drama['episodes'] ?? 0);
 $tags         = $drama['tags_arr'] ?? [];
 $synopsis     = trim((string)($drama['synopsis'] ?? ''));

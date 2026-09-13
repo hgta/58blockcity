@@ -57,10 +57,18 @@ if (!function_exists('model_asset')) {
 
 if (!function_exists('model_media')) {
     /**
-     * 媒体资源地址归一化：
-     *   - 以 http(s):// 开头 → 原样返回
-     *   - assets/ 开头        → 走主站域名（上传目录在仓库根）
-     *   - 其他相对路径        → 走主站域名
+     * 媒体资源地址归一化（模特子站）。
+     *
+     * 站点存在多套并行的上传目录，不能靠猜域名，改为「文件系统探测 + 规则兜底」：
+     *
+     *   1) 头像：      根/assets/images/uploads/avatars/...  → https://58.tl/assets/images/uploads/avatars/...
+     *   2) 模特图：    根/assets/images/uploads/models/...   → https://58.tl/assets/images/uploads/models/...
+     *   3) 商品图：    mall/assets/uploads/products/...      → https://mall.58.tl/assets/uploads/products/...
+     *   4) 短剧封面：  mall/assets/uploads/dramas/...        → https://mall.58.tl/assets/uploads/dramas/...
+     *
+     * 数据库里存的通常是简写（如 `assets/uploads/models/202601/x.jpg`），
+     * 因此在若干候选物理位置中探测第一个真实存在的文件，据此决定 URL 前缀；
+     * 都探测不到时按「主站图片目录」兜底（与 User::avatarUrl 一致）。
      */
     function model_media($path)
     {
@@ -68,16 +76,59 @@ if (!function_exists('model_media')) {
         if ($path === '') {
             return '';
         }
-        if (preg_match('#^https?://#i', $path)) {
+        // 绝对 URL / 协议相对 URL → 原样
+        if (preg_match('#^(https?:)?//#i', $path)) {
             return $path;
         }
-        return 'https://58.tl/' . ltrim($path, '/');
+        // 已拼好的根相对路径 → 原样
+        if ($path[0] === '/') {
+            return $path;
+        }
+
+        $rel = ltrim($path, '/');
+
+        // 归一到「uploads/xxx」形式，便于枚举候选位置
+        $norm = $rel;
+        if (strpos($norm, 'assets/uploads/') === 0) {
+            $norm = 'uploads/' . substr($norm, strlen('assets/uploads/'));
+        } elseif (strpos($norm, 'assets/images/uploads/') === 0) {
+            $norm = 'uploads/' . substr($norm, strlen('assets/images/uploads/'));
+        }
+        // 裸文件名 → 归入模特上传目录
+        if (strpos($norm, '/') === false) {
+            $norm = 'uploads/models/' . $norm;
+        }
+
+        static $cache = [];
+
+        // 候选物理路径 → URL 前缀（顺序即优先级）
+        $candidates = [
+            // 主站图片目录（头像 / 模特图）
+            [APP_ROOT . '/assets/images/' . $norm, 'https://58.tl/assets/images/'],
+            // mall 上传目录（商品图 / 短剧封面）
+            [APP_ROOT . '/mall/assets/' . $norm,   'https://mall.58.tl/assets/'],
+            // 根 assets 直连（历史 / 兜底）
+            [APP_ROOT . '/assets/' . $norm,        'https://58.tl/assets/'],
+            [APP_ROOT . '/mall/assets/images/' . $norm, 'https://mall.58.tl/assets/images/'],
+        ];
+
+        if (isset($cache[$norm])) {
+            return $cache[$norm];
+        }
+        foreach ($candidates as $c) {
+            if (is_file($c[0])) {
+                return $cache[$norm] = $c[1] . $norm;
+            }
+        }
+        // 都探测不到（如本地无上传文件）：按主站图片目录兜底
+        return $cache[$norm] = 'https://58.tl/assets/images/' . $norm;
     }
 }
 
 if (!function_exists('model_img')) {
     /**
-     * 模特头像解析（模特专属头像优先，其次账号头像，最后默认图）
+     * 模特头像 / 主图解析
+     * 优先级：模特专属头像(avatar) → 账号头像(user_avatar) → 默认图
      */
     function model_img($model, $defaultFallback = true)
     {
@@ -88,6 +139,16 @@ if (!function_exists('model_img')) {
             return User::avatarUrl($model['user_avatar']);
         }
         return $defaultFallback ? 'https://58.tl/assets/images/default.jpg' : '';
+    }
+}
+
+if (!function_exists('model_default_img')) {
+    /**
+     * 主站默认图（与 User::avatarUrl 的兜底一致）
+     */
+    function model_default_img()
+    {
+        return 'https://58.tl/assets/images/default.jpg';
     }
 }
 
@@ -116,7 +177,7 @@ if (!function_exists('model_site_config')) {
             'description' => '58 模特库汇集人气模特个人主页、作品图集与短视频，并可发现模特参演的短剧作品，支持关注与在线申请加入。',
             'keywords'    => '58模特,模特库,模特,短剧,红果短剧,模特申请,模特招募',
             'canonical_url' => MODEL_BASE_URL . '/',
-            'og_image'    => 'https://58.tl/assets/images/og-mall.jpg',
+            'og_image'    => 'https://58.tl/assets/images/default.jpg',
             'logo_main'   => '58',
             'logo_sub'    => '模特库',
             'logo_tag'    => '模特 · 短剧',
