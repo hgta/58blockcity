@@ -43,13 +43,12 @@
 - **理由**：`@id` 是 JSON-LD 的实体归一机制；AI 借此判定 8 个域名属于同一组织，而非 8 个独立站点。
 - **替代方案**：仅统一 `name` 字符串 —— 被否决，字符串不构成实体同一性声明，AI 仍可能判为不同实体。
 
-### D3：`sameAs` 与 `isRelatedTo` 的语义边界（关键决策）
+### D3：`isRelatedTo` 的语义边界（关键决策）
 
-- `sameAs`：**只放本站自有的跨平台主页**，当前确定为 `https://github.com/hgta/58blockcity`。
 - `isRelatedTo`：放第三方独立平台 `BlockCity.vip`，配合页面正文说明「58区块城市是基于 BlockCity.vip 生态的独立第三方工具站集群」。
-- **微信号 `BitPFP` 的处理**：微信号不是 URL，`sameAs` 的语义要求 URL，因此**不写入 `sameAs`**；改由 `ContactPoint`（`contactType` 标注）或 `description` 正文承载。
+- **微信号 `BitPFP` 的处理**：微信号不是 URL，改由 `ContactPoint`（`contactType` 标注）或 `description` 正文承载。
 
-- **理由**：`sameAs` 的语义是「同一实体的另一个 URL」。BlockCity.vip 是独立第三方，若写入 `sameAs` 等于对外宣称「58区块城市 = BlockCity.vip」，会导致 AI 实体错误合并、信誉风险转嫁。
+- **理由**：BlockCity.vip 是独立第三方，若写入 `sameAs` 等于对外宣称「58区块城市 = BlockCity.vip」，会导致 AI 实体错误合并、信誉风险转嫁。
 - **替代方案**：把 blockcity.vip 放进 `sameAs` 以「借势」其知名度 —— 被否决，属于错误的实体声明，且违反 `entity-identity` spec 中「sameAs 仅限自有平台」的约束。
 
 ### D4：sitemap 保持单文件，静态节点用 `filemtime()` 生成 lastmod

@@ -12,10 +12,9 @@
  *   $orgId = ORG_ENTITY_ID;                   // "https://www.58.tl/#organization"
  *
  * 维护约定（见 design.md D3 / D6）：
- *   - sameAs  仅放「本站自有的跨平台主页」（是「我是它」）→ 当前仅 GitHub 仓库。
- *   - 第三方独立平台 BlockCity.vip 用 isRelatedTo（是「我服务/关联它」），绝不写入 sameAs，
+ *   - 第三方独立平台 BlockCity.vip 用 isRelatedTo（是「我服务/关联它」），
  *     避免生成式引擎把两个组织错误合并、转嫁信誉风险。
- *   - 微信号 BitPFP 不是 URL，用 ContactPoint 的 identifier/name 承载，不写入 sameAs。
+ *   - 微信号 BitPFP 不是 URL，用 ContactPoint 的 identifier/name 承载。
  *   - 静态 HTML 页需手工注入同一份 JSON-LD（无模板可 include）；变更本文件时同步静态页。
  */
 
@@ -46,10 +45,6 @@ if (!function_exists('organization_json_ld')) {
                 'height' => 180,
             ],
             'description' => '58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、model、nft、v、bid、club 九个子域。',
-            // 自有跨平台主页（同一实体的另一 URL）
-            'sameAs'      => [
-                'https://github.com/hgta/58blockcity',
-            ],
             // 联系入口：微信号非 URL，用 identifier/name 承载
             'contactPoint' => [
                 [

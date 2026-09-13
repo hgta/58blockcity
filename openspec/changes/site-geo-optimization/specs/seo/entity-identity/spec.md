@@ -23,11 +23,11 @@
 - **THEN** 其 `publisher` 使用全局实体的 `@id` 引用
 
 ### Requirement: sameAs 仅限自有平台主页
-`Organization.sameAs` SHALL 仅包含本站自有的跨平台主页 URL，MUST NOT 包含第三方独立站点。
+`Organization.sameAs` SHALL 仅包含本站自有的跨平台主页 URL，MUST NOT 包含第三方独立站点。未配置自有跨平台主页时，`sameAs` MUST 留空（省略该字段）。
 
 #### Scenario: 自有账号写入 sameAs
 - **WHEN** 抓取首页 `Organization` 结构化数据
-- **THEN** `sameAs` 中包含自有平台主页（如 GitHub 仓库主页）的 URL
+- **THEN** `sameAs` 中仅包含自有平台主页的 URL；若未配置自有平台主页，则省略该字段
 
 #### Scenario: 第三方站不进入 sameAs
 - **WHEN** 检查 `Organization.sameAs`

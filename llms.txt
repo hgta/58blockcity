@@ -55,7 +55,6 @@
 
 ## 关于本站
 
-- [GitHub 仓库](https://github.com/hgta/58blockcity): 本站开源代码仓库
 - 生态关联：本站为独立第三方工具站，服务并关联 [BlockCity.vip](https://www.blockcity.vip/) 生态
 - 联系方式：support@58.tl
 
