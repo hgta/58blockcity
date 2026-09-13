@@ -204,9 +204,12 @@
 .m-dc-cast .avs img:first-child, .m-dc-cast .avs .ph:first-child { margin-left: 0; }
 .m-dc-cast .cnt { font-size: 12px; color: var(--muted); }
 
-/* ---------- 模特卡片网格 ---------- */
+/* ---------- 模特卡片网格 ----------
+   固定列数（而非 auto-fill）：桌面 5 列，配合每页 15 个正好 3 行满，
+   避免 auto-fill 在不同宽度下产生未知列数导致最后一行留空位。
+   各断点的列数均能整除常用每页条数（15 / 20 / 24）。 */
 .m-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 18px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px;
 }
 .model-card {
     background: var(--surface); border-radius: var(--radius); overflow: hidden;
@@ -689,11 +692,16 @@
 .m-back:hover { color: var(--brand-ink); }
 
 /* ---------- 响应式 ---------- */
+@media (max-width: 1100px) {
+    .m-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+}
+
 @media (max-width: 900px) {
     .m-hero { height: 460px; }
     .m-hero-name { font-size: 36px; }
     .m-podium { grid-template-columns: 1fr; }
     .m-drama-hero .cover { flex: 0 0 220px; }
+    .m-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
 }
 
 @media (max-width: 640px) {
@@ -705,7 +713,7 @@
     .m-hero-meta { gap: 11px; margin-bottom: 18px; }
     .m-sec { margin: 34px 0; }
     .m-sec-head h2 { font-size: 19px; }
-    .m-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .m-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .m-rail-card { flex: 0 0 160px; }
     .m-drama-card { flex: 0 0 150px; }
     .m-profile-head { padding: 20px; gap: 20px; }

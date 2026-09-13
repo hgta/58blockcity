@@ -403,6 +403,68 @@ class Model
      * 发现页叠加筛选 + 排序
      * @return array ['list'=>..., 'total'=>..., 'pages'=>...]
      */
+    /**
+     * 按偏移量取模特列表（「加载更多」用）
+     *
+     * 与 getFilteredList 的区别：直接接受 offset/limit，
+     * 适用于首屏条数与后续每行条数不一致的场景（避免 page 换算导致重复数据）。
+     *
+     * @return array ['list'=>[], 'total'=>int, 'hasMore'=>bool]
+     */
+    public function getFilteredListByOffset($filters = [], $offset = 0, $limit = 20)
+    {
+        $offset = max(0, intval($offset));
+        $limit  = max(1, min(100, intval($limit)));
+
+        $where  = ["m.status = 'active'"];
+        $params = [];
+        if (!empty($filters['gender']) && in_array($filters['gender'], ['男', '女', '保密'], true)) {
+            $where[] = "m.gender = ?";
+            $params[] = $filters['gender'];
+        }
+        if (!empty($filters['zodiac'])) {
+            $where[] = "m.zodiac = ?";
+            $params[] = $filters['zodiac'];
+        }
+        if (!empty($filters['city'])) {
+            $where[] = "m.city = ?";
+            $params[] = $filters['city'];
+        }
+        if (!empty($filters['q'])) {
+            $where[] = "m.nickname LIKE ?";
+            $params[] = "%" . $filters['q'] . "%";
+        }
+
+        $sortMap = [
+            'follower' => 'm.follower_count DESC',
+            'like'     => 'm.like_count DESC',
+            'product'  => 'm.product_count DESC',
+            'new'      => 'm.created_at DESC',
+        ];
+        $orderBy = $sortMap[$filters['sort'] ?? 'follower'] ?? $sortMap['follower'];
+
+        $whereSql  = implode(' AND ', $where);
+        $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM models m WHERE " . $whereSql);
+        $countStmt->execute($params);
+        $total = intval($countStmt->fetchColumn());
+
+        $stmt = $this->pdo->prepare(
+            "SELECT m.*, u.username, u.avatar as user_avatar
+             FROM models m LEFT JOIN users u ON m.user_id = u.id
+             WHERE {$whereSql}
+             ORDER BY {$orderBy}
+             LIMIT {$limit} OFFSET {$offset}"
+        );
+        $stmt->execute($params);
+        $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'list'    => $list,
+            'total'   => $total,
+            'hasMore' => ($offset + count($list)) < $total,
+        ];
+    }
+
     public function getFilteredList($filters = [], $page = 1, $perPage = 24)
     {
         $where = ["m.status = 'active'"];

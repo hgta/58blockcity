@@ -14,8 +14,8 @@ $featured   = $modelObj->getFeaturedModels(8);
 $topDramas  = $dramaObj->getTopDramas(10);
 $facets     = $modelObj->getFacets();
 
-// 首页发现区：默认首页第一页
-$perPage = 12;
+// 首页发现区：首屏 15 个（桌面 5 列 × 3 行，满行不留空位）
+$perPage = 15;
 $filters = ['gender' => '', 'zodiac' => '', 'city' => '', 'q' => '', 'sort' => 'follower'];
 $result  = $modelObj->getFilteredList($filters, 1, $perPage);
 $list    = $result['list'];
@@ -210,7 +210,7 @@ if ($heroModel) {
         </div>
 
         <?php if ($result['pages'] > 1): ?>
-        <button class="m-load-more" id="load-more" data-page="1" data-pages="<?= $result['pages'] ?>">加载更多</button>
+        <button class="m-load-more" id="load-more" data-total="<?= intval($result['total']) ?>">加载更多</button>
         <?php endif; ?>
     </section>
 
@@ -268,25 +268,16 @@ if ($heroModel) {
         });
     }
 
-    // 发现区加载更多
-    var btn = document.getElementById('load-more');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-        var next  = parseInt(btn.dataset.page, 10) + 1;
-        var pages = parseInt(btn.dataset.pages, 10);
-        btn.disabled = true;
-        btn.textContent = '加载中…';
-        fetch('/list.php?ajax=1&page=' + next, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                document.getElementById('model-grid').insertAdjacentHTML('beforeend', res.html);
-                bindFollowButtons(document.getElementById('model-grid'));
-                btn.dataset.page = next;
-                if (res.hasMore) { btn.disabled = false; btn.textContent = '加载更多'; }
-                else { btn.textContent = '已加载全部'; btn.style.display = 'none'; }
-            })
-            .catch(function () { btn.disabled = false; btn.textContent = '加载失败，点击重试'; });
-    });
+    // 发现区：首屏自动补齐整行 + 加载更多（按当前列数补一行）
+    var discoverOpts = {
+        buttonId: 'load-more',
+        gridId:   'model-grid',
+        url:      '/list.php',
+        args:     { sort: 'follower' },
+        onLoaded: function (grid) { bindFollowButtons(grid); }
+    };
+    autoFillFirstRow(discoverOpts);
+    bindLoadMore(discoverOpts);
 })();
 </script>
 

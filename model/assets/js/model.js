@@ -13,6 +13,131 @@ function mFormatFollower(n) {
     return String(n);
 }
 
+/* ---------- 网格工具：读取实际列数 ----------
+   .m-grid 为固定列数网格，通过计算后的 grid-template-columns
+   统计轨道数，供「加载更多」按整行补齐使用。 */
+function mGridColumns(gridEl) {
+    if (!gridEl) return 1;
+    var tpl = window.getComputedStyle(gridEl).gridTemplateColumns || '';
+    var cols = tpl.split(' ').filter(function (s) { return s.trim() !== ''; }).length;
+    return cols > 0 ? cols : 1;
+}
+
+/* ---------- 首屏自动补齐整行 ----------
+   服务端首屏条数是固定的（首页 15 / 列表 20），在窄屏下可能不是
+   当前列数的整数倍。页面加载后检查首屏余数，若不满一行则自动补一次，
+   使用户第一眼就看到完整行。
+   （宽屏下若已是整数倍则不发请求） */
+function autoFillFirstRow(opts) {
+    var btn  = document.getElementById(opts.buttonId || 'load-more');
+    var grid = document.getElementById(opts.gridId || 'model-grid');
+    if (!btn || !grid) return;
+
+    function fill() {
+        var cols   = mGridColumns(grid);
+        var loaded = grid.querySelectorAll('.model-card').length;
+        var total  = parseInt(btn.dataset.total || '0', 10);
+        if (loaded === 0 || loaded % cols === 0) return;      // 已满行
+        if (total > 0 && loaded >= total) return;             // 已全部加载
+
+        var params = new URLSearchParams();
+        params.set('ajax', '1');
+        params.set('offset', loaded);
+        params.set('limit', cols - (loaded % cols));          // 补足这一行
+        Object.keys(opts.args || {}).forEach(function (k) {
+            var v = opts.args[k];
+            if (v !== '' && v !== null) params.set(k, v);
+        });
+
+        fetch((opts.url || '/list.php') + '?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            grid.insertAdjacentHTML('beforeend', res.html);
+            if (opts.onLoaded) opts.onLoaded(grid, res);
+        })
+        .catch(function () {});
+    }
+
+    // 首屏渲染后执行；视口尺寸变化（如旋转屏幕）时重新检查
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        fill();
+    } else {
+        document.addEventListener('DOMContentLoaded', fill);
+    }
+    var rTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(rTimer);
+        rTimer = setTimeout(fill, 300);
+    });
+}
+
+/* ---------- 按整行补齐加载更多 ----------
+   以「已加载条数」为游标请求下一行：每次请求 limit = 当前网格列数，
+   保证追加后不产生半行空位。
+
+   注意：不能简单用 page +1 递增，因为首屏条数与后续每行条数往往不同
+   （如首屏 15 个、每次补一行 5 个），用 page 计算 OFFSET 会导致重复数据。
+   因此这里统一使用 offset = 当前已渲染卡片数。 */
+function bindLoadMore(opts) {
+    var btn  = document.getElementById(opts.buttonId || 'load-more');
+    var grid = document.getElementById(opts.gridId || 'model-grid');
+    if (!btn || !grid) return;
+
+    var baseUrl   = opts.url || '/list.php';
+    var extraArgs = opts.args || {};
+    var onLoaded  = opts.onLoaded || function () {};
+
+    btn.addEventListener('click', function () {
+        var cols   = mGridColumns(grid);
+        var loaded = grid.querySelectorAll('.model-card').length;
+        var total  = parseInt(btn.dataset.total || '0', 10);
+
+        // 已加载数量达到总数则直接收尾
+        if (total > 0 && loaded >= total) {
+            btn.textContent = '已加载全部';
+            btn.disabled = true;
+            setTimeout(function () { btn.style.display = 'none'; }, 600);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '加载中…';
+
+        var params = new URLSearchParams();
+        params.set('ajax', '1');
+        params.set('offset', loaded);      // 从已加载处继续
+        params.set('limit', cols);         // 恰好补满一行
+        Object.keys(extraArgs).forEach(function (k) {
+            if (extraArgs[k] !== '' && extraArgs[k] !== null) params.set(k, extraArgs[k]);
+        });
+
+        fetch(baseUrl + '?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            grid.insertAdjacentHTML('beforeend', res.html);
+            onLoaded(grid, res);
+
+            var got = parseInt(res.count || 0, 10);
+            if (got < cols) {
+                btn.textContent = '已加载全部';
+                btn.disabled = true;
+                setTimeout(function () { btn.style.display = 'none'; }, 600);
+            } else {
+                btn.disabled = false;
+                btn.textContent = '加载更多';
+            }
+        })
+        .catch(function () {
+            btn.disabled = false;
+            btn.textContent = '加载失败，点击重试';
+        });
+    });
+}
+
 /* ---------- 关注按钮 ---------- */
 function bindFollowButtons(root) {
     var scope = root || document;

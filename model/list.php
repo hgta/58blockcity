@@ -7,7 +7,8 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/card.php';
 
 $userId  = $modelUserId;
-$perPage = 24;
+// 首屏 20 条：可被桌面 5 列 / 平板 4 列整除，首屏无半行空位
+$perPage = 20;
 
 $gender  = in_array($_GET['gender'] ?? '', ['男', '女', '保密'], true) ? $_GET['gender'] : '';
 $zodiac  = trim($_GET['zodiac'] ?? '');
@@ -35,9 +36,16 @@ function buildQuery($overrides)
 /* ---------- AJAX：返回一页卡片 ---------- */
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json; charset=utf-8');
-    $r    = $modelObj->getFilteredList($filters, $page, $perPage);
+
+    // 「加载更多」以偏移量为游标：offset = 页面已渲染的卡片数，
+    // limit = 当前网格列数，保证每次追加恰好补满一行、且不重复数据。
+    $offset = isset($_GET['offset']) ? max(0, intval($_GET['offset'])) : 0;
+    $limit  = isset($_GET['limit'])  ? max(1, min(50, intval($_GET['limit']))) : 20;
+
+    $r    = $modelObj->getFilteredListByOffset($filters, $offset, $limit);
     $rows = $r['list'];
-    $ids  = array_column($rows, 'id');
+
+    $ids    = array_column($rows, 'id');
     $strips = $modelObj->getModelImageStrips($ids, 4);
     $followedIds = [];
     if ($userId && $ids) {
@@ -46,16 +54,17 @@ if (isset($_GET['ajax'])) {
         $stmt->execute([$userId]);
         $followedIds = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
     }
+
     $html = '';
     foreach ($rows as $m) {
         $html .= renderModelCard($m, $strips[$m['id']] ?? [], isset($followedIds[$m['id']]), $userId);
     }
+
     echo json_encode([
         'html'    => $html,
-        'page'    => $page,
-        'pages'   => $r['pages'],
+        'count'   => count($rows),
         'total'   => $r['total'],
-        'hasMore' => $page < $r['pages'],
+        'hasMore' => $r['hasMore'],
     ]);
     exit;
 }
@@ -162,7 +171,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <?php if ($result['pages'] > 1): ?>
-    <button class="m-load-more" id="load-more" data-page="1" data-pages="<?= intval($result['pages']) ?>">加载更多</button>
+    <button class="m-load-more" id="load-more" data-total="<?= intval($result['total']) ?>">加载更多</button>
     <?php endif; ?>
 </div>
 
@@ -177,42 +186,31 @@ require_once __DIR__ . '/includes/header.php';
 <script src="<?= htmlspecialchars(model_asset('assets/js/model.js')) ?>"></script>
 <script>
 (function () {
-    var btn = document.getElementById('load-more');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-        var next  = parseInt(btn.dataset.page, 10) + 1;
-        var pages = parseInt(btn.dataset.pages, 10);
-        btn.disabled = true;
-        btn.textContent = '加载中…';
+    // 当前筛选参数（从地址栏继承，供加载更多复用）
+    var sp = new URLSearchParams(window.location.search);
+    sp.delete('page');
+    sp.delete('ajax');
+    var args = {};
+    sp.forEach(function (v, k) { args[k] = v; });
 
-        var qs = new URLSearchParams(window.location.search);
-        qs.delete('page');
-        qs.set('ajax', '1');
-        qs.set('page', next);
-
-        fetch('/list.php?' + qs.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                var grid = document.getElementById('model-grid');
-                grid.insertAdjacentHTML('beforeend', res.html);
-                bindFollowButtons(grid);
-                btn.dataset.page = next;
-                if (res.hasMore) {
-                    btn.disabled = false;
-                    btn.textContent = '加载更多';
-                } else {
-                    btn.textContent = '已加载全部';
-                    setTimeout(function () { btn.style.display = 'none'; }, 600);
-                }
+    var opts = {
+        buttonId: 'load-more',
+        gridId:   'model-grid',
+        url:      '/list.php',
+        args:     args,
+        onLoaded: function (grid, res) {
+            bindFollowButtons(grid);
+            // 同步地址栏，便于分享当前浏览进度（无数据时不写）
+            if (typeof res.page !== 'undefined') {
                 var share = new URLSearchParams(window.location.search);
-                share.set('page', next);
+                share.set('page', res.page);
                 history.replaceState(null, '', '?' + share.toString());
-            })
-            .catch(function () {
-                btn.disabled = false;
-                btn.textContent = '加载失败，点击重试';
-            });
-    });
+            }
+        }
+    };
+    // 首屏在窄屏下可能不满一行，自动补齐
+    autoFillFirstRow(opts);
+    bindLoadMore(opts);
 })();
 </script>
 
