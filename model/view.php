@@ -5,7 +5,7 @@
  */
 require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/card.php';
-require_once APP_ROOT . '/classes/Message.php';
+require_once APP_ROOT . '/classes/ModelMessage.php';
 
 $modelId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($modelId <= 0) {
@@ -56,26 +56,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['like']) && $userId) {
     exit;
 }
 
-/* ---------- 留言 ---------- */
-$messageObj  = new Message($pdo);
-$msgSuccess  = '';
+/* ---------- 留言板（公开，所有人可见；登录后才可发布/回复） ---------- */
+$msgObj      = new ModelMessage($pdo);
 $modelUserId = (int)($modelInfo['user_id'] ?? 0);
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message_text']) && $userId && $modelUserId) {
-    $msg = trim($_POST['message_text'] ?? '');
-    if (mb_strlen($msg) < 1) {
-        $msgSuccess = '<div class="m-alert err">请输入留言内容</div>';
-    } elseif ($messageObj->send($userId, $modelUserId, $msg)) {
-        header('Location: ' . $canonicalUrl . '#messages');
+$msgError    = '';
+
+// 发布留言 / 回复
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message_text'])) {
+    $content = trim($_POST['message_text'] ?? '');
+    $parentId = intval($_POST['parent_id'] ?? 0);
+
+    if (!$userId) {
+        header('Location: ' . model_login_url($canonicalUrl . '#messages'));
         exit;
+    }
+    if (mb_strlen($content) < 1) {
+        $msgError = '请输入留言内容';
+    } else {
+        $newId = $msgObj->create($modelId, $userId, $content, $parentId, intval($_POST['reply_to'] ?? 0));
+        if ($newId > 0) {
+            header('Location: ' . $canonicalUrl . '#messages');
+            exit;
+        }
+        $msgError = '回复的留言不存在或已删除';
     }
 }
 
-$messages = [];
-$messageCount = 0;
-if ($modelUserId && $userId) {
-    $messages = $messageObj->getMessages($userId, $modelUserId, 1, 10);
-    $messageCount = count($messageObj->getMessages($userId, $modelUserId, 1, 9999));
-}
+$msgPage     = max(1, intval($_GET['mpage'] ?? 1));
+$msgResult   = $msgObj->getByModel($modelId, $msgPage, 20);
+$messages    = $msgResult['list'];
+$messageCount = $msgObj->countByModel($modelId);
 
 /* ---------- 主视觉 ---------- */
 $modelAvatar = model_img($modelInfo, false);
@@ -336,38 +346,141 @@ require_once __DIR__ . '/includes/header.php';
     </section>
     <?php endif; ?>
 
-    <!-- ============ 留言 ============ -->
-    <section class="m-sec" id="messages">
+    <!-- ============ 留言板（公开可见，登录可发/可回复） ============ -->
+    <section class="m-sec m-sec-tight" id="messages">
         <div class="m-sec-head">
-            <h2><span class="bar"></span>留言 <span style="font-size:14px;color:var(--muted);font-weight:500;">（<?= $messageCount ?> 条）</span></h2>
+            <div>
+                <h2><span class="bar"></span>留言板</h2>
+                <p class="sub">共 <?= $messageCount ?> 条留言<?= $modelUserId ? '，' . $nickname . ' 可回复' : '' ?></p>
+            </div>
         </div>
+
         <?php if ($userId): ?>
-        <form method="post" class="m-msg-form">
-            <input type="text" name="message_text" maxlength="500" placeholder="给 <?= $nickname ?> 留言…">
+        <form method="post" class="m-msg-form" id="msg-main-form">
+            <input type="hidden" name="parent_id" value="0">
+            <input type="text" name="message_text" maxlength="500" id="msg-main-input"
+                   placeholder="给 <?= $nickname ?> 留言…（友善发言）" autocomplete="off">
             <button type="submit">发送</button>
         </form>
         <?php else: ?>
-        <p style="color:var(--muted);margin-bottom:16px;">请 <a href="<?= htmlspecialchars(model_login_url($canonicalUrl . '#messages')) ?>" style="color:var(--brand-ink);">登录</a> 后留言</p>
+        <div class="m-msg-login">
+            <i class="fas fa-comment-dots"></i>
+            <span>登录后即可留言</span>
+            <a class="m-btn m-btn-primary m-btn-sm" href="<?= htmlspecialchars(model_login_url($canonicalUrl . '#messages')) ?>">立即登录</a>
+        </div>
         <?php endif; ?>
-        <?= $msgSuccess ?>
+
+        <?php if ($msgError): ?>
+            <div class="m-alert err" style="margin-bottom:14px;"><?= htmlspecialchars($msgError) ?></div>
+        <?php endif; ?>
 
         <?php if (empty($messages)): ?>
-            <div class="m-empty"><i class="fas fa-comment-dots"></i>暂无留言，快来抢沙发~</div>
+            <div class="m-empty"><i class="fas fa-comment-dots"></i>还没有留言，来抢沙发~</div>
         <?php else: ?>
-            <?php foreach ($messages as $msg): $msgAvatar = User::avatarUrl($msg['user_avatar'] ?? ''); ?>
-            <div class="m-msg">
-                <div class="av">
-                    <?php if ($msgAvatar): ?><img src="<?= htmlspecialchars($msgAvatar) ?>" alt="" onerror="this.src='https://58.tl/assets/images/default.jpg'"><?php else: ?><i class="fas fa-user"></i><?php endif; ?>
-                </div>
-                <div class="bd">
-                    <div class="hd">
-                        <strong><?= htmlspecialchars($msg['username'] ?? '匿名') ?></strong>
-                        <span><?= date('m-d H:i', strtotime($msg['created_at'])) ?></span>
+            <div class="m-msg-list">
+                <?php foreach ($messages as $msg):
+                    $msgAvatar = User::avatarUrl($msg['user_avatar'] ?? '');
+                    // 该主留言的作者是否是模特本人
+                    $isOwnerMsg = ($modelUserId && intval($msg['user_id']) === $modelUserId);
+                ?>
+                <div class="m-msg-item">
+                    <div class="m-msg">
+                        <div class="av">
+                            <?php if ($isOwnerMsg && !empty($msg['model_avatar'])): ?>
+                                <img src="<?= htmlspecialchars(model_media($msg['model_avatar'])) ?>" alt="">
+                            <?php elseif ($msgAvatar): ?>
+                                <img src="<?= htmlspecialchars($msgAvatar) ?>" alt="" onerror="this.style.display='none'">
+                            <?php else: ?>
+                                <i class="fas fa-user"></i>
+                            <?php endif; ?>
+                        </div>
+                        <div class="bd">
+                            <div class="hd">
+                                <strong><?= htmlspecialchars($msg['username'] ?? '匿名用户') ?></strong>
+                                <?php if ($isOwnerMsg): ?><span class="m-owner-tag">模特本人</span><?php endif; ?>
+                                <span><?= date('m-d H:i', strtotime($msg['created_at'])) ?></span>
+                            </div>
+                            <p><?= nl2br(htmlspecialchars($msg['message'])) ?></p>
+                            <div class="m-msg-actions">
+                                <?php if ($userId): ?>
+                                    <a href="#" class="m-reply-toggle" data-target="reply-<?= intval($msg['id']) ?>">回复</a>
+                                <?php endif; ?>
+                                <a href="#" class="m-msg-like" data-id="<?= intval($msg['id']) ?>">
+                                    <i class="far fa-thumbs-up"></i> <span><?= intval($msg['like_count']) ?></span>
+                                </a>
+                                <?php if ($userId && (intval($msg['user_id']) === $userId || $modelUserId === $userId)): ?>
+                                    <a href="#" class="m-msg-del" data-id="<?= intval($msg['id']) ?>">删除</a>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- 回复输入框（默认隐藏） -->
+                            <?php if ($userId): ?>
+                            <form method="post" class="m-reply-form" id="reply-<?= intval($msg['id']) ?>" style="display:none;">
+                                <input type="hidden" name="parent_id" value="<?= intval($msg['id']) ?>">
+                                <input type="hidden" name="reply_to" value="<?= intval($msg['user_id']) ?>">
+                                <input type="text" name="message_text" maxlength="500" autocomplete="off"
+                                       placeholder="回复 <?= htmlspecialchars($msg['username'] ?? '') ?>…">
+                                <button type="submit">回复</button>
+                                <a href="#" class="m-reply-cancel" data-target="reply-<?= intval($msg['id']) ?>">取消</a>
+                            </form>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <p><?= nl2br(htmlspecialchars($msg['message'])) ?></p>
+
+                    <?php if (!empty($msg['replies'])): ?>
+                    <div class="m-replies">
+                        <?php foreach ($msg['replies'] as $rep):
+                            $repAvatar = User::avatarUrl($rep['user_avatar'] ?? '');
+                            $isOwnerRep = ($modelUserId && intval($rep['user_id']) === $modelUserId);
+                        ?>
+                        <div class="m-msg m-msg-reply">
+                            <div class="av av-sm">
+                                <?php if ($isOwnerRep && !empty($rep['model_avatar'])): ?>
+                                    <img src="<?= htmlspecialchars(model_media($rep['model_avatar'])) ?>" alt="">
+                                <?php elseif ($repAvatar): ?>
+                                    <img src="<?= htmlspecialchars($repAvatar) ?>" alt="" onerror="this.style.display='none'">
+                                <?php else: ?>
+                                    <i class="fas fa-user"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="bd">
+                                <div class="hd">
+                                    <strong><?= htmlspecialchars($rep['username'] ?? '匿名用户') ?></strong>
+                                    <?php if ($isOwnerRep): ?><span class="m-owner-tag">模特本人</span><?php endif; ?>
+                                    <?php if (!empty($rep['reply_to_user_id']) && intval($rep['reply_to_user_id']) !== intval($msg['user_id'])): ?>
+                                        <span class="m-reply-at">回复 @<?= htmlspecialchars($rep['username'] ?? '') ?></span>
+                                    <?php endif; ?>
+                                    <span><?= date('m-d H:i', strtotime($rep['created_at'])) ?></span>
+                                </div>
+                                <p><?= nl2br(htmlspecialchars($rep['message'])) ?></p>
+                                <div class="m-msg-actions">
+                                    <?php if ($userId): ?>
+                                        <a href="#" class="m-reply-toggle" data-target="reply-<?= intval($msg['id']) ?>">回复</a>
+                                    <?php endif; ?>
+                                    <?php if ($userId && (intval($rep['user_id']) === $userId || $modelUserId === $userId)): ?>
+                                        <a href="#" class="m-msg-del" data-id="<?= intval($rep['id']) ?>">删除</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
+
+            <?php if ($msgResult['pages'] > 1): ?>
+            <div class="m-pager">
+                <?php if ($msgPage > 1): ?>
+                    <a href="?id=<?= $modelId ?>&mpage=<?= $msgPage - 1 ?>#messages">上一页</a>
+                <?php endif; ?>
+                <span class="cur"><?= $msgPage ?> / <?= intval($msgResult['pages']) ?></span>
+                <?php if ($msgPage < $msgResult['pages']): ?>
+                    <a href="?id=<?= $modelId ?>&mpage=<?= $msgPage + 1 ?>#messages">下一页</a>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 
@@ -459,6 +572,75 @@ function shareModel() {
         alert('链接已复制到剪贴板');
     }
 }
+
+/* ---------- 留言板交互 ---------- */
+(function () {
+    // 展开/收起回复框
+    document.querySelectorAll('.m-reply-toggle').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            var box = document.getElementById(el.dataset.target);
+            if (!box) return;
+            var show = box.style.display === 'none';
+            // 同时只开一个回复框
+            document.querySelectorAll('.m-reply-form').forEach(function (f) { f.style.display = 'none'; });
+            box.style.display = show ? 'flex' : 'none';
+            if (show) {
+                var input = box.querySelector('input[name=message_text]');
+                if (input) input.focus();
+            }
+        });
+    });
+    document.querySelectorAll('.m-reply-cancel').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            var box = document.getElementById(el.dataset.target);
+            if (box) box.style.display = 'none';
+        });
+    });
+
+    // 点赞
+    document.querySelectorAll('.m-msg-like').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            var fd = new FormData();
+            fd.append('action', 'like');
+            fd.append('id', el.dataset.id);
+            fetch('/message.php', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.ok) {
+                        var span = el.querySelector('span');
+                        if (span) span.textContent = res.like_count;
+                        el.querySelector('i').className = 'fas fa-thumbs-up';
+                    }
+                })
+                .catch(function () {});
+        });
+    });
+
+    // 删除
+    document.querySelectorAll('.m-msg-del').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (!confirm('确认删除这条留言？')) return;
+            var fd = new FormData();
+            fd.append('action', 'delete');
+            fd.append('id', el.dataset.id);
+            fetch('/message.php', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.ok) {
+                        var item = el.closest('.m-msg-item');
+                        if (item) item.remove();
+                    } else {
+                        alert(res.error === 'forbidden' ? '你没有权限删除这条留言' : '删除失败，请重试');
+                    }
+                })
+                .catch(function () { alert('删除失败，请重试'); });
+        });
+    });
+})();
 
 (function () {
     mInitLightbox('.gallery-item');

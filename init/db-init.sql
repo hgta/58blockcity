@@ -1520,14 +1520,19 @@ CREATE TABLE IF NOT EXISTS `model_likes` (
 
 CREATE TABLE IF NOT EXISTS `model_messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `model_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `message` text NOT NULL,
+  `model_id` int(11) NOT NULL COMMENT '被留言的模特ID',
+  `user_id` int(11) NOT NULL COMMENT '留言者用户ID',
+  `message` text NOT NULL COMMENT '留言内容',
+  `parent_id` int(11) DEFAULT NULL COMMENT '回复的主留言ID（NULL=主留言）',
+  `reply_to_user_id` int(11) DEFAULT NULL COMMENT '被回复的用户ID（渲染「回复 @某人」）',
+  `like_count` int(11) NOT NULL DEFAULT 0 COMMENT '点赞数',
+  `status` enum('active','deleted') NOT NULL DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_model_id` (`model_id`),
+  KEY `idx_model_status` (`model_id`, `status`, `created_at`),
+  KEY `idx_parent` (`parent_id`),
   KEY `idx_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模特公开留言板';
 
 -- --------------------------------------------------------
 -- 模特关注

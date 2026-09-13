@@ -578,6 +578,59 @@
 .m-msg .bd .hd span { font-size: 12px; color: var(--muted); }
 .m-msg .bd p { font-size: 14px; color: var(--text-2); margin: 0; word-break: break-word; line-height: 1.6; }
 
+/* ---------- 留言板 ---------- */
+.m-msg-login {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 20px; color: var(--muted); font-size: 14px;
+}
+.m-msg-login i { color: var(--brand); font-size: 18px; }
+.m-msg-login .m-btn { margin-left: auto; }
+
+.m-msg-list { display: flex; flex-direction: column; gap: 2px; }
+.m-msg-item {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 4px 0 2px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.m-msg-item > .m-msg { padding: 14px 18px 8px; }
+
+.m-owner-tag {
+    padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), var(--brand-ink)); color: #fff;
+}
+.m-reply-at { font-size: 12px; color: var(--brand-ink); }
+
+.m-msg-actions {
+    display: flex; gap: 16px; align-items: center; margin-top: 7px;
+    font-size: 12.5px; color: var(--muted);
+}
+.m-msg-actions a { color: var(--muted); text-decoration: none; }
+.m-msg-actions a:hover { color: var(--brand-ink); text-decoration: none; }
+
+.m-replies {
+    margin: 0 18px 12px 62px; padding: 8px 0 0;
+    border-top: 1px dashed var(--line);
+}
+.m-msg-reply { padding: 8px 0 0; border-bottom: none; }
+.m-msg-reply .av-sm { width: 32px; height: 32px; }
+.m-msg-reply .bd .hd strong { font-size: 13px; }
+.m-msg-reply .bd p { font-size: 13.5px; }
+
+.m-reply-form {
+    display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap;
+}
+.m-reply-form input[type=text] {
+    flex: 1; min-width: 160px; padding: 8px 14px; border: 1px solid var(--line);
+    border-radius: 999px; font-size: 13.5px; outline: none; background: var(--surface-2);
+}
+.m-reply-form input[type=text]:focus { border-color: var(--brand); background: var(--surface); }
+.m-reply-form button {
+    padding: 8px 20px; border: none; border-radius: 999px; cursor: pointer;
+    background: linear-gradient(135deg, var(--brand), var(--brand-ink)); color: #fff;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+}
+.m-reply-cancel { font-size: 12.5px; color: var(--muted); text-decoration: none; }
+
 /* ---------- 灯箱 ---------- */
 .m-lightbox {
     display: none; position: fixed; inset: 0; z-index: 9999;
