@@ -270,10 +270,73 @@ class Drama
     }
 
     /**
-     * 登记「非模特演员」参演（未入驻模特库的普通演员，仅存姓名）
-     * 同一部剧内不允许重名演员（uniq_drama_actor）
+     * 关联「演员表成员」参演（优先使用，可展示头像、可跨剧复用）
      *
-     * @return array|null 成功返回可展示的参演记录，重名或参数非法返回 null
+     * @param int $actorId actors.id
+     * @return array|null 成功返回参演记录；已关联或参数非法返回 null
+     */
+    public function attachActorRecord($dramaId, $actorId, $roleName = '', $isLead = 0, $sortOrder = 0)
+    {
+        $dramaId = intval($dramaId);
+        $actorId = intval($actorId);
+        if ($dramaId <= 0 || $actorId <= 0) {
+            return null;
+        }
+
+        // 同一部剧同一演员只能一条
+        $stmt = $this->pdo->prepare(
+            "SELECT id FROM model_dramas WHERE drama_id = ? AND actor_id = ?"
+        );
+        $stmt->execute([$dramaId, $actorId]);
+        if ($stmt->fetchColumn()) {
+            return null;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $ok = $this->pdo->prepare(
+                "INSERT INTO model_dramas (drama_id, model_id, actor_id, actor_name, role_name, is_lead, sort_order)
+                 VALUES (?, NULL, ?, NULL, ?, ?, ?)"
+            )->execute([$dramaId, $actorId, mb_substr((string)$roleName, 0, 100), $isLead ? 1 : 0, intval($sortOrder)]);
+            if (!$ok) {
+                $this->pdo->rollBack();
+                return null;
+            }
+            $creditId = (int)$this->pdo->lastInsertId();
+            $this->syncActorDramaCount($actorId);
+            $this->pdo->commit();
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+
+        return [
+            'id'         => $creditId,
+            'model_id'   => null,
+            'actor_id'   => $actorId,
+            'role_name'  => $roleName,
+            'is_lead'    => $isLead ? 1 : 0,
+            'sort_order' => intval($sortOrder),
+        ];
+    }
+
+    /** 演员参演短剧数重算（含停用短剧不计，与前端展示口径一致） */
+    private function syncActorDramaCount($actorId)
+    {
+        $this->pdo->prepare(
+            "UPDATE actors a SET a.drama_count = (
+                SELECT COUNT(*) FROM model_dramas md
+                JOIN dramas d ON md.drama_id = d.id
+                WHERE md.actor_id = a.id AND d.status = 'active'
+             ) WHERE a.id = ?"
+        )->execute([intval($actorId)]);
+    }
+
+    /**
+     * 登记「无档案演员」参演（仅存姓名，历史兼容 / 应急录入）
+     * 新流程应优先使用 attachActorRecord()
+     *
+     * @return array|null 成功返回参演记录，重名或参数非法返回 null
      */
     public function attachActor($dramaId, $actorName, $roleName = '', $isLead = 0, $sortOrder = 0)
     {
@@ -294,8 +357,8 @@ class Drama
         }
 
         $ok = $this->pdo->prepare(
-            "INSERT INTO model_dramas (drama_id, model_id, actor_name, role_name, is_lead, sort_order)
-             VALUES (?, NULL, ?, ?, ?, ?)"
+            "INSERT INTO model_dramas (drama_id, model_id, actor_id, actor_name, role_name, is_lead, sort_order)
+             VALUES (?, NULL, NULL, ?, ?, ?, ?)"
         )->execute([$dramaId, $actorName, mb_substr((string)$roleName, 0, 100), $isLead ? 1 : 0, intval($sortOrder)]);
 
         if (!$ok) {
@@ -304,6 +367,7 @@ class Drama
         return [
             'id'         => intval($this->pdo->lastInsertId()),
             'model_id'   => null,
+            'actor_id'   => null,
             'actor_name' => $actorName,
             'role_name'  => $roleName,
             'is_lead'    => $isLead ? 1 : 0,
@@ -321,16 +385,19 @@ class Drama
             return false;
         }
 
-        // 先取出所属模特，便于同步 drama_count
-        $stmt = $this->pdo->prepare("SELECT model_id FROM model_dramas WHERE id = ?");
+        // 先取出归属，便于同步冗余计数
+        $stmt = $this->pdo->prepare("SELECT model_id, actor_id FROM model_dramas WHERE id = ?");
         $stmt->execute([$creditId]);
-        $modelId = $stmt->fetchColumn();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $this->pdo->beginTransaction();
         try {
             $this->pdo->prepare("DELETE FROM model_dramas WHERE id = ?")->execute([$creditId]);
-            if ($modelId) {
-                $this->syncDramaCount(intval($modelId));
+            if (!empty($row['model_id'])) {
+                $this->syncDramaCount(intval($row['model_id']));
+            }
+            if (!empty($row['actor_id'])) {
+                $this->syncActorDramaCount(intval($row['actor_id']));
             }
             $this->pdo->commit();
             return true;
@@ -386,16 +453,25 @@ class Drama
     }
 
     /**
-     * 某短剧的「非模特演员」（仅存姓名的普通演员）
+     * 某短剧的「普通演员」参演记录
+     * 优先取演员表成员（带头像），兼容历史的纯文本 actor_name 记录
      */
-    public function getActorsByDrama($dramaId)
+    public function getActorsByDrama($dramaId, $onlyActiveActor = true)
     {
-        $stmt = $this->pdo->prepare(
-            "SELECT id, actor_name, role_name, is_lead, sort_order
-             FROM model_dramas
-             WHERE drama_id = ? AND model_id IS NULL AND actor_name IS NOT NULL AND actor_name <> ''
-             ORDER BY is_lead DESC, sort_order ASC, id ASC"
-        );
+        $sql = "SELECT md.id AS credit_id, md.actor_id, md.actor_name AS raw_actor_name,
+                       md.role_name, md.is_lead, md.sort_order,
+                       a.nickname, a.avatar, a.gender, a.city, a.bio, a.status AS actor_status
+                FROM model_dramas md
+                LEFT JOIN actors a ON md.actor_id = a.id
+                WHERE md.drama_id = ?
+                  AND md.model_id IS NULL
+                  AND (md.actor_id IS NOT NULL
+                       OR (md.actor_name IS NOT NULL AND md.actor_name <> ''))";
+        if ($onlyActiveActor) {
+            $sql .= " AND (a.id IS NULL OR a.status = 'active')";
+        }
+        $sql .= " ORDER BY md.is_lead DESC, md.sort_order ASC, md.id ASC";
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([intval($dramaId)]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -426,14 +502,20 @@ class Drama
             ];
         }
         foreach ($actors as $a) {
+            // 演员表成员用 nickname，无档案历史记录回退 actor_name
+            $name = !empty($a['actor_id']) ? ($a['nickname'] ?? '') : ($a['raw_actor_name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
             $cast[] = [
-                'credit_id'  => intval($a['id']),
+                'credit_id'  => intval($a['credit_id']),
                 'model_id'   => null,
-                'name'       => $a['actor_name'],
+                'actor_id'   => !empty($a['actor_id']) ? intval($a['actor_id']) : null,
+                'name'       => $name,
                 'role_name'  => $a['role_name'] ?? '',
                 'is_lead'    => intval($a['is_lead'] ?? 0),
                 'sort_order' => intval($a['sort_order'] ?? 0),
-                'avatar'     => '',
+                'avatar'     => $a['avatar'] ?? '',
                 'link'       => '',
                 'raw'        => $a,
             ];
@@ -470,8 +552,12 @@ class Drama
         $modelCount = (int)$stmt->fetchColumn();
 
         $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM model_dramas
-             WHERE drama_id = ? AND model_id IS NULL AND actor_name IS NOT NULL AND actor_name <> ''"
+            "SELECT COUNT(*) FROM model_dramas md
+             LEFT JOIN actors a ON md.actor_id = a.id
+             WHERE md.drama_id = ?
+               AND md.model_id IS NULL
+               AND ( (md.actor_id IS NOT NULL AND (a.id IS NULL OR a.status = 'active'))
+                  OR (md.actor_id IS NULL AND md.actor_name IS NOT NULL AND md.actor_name <> '') )"
         );
         $stmt->execute([intval($dramaId)]);
         return $modelCount + (int)$stmt->fetchColumn();
@@ -502,25 +588,58 @@ class Drama
     }
 
     /**
+     * 某演员参演的短剧（后台演员详情用）
+     */
+    public function getDramasByActor($actorId, $onlyActiveDrama = true)
+    {
+        $sql = "SELECT d.id, d.title, d.cover, d.episodes, d.tags, d.hg_url, d.synopsis, d.status,
+                       md.role_name, md.is_lead, md.sort_order
+                FROM model_dramas md
+                JOIN dramas d ON md.drama_id = d.id
+                WHERE md.actor_id = ?";
+        if ($onlyActiveDrama) {
+            $sql .= " AND d.status = 'active'";
+        }
+        $sql .= " ORDER BY md.is_lead DESC, md.sort_order ASC, d.updated_at DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([intval($actorId)]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['tags_arr'] = $this->decodeTags($row['tags']);
+        }
+        unset($row);
+        return $rows;
+    }
+
+    /**
      * 某短剧的参演关系原始记录（后台管理用，含未上架的模特）
      */
     public function getCredits($dramaId)
     {
         $stmt = $this->pdo->prepare(
-            "SELECT md.*, m.nickname, m.avatar, m.status AS model_status
+            "SELECT md.*,
+                    m.nickname, m.avatar, m.status AS model_status,
+                    a.nickname AS actor_nickname, a.avatar AS actor_avatar, a.status AS actor_status
              FROM model_dramas md
              LEFT JOIN models m ON md.model_id = m.id
+             LEFT JOIN actors a ON md.actor_id = a.id
              WHERE md.drama_id = ?
              ORDER BY md.is_lead DESC, md.sort_order ASC, md.id ASC"
         );
         $stmt->execute([intval($dramaId)]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
-            // 统一展示名：模特用昵称，普通演员用 actor_name
-            $row['display_name'] = !empty($row['model_id'])
-                ? ($row['nickname'] ?? ('#' . intval($row['model_id'])))
-                : ($row['actor_name'] ?? '');
-            $row['is_model'] = !empty($row['model_id']);
+            if (!empty($row['model_id'])) {
+                $row['display_name'] = $row['nickname'] ?? ('#' . intval($row['model_id']));
+                $row['cast_type']    = 'model';
+            } elseif (!empty($row['actor_id'])) {
+                $row['display_name'] = $row['actor_nickname'] ?? ('#' . intval($row['actor_id']));
+                $row['cast_type']    = 'actor';
+            } else {
+                $row['display_name'] = $row['actor_name'] ?? '';
+                $row['cast_type']    = 'legacy';   // 无档案的历史记录
+            }
+            $row['is_model'] = $row['cast_type'] === 'model';
         }
         unset($row);
         return $rows;
@@ -540,9 +659,12 @@ class Drama
             "SELECT d.id, d.title, d.cover, d.episodes, d.tags, d.updated_at,
                     (SELECT COUNT(*) FROM model_dramas md
                      LEFT JOIN models m ON md.model_id = m.id
+                     LEFT JOIN actors a ON md.actor_id = a.id
                      WHERE md.drama_id = d.id
                        AND ( (md.model_id IS NOT NULL AND m.status = 'active')
-                          OR (md.model_id IS NULL AND md.actor_name IS NOT NULL AND md.actor_name <> '') )
+                          OR (md.actor_id IS NOT NULL AND (a.id IS NULL OR a.status = 'active'))
+                          OR (md.model_id IS NULL AND md.actor_id IS NULL
+                              AND md.actor_name IS NOT NULL AND md.actor_name <> '') )
                     ) AS model_count
              FROM dramas d
              WHERE d.status = 'active'
@@ -602,9 +724,12 @@ class Drama
             "SELECT d.id, d.title, d.cover, d.episodes, d.tags, d.updated_at,
                     (SELECT COUNT(*) FROM model_dramas md
                      LEFT JOIN models m ON md.model_id = m.id
+                     LEFT JOIN actors a ON md.actor_id = a.id
                      WHERE md.drama_id = d.id
                        AND ( (md.model_id IS NOT NULL AND m.status = 'active')
-                          OR (md.model_id IS NULL AND md.actor_name IS NOT NULL AND md.actor_name <> '') )
+                          OR (md.actor_id IS NOT NULL AND (a.id IS NULL OR a.status = 'active'))
+                          OR (md.model_id IS NULL AND md.actor_id IS NULL
+                              AND md.actor_name IS NOT NULL AND md.actor_name <> '') )
                     ) AS model_count
              FROM dramas d" . $whereSql . "
              ORDER BY d.updated_at DESC, d.id DESC

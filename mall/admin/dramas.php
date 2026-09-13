@@ -6,6 +6,7 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Drama.php';
 require_once '../../classes/Model.php';
+require_once '../../classes/Actor.php';
 require_once '../../classes/SeoHelper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -15,6 +16,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 $drama = new Drama($pdo);
 $model = new Model($pdo);
+$actor = new Actor($pdo);
 
 /** 封面上传（与模特头像一致：GD 等比裁切，统一 jpg） */
 function uploadDramaCover($file)
@@ -96,21 +98,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $drama->detachCredit(intval($_POST['credit_id'] ?? 0));
         $actionMsg = '<div class="admin-alert admin-alert-success">已移除该演职人员</div>';
     } elseif ($_POST['action'] === 'attachactor' && $dramaId > 0) {
-        // 登记非模特演员（仅姓名 + 角色名，不关联模特库）
-        $actorName = trim($_POST['actor_name'] ?? '');
-        if ($actorName === '') {
-            $actionMsg = '<div class="admin-alert admin-alert-error">请填写演员姓名</div>';
+        // 关联演员表成员（可复用、带头像）
+        $actorId = intval($_POST['actor_id'] ?? 0);
+        if ($actorId <= 0) {
+            $actionMsg = '<div class="admin-alert admin-alert-error">请先搜索并选择演员</div>';
         } else {
-            $res = $drama->attachActor(
+            $res = $drama->attachActorRecord(
                 $dramaId,
-                $actorName,
+                $actorId,
                 trim($_POST['actor_role'] ?? ''),
                 !empty($_POST['actor_lead']) ? 1 : 0,
                 intval($_POST['actor_sort'] ?? 0)
             );
+            $actorInfo = $actor->getById($actorId);
             $actionMsg = $res
-                ? '<div class="admin-alert admin-alert-success">已添加演员「' . htmlspecialchars($actorName) . '」</div>'
-                : '<div class="admin-alert admin-alert-error">添加失败：该剧已存在同名演员</div>';
+                ? '<div class="admin-alert admin-alert-success">已添加演员「' . htmlspecialchars($actorInfo['nickname'] ?? '') . '」</div>'
+                : '<div class="admin-alert admin-alert-error">添加失败：该演员已在本剧参演</div>';
+        }
+    } elseif ($_POST['action'] === 'createattachactor' && $dramaId > 0) {
+        // 新建演员并直接加入本剧（一步完成）
+        $newName = trim($_POST['new_actor_name'] ?? '');
+        if ($newName === '') {
+            $actionMsg = '<div class="admin-alert admin-alert-error">请填写演员姓名</div>';
+        } else {
+            $newId = $actor->create([
+                'nickname' => $newName,
+                'gender'   => $_POST['new_actor_gender'] ?? '保密',
+                'status'   => 'active',
+            ]);
+            if ($newId <= 0) {
+                $actionMsg = '<div class="admin-alert admin-alert-error">创建失败：已存在同名演员，请改用上方搜索</div>';
+            } else {
+                $drama->attachActorRecord(
+                    $dramaId,
+                    $newId,
+                    trim($_POST['new_actor_role'] ?? ''),
+                    !empty($_POST['new_actor_lead']) ? 1 : 0,
+                    intval($_POST['new_actor_sort'] ?? 0)
+                );
+                $actionMsg = '<div class="admin-alert admin-alert-success">已新建演员「' . htmlspecialchars($newName) . '」并加入本剧（可到<a href="actors.php?edit=' . $newId . '" style="color:#7dd3fc;">演员表</a>补充头像）</div>';
+            }
         }
     } elseif ($_POST['action'] === 'updatecredit' && $dramaId > 0) {
         // 逐行更新角色名 / 主演 / 排序
@@ -172,18 +199,21 @@ $page    = max(1, intval($_GET['page'] ?? 1));
 $search  = trim($_GET['search'] ?? '');
 $status  = in_array($_GET['status'] ?? '', ['active', 'inactive'], true) ? $_GET['status'] : '';
 
-/* ---------- AJAX：按昵称搜索模特（供「添加参演模特」用，避免手填 ID） ---------- */
-if (isset($_GET['ajax']) && $_GET['ajax'] === 'search_models') {
+/* ---------- AJAX：统一搜索「模特 + 演员」（供添加演职人员用，避免手填 ID） ---------- */
+if (isset($_GET['ajax']) && in_array($_GET['ajax'], ['search_cast', 'search_models'], true)) {
     header('Content-Type: application/json; charset=utf-8');
     $kw = trim($_GET['q'] ?? '');
     if (mb_strlen($kw) < 1) {
         echo json_encode(['list' => []]);
         exit;
     }
-    $found = $model->getList(1, 15, $kw);
     $out = [];
+
+    // 模特库成员
+    $found = $model->getList(1, 10, $kw);
     foreach ($found['list'] as $m) {
         $out[] = [
+            'type'     => 'model',
             'id'       => intval($m['id']),
             'nickname' => $m['nickname'],
             'city'     => $m['city'] ?? '',
@@ -192,6 +222,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'search_models') {
             'status'   => $m['status'] ?? 'active',
         ];
     }
+
+    // 演员表成员
+    foreach ($actor->searchByNickname($kw, 10) as $a) {
+        $out[] = [
+            'type'     => 'actor',
+            'id'       => intval($a['id']),
+            'nickname' => $a['nickname'],
+            'city'     => $a['city'] ?? '',
+            'gender'   => $a['gender'] ?? '',
+            'avatar'   => $a['avatar'] ? (preg_match('#^https?://#i', $a['avatar']) ? $a['avatar'] : '../' . ltrim($a['avatar'], '/')) : '',
+            'status'   => $a['status'] ?? 'active',
+        ];
+    }
+
     echo json_encode(['list' => $out]);
     exit;
 }
@@ -323,6 +367,21 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                             <tr style="border-top:1px solid #1e293b;color:#e2e8f0;font-size:13.5px;">
                                 <td style="padding:8px;white-space:nowrap;">
                                     <input type="hidden" name="credit_id[]" value="<?= $cid ?>">
+                                    <?php
+                                    // 头像：模特取 models.avatar，演员取 actors.avatar（可能是外链）
+                                    $castAvatar = '';
+                                    if ($isModel && !empty($c['avatar'])) {
+                                        $castAvatar = '../' . ltrim($c['avatar'], '/');
+                                    } elseif (($c['cast_type'] ?? '') === 'actor' && !empty($c['actor_avatar'])) {
+                                        $av = $c['actor_avatar'];
+                                        $castAvatar = preg_match('#^https?://#i', $av) ? $av : '../' . ltrim($av, '/');
+                                    }
+                                    ?>
+                                    <?php if ($castAvatar): ?>
+                                        <img src="<?= htmlspecialchars($castAvatar) ?>" style="width:30px;height:30px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;background:#1e293b;">
+                                    <?php else: ?>
+                                        <span style="display:inline-flex;width:30px;height:30px;border-radius:50%;background:#1e293b;align-items:center;justify-content:center;color:#475569;vertical-align:middle;margin-right:6px;"><i class="fas fa-user" style="font-size:13px;"></i></span>
+                                    <?php endif; ?>
                                     <?php if ($isModel): ?>
                                         <a href="models.php?edit=<?= intval($c['model_id']) ?>" style="color:#7dd3fc;">
                                             <?= htmlspecialchars($c['nickname'] ?? ('#' . intval($c['model_id']))) ?>
@@ -331,9 +390,17 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                                         <?php if (($c['model_status'] ?? '') === 'inactive'): ?>
                                             <small style="color:#f87171;">（已停用）</small>
                                         <?php endif; ?>
-                                    <?php else: ?>
-                                        <span style="color:#e2e8f0;"><?= htmlspecialchars($c['actor_name'] ?? '') ?></span>
+                                    <?php elseif (($c['cast_type'] ?? '') === 'actor'): ?>
+                                        <a href="actors.php?edit=<?= intval($c['actor_id']) ?>" style="color:#fbbf24;">
+                                            <?= htmlspecialchars($c['actor_nickname'] ?? '') ?>
+                                        </a>
                                         <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;background:#3f2d1a;color:#fbbf24;font-size:11px;">演员</span>
+                                        <?php if (($c['actor_status'] ?? '') === 'inactive'): ?>
+                                            <small style="color:#f87171;">（已停用）</small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span style="color:#94a3b8;"><?= htmlspecialchars($c['actor_name'] ?? '') ?></span>
+                                        <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;background:#334155;color:#94a3b8;font-size:11px;">无档案</span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="padding:8px;">
@@ -371,7 +438,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
 
                 <!-- 添加参演模特：按昵称搜索选择，无需手填 ID -->
                 <div style="margin-top:20px;border-top:1px solid #1e293b;padding-top:16px;">
-                    <div style="font-size:13px;color:#94a3b8;margin-bottom:8px;">添加参演模特（输入昵称搜索）：</div>
+                    <div style="font-size:13px;color:#7dd3fc;margin-bottom:8px;">添加模特库成员（输入昵称搜索，可跳转其主页）：</div>
                     <div style="position:relative;max-width:520px;">
                         <input type="text" id="model-search-input" autocomplete="off"
                                placeholder="输入模特昵称，如「言」" style="<?= $inputStyle ?>">
@@ -412,37 +479,87 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                     </small>
                 </div>
 
-                <!-- 添加非模特演员：仅存姓名 + 角色名 -->
+                <!-- 添加演员表成员：搜索已有（可复用）/ 新建并加入 -->
                 <div style="margin-top:18px;border-top:1px solid #1e293b;padding-top:16px;">
                     <div style="font-size:13px;color:#fbbf24;margin-bottom:8px;">
-                        添加普通演员（未入驻模特库的演员，仅登记姓名与角色，不跳转主页）：
+                        添加演员（从演员表搜索复用，或新建一个）：
                     </div>
-                    <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+
+                    <!-- 方式一：搜索已有演员 -->
+                    <div style="position:relative;max-width:520px;margin-bottom:10px;">
+                        <input type="text" id="actor-search-input" autocomplete="off"
+                               placeholder="输入演员姓名搜索…" style="<?= $inputStyle ?>">
+                        <div id="actor-search-results"
+                             style="display:none;position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:4px;
+                                    background:#0f172a;border:1px solid #334155;border-radius:8px;max-height:300px;overflow-y:auto;
+                                    box-shadow:0 12px 30px rgba(0,0,0,.5);"></div>
+                    </div>
+
+                    <form method="post" id="attach-actor-form" style="display:none;margin-bottom:14px;padding:14px;background:#0b1220;border:1px solid #334155;border-radius:8px;">
                         <input type="hidden" name="action" value="attachactor">
                         <input type="hidden" name="id" value="<?= intval($editDrama['id']) ?>">
-                        <div>
-                            <label style="<?= $labelStyle ?>">演员姓名 <span style="color:#ef4444">*</span></label>
-                            <input type="text" name="actor_name" maxlength="100" required placeholder="如 张小明" style="<?= $inputStyle ?>width:170px;">
+                        <input type="hidden" name="actor_id" id="attach-actor-id" value="">
+                        <div style="font-size:13px;color:#e2e8f0;margin-bottom:10px;">
+                            已选择：<b id="attach-actor-name" style="color:#fbbf24;"></b>
+                            <a href="#" onclick="resetAttachActor();return false;" style="color:#64748b;margin-left:8px;font-size:12px;">重新选择</a>
                         </div>
-                        <div>
-                            <label style="<?= $labelStyle ?>">角色名</label>
-                            <input type="text" name="actor_role" maxlength="100" placeholder="饰演角色" style="<?= $inputStyle ?>width:170px;">
+                        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                            <div>
+                                <label style="<?= $labelStyle ?>">角色名</label>
+                                <input type="text" name="actor_role" maxlength="100" placeholder="饰演角色" style="<?= $inputStyle ?>width:170px;">
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">主要演员</label>
+                                <label style="display:flex;align-items:center;gap:5px;color:#94a3b8;font-size:13px;height:38px;cursor:pointer;">
+                                    <input type="checkbox" name="actor_lead" value="1" style="width:17px;height:17px;"> 是
+                                </label>
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">排序</label>
+                                <input type="number" name="actor_sort" value="0" style="<?= $inputStyle ?>width:90px;">
+                            </div>
+                            <button type="submit" class="admin-btn admin-btn-primary">加入本剧</button>
                         </div>
-                        <div>
-                            <label style="<?= $labelStyle ?>">主要演员</label>
-                            <label style="display:flex;align-items:center;gap:5px;color:#94a3b8;font-size:13px;height:38px;cursor:pointer;">
-                                <input type="checkbox" name="actor_lead" value="1" style="width:17px;height:17px;"> 是
-                            </label>
-                        </div>
-                        <div>
-                            <label style="<?= $labelStyle ?>">排序</label>
-                            <input type="number" name="actor_sort" value="0" style="<?= $inputStyle ?>width:90px;">
-                        </div>
-                        <button type="submit" class="admin-btn admin-btn-primary">添加演员</button>
                     </form>
-                    <small style="display:block;color:#64748b;margin-top:8px;">
-                        同一部剧内演员姓名不可重复。若该演员已在模特库，请改用上方的搜索方式添加，以便跳转其主页。
-                    </small>
+
+                    <!-- 方式二：新建演员并加入 -->
+                    <details style="margin-top:6px;">
+                        <summary style="cursor:pointer;color:#94a3b8;font-size:13px;outline:none;">找不到？新建一个演员并加入本剧</summary>
+                        <form method="post" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px;padding:14px;background:#0b1220;border:1px solid #334155;border-radius:8px;">
+                            <input type="hidden" name="action" value="createattachactor">
+                            <input type="hidden" name="id" value="<?= intval($editDrama['id']) ?>">
+                            <div>
+                                <label style="<?= $labelStyle ?>">演员姓名 <span style="color:#ef4444">*</span></label>
+                                <input type="text" name="new_actor_name" maxlength="100" required placeholder="如 张小明" style="<?= $inputStyle ?>width:170px;">
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">性别</label>
+                                <select name="new_actor_gender" style="<?= $inputStyle ?>width:90px;">
+                                    <?php foreach (['女', '男', '保密'] as $g): ?>
+                                        <option value="<?= $g ?>"><?= $g ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">角色名</label>
+                                <input type="text" name="new_actor_role" maxlength="100" placeholder="饰演角色" style="<?= $inputStyle ?>width:150px;">
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">主要演员</label>
+                                <label style="display:flex;align-items:center;gap:5px;color:#94a3b8;font-size:13px;height:38px;cursor:pointer;">
+                                    <input type="checkbox" name="new_actor_lead" value="1" style="width:17px;height:17px;"> 是
+                                </label>
+                            </div>
+                            <div>
+                                <label style="<?= $labelStyle ?>">排序</label>
+                                <input type="number" name="new_actor_sort" value="0" style="<?= $inputStyle ?>width:80px;">
+                            </div>
+                            <button type="submit" class="admin-btn admin-btn-primary">新建并加入</button>
+                        </form>
+                        <small style="display:block;color:#64748b;margin-top:8px;">
+                            新建后可在「<a href="actors.php" style="color:#7dd3fc;">演员表管理</a>」中补充头像与简介；该演员之后可在其它短剧中直接搜索复用。
+                        </small>
+                    </details>
                 </div>
             </div>
             <?php endif; ?>
@@ -481,7 +598,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
                         <th style="padding:10px 8px;">剧名</th>
                         <th style="padding:10px 8px;">集数</th>
                         <th style="padding:10px 8px;">题材</th>
-                        <th style="padding:10px 8px;">参演模特</th>
+                        <th style="padding:10px 8px;">演职人员</th>
                         <th style="padding:10px 8px;">状态</th>
                         <th style="padding:10px 8px;">操作</th>
                     </tr>
@@ -559,6 +676,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
     var timer = null;
 
     function render(list) {
+        list = (list || []).filter(function (m) { return m.type === 'model'; });
         if (!list.length) {
             box.innerHTML = '<div style="padding:14px;color:#64748b;font-size:13px;">未找到匹配的模特</div>';
         } else {
@@ -597,7 +715,7 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
         clearTimeout(timer);
         if (q.length < 1) { box.style.display = 'none'; return; }
         timer = setTimeout(function () {
-            fetch('dramas.php?ajax=search_models&q=' + encodeURIComponent(q))
+            fetch('dramas.php?ajax=search_cast&q=' + encodeURIComponent(q))
                 .then(function (r) { return r.json(); })
                 .then(function (res) { render(res.list || []); })
                 .catch(function () { box.style.display = 'none'; });
@@ -608,6 +726,74 @@ $labelStyle = 'display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;';
         if (!box.contains(e.target) && e.target !== input) box.style.display = 'none';
     });
 })();
+
+/* ---------- 演员选择器：按姓名搜索已有演员 ---------- */
+(function () {
+    var input = document.getElementById('actor-search-input');
+    var box   = document.getElementById('actor-search-results');
+    if (!input || !box) return;
+    var timer = null;
+
+    function render(list) {
+        var actors = (list || []).filter(function (m) { return m.type === 'actor'; });
+        if (!actors.length) {
+            box.innerHTML = '<div style="padding:14px;color:#64748b;font-size:13px;">未找到该演员，可在下方「新建一个演员」</div>';
+        } else {
+            box.innerHTML = actors.map(function (m) {
+                var av = m.avatar
+                    ? '<img src="' + m.avatar + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;background:#1e293b;">'
+                    : '<span style="display:inline-flex;width:34px;height:34px;border-radius:50%;background:#1e293b;align-items:center;justify-content:center;color:#475569;"><i class="fas fa-user"></i></span>';
+                var extra = [];
+                if (m.gender) extra.push(m.gender);
+                if (m.city)   extra.push(m.city);
+                extra.push('参演 ' + m.drama_count + ' 部');
+                if (m.status === 'inactive') extra.push('已停用');
+                return '<div class="a-search-item" data-id="' + m.id + '" data-name="' + m.nickname.replace(/"/g, '&quot;') + '" '
+                     + 'style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid #1e293b;">'
+                     + av
+                     + '<div><div style="color:#e2e8f0;font-size:13.5px;">' + m.nickname + '</div>'
+                     + '<div style="color:#64748b;font-size:12px;">' + extra.join(' · ') + '</div></div>'
+                     + '</div>';
+            }).join('');
+        }
+        box.style.display = 'block';
+        box.querySelectorAll('.a-search-item').forEach(function (el) {
+            el.addEventListener('click', function () {
+                document.getElementById('attach-actor-id').value = el.dataset.id;
+                document.getElementById('attach-actor-name').textContent = el.dataset.name;
+                document.getElementById('attach-actor-form').style.display = 'block';
+                box.style.display = 'none';
+                input.value = el.dataset.name;
+            });
+            el.addEventListener('mouseenter', function () { el.style.background = '#1e293b'; });
+            el.addEventListener('mouseleave', function () { el.style.background = 'transparent'; });
+        });
+    }
+
+    input.addEventListener('input', function () {
+        var q = input.value.trim();
+        clearTimeout(timer);
+        if (q.length < 1) { box.style.display = 'none'; return; }
+        timer = setTimeout(function () {
+            fetch('dramas.php?ajax=search_cast&q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(function (res) { render(res.list || []); })
+                .catch(function () { box.style.display = 'none'; });
+        }, 260);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!box.contains(e.target) && e.target !== input) box.style.display = 'none';
+    });
+})();
+
+function resetAttachActor() {
+    document.getElementById('attach-actor-form').style.display = 'none';
+    document.getElementById('attach-actor-id').value = '';
+    var input = document.getElementById('actor-search-input');
+    input.value = '';
+    input.focus();
+}
 
 /* 重新选择模特 */
 function resetAttach() {

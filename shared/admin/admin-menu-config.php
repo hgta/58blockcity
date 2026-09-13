@@ -62,6 +62,7 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-box',         'text' => '商品管理', 'url' => 'categories.php'],
         ['icon' => 'fa-user-circle', 'text' => '模特管理', 'url' => 'models.php'],
         ['icon' => 'fa-film',        'text' => '短剧管理', 'url' => 'dramas.php'],
+        ['icon' => 'fa-user-tie',    'text' => '演员表',   'url' => 'actors.php'],
         ['icon' => 'fa-palette',     'text' => '作者管理', 'url' => 'authors.php'],
         ['icon' => 'fa-file-signature', 'text' => '申请管理', 'url' => 'applications.php'],
         ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],

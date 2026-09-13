@@ -1566,10 +1566,28 @@ CREATE TABLE IF NOT EXISTS `dramas` (
   KEY `idx_updated_at` (`updated_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧主表';
 
+CREATE TABLE IF NOT EXISTS `actors` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nickname` varchar(100) NOT NULL COMMENT '演员姓名/艺名',
+  `avatar` varchar(500) DEFAULT NULL COMMENT '头像：上传相对路径 或 完整外链URL',
+  `gender` enum('男','女','保密') DEFAULT '保密',
+  `city` varchar(100) DEFAULT NULL COMMENT '所在城市',
+  `bio` varchar(500) DEFAULT NULL COMMENT '一句话简介',
+  `drama_count` int(11) DEFAULT 0 COMMENT '参演短剧数（冗余，关联增删时维护）',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_nickname` (`nickname`),
+  KEY `idx_status` (`status`),
+  KEY `idx_drama_count` (`drama_count`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧演员表（跨剧复用的演职人员档案）';
+
 CREATE TABLE IF NOT EXISTS `model_dramas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `model_id` int(11) DEFAULT NULL COMMENT '关联模特ID（非模特演员时为NULL）',
-  `actor_name` varchar(100) DEFAULT NULL COMMENT '非模特演员姓名（纯文本展示，不跳转）',
+  `model_id` int(11) DEFAULT NULL COMMENT '关联模特ID（模特库成员）',
+  `actor_id` int(11) DEFAULT NULL COMMENT '关联演员表ID（普通演员）',
+  `actor_name` varchar(100) DEFAULT NULL COMMENT '无档案演员姓名（历史兜底，不再新增使用）',
   `drama_id` int(11) NOT NULL,
   `role_name` varchar(100) DEFAULT NULL COMMENT '饰演角色名',
   `is_lead` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否主演',
@@ -1578,10 +1596,12 @@ CREATE TABLE IF NOT EXISTS `model_dramas` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `model_drama` (`model_id`, `drama_id`),
   UNIQUE KEY `uniq_drama_actor` (`drama_id`, `actor_name`),
+  UNIQUE KEY `uniq_drama_actor_id` (`drama_id`, `actor_id`),
   KEY `idx_drama_id` (`drama_id`),
   KEY `idx_model_id` (`model_id`),
+  KEY `idx_actor_id` (`actor_id`),
   KEY `idx_drama_lead_sort` (`drama_id`, `is_lead`, `sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧参演人员关联（模特库成员 或 普通演员）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短剧参演人员关联（模特库成员 或 演员表成员）';
 
 -- --------------------------------------------------------
 -- 作者（Author）：商品图案原创作者，平行模特功能

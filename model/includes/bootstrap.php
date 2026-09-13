@@ -105,8 +105,10 @@ if (!function_exists('model_media')) {
         $candidates = [
             // 主站图片目录（头像 / 模特图）
             [APP_ROOT . '/assets/images/' . $norm, 'https://58.tl/assets/images/'],
-            // mall 上传目录（商品图 / 短剧封面）
+            // mall 上传目录（商品图 / 短剧封面 / 演员头像）
             [APP_ROOT . '/mall/assets/' . $norm,   'https://mall.58.tl/assets/'],
+            // 演员头像目录（后端存 assets/uploads/actors/...，此处直接命中）
+            [APP_ROOT . '/mall/assets/uploads/' . $norm, 'https://mall.58.tl/assets/uploads/'],
             // 根 assets 直连（历史 / 兜底）
             [APP_ROOT . '/assets/' . $norm,        'https://58.tl/assets/'],
             [APP_ROOT . '/mall/assets/images/' . $norm, 'https://mall.58.tl/assets/images/'],
@@ -164,7 +166,9 @@ $modelUserId = (int)($_SESSION['user_id'] ?? 0);
 $modelPdo    = $pdo;
 $modelObj    = new Model($pdo);
 require_once APP_ROOT . '/classes/Drama.php';
+require_once APP_ROOT . '/classes/Actor.php';
 $dramaObj    = new Drama($pdo);
+$actorObj    = new Actor($pdo);
 
 /**
  * 组装子站页头配置
