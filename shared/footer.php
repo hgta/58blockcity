@@ -23,6 +23,10 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             <span style="font-size:28px;">🛍</span>
             <div><div style="font-size:14px;font-weight:600;color:#333;">人气商城</div><div style="font-size:11px;color:#999;">BCT支付购物</div></div>
         </a>
+        <a href="https://model.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fff6f9,#fdebf1);border-radius:10px;text-decoration:none;border:1px solid #f8c9db;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <span style="font-size:28px;">📸</span>
+            <div><div style="font-size:14px;font-weight:600;color:#333;">模特库</div><div style="font-size:11px;color:#999;">模特主页·参演短剧</div></div>
+        </a>
         <a href="https://nft.58.tl/" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#fdf0ff,#f3e5f5);border-radius:10px;text-decoration:none;border:1px solid #e1bee7;transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
             <span style="font-size:28px;">🎨</span>
             <div><div style="font-size:14px;font-weight:600;color:#333;">NFT 头像</div><div style="font-size:11px;color:#999;">数字收藏头像</div></div>
@@ -60,6 +64,7 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                     <li><a href="https://block.58.tl/"><i class="fas fa-cubes"></i> 区块交易</a></li>
                     <li><a href="https://bct.58.tl/"><i class="fas fa-coins"></i> BCT 交易</a></li>
                     <li><a href="https://mall.58.tl/"><i class="fas fa-shopping-bag"></i> 人气商城</a></li>
+                    <li><a href="https://model.58.tl/"><i class="fas fa-camera"></i> 模特库</a></li>
                     <li><a href="https://bid.58.tl/"><i class="fas fa-gavel"></i> 拍卖</a></li>
                     <li><a href="https://club.58.tl/"><i class="fas fa-comments"></i> 社区</a></li>
                     <li><a href="https://task.58.tl/"><i class="fas fa-tasks"></i> 任务广场</a></li>

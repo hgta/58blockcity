@@ -167,6 +167,7 @@ $letters = range('A', 'Z');
 				<a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
 				<a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
 				<a href="https://mall.58.tl/" class="nav-button">人气商城</a>
+				<a href="https://model.58.tl/" class="nav-button">模特库</a>
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
 				<a href="https://bid.58.tl/" class="nav-button">拍卖</a>
 				<a href="https://task.58.tl/" class="nav-button">任务广场</a>
@@ -283,6 +284,12 @@ $letters = range('A', 'Z');
                     <div class="eco-desc">BCT支付优惠购物</div>
                     <span class="eco-go">进入 →</span>
                 </a>
+                <a href="https://model.58.tl/" class="eco-card">
+                    <div class="eco-icon">📸</div>
+                    <div class="eco-name">模特库</div>
+                    <div class="eco-desc">模特主页 · 参演短剧</div>
+                    <span class="eco-go">进入 →</span>
+                </a>
                 <a href="https://v.58.tl/" class="eco-card">
                     <div class="eco-icon">🤝</div>
                     <div class="eco-name">互访圈</div>
@@ -382,6 +389,7 @@ $letters = range('A', 'Z');
                         <li><a href="https://block.58.tl/" style="color:#64748b;">区块交易</a></li>
                         <li><a href="https://bct.58.tl/" style="color:#64748b;">BCT交易</a></li>
                         <li><a href="https://mall.58.tl/" style="color:#64748b;">人气商城</a></li>
+                        <li><a href="https://model.58.tl/" style="color:#64748b;">模特库</a></li>
                         <li><a href="https://nft.58.tl/" style="color:#64748b;">NFT头像</a></li>
                         <li><a href="https://bid.58.tl/" style="color:#64748b;">拍卖</a></li>
                         <li><a href="https://club.58.tl/" style="color:#64748b;">社区</a></li>

@@ -167,7 +167,8 @@ if (!function_exists('city_portal_render')) {
             'nft'     => 'https://nft.58.tl/',
             'club'    => 'https://club.58.tl/index.php?city=' . $cityEnc,
             'circles' => 'https://v.58.tl/?city=' . $cityEnc,
-            'mall'    => 'https://model.58.tl/list.php?city=' . $cityEnc,
+            'mall'    => 'https://mall.58.tl/product/list.php?city=' . $cityEnc,
+            'model'   => 'https://model.58.tl/list.php?city=' . $cityEnc,
         ];
 
         ob_start();
@@ -237,6 +238,7 @@ if (!function_exists('city_portal_render')) {
                 <a href="https://bct.58.tl/" class="nav-button">BCT交易</a>
                 <a href="https://nft.58.tl/" class="nav-button">NFT头像</a>
                 <a href="https://mall.58.tl/" class="nav-button">人气商城</a>
+                <a href="https://model.58.tl/" class="nav-button">模特库</a>
                 <a href="https://v.58.tl/" class="nav-button">互访圈</a>
                 <a href="https://bid.58.tl/" class="nav-button">拍卖</a>
                 <?php if ($loggedIn): ?>
@@ -482,7 +484,8 @@ if (!function_exists('city_portal_render')) {
         <?php $mallMod = $portal['mall'] ?? ['ok' => false, 'count' => 0, 'items' => []]; ?>
         <section class="cp-card" id="city-mall">
             <h2 class="cp-card-title"><span class="cp-dot"></span>🛍 <?= cp_e($cityName) ?>好店·人物
-                <a class="cp-more" href="<?= cp_e($L['mall']) ?>" rel="nofollow">逛逛商城 →</a></h2>
+                <a class="cp-more" href="<?= cp_e($L['mall']) ?>" rel="nofollow">逛逛商城 →</a>
+                <a class="cp-more" href="<?= cp_e($L['model']) ?>" rel="nofollow">看模特 →</a></h2>
             <?php if ($mallMod['count'] > 0): ?>
                 <div class="cp-sgrid">
                     <?php foreach ($mallMod['items'] as $m):
@@ -535,6 +538,7 @@ if (!function_exists('city_portal_render')) {
                         <li><a href="https://block.58.tl/">区块交易</a></li>
                         <li><a href="https://bct.58.tl/">BCT交易</a></li>
                         <li><a href="https://mall.58.tl/">人气商城</a></li>
+                        <li><a href="https://model.58.tl/">模特库</a></li>
                         <li><a href="https://nft.58.tl/">NFT头像</a></li>
                         <li><a href="https://bid.58.tl/">拍卖</a></li>
                         <li><a href="https://club.58.tl/">社区</a></li>
