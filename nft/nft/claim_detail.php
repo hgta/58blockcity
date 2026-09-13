@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($blockInfo && $nft->claimNft($nftId, $userId, $cityId, $blockId)) {
 			$_SESSION['success_message'] = '认领成功！';
 			// 百度主动推送
-			SeoHelper::baiduPush(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
+			SeoHelper::pushContentUrl(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
 			header("Location: /nft/claim_list.php");
 			exit;
 		} else {

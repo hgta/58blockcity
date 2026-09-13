@@ -1,0 +1,29 @@
+# 58互访圈（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的城市间互访交流子站（域名 v.58.tl），主站实体为 https://www.58.tl/ 。本站支持创建互访圈、跨城互访与访问记录管理，打造基于区块城市的城市社交体验。
+
+## 本站主要入口
+
+- [互访圈首页](https://v.58.tl/): 互访圈总入口
+- [浏览全部互访圈](https://v.58.tl/hufang/circles/all.php): 按城市浏览互访圈
+
+## 内容形态
+
+- [互访圈详情](https://v.58.tl/circle/{id}-{slug}.html): 圈子介绍、成员与互访记录
+- [创建互访圈](https://v.58.tl/hufang/circles/create.php): 发起一个新的城市互访圈
+
+## 姊妹站
+
+- [58区块社区](https://club.58.tl/): 同城帖子与话题交流
+- [区块交易市场](https://block.58.tl/): 城市地块认领与交易
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)
+
+## Optional
+
+- [Sitemap](https://v.58.tl/sitemap.xml): 本站 URL 清单
+- [robots.txt](https://v.58.tl/robots.txt): 爬虫抓取规则（对主流 AI 爬虫全部放行）

@@ -1,0 +1,29 @@
+# 58任务广场（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的任务协作子站，主站实体为 https://www.58.tl/ 。本站支持发布任务、接单协作、任务评价与技能匹配，服务区块城市生态内的用工与协作需求。
+
+## 本站主要入口
+
+- [任务广场首页](https://task.58.tl/): 任务总入口
+- [发现任务](https://task.58.tl/find.php): 按分类与技能筛选任务
+- [发布任务](https://task.58.tl/create.php): 雇主发布新任务
+
+## 内容形态
+
+- [任务详情](https://task.58.tl/view.php?id={id}): 任务描述、预算、技能要求与接单入口
+
+## 姊妹站
+
+- [58区块社区](https://club.58.tl/): 同城帖子与话题交流
+- [模特库](https://model.58.tl/): 模特个人主页与作品展示
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)
+
+## Optional
+
+- [Sitemap](https://task.58.tl/sitemap.xml): 本站 URL 清单
+- [robots.txt](https://task.58.tl/robots.txt): 爬虫抓取规则（对主流 AI 爬虫全部放行）

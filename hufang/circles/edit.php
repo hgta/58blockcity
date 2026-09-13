@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $circleInfo = $circle->getCircleById($circleId);
             // 百度主动推送
             if (class_exists('SeoHelper')) {
-                SeoHelper::baiduPush(SeoHelper::circleUrl($circleId, $name));
+                SeoHelper::pushContentUrl(SeoHelper::circleUrl($circleId, $name));
             }
         } else {
             $error = '更新互访圈时出错，请稍后再试';

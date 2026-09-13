@@ -219,28 +219,112 @@ class SeoHelper
     }
 
     /**
-     * 百度主动推送（实时推送）
+     * 读取 SEO 配置（带静态缓存，单次请求内只读一次文件）
      *
-     * @param string|array $urls 要推送的 URL
-     * @return string|false API 返回结果
+     * @return array
      */
-    public static function baiduPush($urls)
+    private static function seoConfig()
     {
+        static $config = null;
+        if ($config !== null) {
+            return $config;
+        }
         $configFile = __DIR__ . '/../config/seo.php';
         if (!file_exists($configFile)) {
-            return false;
+            $config = [];
+            return $config;
         }
-        $config = require $configFile;
-        $token  = $config['baidu_token'] ?? '';
-        $site   = $config['baidu_site'] ?? 'www.58.tl';
+        $loaded = require $configFile;
+        $config = is_array($loaded) ? $loaded : [];
+        return $config;
+    }
 
-        if (empty($token) || empty($urls)) {
-            return false;
+    /**
+     * 解析某 host 对应的推送凭据
+     *
+     * 优先读取 sites 映射；无映射时回退到顶层 baidu_token / baidu_site。
+     * token 为占位符或空视为未配置。
+     *
+     * @param string $host 不带协议的域名，如 www.58.tl
+     * @return array{token:string,site:string,enabled:bool,reason:string}
+     */
+    public static function resolvePushCredentials($host)
+    {
+        $config = self::seoConfig();
+        $host   = strtolower(trim((string)$host));
+
+        $token   = '';
+        $site    = $host;
+        $enabled = false;
+        $reason  = '';
+
+        if (!empty($config['sites']) && is_array($config['sites'])) {
+            $entry = $config['sites'][$host] ?? null;
+            if ($entry === null) {
+                $reason = '该子域未在 sites 中配置';
+            } else {
+                $token   = (string)($entry['token'] ?? '');
+                $site    = (string)($entry['site'] ?? $host);
+                $enabled = !empty($entry['enabled']);
+                if (!$enabled) {
+                    $reason = '该子域已配置但未启用（enabled=false）';
+                }
+            }
+        } else {
+            // 无 sites 配置：回退到顶层字段（视为 www）
+            $token   = (string)($config['baidu_token'] ?? '');
+            $site    = (string)($config['baidu_site'] ?? 'www.58.tl');
+            $enabled = true;
         }
 
+        if ($enabled && ($token === '' || $token === 'YOUR_BAIDU_TOKEN')) {
+            $enabled = false;
+            $reason  = 'token 未配置或仍为占位符';
+        }
+
+        return [
+            'token'   => $token,
+            'site'    => $site,
+            'enabled' => $enabled,
+            'reason'  => $reason,
+        ];
+    }
+
+    /**
+     * 百度主动推送（底层执行：发送 HTTP 请求 + 记录结果日志）
+     *
+     * 注意：业务代码请使用 pushContentUrl()，它会自动按 URL 归属选择 token。
+     * 本方法供 pushContentUrl() 与命令行批量推送（site.php）使用。
+     *
+     * @param string|array $urls 要推送的 URL
+     * @param string       $token 推送 token
+     * @param string       $site  站点域名（不带协议），如 www.58.tl
+     * @return string|false API 原始返回
+     */
+    public static function baiduPush($urls, $token = '', $site = '')
+    {
         $urls = (array)$urls;
-        $urls = array_filter(array_unique($urls));
+        $urls = array_values(array_filter(array_unique(array_map('trim', $urls))));
+
+        // 未显式传 token 时，按第一个 URL 的 host 解析
+        if ($token === '' || $site === '') {
+            $first = $urls[0] ?? '';
+            $host  = parse_url($first, PHP_URL_HOST);
+            if (!$host) {
+                $cfg  = self::seoConfig();
+                $host = $cfg['baidu_site'] ?? 'www.58.tl';
+            }
+            $cred = self::resolvePushCredentials($host);
+            if ($token === '') $token = $cred['token'];
+            if ($site === '')  $site  = $cred['site'];
+        }
+
+        if ($token === '' || $token === 'YOUR_BAIDU_TOKEN') {
+            self::log('[推送跳过] token 未配置 site=' . $site . ' urls=' . count($urls));
+            return false;
+        }
         if (empty($urls)) {
+            self::log('[推送跳过] URL 为空 site=' . $site);
             return false;
         }
 
@@ -254,15 +338,53 @@ class SeoHelper
             CURLOPT_POSTFIELDS     => implode("\n", $urls),
             CURLOPT_HTTPHEADER     => ['Content-Type: text/plain'],
             CURLOPT_TIMEOUT        => 20,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
         ]);
-        $result = curl_exec($ch);
+        $result    = curl_exec($ch);
+        $curlErrNo = curl_errno($ch);
+        $curlError = curl_error($ch);
+        $httpCode  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        // 网络层错误
+        if ($result === false || $curlErrNo !== 0) {
+            self::log('[推送失败·网络] site=' . $site
+                . ' errno=' . $curlErrNo . ' error=' . $curlError
+                . ' urls=' . count($urls));
+            return false;
+        }
+
+        // HTTP 层错误
+        if ($httpCode !== 200) {
+            self::log('[推送失败·HTTP] site=' . $site
+                . ' http=' . $httpCode . ' body=' . substr((string)$result, 0, 500));
+            return $result;
+        }
+
+        // 业务层结果（解析百度返回，提取关键字段）
+        $parsed = json_decode((string)$result, true);
+        if (is_array($parsed)) {
+            $parts = [];
+            foreach (['success', 'remain', 'not_same_site', 'not_valid', 'over_quota', 'message', 'error'] as $k) {
+                if (array_key_exists($k, $parsed)) {
+                    $v = $parsed[$k];
+                    $parts[] = $k . '=' . (is_scalar($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE));
+                }
+            }
+            self::log('[推送结果] site=' . $site
+                . ' sent=' . count($urls)
+                . ' ' . implode(' ', $parts));
+        } else {
+            self::log('[推送结果·无法解析] site=' . $site
+                . ' http=' . $httpCode . ' body=' . substr((string)$result, 0, 500));
+        }
 
         return $result;
     }
 
     /**
-     * 记录 SEO 日志（方便调试百度推送结果）
+     * 记录 SEO 日志
      */
     public static function log($message)
     {
@@ -270,30 +392,52 @@ class SeoHelper
     }
 
     /**
-     * 发布内容时自动推送 URL 到百度
-     * 读取 config/seo.php 的 auto_push_enabled，仅当开启且 token 非占位值时执行
+     * 发布内容时自动推送 URL 到百度（业务侧唯一入口）
+     *
+     * 守卫：auto_push_enabled 开启 + 该 URL 所属 host 已配置 token 且启用。
+     * 按 URL 的 host 选择对应子域 token，匹配不到则跳过（不误推给主站）。
      */
     public static function pushContentUrl($url)
     {
-        $configFile = __DIR__ . '/../config/seo.php';
-        if (!file_exists($configFile)) return;
-        $config = require $configFile;
-        if (empty($config['auto_push_enabled'])) return;
-        if (empty($config['baidu_token']) || $config['baidu_token'] === 'YOUR_BAIDU_TOKEN') return;
-        self::baiduPush($url);
+        $config = self::seoConfig();
+        if (empty($config['auto_push_enabled'])) {
+            return;
+        }
+
+        $url = trim((string)$url);
+        if ($url === '') {
+            return;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!$host) {
+            self::log('[推送跳过] 无法解析 URL host: ' . $url);
+            return;
+        }
+
+        $cred = self::resolvePushCredentials($host);
+        if (!$cred['enabled']) {
+            self::log('[推送跳过] host=' . $host . ' 原因=' . $cred['reason'] . ' url=' . $url);
+            return;
+        }
+
+        self::baiduPush($url, $cred['token'], $cred['site']);
     }
 
     /**
-     * 通知百度 sitemap 已更新（主动 ping）
-     * 可在 sitemap.php 结尾或 cron 中调用
+     * 通知 Google sitemap 已更新（百度无 sitemap ping 接口，故不发送）
+     *
+     * 受 config/seo.php 的 sitemap_ping_enabled 控制，默认关闭。
+     * 百度发现 sitemap 依靠 robots.txt 的 Sitemap 声明与平台手动提交。
      */
     public static function pingSitemap($sitemapUrl)
     {
-        // 百度
-        $baiduPing = 'http://data.zz.baidu.com/urls?site=' . urlencode($sitemapUrl) . '&type=sitemap';
-        @file_get_contents($baiduPing);
+        $config = self::seoConfig();
+        if (empty($config['sitemap_ping_enabled'])) {
+            return;
+        }
 
-        // Google（如果有）
+        // Google sitemap ping
         $googlePing = 'https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl);
         @file_get_contents($googlePing);
     }

@@ -1,8 +1,12 @@
 <?php
 /**
- * 自动生成全站 Sitemap
- * 包含：首页、城市页、商品页、店铺页、互访圈页、NFT 页
- * 通过 .htaccess 映射到 sitemap.xml
+ * www.58.tl 站点地图（仅包含本域 URL）
+ *
+ * 归属约定：sitemap 中的 <loc> 必须与 sitemap 所在站点同域。
+ * 子域（mall/block/bct/model/nft/v/bid/club/task）各自提供独立 sitemap，
+ * 见各子目录下的 sitemap.php，不混入本文件。
+ *
+ * 通过 .htaccess / nginx 映射到 /sitemap.xml
  */
 
 require_once __DIR__ . '/config/database.php';
@@ -43,26 +47,10 @@ function staticNode($relPath, $priority = '0.7', $changefreq = 'weekly')
     urlNode('https://www.58.tl/' . $relPath, $priority, $changefreq, $lastmod);
 }
 
-// 1. 首页与重要列表页
+// 1. 首页与重要列表页（仅 www.58.tl 域）
 urlNode('https://www.58.tl/', '1.0', 'daily', $now);
 urlNode('https://www.58.tl/top200city.php', '0.8', 'weekly', $now);
 urlNode('https://www.58.tl/all-cities.php', '0.8', 'weekly', $now);
-urlNode('https://block.58.tl/', '0.9', 'daily', $now);
-urlNode('https://block.58.tl/top200city.php', '0.8', 'weekly', $now);
-urlNode('https://bct.58.tl/', '0.9', 'daily', $now);
-urlNode('https://bct.58.tl/market.php', '0.8', 'hourly', $now);
-urlNode('https://mall.58.tl/', '0.9', 'daily', $now);
-urlNode('https://mall.58.tl/product/list.php', '0.8', 'daily', $now);
-urlNode('https://mall.58.tl/shop/list.php', '0.8', 'weekly', $now);
-urlNode('https://model.58.tl/list.php', '0.8', 'daily', $now);
-urlNode('https://model.58.tl/rankings.php', '0.7', 'daily', $now);
-urlNode('https://model.58.tl/dramas.php', '0.7', 'daily', $now);
-urlNode('https://mall.58.tl/author/list.php', '0.8', 'daily', $now);
-urlNode('https://nft.58.tl/', '0.8', 'daily', $now);
-urlNode('https://v.58.tl/', '0.8', 'daily', $now);
-urlNode('https://v.58.tl/circles/all.php', '0.8', 'weekly', $now);
-urlNode('https://bid.58.tl/', '0.8', 'daily', $now);
-urlNode('https://club.58.tl/', '0.8', 'daily', $now);
 
 // 1b. 静态内容页（帮助中心 / 术语表 / 排行榜 / 新闻 / 城市入口）
 // 说明：静态页无数据库 updated_at，lastmod 统一取自 filemtime()
@@ -93,84 +81,11 @@ while ($city = $stmt->fetch(PDO::FETCH_ASSOC)) {
     urlNode(SeoHelper::cityUrl($city['pinyin']), '0.7', 'weekly', $lastmod);
 }
 
-// 3. 商品页
-$stmt = $pdo->query("SELECT id, name, updated_at FROM products WHERE status = 'active' ORDER BY id DESC LIMIT 5000");
-while ($product = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $lastmod = $product['updated_at'] ? date('Y-m-d', strtotime($product['updated_at'])) : $now;
-    urlNode(SeoHelper::productUrl($product['id'], $product['name']), '0.7', 'weekly', $lastmod);
-}
-
-// 4. 店铺页
-$stmt = $pdo->query("SELECT id, shop_name, updated_at FROM shops WHERE status = 'active' ORDER BY id DESC LIMIT 1000");
-while ($shop = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $lastmod = $shop['updated_at'] ? date('Y-m-d', strtotime($shop['updated_at'])) : $now;
-    urlNode(SeoHelper::shopUrl($shop['id'], $shop['shop_name']), '0.7', 'weekly', $lastmod);
-}
-
-// 5. 互访圈页
-$stmt = $pdo->query("SELECT id, name, updated_at FROM circles WHERE status = 'active' ORDER BY id DESC LIMIT 2000");
-while ($circle = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $lastmod = $circle['updated_at'] ? date('Y-m-d', strtotime($circle['updated_at'])) : $now;
-    urlNode(SeoHelper::circleUrl($circle['id'], $circle['name']), '0.6', 'weekly', $lastmod);
-}
-
-// 6. NFT 页（基于 nft_avatars）
-$stmt = $pdo->query("SELECT id, avatar_id, code, updated_at FROM nft_avatars ORDER BY id DESC LIMIT 2000");
-while ($nft = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $lastmod = $nft['updated_at'] ? date('Y-m-d', strtotime($nft['updated_at'])) : $now;
-    $name = $nft['avatar_id'] ?: $nft['code'];
-    urlNode(SeoHelper::nftUrl($nft['id'], $name), '0.6', 'weekly', $lastmod);
-}
-
-// 7. 模特页（子站 model.58.tl）
-try {
-    $stmt = $pdo->query("SELECT id, nickname, updated_at FROM models WHERE status='active' ORDER BY id DESC LIMIT 2000");
-    while ($model = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $lastmod = $model['updated_at'] ? date('Y-m-d', strtotime($model['updated_at'])) : $now;
-        urlNode(SeoHelper::modelUrl($model['id'], $model['nickname']), '0.7', 'weekly', $lastmod);
-    }
-} catch (Exception $e) {
-    // models 表尚未创建，跳过
-}
-
-// 7b. 短剧页（子站 model.58.tl）
-try {
-    $stmt = $pdo->query("SELECT id, title, updated_at FROM dramas WHERE status='active' ORDER BY id DESC LIMIT 2000");
-    while ($drama = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $lastmod = $drama['updated_at'] ? date('Y-m-d', strtotime($drama['updated_at'])) : $now;
-        urlNode(SeoHelper::dramaUrl($drama['id'], $drama['title']), '0.6', 'weekly', $lastmod);
-    }
-} catch (Exception $e) {
-    // dramas 表尚未创建，跳过
-}
-
-// 8. 作者页
-try {
-    $stmt = $pdo->query("SELECT id, nickname, updated_at FROM authors WHERE status='active' ORDER BY id DESC LIMIT 2000");
-    while ($author = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $lastmod = $author['updated_at'] ? date('Y-m-d', strtotime($author['updated_at'])) : $now;
-        urlNode(SeoHelper::authorUrl($author['id'], $author['nickname']), '0.7', 'weekly', $lastmod);
-    }
-} catch (Exception $e) {
-    // authors 表尚未创建，跳过
-}
-
-// 9. 社区帖子（club.58.tl）
-try {
-    $stmt = $pdo->query("SELECT id, title, content, updated_at FROM posts WHERE status='active' ORDER BY id DESC LIMIT 5000");
-    while ($post = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $lastmod = $post['updated_at'] ? date('Y-m-d', strtotime($post['updated_at'])) : $now;
-        $title = !empty($post['title']) ? $post['title'] : $post['content'];
-        urlNode(SeoHelper::postUrl($post['id'], $title), '0.7', 'weekly', $lastmod);
-    }
-} catch (Exception $e) {
-    // posts 表尚未创建，跳过
-}
-
 echo '</urlset>', "\n";
 
-// 主动通知百度 sitemap 已更新（PHP 请求结束时异步执行，不影响响应速度）
+// 主动通知（百度无 sitemap ping 接口；Google ping 受配置开关控制，默认关闭）
 if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
 }
 SeoHelper::pingSitemap('https://www.58.tl/sitemap.xml');
+

@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result) {
                 // 百度主动推送
                 if (class_exists('SeoHelper')) {
-                    SeoHelper::baiduPush(SeoHelper::shopUrl($result, $shopName));
+                    SeoHelper::pushContentUrl(SeoHelper::shopUrl($result, $shopName));
                 }
                 header("Location: manage.php");
                 exit();

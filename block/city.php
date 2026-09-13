@@ -186,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                     echo json_encode(['success' => true, 'message' => "成功认领 " . count($selected_blocks) . " 个区块！", 'block_numbers' => $claimedNumbers]); exit;
                 }
                 $success_message = "成功认领 " . count($selected_blocks) . " 个区块！";
-                SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
+                SeoHelper::pushContentUrl(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
                 if (($_POST['ajax'] ?? '') === '1') {
                     echo json_encode(['success' => false, 'message' => "认领失败，请重试"]); exit;
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $current_user_id && $view_mode === 
                     echo json_encode(['success' => true, 'message' => "成功认领区块 {$block_number}！", 'block_number' => $block_number]); exit;
                 }
                 $success_message = "成功认领区块 {$block_number}！";
-                SeoHelper::baiduPush(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
+                SeoHelper::pushContentUrl(SeoHelper::cityUrl($city_info['pinyin'] ?? $city_pinyin));
             } else {
                 if (($_POST['ajax'] ?? '') === '1') {
                     echo json_encode(['success' => false, 'message' => "认领失败，区块可能已被认领"]); exit;

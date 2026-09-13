@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+Sitemap: https://club.58.tl/sitemap.xml
+
+# ===== 生成式引擎爬虫显式放行 =====
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Bytespider
+Allow: /
+User-agent: CCBot
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: meta-externalagent
+Allow: /
+
+# ===== 私密与功能性页面 =====
+Disallow: /user/
+Disallow: /auth/
+Disallow: /includes/
+Disallow: /my.php
+Disallow: /create.php
+Disallow: /*?action=edit
+Disallow: /*?redirect=

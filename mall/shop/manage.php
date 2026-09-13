@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $userShop = $shop->getShopById($shopId);
                 // 百度主动推送
                 if (class_exists('SeoHelper')) {
-                    SeoHelper::baiduPush(SeoHelper::shopUrl($shopId, $updateData['shop_name'] ?? $userShop['shop_name']));
+                    SeoHelper::pushContentUrl(SeoHelper::shopUrl($shopId, $updateData['shop_name'] ?? $userShop['shop_name']));
                 }
             } else {
                 $error = '店铺信息更新失败';

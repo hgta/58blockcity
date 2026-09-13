@@ -2,7 +2,7 @@
 /**
  * 全局品牌实体 Organization JSON-LD —— 单一来源（Single Source of Truth）
  *
- * 用途：把 www / block / bct / mall / model / nft / v / bid / club 九个子域在结构化数据层面
+ * 用途：把 www / block / bct / mall / model / nft / v / bid / club / task 十个子域在结构化数据层面
  *      聚合为「同一个组织实体」，供生成式引擎做实体归因。
  *
  * 用法：
@@ -14,7 +14,9 @@
  * 维护约定（见 design.md D3 / D6）：
  *   - 第三方独立平台 BlockCity.vip 用 isRelatedTo（是「我服务/关联它」），
  *     避免生成式引擎把两个组织错误合并、转嫁信誉风险。
- *   - 微信号 BitPFP 不是 URL，用 ContactPoint 的 identifier/name 承载。
+ *   - 微信号 BitPFP / 公众号 www58tl 都不是 URL，用 ContactPoint 的 identifier/name 承载，
+ *     不写入 sameAs（schema.org 要求 sameAs 为可解析 URL）。
+ *   - 当前无其他可引用的自有平台主页，故 sameAs 暂不声明；后续如有官方站外主页再加。
  *   - 静态 HTML 页需手工注入同一份 JSON-LD（无模板可 include）；变更本文件时同步静态页。
  */
 
@@ -44,8 +46,8 @@ if (!function_exists('organization_json_ld')) {
                 'width'  => 180,
                 'height' => 180,
             ],
-            'description' => '58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、model、nft、v、bid、club 九个子域。',
-            // 联系入口：微信号非 URL，用 identifier/name 承载
+            'description' => '58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，提供区块认领、人气值（BCT）交易、NFT 头像、同城社交与本地生活服务。本站为基于 BlockCity.vip 生态的独立第三方工具站集群，涵盖 www、block、bct、mall、model、nft、v、bid、club、task 十个子域。',
+            // 联系入口：微信号/公众号 ID 非 URL，用 identifier/name 承载
             'contactPoint' => [
                 [
                     '@type'        => 'ContactPoint',
@@ -53,6 +55,13 @@ if (!function_exists('organization_json_ld')) {
                     'email'        => 'support@58.tl',
                     'identifier'   => 'BitPFP',
                     'name'         => '微信客服（BitPFP）',
+                    'availableLanguage' => ['zh-CN'],
+                ],
+                [
+                    '@type'        => 'ContactPoint',
+                    'contactType'  => 'customer service',
+                    'identifier'   => 'www58tl',
+                    'name'         => '微信公众号（www58tl）',
                     'availableLanguage' => ['zh-CN'],
                 ],
             ],

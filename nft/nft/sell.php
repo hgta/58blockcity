@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result) {
             $_SESSION['message'] = "NFT已成功上架出售";
             // 百度主动推送
-            SeoHelper::baiduPush(SeoHelper::nftUrl($nftId, $nftDetails['name'] ?? ''));
+            SeoHelper::pushContentUrl(SeoHelper::nftUrl($nftId, $nftDetails['name'] ?? ''));
             header("Location: /user/collection.php");
             exit();
         } else {

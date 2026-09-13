@@ -1,0 +1,32 @@
+# 58模特库（58区块城市 · 子站）
+
+> 本站是「58区块城市」组织实体旗下的模特库子站，主站实体为 https://www.58.tl/ 。本站提供模特个人主页、作品图集、参演短剧与排行榜，并支持在线申请加入。
+
+## 本站主要入口
+
+- [模特库首页](https://model.58.tl/): 模特库总入口
+- [模特列表](https://model.58.tl/list.php): 浏览全部模特
+- [模特排行榜](https://model.58.tl/rankings.php): 按粉丝、人气、参演短剧、作品数排名
+- [短剧库](https://model.58.tl/dramas.php): 模特参演的短剧作品与参演阵容
+- [我要当模特](https://model.58.tl/apply.php): 在线提交资料与照片申请加入
+
+## 内容形态
+
+- [模特个人主页](https://model.58.tl/m/{id}-{slug}.html): 个人简介、作品图集、短视频与关注
+- [短剧详情](https://model.58.tl/drama/{id}-{slug}.html): 短剧信息与参演模特
+
+## 姊妹站
+
+- [人气值商城](https://mall.58.tl/): 支持 BCT 人气值支付的购物商城与作者库
+- [58区块社区](https://club.58.tl/): 同城帖子与话题交流
+
+## 所属实体（主站）
+
+- [58区块城市主站](https://www.58.tl/): 组织实体总入口
+- [主站 llms.txt](https://www.58.tl/llms.txt)
+- [帮助中心](https://www.58.tl/help/help.html)
+
+## Optional
+
+- [Sitemap](https://model.58.tl/sitemap.xml): 本站 URL 清单
+- [robots.txt](https://model.58.tl/robots.txt): 爬虫抓取规则（对主流 AI 爬虫全部放行）

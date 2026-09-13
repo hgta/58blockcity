@@ -1,44 +1,96 @@
 <?php
 /**
  * 百度主动推送工具
+ *
  * 使用方式：
- *   1. 命令行：php site.php                    （推送 sitemap 中所有 URL）
- *   2. 命令行：php site.php <url1> <url2> ...  （推送指定 URL）
- * 注意：请先在 config/seo.php 中填入百度搜索资源平台的真实 token。
+ *   1. 命令行：php site.php                  （推送默认入口页列表）
+ *   2. 命令行：php site.php <url1> <url2> ...（推送指定 URL）
+ *
+ * 未指定 URL 时，按 URL 归属自动选择对应子域的 token；
+ * 未在 config/seo.php 的 sites 中启用 token 的子域会被跳过并提示。
+ *
+ * 退出码：0=至少一条成功，1=全部失败或未配置。
  */
 require_once __DIR__ . '/classes/SeoHelper.php';
 
 $urls = [];
 
 if ($argc > 1) {
-    // 命令行参数传入指定 URL
     $urls = array_slice($argv, 1);
 } else {
-    // 自动从当前站点生成一批重要 URL（与 sitemap 保持一致的入口页）
+    // 默认入口页：按 host 分组，仅推送已在 sites 中启用 token 的域
     $urls = [
         'https://www.58.tl/',
         'https://www.58.tl/top200city.php',
         'https://www.58.tl/all-cities.php',
-        'https://block.58.tl/',
-        'https://bct.58.tl/',
-        'https://bct.58.tl/market.php',
-        'https://mall.58.tl/',
-        'https://mall.58.tl/product/list.php',
-        'https://mall.58.tl/shop/list.php',
-        'https://model.58.tl/',
-        'https://model.58.tl/list.php',
-        'https://model.58.tl/dramas.php',
-        'https://model.58.tl/rankings.php',
-        'https://nft.58.tl/',
-        'https://v.58.tl/',
-        'https://v.58.tl/circles/all.php',
+        'https://www.58.tl/news.php',
+        'https://www.58.tl/help/help.html',
+        'https://www.58.tl/rankings/rankings.html',
     ];
 }
 
-$result = SeoHelper::baiduPush($urls);
-if ($result === false) {
-    echo "推送失败：config/seo.php 中未配置百度 token 或 URL 为空。\n";
+// 按 host 分组（token 与 site 由 host 决定）
+$groups = [];
+foreach ($urls as $u) {
+    $host = parse_url($u, PHP_URL_HOST);
+    if (!$host) {
+        fwrite(STDERR, "跳过无法解析的 URL: {$u}\n");
+        continue;
+    }
+    $groups[strtolower($host)][] = $u;
+}
+
+if (empty($groups)) {
+    fwrite(STDERR, "没有可推送的 URL。\n");
     exit(1);
 }
 
-echo $result . "\n";
+$anySuccess = false;
+
+foreach ($groups as $host => $hostUrls) {
+    $cred = SeoHelper::resolvePushCredentials($host);
+
+    echo "── {$host} ──────────────────────────────\n";
+
+    if (!$cred['enabled']) {
+        echo "  跳过：{$cred['reason']}\n";
+        echo "  （完成百度验证后，在 config/seo.php 的 sites.{$host} 填入 token 并置 enabled=true）\n\n";
+        continue;
+    }
+
+    echo "  site={$cred['site']}  待推送 " . count($hostUrls) . " 条\n";
+
+    $result = SeoHelper::baiduPush($hostUrls, $cred['token'], $cred['site']);
+
+    if ($result === false) {
+        echo "  ❌ 推送失败（网络层错误，详见 error log 的 [SEO] 记录）\n\n";
+        continue;
+    }
+
+    // 美化输出百度返回
+    $decoded = json_decode((string)$result, true);
+    if (is_array($decoded)) {
+        echo "  返回：\n";
+        foreach ($decoded as $k => $v) {
+            $sv = is_scalar($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE);
+            echo "    {$k}: {$sv}\n";
+        }
+        if (!empty($decoded['success']) && (int)$decoded['success'] > 0) {
+            $anySuccess = true;
+        }
+        if (!empty($decoded['message'])) {
+            echo "  ⚠️ 百度提示：{$decoded['message']}\n";
+        }
+    } else {
+        echo "  返回（原始）：" . (string)$result . "\n";
+    }
+    echo "\n";
+}
+
+if (!$anySuccess) {
+    echo "⚠️ 没有取得 success > 0 的结果，请检查 token / site 是否与百度后台一致。\n";
+    exit(1);
+}
+
+echo "✅ 推送完成。\n";
+exit(0);

@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 百度主动推送新创建的互访圈
                 $newCircleId = $pdo->lastInsertId();
                 if ($newCircleId) {
-                    SeoHelper::baiduPush(SeoHelper::circleUrl($newCircleId, $name));
+                    SeoHelper::pushContentUrl(SeoHelper::circleUrl($newCircleId, $name));
                 }
                 $_POST = []; // 清空表单
             } else {
