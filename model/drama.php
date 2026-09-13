@@ -132,7 +132,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- ============ 主要演员（红果风格横向卡片） ============ -->
     <?php if (!empty($cast)): ?>
-    <section class="m-sec" id="cast">
+    <section class="m-sec m-sec-tight" id="cast">
         <div class="m-sec-head">
             <div>
                 <h2><span class="bar"></span>主要演员</h2>
@@ -174,7 +174,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- ============ 全部演职人员（含非模特演员） ============ -->
     <?php if ($castCount > 5): ?>
-    <section class="m-sec" id="cast-all">
+    <section class="m-sec m-sec-tight" id="cast-all">
         <div class="m-sec-head">
             <div>
                 <h2><span class="bar"></span>全部演职人员</h2>
