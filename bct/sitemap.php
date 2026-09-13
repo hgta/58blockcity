@@ -12,7 +12,8 @@ require_once $__root . '/classes/SeoHelper.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 
-define('BCT_BASE', 'https://bct.58.tl');
+$__bctMap = SeoHelper::primaryDomainMap('bct');
+define('BCT_BASE', 'https://' . (!empty($__bctMap['primary']) ? $__bctMap['primary'] : 'bct.58.tl'));
 $now = date('Y-m-d');
 
 $urls = [];

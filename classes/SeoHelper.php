@@ -80,9 +80,17 @@ class SeoHelper
         return 'https://www.58.tl/city/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $pinyin) . '.html';
     }
 
+    /**
+     * 互访圈详情规范 URL
+     *
+     * 主域为 hufangquan.com（见 config/seo.php 的 primary_domains）。
+     * 若未配置主域映射，回退到 v.58.tl。
+     */
     public static function circleUrl($id, $name)
     {
-        return 'https://v.58.tl/hufang/circles/view.php?id=' . intval($id);
+        $rec  = self::primaryDomainMap('hufang');
+        $host = !empty($rec['primary']) ? $rec['primary'] : 'v.58.tl';
+        return 'https://' . $host . '/hufang/circles/view.php?id=' . intval($id);
     }
 
     public static function nftUrl($id, $name)
@@ -237,6 +245,126 @@ class SeoHelper
         $loaded = require $configFile;
         $config = is_array($loaded) ? $loaded : [];
         return $config;
+    }
+
+    /**
+     * 按业务查找一级域名映射记录
+     *
+     * @param string $key 业务键（bct / hufang）
+     * @return array|null ['primary'=>, 'aliases'=>[], 'subdomain'=>]
+     */
+    public static function primaryDomainMap($key)
+    {
+        $config = self::seoConfig();
+        $map    = $config['primary_domains'] ?? [];
+        return isset($map[$key]) && is_array($map[$key]) ? $map[$key] : null;
+    }
+
+    /**
+     * 查找某 host 所属的一级域名映射记录
+     *
+     * 匹配 primary / aliases / subdomain 任一角色即视为该业务。
+     *
+     * @param string $host 不带协议的域名
+     * @return array|null ['key'=>业务键, 'primary'=>, 'aliases'=>[], 'subdomain'=>, 'role'=>]
+     */
+    public static function primaryDomainByHost($host)
+    {
+        $host = strtolower(trim((string)$host));
+        if ($host === '') {
+            return null;
+        }
+        $config = self::seoConfig();
+        $map    = $config['primary_domains'] ?? [];
+        if (!is_array($map)) {
+            return null;
+        }
+
+        foreach ($map as $key => $rec) {
+            if (!is_array($rec)) {
+                continue;
+            }
+            $primary   = strtolower((string)($rec['primary'] ?? ''));
+            $aliases   = array_map('strtolower', array_map('strval', (array)($rec['aliases'] ?? [])));
+            $subdomain = strtolower((string)($rec['subdomain'] ?? ''));
+
+            $role = '';
+            if ($primary !== '' && $host === $primary) {
+                $role = 'primary';
+            } elseif (in_array($host, $aliases, true)) {
+                $role = 'alias';
+            } elseif ($subdomain !== '' && $host === $subdomain) {
+                $role = 'subdomain';
+            }
+
+            if ($role !== '') {
+                return [
+                    'key'       => $key,
+                    'primary'   => $primary,
+                    'aliases'   => $aliases,
+                    'subdomain' => $subdomain,
+                    'role'      => $role,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 计算当前请求 host 的 canonical 目标 host
+     *
+     * 规则（仅对配置了 primary_domains 的业务生效）：
+     *   - 主域   → 返回自身
+     *   - 别名域 → 返回主域（正常情况已被 nginx 301，此处兜底）
+     *   - 收口子域 → 返回主域
+     *   - 其他 host（未配置的业务）→ 返回原 host，保持原有行为
+     *
+     * @param string $host 不带协议的域名
+     * @return string canonical 目标 host
+     */
+    public static function canonicalTargetHost($host)
+    {
+        $host = strtolower(trim((string)$host));
+        $rec  = self::primaryDomainByHost($host);
+        if ($rec === null) {
+            return $host;
+        }
+        return $rec['role'] === 'primary' ? $host : $rec['primary'];
+    }
+
+    /**
+     * 计算当前请求的 canonical 目标 URL（保留原路径与查询串）
+     *
+     * 用于替换原先写死的 canonical_url。未配置主域映射时返回原样。
+     *
+     * @param string $host 不带协议的域名（默认取当前请求）
+     * @return string 形如 https://target.host/path?query
+     */
+    public static function canonicalTargetUrl($host = '')
+    {
+        if ($host === '') {
+            $host = $_SERVER['HTTP_HOST'] ?? 'www.58.tl';
+        }
+        $target = self::canonicalTargetHost($host);
+
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        // 去掉可能存在的 host 之外的部分，仅保留 path + query
+        $path = $uri;
+
+        // 主域与原 host 不同时，需保证路径可用（去重前导斜杠）
+        return 'https://' . $target . ($path === '' ? '/' : $path);
+    }
+
+    /**
+     * 判定某 host 是否属于「别名域」（应 301 到主域）
+     *
+     * 供业务代码/文档参考；实际 301 由 nginx 完成。
+     */
+    public static function isAliasHost($host)
+    {
+        $rec = self::primaryDomainByHost($host);
+        return $rec !== null && $rec['role'] === 'alias';
     }
 
     /**

@@ -3,7 +3,12 @@ require_once __DIR__ . '/functions.php';
 $site_config['title']       = $site_config['title'] ?? '58互访圈 - 城市间互访交流平台 | 58 Hufang';
 $site_config['description'] = $site_config['description'] ?? '58互访圈是基于区块城市BlockCity的城市间互访交流平台，支持创建互访圈、跨城互访、访问记录管理，打造城市社交新体验。';
 $site_config['keywords']    = $site_config['keywords'] ?? '58,互访圈,区块城市,BlockCity,DAO,同城交流,互访,城市社交';
-$site_config['canonical_url'] = $site_config['canonical_url'] ?? 'https://v.58.tl/';
+// canonical：按请求 host 决定（主域 hufangquan.com 指向自身；子域 v.58.tl 收口到主域）
+// 页面可传 $site_config['canonical_url'] 覆盖（如详情页需固定路径），否则用当前 URL 推导
+if (empty($site_config['canonical_url'])) {
+    require_once __DIR__ . '/../../classes/SeoHelper.php';
+    $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
+}
 $site_config['og_image']    = $site_config['og_image'] ?? 'https://58.tl/assets/images/og-hufang.jpg';
 $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '互访圈';

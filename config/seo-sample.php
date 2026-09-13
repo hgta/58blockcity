@@ -25,6 +25,30 @@ return [
         'club.58.tl'  => ['token' => '', 'enabled' => false],
         'model.58.tl' => ['token' => '', 'enabled' => false],
         'task.58.tl'  => ['token' => '', 'enabled' => false],
+
+        // 一级域名（主收录目标；见下方 primary_domains）
+        // 完成百度验证后填入各自 token 并置 enabled=true
+        'renqizhi.com'   => ['token' => '', 'enabled' => false],
+        'hufangquan.com' => ['token' => '', 'enabled' => false],
+    ],
+
+    // ============ 一级域名映射（主域路由）============
+    // 某些业务同时绑定子域与一级域名（内容相同）时，用本表声明主收录目标。
+    //   primary    —— 主收录目标，canonical 指向它
+    //   aliases    —— 别名域，nginx 层 301 到 primary
+    //   subdomain  —— 收口子域，canonical 指向 primary（保留可访问，不 301）
+    // 未在表中列出的 host 保持原有行为（canonical 指向自身）。
+    'primary_domains' => [
+        'bct' => [
+            'primary'   => 'renqizhi.com',
+            'aliases'   => ['renqizhi.cn'],
+            'subdomain' => 'bct.58.tl',
+        ],
+        'hufang' => [
+            'primary'   => 'hufangquan.com',
+            'aliases'   => ['hufangquan.cn'],
+            'subdomain' => 'v.58.tl',
+        ],
     ],
 
     // ============ 兼容字段 ============

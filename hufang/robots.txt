@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Sitemap: https://v.58.tl/sitemap.xml
+Sitemap: https://hufangquan.com/sitemap.xml
 
 # ===== 生成式引擎爬虫显式放行 =====
 User-agent: GPTBot

@@ -4,8 +4,8 @@
 
 ## 本站主要入口
 
-- [BCT 行情市场](https://bct.58.tl/market.php): BCT 实时行情与交易
-- [BCT 交易首页](https://bct.58.tl/)
+- [BCT 行情市场](https://renqizhi.com/market.php): BCT 实时行情与交易
+- [BCT 交易首页](https://renqizhi.com/)
 
 ## 所属实体（主站）
 

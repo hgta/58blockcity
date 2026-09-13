@@ -9,6 +9,7 @@ require_once 'includes/auth.php';
 require_once '../classes/Visit.php';
 require_once '../classes/Circle.php';
 require_once '../classes/City.php';
+require_once '../classes/SeoHelper.php';
 
 $circle = new Circle($pdo);
 
@@ -50,7 +51,8 @@ if (isset($_SESSION['user_id'])) {
 $site_config['title']       = '58互访圈 - 城市间互访交流平台 | 58 BlockCity';
 $site_config['description'] = '58互访圈是基于58区块城市的城市间互访交流平台，记录和管理城市间的互访活动。';
 $site_config['keywords']    = '58,互访圈,城市互访,区块城市,BlockCity,DAO,同城交流';
-$site_config['canonical_url'] = 'https://v.58.tl/';
+$__hfMap = SeoHelper::primaryDomainMap('hufang');
+$site_config['canonical_url'] = 'https://' . (!empty($__hfMap['primary']) ? $__hfMap['primary'] : 'v.58.tl') . '/';
 $site_config['og_image']    = 'https://58.tl/assets/images/og-hufang.jpg';
 $site_config['extra_head']  = '<link rel="stylesheet" href="assets/css/main.css"><style>.circle-visit-badge{position:absolute;top:8px;right:8px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;z-index:2}.circle-visit-badge.completed{background:#22c55e}.circle-visit-badge.visited{background:#3b82f6}.circle-visit-badge.pending{background:#f59e0b}.view-switch{display:flex;gap:6px}.view-switch .btn{padding:6px 14px;font-size:13px}@media(max-width:768px){.user-header{flex-direction:column;gap:8px}.user-header>*{width:100%}.city-tags a{font-size:14px;padding:6px 12px}.table th,.table td{font-size:13px;padding:8px 6px}.view-switch .btn{font-size:13px;padding:8px 12px}}@media(max-width:480px){.table{font-size:12px}.city-tags a{font-size:13px;padding:5px 10px}}</style>';
 

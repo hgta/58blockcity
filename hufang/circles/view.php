@@ -74,6 +74,9 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reques
 $circleName = htmlspecialchars($circleInfo['name'] ?? '互访圈详情');
 $circleDesc = SeoHelper::excerpt($circleInfo['description'] ?? '', 100);
 $circleCity = htmlspecialchars($circleInfo['city'] ?? '');
+// 主域基准（hufangquan.com；未配置映射时回退 v.58.tl）
+$_hufangMap = SeoHelper::primaryDomainMap('hufang');
+$hufangBase = 'https://' . (!empty($_hufangMap['primary']) ? $_hufangMap['primary'] : 'v.58.tl');
 $canonicalUrl = SeoHelper::circleUrl($circleId, $circleInfo['name'] ?? '');
 $site_config['title']       = SeoHelper::title($circleName . ' - 58互访圈');
 $site_config['description'] = SeoHelper::description($circleDesc, '58互访圈');
@@ -94,10 +97,10 @@ $circleJsonLd = '<script type="application/ld+json">' . json_encode([
     'founder'   => ['@type' => 'Person', 'name' => $circleOwnerName],
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
-// 面包屑
+// 面包屑（URL 使用主域 hufangquan.com）
 $circleBreadcrumbJsonLd = SeoHelper::breadcrumbList([
-    ['name' => '58互访圈', 'url' => 'https://v.58.tl/'],
-    ['name' => $circleCity . '互访圈', 'url' => 'https://v.58.tl/index.php?city=' . urlencode($circleCity)],
+    ['name' => '58互访圈', 'url' => $hufangBase . '/'],
+    ['name' => $circleCity . '互访圈', 'url' => $hufangBase . '/index.php?city=' . urlencode($circleCity)],
     ['name' => $circleName, 'url' => null],
 ]);
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd . $circleBreadcrumbJsonLd;

@@ -2,7 +2,12 @@
 $site_config['title']       = $site_config['title'] ?? '58人气值市场 - BCT(BlockCity Token)大宗交易平台 | 58 BCT';
 $site_config['description'] = $site_config['description'] ?? '人气值市场是基于区块城市BlockCity的BCT人气值大宗交易平台，支持百万级交易、低至0%手续费、平台/中介/直接三种交易方式。';
 $site_config['keywords']    = $site_config['keywords'] ?? '58,人气值,BCT,区块城市,BlockCity,DAO,同城交流,BCT交易,人气值交易';
-$site_config['canonical_url'] = $site_config['canonical_url'] ?? 'https://bct.58.tl/';
+// canonical：按请求 host 决定（主域 renqizhi.com 指向自身；子域 bct.58.tl 收口到主域）
+// 页面可传 $site_config['canonical_url'] 覆盖（如详情页需固定路径），否则用当前 URL 推导
+if (empty($site_config['canonical_url'])) {
+    require_once __DIR__ . '/../../classes/SeoHelper.php';
+    $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
+}
 $site_config['og_image']    = $site_config['og_image'] ?? 'https://58.tl/assets/images/og-bct.jpg';
 $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '人气值';

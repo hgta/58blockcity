@@ -17,7 +17,8 @@ require_once $__root . '/classes/SeoHelper.php';
 
 header('Content-Type: application/xml; charset=utf-8');
 
-define('V_BASE', 'https://v.58.tl');
+$__hfMap = SeoHelper::primaryDomainMap('hufang');
+define('V_BASE', 'https://' . (!empty($__hfMap['primary']) ? $__hfMap['primary'] : 'v.58.tl'));
 $now = date('Y-m-d');
 
 $urls = [];

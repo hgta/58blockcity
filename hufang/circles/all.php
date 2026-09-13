@@ -4,6 +4,7 @@ require_once '../includes/auth.php';
 require_once '../../classes/Circle.php';
 require_once '../../classes/City.php';
 require_once '../../classes/Visit.php';
+require_once '../../classes/SeoHelper.php';
 
 $circle = new Circle($pdo);
 $city = new City($pdo);
@@ -27,7 +28,8 @@ if (isset($_SESSION['user_id'])) {
 $site_config['title']       = e($selectedCity) . '全部互访圈 - 58互访圈';
 $site_config['description'] = '浏览 ' . e($selectedCity) . ' 的全部互访圈，发现城市间互访交流的机会。';
 $site_config['keywords']    = '58,互访圈,' . e($selectedCity) . ',城市互访,BlockCity';
-$site_config['canonical_url'] = 'https://v.58.tl/circles/all.php';
+$__hfMap = SeoHelper::primaryDomainMap('hufang');
+$site_config['canonical_url'] = 'https://' . (!empty($__hfMap['primary']) ? $__hfMap['primary'] : 'v.58.tl') . '/circles/all.php';
 $site_config['extra_head']  = '<link rel="stylesheet" href="../assets/css/main.css">';
 
 require_once '../includes/header.php';
