@@ -431,41 +431,54 @@ if (isset($_SESSION['error'])) {
     margin-bottom: 20px;
 }
 
+.hot-cities-section h5 {
+    margin-bottom: 8px;
+}
+
 .city-selector {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .city-option {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 15px 10px;
-    text-align: center;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: 999px;
+    padding: 5px 12px;
+    line-height: 1.2;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    font-size: 13px;
 }
 
 .city-option:hover {
-    border-color: #ff6b00;
-    transform: translateY(-2px);
+    border-color: var(--bct-accent);
+    color: var(--bct-accent);
 }
 
 .city-option.active {
-    border-color: #ff6b00;
-    background: #fff8f5;
+    border-color: var(--bct-accent);
+    background: rgba(240, 185, 11, 0.12);
 }
 
 .city-name {
     font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
+    color: var(--bct-text);
+    margin-bottom: 0;
+}
+
+.city-option.active .city-name,
+.city-option:hover .city-name {
+    color: var(--bct-accent);
 }
 
 .city-rank {
-    color: #ff6b00;
-    font-size: 12px;
+    color: var(--bct-text-muted);
+    font-size: 11px;
     font-weight: 500;
 }
 
@@ -604,20 +617,35 @@ if (isset($_SESSION['error'])) {
 
 /* 交易预览 */
 .trade-preview {
-    background: #f8f9fa;
-    border-radius: 8px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
     padding: 20px;
 }
 
 .preview-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #e9ecef;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bct-border);
+    color: var(--bct-text-secondary);
+    font-size: 14px;
+}
+
+.preview-item:last-child {
+    border-bottom: none;
+}
+
+.preview-item strong {
+    color: var(--bct-text);
+    font-weight: 600;
+    font-family: 'Roboto Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
 }
 
 .preview-item.total {
-    border-top: 2px solid #dee2e6;
+    border-top: 1px solid var(--bct-border);
     border-bottom: none;
     margin-top: 10px;
     padding-top: 15px;
@@ -625,8 +653,8 @@ if (isset($_SESSION['error'])) {
 }
 
 .preview-item.total strong {
-    color: #ff6b00;
-    font-size: 18px;
+    color: var(--bct-accent);
+    font-size: 20px;
 }
 
 /* 信息卡片 */
@@ -664,10 +692,6 @@ if (isset($_SESSION['error'])) {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-    .city-selector {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    }
-    
     .trade-type-selector {
         grid-template-columns: 1fr;
     }
@@ -683,7 +707,7 @@ if (isset($_SESSION['error'])) {
     }
 }
 @media (max-width: 480px) {
-    .city-selector { grid-template-columns: repeat(2, 1fr); }
+    .city-option { font-size: 12px; padding: 4px 10px; }
     button[type="submit"] { width: 100%; padding: 14px; font-size: 16px; }
     input, select, textarea { font-size: 16px; }
 }

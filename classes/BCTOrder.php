@@ -366,10 +366,8 @@ class BCTOrder {
 
 		if ($type === 'buy') {
 			$sql .= " AND type = 'buy'";
-			$params[] = 'buy';
 		} elseif ($type === 'sell') {
 			$sql .= " AND type = 'sell'";
-			$params[] = 'sell';
 		}
 
 		if ($status === 'active') {
