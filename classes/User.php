@@ -10,7 +10,12 @@ class User {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         try {
             $stmt = $this->pdo->prepare("INSERT INTO users (username, email, password, city) VALUES (?, ?, ?, ?)");
-            return $stmt->execute([$username, $email, $hashedPassword, $city]);
+            // 返回新用户ID（失败返回0）。切勿返回 execute() 的布尔值，
+            // 否则 true 在数值上下文中会被当作 user_id=1 导致注册后误登录为 1 号用户。
+            if (!$stmt->execute([$username, $email, $hashedPassword, $city])) {
+                return 0;
+            }
+            return (int)$this->pdo->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == 23000 || strpos($e->getMessage(), 'Duplicate entry') !== false) {
                 if (strpos($e->getMessage(), 'email') !== false) {

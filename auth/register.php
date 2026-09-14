@@ -50,11 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             $userId = $user->register($username, $email, $password, $city);
-            if ($userId) {
-                handleLogin($userId, $username, $email, 'user', false);
+            // 严格判断 > 0：register() 返回新用户ID，0 表示写入失败
+            if ($userId > 0) {
+                handleLogin((int)$userId, $username, $email, 'user', false);
                 header('Location: ' . $site_config['redirect_after_login']);
                 exit;
             }
+            $errors[] = '注册失败，请稍后重试';
         } catch (Exception $e) {
             $errors[] = $e->getMessage();
         }
