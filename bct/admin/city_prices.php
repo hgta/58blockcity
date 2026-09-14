@@ -12,67 +12,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($isBatch) {
         // ---- 批量设置：每行「城市 数量 价格」，空格/Tab 分隔 ----
+        // 解析规则与 BCT 批量发布交易共用 BatchOrderParser，避免两处规则漂移。
         // 规则：数量仅校验不写库；价格仅更新 current_price；
         //      若该城市现有单价 < 录入价，则提示并跳过（不更新）。
+        require_once '../../classes/BatchOrderParser.php';
         $result = ['updated' => [], 'skipped' => [], 'missing' => [], 'invalid' => []];
         try {
             $batchText = trim((string)($_POST['batch_text'] ?? ''));
             if ($batchText === '') {
                 throw new Exception('请输入批量设置内容');
             }
-            $batchText = str_replace('　', ' ', $batchText); // 兼容全角空格
 
-            $lines = preg_split('/\r\n|\r|\n/', $batchText);
+            $parser = new BatchOrderParser($pdo);
+            $parsed = $parser->parseText($batchText);
+
+            // 解析失败行：保留原有 invalid 文案口径
+            $result['invalid'] = $parsed['invalid'];
+
             $stmtCity = $pdo->prepare("SELECT bct_current_price AS current_price FROM cities WHERE name = ?");
-            $stmtPy   = $pdo->prepare("SELECT name FROM cities WHERE pinyin = ? LIMIT 1");
 
-            foreach ($lines as $lineNo => $rawLine) {
-                $line = trim($rawLine);
-                if ($line === '' || $line[0] === '#' || strpos($line, '//') === 0) continue;
-
-                $parts = preg_split('/\s+/', $line);
-                if (count($parts) !== 3) {
-                    $result['invalid'][] = ['line' => $lineNo + 1, 'text' => mb_substr(trim($rawLine), 0, 60), 'reason' => '应为「城市 数量 价格」三列'];
-                    continue;
-                }
-                $name  = trim($parts[0]);
-                $qty   = $parts[1];
-                $price = $parts[2];
-
-                if (!ctype_digit($qty) || (int)$qty <= 0) {
-                    $result['invalid'][] = ['line' => $lineNo + 1, 'text' => $name, 'reason' => '数量必须是正整数'];
-                    continue;
-                }
-                if (!is_numeric($price) || (float)$price <= 0) {
-                    $result['invalid'][] = ['line' => $lineNo + 1, 'text' => $name, 'reason' => '价格必须是正数'];
-                    continue;
-                }
+            foreach ($parsed['items'] as $item) {
+                $name  = $item['input'];
+                $price = $item['price'];
 
                 // 定位城市（支持直接城市名，或 cities.pinyin）
-                $cityName = '';
-                $row = null;
-                $stmtCity->execute([$name]);
-                $row = $stmtCity->fetch();
-                if ($row) {
-                    $cityName = $name;
-                } else {
-                    $stmtPy->execute([strtolower($name)]);
-                    $pyName = $stmtPy->fetchColumn();
-                    if ($pyName) {
-                        $stmtCity->execute([$pyName]);
-                        $row = $stmtCity->fetch();
-                        if ($row) $cityName = $pyName;
-                    }
-                }
-                if ($cityName === '') {
-                    $result['missing'][] = ['line' => $lineNo + 1, 'text' => $name];
+                $cityName = $parser->matchCity($name);
+                if ($cityName === null) {
+                    $result['missing'][] = ['line' => $item['line'], 'text' => $name];
                     continue;
                 }
 
+                $stmtCity->execute([$cityName]);
+                $row = $stmtCity->fetch();
+
                 $newPrice = (float)$price;
-                $curPrice = (float)$row['current_price'];
+                $curPrice = $row ? (float)$row['current_price'] : 0.0;
                 if ($curPrice < $newPrice) {
-                    $result['skipped'][] = ['line' => $lineNo + 1, 'city' => $cityName, 'current' => $curPrice, 'new' => $newPrice];
+                    $result['skipped'][] = ['line' => $item['line'], 'city' => $cityName, 'current' => $curPrice, 'new' => $newPrice];
                     continue;
                 }
 
@@ -80,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $cityBCT->updatePrice($cityName, $newPrice);
                     $result['updated'][] = ['city' => $cityName, 'price' => $newPrice];
                 } catch (Exception $e) {
-                    $result['invalid'][] = ['line' => $lineNo + 1, 'text' => $cityName, 'reason' => '更新失败：' . $e->getMessage()];
+                    $result['invalid'][] = ['line' => $item['line'], 'text' => $cityName, 'reason' => '更新失败：' . $e->getMessage()];
                 }
             }
 

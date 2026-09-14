@@ -4,6 +4,7 @@ require_once 'includes/auth.php';
 require_once '../classes/UserBCTAccount.php';
 require_once '../classes/BCTOrder.php';
 require_once '../classes/CityBCT.php';
+require_once '../classes/BatchOrderParser.php';
 
 checkLogin();
 
@@ -29,6 +30,10 @@ $mediatorId = intval($_POST['mediator_id'] ?? 0);
 $contactInfo = $_POST['contact_info'] ?? '';
 
 if (!in_array($type, ['buy', 'sell']) || empty($city) || $amount <= 0) fail("无效的请求参数", $city);
+// 服务端数量上限校验（与批量发布共用同一取值来源，防止绕过前端 max 属性）
+if ($amount < BatchOrderParser::MIN_AMOUNT || $amount > BatchOrderParser::MAX_AMOUNT) {
+    fail("交易数量需在 " . number_format(BatchOrderParser::MIN_AMOUNT) . " - " . number_format(BatchOrderParser::MAX_AMOUNT) . " BCT 之间", $city);
+}
 if (!in_array($tradeType, ['platform', 'mediator', 'direct'])) fail("无效的交易类型", $city);
 if ($tradeType === 'mediator' && $mediatorId <= 0) fail("请选择中介", $city);
 if ($tradeType === 'direct' && empty($contactInfo)) fail("请提供联系方式", $city);

@@ -12,7 +12,7 @@ class BCTOrder {
     }
     
     // 创建订单
-    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null, $durationDays = 0) {
+    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null, $durationDays = 0, $mediatorId = null) {
         try {
             $this->pdo->beginTransaction();
             
@@ -42,8 +42,8 @@ class BCTOrder {
             // 创建订单
             $orderNo = $this->generateOrderNo();
             $stmt = $this->pdo->prepare("INSERT INTO bct_orders 
-                (order_no, user_id, city, type, amount, price, total_amount, trade_type, contact_info, expires_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (order_no, user_id, city, type, amount, price, total_amount, trade_type, contact_info, mediator_id, expires_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
             $stmt->execute([
                 $orderNo, 
@@ -55,6 +55,7 @@ class BCTOrder {
                 $total, 
                 $tradeType,
                 $contactInfo,
+                $mediatorId,
                 $expiresAt
             ]);
             

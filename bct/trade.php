@@ -8,12 +8,27 @@ checkLogin();
 require_once 'includes/header.php';
 require_once '../classes/UserBCTAccount.php';
 require_once '../classes/CityBCT.php';
+require_once '../classes/BatchOrderParser.php';
 
 $account = new UserBCTAccount($pdo);
 $cityBCT = new CityBCT($pdo);
 
 // 获取城市参数
 $selectedCity = $_GET['city'] ?? '';
+
+// 模式：single（单条）/ batch（批量）
+$mode = ($_GET['mode'] ?? 'single') === 'batch' ? 'batch' : 'single';
+
+// 批量发布结果 / 中介列表
+$batchResult = $_SESSION['batch_publish_result'] ?? null;
+unset($_SESSION['batch_publish_result']);
+
+$mediators = [];
+try {
+    $mediators = $pdo->query("SELECT id, name, contact FROM mediators ORDER BY id ASC")->fetchAll();
+} catch (Exception $e) {
+    $mediators = [];
+}
 
 // 获取城市数据
 $cities = $pdo->query("SELECT * FROM cities WHERE status = 'active' ORDER BY rank ASC, name ASC")->fetchAll();
@@ -67,6 +82,201 @@ if (isset($_SESSION['error'])) {
     </div>
 </div>
 
+<!-- 模式切换 -->
+<div class="mode-tabs">
+    <a href="trade.php?<?= $selectedCity ? 'city='.urlencode($selectedCity).'&' : '' ?>mode=single"
+       class="mode-tab <?= $mode === 'single' ? 'active' : '' ?>">
+        <i class="glyphicon glyphicon-edit"></i> 单条模式
+    </a>
+    <a href="trade.php?mode=batch" class="mode-tab <?= $mode === 'batch' ? 'active' : '' ?>">
+        <i class="glyphicon glyphicon-list-alt"></i> 批量模式
+    </a>
+</div>
+
+<?php if ($mode === 'batch'): ?>
+<!-- ======================= 批量模式 ======================= -->
+<?php if ($batchResult): ?>
+<div class="card batch-result-card">
+    <div class="card-header">
+        <h4>
+            <i class="glyphicon glyphicon-ok-circle"></i> 批量发布结果
+            <span class="result-summary">
+                成功 <strong class="up"><?= (int)$batchResult['success'] ?></strong> 条
+                · 失败 <strong class="down"><?= (int)$batchResult['failed'] ?></strong> 条
+            </span>
+        </h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table batch-table">
+                <thead>
+                    <tr>
+                        <th>城市</th><th class="text-right">数量</th><th class="text-right">单价</th>
+                        <th class="text-right">总价</th><th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($batchResult['items'] as $it): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($it['city']) ?></td>
+                        <td class="text-right num"><?= number_format($it['amount']) ?></td>
+                        <td class="text-right num"><?= number_format($it['price'], 2) ?></td>
+                        <td class="text-right num"><?= number_format($it['amount'] * $it['price'], 2) ?></td>
+                        <td>
+                            <?php if ($it['ok']): ?>
+                                <span class="badge badge-success">已发布 #<?= (int)$it['order_id'] ?></span>
+                            <?php else: ?>
+                                <span class="badge badge-danger"><?= htmlspecialchars($it['message']) ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php if (!empty($batchResult['missing'])): ?>
+        <div class="batch-problem">
+            <strong class="down">城市不存在（<?= count($batchResult['missing']) ?> 行）</strong>
+            <?php foreach ($batchResult['missing'] as $m): ?>
+                <span class="problem-chip">第<?= (int)$m['line'] ?>行 <?= htmlspecialchars($m['text']) ?></span>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($batchResult['invalid'])): ?>
+        <div class="batch-problem">
+            <strong class="down">格式错误（<?= count($batchResult['invalid']) ?> 行）</strong>
+            <?php foreach ($batchResult['invalid'] as $m): ?>
+                <span class="problem-chip">第<?= (int)$m['line'] ?>行 <?= htmlspecialchars($m['reason']) ?></span>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="batch-layout">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="glyphicon glyphicon-list-alt"></i> 批量发布交易</h3>
+        </div>
+        <div class="card-body">
+            <!-- 方向 -->
+            <div class="form-section">
+                <h4><i class="glyphicon glyphicon-transfer"></i> 交易方向</h4>
+                <div class="trade-type-selector">
+                    <button type="button" class="trade-type-option active" data-batch-type="buy">
+                        <i class="glyphicon glyphicon-shopping-cart"></i>
+                        <span>全部买入</span>
+                        <small>本批次全部为买单</small>
+                    </button>
+                    <button type="button" class="trade-type-option" data-batch-type="sell">
+                        <i class="glyphicon glyphicon-yen"></i>
+                        <span>全部卖出</span>
+                        <small>本批次全部为卖单</small>
+                    </button>
+                </div>
+                <small class="form-text text-muted">同一批次方向统一，不支持买入与卖出混合。</small>
+            </div>
+
+            <!-- 交易方式 -->
+            <div class="form-section">
+                <h4><i class="glyphicon glyphicon-option-horizontal"></i> 交易方式</h4>
+                <div class="trade-method-options">
+                    <div class="method-option">
+                        <input type="radio" name="batch_trade_type" value="direct" id="b_direct" checked>
+                        <label for="b_direct">
+                            <div class="method-icon"><i class="glyphicon glyphicon-transfer"></i></div>
+                            <div class="method-info">
+                                <div class="method-title">直接交易</div>
+                                <div class="method-desc">双方直接联系，无手续费</div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="method-option">
+                        <input type="radio" name="batch_trade_type" value="mediator" id="b_mediator">
+                        <label for="b_mediator">
+                            <div class="method-icon"><i class="glyphicon glyphicon-user"></i></div>
+                            <div class="method-info">
+                                <div class="method-title">中介交易</div>
+                                <div class="method-desc">平台客服中介，手续费2%</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <small class="form-text text-muted">批量模式不提供平台交易（平台交易限制 500 BCT 以下）。</small>
+
+                <div class="form-group batch-field" id="batchContactGroup" style="margin-top:15px;">
+                    <label for="batch_contact_info">联系方式</label>
+                    <input type="text" class="form-control" id="batch_contact_info"
+                           placeholder="请输入您的手机号、微信或QQ等联系方式（本批次共用）">
+                </div>
+
+                <div class="form-group batch-field" id="batchMediatorGroup" style="display:none;margin-top:15px;">
+                    <label for="batch_mediator_id">选择中介（本批次共用）</label>
+                    <select class="form-control" id="batch_mediator_id">
+                        <option value="">请选择中介</option>
+                        <?php foreach ($mediators as $m): ?>
+                        <option value="<?= (int)$m['id'] ?>"><?= htmlspecialchars($m['name']) ?>（<?= htmlspecialchars($m['contact']) ?>）</option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (empty($mediators)): ?>
+                    <small class="form-text text-muted">暂无可选中介</small>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- 粘贴区 -->
+            <div class="form-section">
+                <h4><i class="glyphicon glyphicon-paste"></i> 粘贴挂单</h4>
+                <p class="batch-hint">
+                    每行一条，格式：<code>城市 数量 价格</code>（空格或 Tab 分隔，支持全角空格；<code>#</code> 或 <code>//</code> 开头为注释行）。<br>
+                    城市支持名称或拼音，自建城市同样可直接填写。同一城市同一价格的多行会自动累加数量。<br>
+                    单次数量范围：1 - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT。
+                </p>
+                <textarea id="batch_text" class="batch-textarea" rows="10"
+                          placeholder="<?= htmlspecialchars("吐鲁番 65000 0.03\n西双版纳 60000 0.03\n锡林郭勒 36000 0.03\n鲸探 27000 0.05") ?>"></textarea>
+                <div class="batch-actions">
+                    <button type="button" class="btn btn-default" id="btnParse">
+                        <i class="glyphicon glyphicon-search"></i> 识别
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnSubmitBatch" disabled>
+                        <i class="glyphicon glyphicon-ok"></i> 确认发布
+                    </button>
+                    <span class="batch-status" id="batchStatus"></span>
+                </div>
+            </div>
+
+            <!-- 预览 -->
+            <div class="form-section" id="batchPreviewSection" style="display:none;">
+                <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
+                <div class="table-responsive">
+                    <table class="table batch-table">
+                        <thead>
+                            <tr>
+                                <th>城市</th><th class="text-right">数量</th><th class="text-right">单价</th>
+                                <th class="text-right">总价</th><th>状态</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchPreviewBody"></tbody>
+                    </table>
+                </div>
+                <div id="batchProblems"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="batchSubmitForm" method="post" action="process_batch_orders.php" style="display:none;">
+    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+    <input type="hidden" name="type" id="batchTypeInput" value="buy">
+    <input type="hidden" name="trade_type" id="batchTradeTypeInput" value="direct">
+    <input type="hidden" name="contact_info" id="batchContactInput" value="">
+    <input type="hidden" name="mediator_id" id="batchMediatorInput" value="">
+    <input type="hidden" name="batch_text" id="batchTextInput" value="">
+</form>
+
+<?php else: ?>
+<!-- ======================= 单条模式 ======================= -->
 <div class="row">
     <div class="col-md-8">
             <!-- 交易表单卡片 -->
@@ -146,9 +356,9 @@ if (isset($_SESSION['error'])) {
                                     <div class="form-group">
                                         <label for="amount">交易数量 (BCT)</label>
                                         <input type="number" class="form-control" id="amount" name="amount" 
-                                               min="1" max="100000" required 
+                                               min="<?= BatchOrderParser::MIN_AMOUNT ?>" max="<?= BatchOrderParser::MAX_AMOUNT ?>" required 
                                                placeholder="请输入交易数量">
-                                        <small class="form-text text-muted">单次交易数量范围：1 - 100,000 BCT</small>
+                                        <small class="form-text text-muted">单次交易数量范围：<?= number_format(BatchOrderParser::MIN_AMOUNT) ?> - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -398,21 +608,152 @@ if (isset($_SESSION['error'])) {
         </div>
     </div>
 </div>
+<?php endif; // 模式分支结束 ?>
 
 <!-- 引入Select2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
 <!-- 页面特定样式 -->
 <style>
+/* 模式切换 */
+.mode-tabs {
+    display: inline-flex;
+    gap: 6px;
+    padding: 4px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+    margin-bottom: 20px;
+}
+.mode-tab {
+    padding: 7px 18px;
+    border-radius: 6px;
+    color: var(--bct-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.mode-tab:hover {
+    color: var(--bct-text);
+    background: var(--bct-bg-hover);
+    text-decoration: none;
+}
+.mode-tab.active {
+    background: var(--bct-accent);
+    color: #0b0e11;
+}
+.mode-tab.active:hover { color: #0b0e11; }
+
+/* 批量模式 */
+.batch-hint {
+    color: var(--bct-text-secondary);
+    font-size: 13px;
+    line-height: 1.9;
+    margin: 0 0 12px;
+}
+.batch-hint code {
+    color: var(--bct-text);
+    background: var(--bct-bg-hover);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+.batch-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+    color: var(--bct-text);
+    font-size: 13px;
+    font-family: 'Roboto Mono', 'SF Mono', Menlo, Consolas, monospace;
+    line-height: 1.8;
+    resize: vertical;
+}
+.batch-textarea:focus {
+    outline: none;
+    border-color: var(--bct-accent);
+    box-shadow: 0 0 0 2px rgba(240, 185, 11, 0.2);
+}
+.batch-textarea::placeholder { color: var(--bct-text-muted); }
+
+.batch-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+.batch-status {
+    font-size: 13px;
+    color: var(--bct-text-secondary);
+}
+
+.batch-table { margin-bottom: 0; color: var(--bct-text); }
+.batch-table > thead > tr > th {
+    background: var(--bct-bg-tertiary);
+    color: var(--bct-text-secondary);
+    border-bottom: 1px solid var(--bct-border);
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.batch-table > tbody > tr > td {
+    border-top: 1px solid var(--bct-border);
+    color: var(--bct-text);
+    vertical-align: middle;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.batch-table .num { font-family: 'Roboto Mono', Monaco, monospace; font-variant-numeric: tabular-nums; }
+
+.row-bad td { background: rgba(246, 70, 93, 0.06); }
+.row-bad .batch-issue { color: var(--bct-down); font-size: 12px; }
+.row-merged .batch-merged { color: var(--bct-accent); font-size: 11px; margin-left: 6px; }
+
+.btn-remove-row {
+    background: transparent;
+    border: 1px solid var(--bct-border);
+    border-radius: 6px;
+    color: var(--bct-text-secondary);
+    padding: 2px 8px;
+    cursor: pointer;
+}
+.btn-remove-row:hover { border-color: var(--bct-down); color: var(--bct-down); }
+
+.batch-problem {
+    margin-top: 14px;
+    padding: 12px;
+    background: rgba(246, 70, 93, 0.08);
+    border: 1px solid rgba(246, 70, 93, 0.25);
+    border-radius: var(--bct-radius);
+    font-size: 13px;
+}
+.problem-chip {
+    display: inline-block;
+    margin: 4px 6px 0 0;
+    padding: 2px 8px;
+    background: var(--bct-bg-tertiary);
+    border-radius: 4px;
+    color: var(--bct-text-secondary);
+    font-size: 12px;
+}
+.batch-result-card .result-summary {
+    float: right;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--bct-text-secondary);
+}
+.batch-field label { color: var(--bct-text-secondary); }
+
 /* 表单区域 */
 .form-section {
     margin-bottom: 30px;
     padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--bct-border);
 }
 
 .form-section h4 {
-    color: #333;
+    color: var(--bct-text);
     margin-bottom: 15px;
     display: flex;
     align-items: center;
@@ -420,7 +761,7 @@ if (isset($_SESSION['error'])) {
 }
 
 .form-section h5 {
-    color: #666;
+    color: var(--bct-text-secondary);
     margin-bottom: 10px;
     font-size: 14px;
     font-weight: 600;
@@ -460,6 +801,8 @@ if (isset($_SESSION['error'])) {
     color: var(--bct-accent);
 }
 
+.batch-layout { max-width: 900px; }
+
 .city-option.active {
     border-color: var(--bct-accent);
     background: rgba(240, 185, 11, 0.12);
@@ -489,8 +832,9 @@ if (isset($_SESSION['error'])) {
 
 /* Select2 自定义样式 */
 .select2-container--default .select2-selection--single {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
     height: 46px;
     padding: 8px 12px;
 }
@@ -501,11 +845,33 @@ if (isset($_SESSION['error'])) {
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 30px;
-    color: #333;
+    color: var(--bct-text);
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--bct-text-muted);
 }
 
 .select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: #ff6b00;
+    border-color: var(--bct-accent);
+}
+
+.select2-dropdown {
+    background: var(--bct-bg-secondary);
+    border: 1px solid var(--bct-border);
+    color: var(--bct-text);
+}
+.select2-container--default .select2-results__option {
+    color: var(--bct-text);
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: var(--bct-bg-hover);
+    color: var(--bct-accent);
+}
+.select2-search--dropdown .select2-search__field {
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    color: var(--bct-text);
 }
 
 /* 交易类型选择器 */
@@ -516,9 +882,9 @@ if (isset($_SESSION['error'])) {
 }
 
 .trade-type-option {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
+    background: var(--bct-bg-tertiary);
+    border: 2px solid var(--bct-border);
+    border-radius: var(--bct-radius);
     padding: 20px;
     text-align: center;
     cursor: pointer;
@@ -526,29 +892,29 @@ if (isset($_SESSION['error'])) {
 }
 
 .trade-type-option:hover {
-    border-color: #ff6b00;
+    border-color: var(--bct-accent);
 }
 
 .trade-type-option.active {
-    border-color: #ff6b00;
-    background: #fff8f5;
+    border-color: var(--bct-accent);
+    background: rgba(240, 185, 11, 0.12);
 }
 
 .trade-type-option i {
     font-size: 24px;
-    color: #ff6b00;
+    color: var(--bct-accent);
     margin-bottom: 10px;
 }
 
 .trade-type-option span {
     display: block;
     font-weight: 600;
-    color: #333;
+    color: var(--bct-text);
     margin-bottom: 5px;
 }
 
 .trade-type-option small {
-    color: #666;
+    color: var(--bct-text-secondary);
     font-size: 12px;
 }
 
@@ -567,25 +933,25 @@ if (isset($_SESSION['error'])) {
     display: flex;
     align-items: center;
     padding: 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
+    border: 2px solid var(--bct-border);
+    border-radius: var(--bct-radius);
     cursor: pointer;
     transition: all 0.3s;
 }
 
 .method-option input[type="radio"]:checked + label {
-    border-color: #ff6b00;
-    background: #fff8f5;
+    border-color: var(--bct-accent);
+    background: rgba(240, 185, 11, 0.12);
 }
 
 .method-option label:hover {
-    border-color: #ff6b00;
+    border-color: var(--bct-accent);
 }
 
 .method-icon {
     width: 40px;
     height: 40px;
-    background: #f8f9fa;
+    background: var(--bct-bg-hover);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -594,23 +960,23 @@ if (isset($_SESSION['error'])) {
 }
 
 .method-icon i {
-    color: #ff6b00;
+    color: var(--bct-accent);
 }
 
 .method-title {
     font-weight: 600;
-    color: #333;
+    color: var(--bct-text);
     margin-bottom: 2px;
 }
 
 .method-desc {
-    color: #666;
+    color: var(--bct-text-secondary);
     font-size: 12px;
     margin-bottom: 2px;
 }
 
 .method-tip {
-    color: #ff6b00;
+    color: var(--bct-accent);
     font-size: 11px;
     font-weight: 500;
 }
@@ -668,7 +1034,7 @@ if (isset($_SESSION['error'])) {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid #f1f1f1;
+    border-bottom: 1px solid var(--bct-border);
 }
 
 .info-item:last-child {
@@ -687,7 +1053,7 @@ if (isset($_SESSION['error'])) {
     align-items: center;
     gap: 10px;
     font-size: 14px;
-    color: #666;
+    color: var(--bct-text-secondary);
 }
 
 /* 响应式调整 */
@@ -720,6 +1086,9 @@ if (isset($_SESSION['error'])) {
 <!-- 页面特定脚本 -->
 <script>
 $(document).ready(function() {
+    // ===== 批量模式 =====
+    initBatchMode();
+
     // 初始化Select2
     $('.city-select2').select2({
         language: "zh-CN",
@@ -742,11 +1111,11 @@ $(document).ready(function() {
         }
     });
     
-    // 交易类型切换
-    $('.trade-type-option').click(function() {
+    // 交易类型切换（仅单条模式）
+    $('.trade-type-option[data-type]').click(function() {
         const type = $(this).data('type');
         
-        $('.trade-type-option').removeClass('active');
+        $('.trade-type-option[data-type]').removeClass('active');
         $(this).addClass('active');
         
         $('#tradeType').val(type);
@@ -805,6 +1174,219 @@ $(document).ready(function() {
     // 初始更新预览
     updatePreview();
 });
+
+/* ================= 批量模式 ================= */
+var batchRows = [];
+
+function initBatchMode() {
+    if (!$('#batch_text').length) return;
+
+    // 方向切换
+    $('.trade-type-option[data-batch-type]').click(function() {
+        $('.trade-type-option[data-batch-type]').removeClass('active');
+        $(this).addClass('active');
+        $('#batchTypeInput').val($(this).data('batch-type'));
+        resetBatchPreview();
+    });
+
+    // 交易方式切换
+    $('input[name="batch_trade_type"]').change(function() {
+        var m = $(this).val();
+        $('#batchTradeTypeInput').val(m);
+        if (m === 'mediator') {
+            $('#batchContactGroup').hide();
+            $('#batchMediatorGroup').show();
+        } else {
+            $('#batchMediatorGroup').hide();
+            $('#batchContactGroup').show();
+        }
+        resetBatchPreview();
+    });
+
+    // 识别
+    $('#btnParse').click(function() {
+        doParse();
+    });
+
+    // 文本变化后需重新识别
+    $('#batch_text').on('input', function() {
+        resetBatchPreview();
+    });
+
+    // 确认发布
+    $('#btnSubmitBatch').click(function() {
+        if (!$('#btnSubmitBatch').prop('disabled')) {
+            submitBatch();
+        }
+    });
+}
+
+function resetBatchPreview() {
+    batchRows = [];
+    $('#batchPreviewSection').hide();
+    $('#batchPreviewBody').empty();
+    $('#batchProblems').empty();
+    $('#btnSubmitBatch').prop('disabled', true);
+    $('#batchStatus').text('');
+}
+
+function batchParams() {
+    return {
+        type: $('#batchTypeInput').val(),
+        trade_type: $('#batchTradeTypeInput').val(),
+        text: $('#batch_text').val()
+    };
+}
+
+function doParse() {
+    var text = $('#batch_text').val();
+    if (!text || !text.trim()) {
+        $('#batchStatus').text('请先粘贴挂单内容');
+        return;
+    }
+
+    $('#batchStatus').text('识别中…');
+    $('#btnParse').prop('disabled', true);
+
+    $.ajax({
+        url: 'api/parse_batch_orders.php',
+        type: 'POST',
+        dataType: 'json',
+        data: batchParams(),
+        success: function(res) {
+            $('#btnParse').prop('disabled', false);
+            if (!res.success) {
+                $('#batchStatus').text(res.message || '识别失败');
+                return;
+            }
+            renderBatchPreview(res);
+        },
+        error: function() {
+            $('#btnParse').prop('disabled', false);
+            $('#batchStatus').text('识别请求失败，请重试');
+        }
+    });
+}
+
+function renderBatchPreview(res) {
+    batchRows = res.orders || [];
+    var $body = $('#batchPreviewBody').empty();
+    var okCount = 0;
+
+    if (!batchRows.length) {
+        $('#batchStatus').text('未识别到有效挂单');
+        $('#batchPreviewSection').hide();
+        $('#btnSubmitBatch').prop('disabled', true);
+        renderBatchProblems(res);
+        return;
+    }
+
+    $.each(batchRows, function(i, o) {
+        if (o.ok) okCount++;
+        var $tr = $('<tr></tr>').attr('data-idx', i);
+        if (!o.ok) $tr.addClass('row-bad');
+        if (o.merged) $tr.addClass('row-merged');
+
+        $tr.append($('<td></td>').text(o.city).append(
+            o.merged ? $('<span class="batch-merged">（累加）</span>') : ''
+        ));
+        $tr.append($('<td class="text-right num"></td>').text(fmt(o.amount)));
+        $tr.append($('<td class="text-right num"></td>').text(Number(o.price).toFixed(2)));
+        $tr.append($('<td class="text-right num"></td>').text(Number(o.total).toFixed(2)));
+
+        if (o.ok) {
+            $tr.append('<td><span class="badge badge-success">可发布</span></td>');
+        } else {
+            $tr.append($('<td></td>').append(
+                $('<span class="batch-issue"></span>').text((o.issues || []).join('；'))
+            ));
+        }
+
+        var $del = $('<button type="button" class="btn-remove-row" title="移除此行">×</button>');
+        $del.click(function() {
+            $tr.remove();
+            batchRows[i]._removed = true;
+            updateSubmitState();
+        });
+        $tr.append($('<td></td>').append($del));
+
+        $body.append($tr);
+    });
+
+    $('#batchPreviewSection').show();
+    $('#batchStatus').text('识别完成：可发布 ' + okCount + ' / ' + batchRows.length + ' 条');
+    renderBatchProblems(res);
+    updateSubmitState();
+}
+
+function renderBatchProblems(res) {
+    var $p = $('#batchProblems').empty();
+    if (!res) return;
+
+    if (res.missing && res.missing.length) {
+        var html = '<div class="batch-problem"><strong class="down">城市不存在（' + res.missing.length + ' 行）</strong>';
+        $.each(res.missing, function(i, m) {
+            html += '<span class="problem-chip">第' + m.line + '行 ' + esc(m.text) + '</span>';
+        });
+        $p.append(html + '</div>');
+    }
+
+    if (res.invalid && res.invalid.length) {
+        var html2 = '<div class="batch-problem"><strong class="down">格式错误（' + res.invalid.length + ' 行）</strong>';
+        $.each(res.invalid, function(i, m) {
+            html2 += '<span class="problem-chip">第' + m.line + '行 ' + esc(m.reason) + '</span>';
+        });
+        $p.append(html2 + '</div>');
+    }
+}
+
+function updateSubmitState() {
+    var remain = $.grep(batchRows, function(o) { return !o._removed && o.ok; }).length;
+    $('#btnSubmitBatch').prop('disabled', remain === 0);
+    if (remain === 0) {
+        $('#batchStatus').text('没有可发布的挂单');
+    } else {
+        $('#batchStatus').text('待发布 ' + remain + ' 条');
+    }
+}
+
+function submitBatch() {
+    var tradeType = $('#batchTradeTypeInput').val();
+    var contact = $('#batch_contact_info').val() || '';
+    var mediator = $('#batch_mediator_id').val() || '';
+
+    if (tradeType === 'direct' && !contact.trim()) {
+        alert('请填写联系方式');
+        return;
+    }
+    if (tradeType === 'mediator' && !mediator) {
+        alert('请选择中介');
+        return;
+    }
+
+    // 只提交未被删除且校验通过的挂单行
+    var lines = [];
+    $.each(batchRows, function(i, o) {
+        if (o._removed || !o.ok) return;
+        lines.push(o.city + ' ' + o.amount + ' ' + Number(o.price).toFixed(2));
+    });
+    if (!lines.length) {
+        alert('没有可发布的挂单');
+        return;
+    }
+
+    $('#batchContactInput').val(contact);
+    $('#batchMediatorInput').val(mediator);
+    $('#batchTextInput').val(lines.join("\n"));
+
+    $('#btnSubmitBatch').prop('disabled', true).text('发布中…');
+    $('#batchSubmitForm').submit();
+}
+
+function fmt(n) { return Number(n).toLocaleString(); }
+function esc(s) {
+    return $('<div></div>').text(s == null ? '' : s).html();
+}
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
