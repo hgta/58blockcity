@@ -12,9 +12,9 @@ $perPage = 15;
 $userId = $_SESSION['user_id'];
 
 $order = new BCTOrder($pdo);
-$orders = $order->getUserOrders($userId, $type, $page, $perPage);
+$orders = $order->getUserOrders($userId, $type, 'all', $page, $perPage);
 $total = $order->getUserOrderCount($userId, $type);
-$totalPages = ceil($total / $perPage);
+$totalPages = max(1, (int)ceil($total / $perPage));
 
 // 显示成功/错误消息
 if (isset($_SESSION['message'])) {
@@ -28,7 +28,7 @@ if (isset($_SESSION['error'])) {
 }
 ?>
 
-<div class="container">
+<div class="orders-page">
     <h2>我的交易订单</h2>
     
     <!-- 订单类型选项卡 -->
@@ -142,6 +142,118 @@ if (isset($_SESSION['error'])) {
     </div>
     <?php endif; ?>
 </div>
+
+<!-- 页面特定样式 -->
+<style>
+.orders-page h2 {
+    font-size: 22px;
+    margin: 0 0 18px;
+    color: var(--bct-text);
+}
+
+/* 类型选项卡 */
+.orders-page .nav-tabs {
+    border-bottom: 1px solid var(--bct-border);
+    margin-bottom: 20px;
+}
+.orders-page .nav-tabs > li > a {
+    color: var(--bct-text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 10px 18px;
+    font-weight: 500;
+}
+.orders-page .nav-tabs > li > a:hover {
+    color: var(--bct-text);
+    background: var(--bct-bg-hover);
+    border-bottom-color: transparent;
+}
+.orders-page .nav-tabs > li.active > a,
+.orders-page .nav-tabs > li.active > a:hover,
+.orders-page .nav-tabs > li.active > a:focus {
+    color: var(--bct-accent);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--bct-accent);
+}
+
+/* 表格 */
+.orders-page .table-responsive {
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+    overflow-x: auto;
+}
+.orders-page .table {
+    margin-bottom: 0;
+    color: var(--bct-text);
+}
+.orders-page .table > thead > tr > th {
+    background: var(--bct-bg-tertiary);
+    color: var(--bct-text-secondary);
+    border-bottom: 1px solid var(--bct-border);
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.orders-page .table > tbody > tr > td {
+    border-top: 1px solid var(--bct-border);
+    color: var(--bct-text);
+    vertical-align: middle;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.orders-page .table-striped > tbody > tr:nth-of-type(odd) {
+    background: rgba(255, 255, 255, 0.02);
+}
+.orders-page .table-hover > tbody > tr:hover {
+    background: var(--bct-bg-hover);
+}
+.orders-page .table > tbody > tr > td .num,
+.orders-page .table > tbody > tr > td:nth-child(5),
+.orders-page .table > tbody > tr > td:nth-child(6),
+.orders-page .table > tbody > tr > td:nth-child(7) {
+    font-family: 'Roboto Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 分页条 */
+.orders-page .pagination {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 20px 0 0;
+}
+.orders-page .pagination > li {
+    display: inline-block;
+}
+.orders-page .pagination > li > a {
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    color: var(--bct-text-secondary);
+    border-radius: var(--bct-radius);
+    padding: 7px 13px;
+    transition: all 0.2s;
+}
+.orders-page .pagination > li > a:hover {
+    background: var(--bct-bg-hover);
+    border-color: var(--bct-accent);
+    color: var(--bct-text);
+}
+.orders-page .pagination > li.active > a {
+    background: var(--bct-accent);
+    border-color: var(--bct-accent);
+    color: #0b0e11;
+    font-weight: 600;
+}
+.orders-page .pagination > li.disabled > a {
+    background: var(--bct-bg-secondary);
+    border-color: var(--bct-border);
+    color: var(--bct-text-muted);
+    opacity: 0.6;
+    pointer-events: none;
+}
+</style>
 
 <!-- 页面特定JavaScript -->
 <script>
