@@ -110,24 +110,49 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
     padding: 20px;
 }
 
-.page-header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 20px 0;
+.detail-hero {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ff6b00, #e55a00);
+    color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(255,107,0,0.2);
 }
 
-.page-title {
-    font-size: 2.2rem;
+.detail-hero .detail-title {
+    font-size: 17px;
     font-weight: 700;
-    color: #2d3748;
-    margin-bottom: 10px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.nft-code {
-    font-size: 1.4rem;
-    color: #718096;
-    font-weight: 500;
+.detail-hero .nft-code {
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.2);
+    padding: 3px 12px;
+    border-radius: 14px;
 }
+
+.detail-hero .hero-spacer { flex: 1; }
+
+.detail-hero .hero-link {
+    font-size: 13px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 4px 12px;
+    border-radius: 16px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.detail-hero .hero-link:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
 .content-grid {
     display: grid;
@@ -510,10 +535,6 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
         grid-template-columns: 1fr;
     }
     
-    .page-title {
-        font-size: 1.8rem;
-    }
-    
     .nft-image-container {
         padding: 20px;
         min-height: 250px;
@@ -526,10 +547,12 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
 </style>
 
 <div class="view-container">
-    <!-- 页面标题 -->
-    <div class="page-header">
-        <h1 class="page-title">NFT头像详情</h1>
-        <div class="nft-code">#<?= htmlspecialchars($nftInfo['code']) ?></div>
+    <!-- 顶部一栏式信息栏 -->
+    <div class="detail-hero">
+        <h1 class="detail-title"><i class="fas fa-image"></i> NFT头像详情</h1>
+        <span class="nft-code">#<?= htmlspecialchars($nftInfo['code']) ?></span>
+        <span class="hero-spacer"></span>
+        <a href="list.php" class="hero-link"><i class="fas fa-list"></i> 返回列表</a>
     </div>
 
     <div class="content-grid">
