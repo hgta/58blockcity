@@ -432,41 +432,6 @@ if (isset($_SESSION['error'])) {
                             
                         </div>
                         
-                        <!-- 交易预览 -->
-                        <div class="form-section">
-                            <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
-                            <div class="trade-preview">
-                                <div class="preview-item">
-                                    <span>城市：</span>
-                                    <strong><?= htmlspecialchars($selectedCity) ?></strong>
-                                </div>
-                                <div class="preview-item">
-                                    <span>类型：</span>
-                                    <strong id="previewType">购买</strong>
-                                </div>
-                                <div class="preview-item">
-                                    <span>数量：</span>
-                                    <strong id="previewAmount">0</strong> BCT
-                                </div>
-                                <div class="preview-item">
-                                    <span>单价：</span>
-                                    <strong id="previewPrice">0.01</strong> 元
-                                </div>
-                                <div class="preview-item">
-                                    <span>总价：</span>
-                                    <strong id="previewTotal">0.00</strong> 元
-                                </div>
-                                <div class="preview-item">
-                                    <span>手续费：</span>
-                                    <strong id="previewFee">0.00</strong> 元
-                                </div>
-                                <div class="preview-item total">
-                                    <span>实付/实收：</span>
-                                    <strong id="previewNet">0.00</strong> 元
-                                </div>
-                            </div>
-                        </div>
-                        
                         <button type="submit" class="btn btn-primary btn-lg btn-block">
                             <i class="glyphicon glyphicon-ok"></i> 确认发布交易
                         </button>
@@ -487,9 +452,70 @@ if (isset($_SESSION['error'])) {
         </div>
         
         <div class="col-md-4">
-            <!-- 城市信息卡片 -->
+            <?php if ($selectedCityBCT): ?>
+            <?php $cls = $selectedCityBCT['change_pct'] >= 0 ? 'up' : 'down'; $sign = $selectedCityBCT['change_pct'] >= 0 ? '+' : ''; ?>
+            <!-- 行情（紧凑） -->
+            <div class="card quote-card">
+                <div class="card-body">
+                    <div class="quote-head">
+                        <span class="quote-city">
+                            <i class="fas fa-chart-line"></i> <?= htmlspecialchars($selectedCity) ?>
+                        </span>
+                        <a href="city.php?city=<?= urlencode($selectedCity) ?>" class="quote-link">详情 <i class="fas fa-angle-right"></i></a>
+                    </div>
+                    <div class="quote-row">
+                        <span class="quote-price">¥<?= number_format($selectedCityBCT['current_price'], 2) ?></span>
+                        <span class="quote-change <?= $cls ?>"><?= $sign ?><?= number_format($selectedCityBCT['change_pct'], 2) ?>%</span>
+                    </div>
+                    <div class="quote-vol">24h 成交 ¥<?= number_format($selectedCityBCT['volume_24h'], 2) ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- 交易预览 -->
+            <div class="card <?= $selectedCityBCT ? 'mt-3' : '' ?>">
+                <div class="card-header">
+                    <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
+                </div>
+                <div class="card-body">
+                    <div class="trade-preview">
+                        <?php if ($selectedCity): ?>
+                        <div class="preview-item">
+                            <span>城市：</span>
+                            <strong><?= htmlspecialchars($selectedCity) ?></strong>
+                        </div>
+                        <?php endif; ?>
+                        <div class="preview-item">
+                            <span>类型：</span>
+                            <strong id="previewType">购买</strong>
+                        </div>
+                        <div class="preview-item">
+                            <span>数量：</span>
+                            <strong id="previewAmount">0</strong> BCT
+                        </div>
+                        <div class="preview-item">
+                            <span>单价：</span>
+                            <strong id="previewPrice">0.01</strong> 元
+                        </div>
+                        <div class="preview-item">
+                            <span>总价：</span>
+                            <strong id="previewTotal">0.00</strong> 元
+                        </div>
+                        <div class="preview-item">
+                            <span>手续费：</span>
+                            <strong id="previewFee">0.00</strong> 元
+                        </div>
+                        <div class="preview-item total">
+                            <span>实付/实收：</span>
+                            <strong id="previewNet">0.00</strong> 元
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 城市信息（不含基金总额/当前余额） -->
             <?php if ($selectedCity && $cityInfo): ?>
-            <div class="card">
+            <div class="card mt-3">
                 <div class="card-header">
                     <h4><i class="glyphicon glyphicon-stats"></i> 城市信息</h4>
                 </div>
@@ -512,40 +538,17 @@ if (isset($_SESSION['error'])) {
                             <strong><?= number_format($cityInfo['activated_blocks']) ?> 个</strong>
                         </div>
                         <div class="info-item">
-                            <span>基金总额：</span>
-                            <strong><?= number_format($cityInfo['total_fund'], 2) ?> 元</strong>
-                        </div>
-                        <div class="info-item">
-                            <span>当前余额：</span>
-                            <strong><?= number_format($cityInfo['current_balance'], 2) ?> 元</strong>
-                        </div>
-                        <div class="info-item">
                             <span>已产生人气值：</span>
                             <strong><?= number_format($cityInfo['popularity']) ?> BCT</strong>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- 城市 BCT 行情卡片 -->
-            <?php if ($selectedCityBCT): ?>
-            <?php $cls = $selectedCityBCT['change_pct'] >= 0 ? 'up' : 'down'; $sign = $selectedCityBCT['change_pct'] >= 0 ? '+' : ''; ?>
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h4><i class="fas fa-chart-line"></i> <?= htmlspecialchars($selectedCity) ?> 行情</h4>
-                </div>
-                <div class="card-body" style="text-align:center;">
-                    <div style="font-size:28px;font-weight:700;font-family:monospace;">¥<?= number_format($selectedCityBCT['current_price'], 2) ?></div>
-                    <div style="font-size:16px;font-weight:600;margin-top:6px;" class="<?= $cls ?>"><?= $sign ?><?= number_format($selectedCityBCT['change_pct'], 2) ?>%</div>
-                    <div style="font-size:12px;color:var(--bct-text-secondary);margin-top:10px;">24h 成交量 ¥<?= number_format($selectedCityBCT['volume_24h'], 2) ?></div>
-                    <a href="city.php?city=<?= urlencode($selectedCity) ?>" class="btn btn-primary btn-sm" style="margin-top:12px;">查看详情</a>
-                </div>
-            </div>
             <?php endif; ?>
-            
-            <!-- 用户账户信息（仅作展示，不影响交易） -->
+
+            <!-- 我的账户（仅作展示，不影响交易） -->
             <?php if ($userAccount): ?>
-            <div class="card mt-4">
+            <div class="card mt-3">
                 <div class="card-header">
                     <h4><i class="glyphicon glyphicon-user"></i> 我的账户（仅供参考）</h4>
                 </div>
@@ -573,10 +576,9 @@ if (isset($_SESSION['error'])) {
                 </div>
             </div>
             <?php endif; ?>
-            <?php endif; ?>
-            
-            <!-- 交易说明 -->
-            <div class="card mt-4">
+
+            <!-- 交易提示 -->
+            <div class="card mt-3">
                 <div class="card-header">
                     <h4><i class="glyphicon glyphicon-question-sign"></i> 交易提示</h4>
                 </div>
@@ -979,6 +981,49 @@ if (isset($_SESSION['error'])) {
     color: var(--bct-accent);
     font-size: 11px;
     font-weight: 500;
+}
+
+/* 行情（紧凑） */
+.quote-card .card-body { padding: 12px 14px; }
+.quote-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+.quote-city {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bct-text);
+}
+.quote-city i { color: var(--bct-accent); margin-right: 4px; }
+.quote-link {
+    font-size: 12px;
+    color: var(--bct-text-secondary);
+}
+.quote-link:hover { color: var(--bct-accent); }
+.quote-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.quote-price {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Roboto Mono', 'SF Mono', Monaco, monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--bct-text);
+    line-height: 1.2;
+}
+.quote-change {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Roboto Mono', Monaco, monospace;
+}
+.quote-vol {
+    font-size: 12px;
+    color: var(--bct-text-secondary);
+    margin-top: 4px;
 }
 
 /* 交易预览 */
