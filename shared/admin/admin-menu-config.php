@@ -74,6 +74,7 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-home',        'text' => 'NFT看板',   'url' => 'dashboard.php'],
         ['icon' => 'fa-image',       'text' => 'NFT管理',   'url' => 'nfts.php'],
         ['icon' => 'fa-tags',        'text' => '标签管理',  'url' => 'tags.php'],
+        ['icon' => 'fa-hand-paper',  'text' => '认领管理',  'url' => 'claims.php'],
         ['icon' => 'fa-gavel',       'text' => '申诉审核',  'url' => 'appeal_review.php'],
     ],
     'hufang' => [

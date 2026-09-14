@@ -1371,4 +1371,263 @@ public function getRecentActivities($nftId, $limit = 10) {
 
         return ['list' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pages' => ceil($total / $perPage)];
     }
+
+    /* ============================ 认领稽核与订正 ============================ */
+
+    /**
+     * 检索认领记录（后台稽核用）
+     *
+     * @param array $filters 支持 nft_code / city_id / user (用户名或ID) / block_id / date_from / date_to / is_current
+     * @param int   $page
+     * @param int   $perPage
+     * @return array ['list' => [], 'total' => int, 'pages' => int]
+     */
+    public function getClaimRecords($filters = [], $page = 1, $perPage = 20) {
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $where = ' WHERE 1=1';
+        $params = [];
+
+        if (!empty($filters['nft_code'])) {
+            $where .= ' AND n.code = ?';
+            $params[] = $filters['nft_code'];
+        }
+        if (!empty($filters['city_id'])) {
+            $where .= ' AND ncu.city_id = ?';
+            $params[] = intval($filters['city_id']);
+        }
+        if (!empty($filters['user'])) {
+            if (ctype_digit((string)$filters['user'])) {
+                $where .= ' AND ncu.user_id = ?';
+                $params[] = intval($filters['user']);
+            } else {
+                $where .= ' AND u.username LIKE ?';
+                $params[] = '%' . $filters['user'] . '%';
+            }
+        }
+        if (!empty($filters['block_id'])) {
+            $where .= ' AND ncu.block_id = ?';
+            $params[] = $filters['block_id'];
+        }
+        if (!empty($filters['date_from'])) {
+            $where .= ' AND ncu.created_at >= ?';
+            $params[] = $filters['date_from'] . ' 00:00:00';
+        }
+        if (!empty($filters['date_to'])) {
+            $where .= ' AND ncu.created_at <= ?';
+            $params[] = $filters['date_to'] . ' 23:59:59';
+        }
+        if (isset($filters['is_current']) && $filters['is_current'] !== '') {
+            $where .= ' AND ncu.is_current = ?';
+            $params[] = intval($filters['is_current']);
+        }
+
+        $base = " FROM nft_city_user ncu
+                  JOIN nft_avatars n ON ncu.nft_id = n.id
+                  LEFT JOIN users u ON ncu.user_id = u.id
+                  LEFT JOIN cities c ON ncu.city_id = c.id";
+
+        $countStmt = $this->pdo->prepare("SELECT COUNT(*)" . $base . $where);
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetchColumn();
+
+        $sql = "SELECT ncu.*, n.code AS nft_code, n.base_image, u.username, u.created_at AS user_registered_at, c.name AS city_name"
+             . $base . $where . " ORDER BY ncu.created_at DESC, ncu.id DESC LIMIT $perPage OFFSET $offset";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return ['list' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pages' => (int)ceil($total / $perPage)];
+    }
+
+    /**
+     * 可疑认领筛查：认领时间与归属用户注册时间接近的记录
+     * （注册缺陷导致误归属的指纹）
+     *
+     * @param int $thresholdSeconds 时间接近判定阈值（秒）
+     * @param int $limit
+     * @return array
+     */
+    public function getSuspiciousClaims($thresholdSeconds = 300, $limit = 200) {
+        $thresholdSeconds = max(1, intval($thresholdSeconds));
+        $limit = max(1, intval($limit));
+        $sql = "SELECT ncu.*, n.code AS nft_code, n.base_image,
+                       u.username, u.created_at AS user_registered_at,
+                       c.name AS city_name,
+                       ABS(TIMESTAMPDIFF(SECOND, ncu.created_at, u.created_at)) AS diff_seconds
+                FROM nft_city_user ncu
+                JOIN nft_avatars n ON ncu.nft_id = n.id
+                JOIN users u ON ncu.user_id = u.id
+                LEFT JOIN cities c ON ncu.city_id = c.id
+                WHERE ABS(TIMESTAMPDIFF(SECOND, ncu.created_at, u.created_at)) <= ?
+                ORDER BY ncu.created_at DESC
+                LIMIT $limit";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$thresholdSeconds]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 单条认领订正：把指定认领记录的归属用户改为新用户
+     * 语义与正常认领一致：原记录置 is_current=0，插入新的当前关联
+     *
+     * @param int    $claimId     nft_city_user.id
+     * @param int    $toUserId    目标用户ID
+     * @param int    $adminId     操作管理员ID
+     * @param string $reason      订正原因
+     * @return array ['success' => bool, 'message' => string]
+     */
+    public function correctClaimOwner($claimId, $toUserId, $adminId, $reason) {
+        $claimId = intval($claimId);
+        $toUserId = intval($toUserId);
+        $adminId = intval($adminId);
+        $reason = trim((string)$reason);
+
+        if ($claimId <= 0) {
+            return ['success' => false, 'message' => '认领记录无效'];
+        }
+        if ($reason === '') {
+            return ['success' => false, 'message' => '订正原因必填'];
+        }
+        if ($toUserId <= 0 || !$this->userExists($toUserId)) {
+            return ['success' => false, 'message' => '目标用户不存在'];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT * FROM nft_city_user WHERE id = ?");
+        $stmt->execute([$claimId]);
+        $claim = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$claim) {
+            return ['success' => false, 'message' => '认领记录不存在'];
+        }
+        if (intval($claim['user_id']) === $toUserId) {
+            return ['success' => false, 'message' => '目标用户与该记录当前归属相同，无需订正'];
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $upd = $this->pdo->prepare("UPDATE nft_city_user SET is_current = 0 WHERE nft_id = ? AND city_id = ? AND is_current = 1");
+            $upd->execute([$claim['nft_id'], $claim['city_id']]);
+
+            $ins = $this->pdo->prepare("INSERT INTO nft_city_user (nft_id, city_id, user_id, block_id, is_current, is_listed) VALUES (?, ?, ?, ?, 1, ?)");
+            $ins->execute([$claim['nft_id'], $claim['city_id'], $toUserId, $claim['block_id'], intval($claim['is_listed'])]);
+            $newClaimId = (int)$this->pdo->lastInsertId();
+
+            $this->writeCorrectionLog($claimId, $newClaimId, $claim['nft_id'], $claim['city_id'], intval($claim['user_id']), $toUserId, $adminId, $reason);
+
+            $this->pdo->commit();
+            return ['success' => true, 'message' => '订正完成'];
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log('认领订正失败: ' . $e->getMessage());
+            return ['success' => false, 'message' => '订正失败: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * 批量订正：按来源用户（可选时间范围）转移其认领归属到目标用户
+     * 逐条处理，单条失败不影响其余记录
+     *
+     * @return array ['success' => int, 'failed' => int, 'errors' => []]
+     */
+    public function batchCorrectClaimOwner($fromUserId, $toUserId, $adminId, $reason, $dateFrom = '', $dateTo = '') {
+        $fromUserId = intval($fromUserId);
+        $toUserId = intval($toUserId);
+        $reason = trim((string)$reason);
+
+        if ($fromUserId <= 0) {
+            return ['success' => 0, 'failed' => 0, 'errors' => ['来源用户无效']];
+        }
+        if ($reason === '') {
+            return ['success' => 0, 'failed' => 0, 'errors' => ['订正原因必填']];
+        }
+        if ($toUserId <= 0 || !$this->userExists($toUserId)) {
+            return ['success' => 0, 'failed' => 0, 'errors' => ['目标用户不存在']];
+        }
+        if ($fromUserId === $toUserId) {
+            return ['success' => 0, 'failed' => 0, 'errors' => ['来源用户与目标用户相同']];
+        }
+
+        $where = ' WHERE is_current = 1 AND user_id = ?';
+        $params = [$fromUserId];
+        if ($dateFrom !== '') {
+            $where .= ' AND created_at >= ?';
+            $params[] = $dateFrom . ' 00:00:00';
+        }
+        if ($dateTo !== '') {
+            $where .= ' AND created_at <= ?';
+            $params[] = $dateTo . ' 23:59:59';
+        }
+        $stmt = $this->pdo->prepare("SELECT id FROM nft_city_user" . $where);
+        $stmt->execute($params);
+        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $success = 0; $failed = 0; $errors = [];
+        foreach ($ids as $id) {
+            $r = $this->correctClaimOwner(intval($id), $toUserId, $adminId, $reason);
+            if ($r['success']) {
+                $success++;
+            } else {
+                $failed++;
+                $errors[] = '#' . $id . ': ' . $r['message'];
+            }
+        }
+        return ['success' => $success, 'failed' => $failed, 'errors' => $errors];
+    }
+
+    /**
+     * 统计某来源用户可订正的认领条数（批量订正前确认用）
+     */
+    public function countCorrectableClaims($fromUserId, $dateFrom = '', $dateTo = '') {
+        $where = ' WHERE is_current = 1 AND user_id = ?';
+        $params = [intval($fromUserId)];
+        if ($dateFrom !== '') {
+            $where .= ' AND created_at >= ?';
+            $params[] = $dateFrom . ' 00:00:00';
+        }
+        if ($dateTo !== '') {
+            $where .= ' AND created_at <= ?';
+            $params[] = $dateTo . ' 23:59:59';
+        }
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM nft_city_user" . $where);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * 订正历史
+     */
+    public function getCorrectionLogs($page = 1, $perPage = 20) {
+        $offset = (max(1, intval($page)) - 1) * $perPage;
+        $total = (int)$this->pdo->query("SELECT COUNT(*) FROM nft_claim_corrections")->fetchColumn();
+        $sql = "SELECT cc.*, n.code AS nft_code, c.name AS city_name,
+                       fu.username AS from_username, tu.username AS to_username, au.username AS admin_name
+                FROM nft_claim_corrections cc
+                LEFT JOIN nft_avatars n ON cc.nft_id = n.id
+                LEFT JOIN cities c ON cc.city_id = c.id
+                LEFT JOIN users fu ON cc.from_user_id = fu.id
+                LEFT JOIN users tu ON cc.to_user_id = tu.id
+                LEFT JOIN users au ON cc.admin_id = au.id
+                ORDER BY cc.created_at DESC, cc.id DESC LIMIT $perPage OFFSET $offset";
+        $stmt = $this->pdo->query($sql);
+        return ['list' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'pages' => (int)ceil($total / $perPage)];
+    }
+
+    /**
+     * 是否存在指定用户
+     */
+    public function userExists($userId) {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE id = ?");
+        $stmt->execute([intval($userId)]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * 写入订正审计记录
+     */
+    private function writeCorrectionLog($claimId, $newClaimId, $nftId, $cityId, $fromUserId, $toUserId, $adminId, $reason) {
+        $stmt = $this->pdo->prepare("INSERT INTO nft_claim_corrections
+            (claim_id, new_claim_id, nft_id, city_id, from_user_id, to_user_id, admin_id, reason)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$claimId, $newClaimId, $nftId, $cityId, $fromUserId, $toUserId, $adminId, $reason]);
+    }
 }
