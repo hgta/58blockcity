@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$editItemType = $editAuction ? $editAuction['item_type'] : 'block';
+$editItemType = $editAuction ? $editAuction['item_type'] : 'nft';
 
 $site_config['title'] = ($editId > 0 ? '编辑拍卖' : '发起拍卖') . ' - 58拍卖';
 require_once 'includes/header.php';
