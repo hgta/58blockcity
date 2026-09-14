@@ -1472,20 +1472,21 @@ public function getRecentActivities($nftId, $limit = 10) {
      * @param int    $claimId     nft_city_user.id
      * @param int    $toUserId    目标用户ID
      * @param int    $adminId     操作管理员ID
-     * @param string $reason      订正原因
+     * @param string $reason      订正原因（选填，留空使用默认原因）
+     * @param string $defaultReason 原因为空时使用的默认原因
      * @return array ['success' => bool, 'message' => string]
      */
-    public function correctClaimOwner($claimId, $toUserId, $adminId, $reason) {
+    public function correctClaimOwner($claimId, $toUserId, $adminId, $reason = '', $defaultReason = '后台认领归属订正') {
         $claimId = intval($claimId);
         $toUserId = intval($toUserId);
         $adminId = intval($adminId);
         $reason = trim((string)$reason);
+        if ($reason === '') {
+            $reason = $defaultReason;
+        }
 
         if ($claimId <= 0) {
             return ['success' => false, 'message' => '认领记录无效'];
-        }
-        if ($reason === '') {
-            return ['success' => false, 'message' => '订正原因必填'];
         }
         if ($toUserId <= 0 || !$this->userExists($toUserId)) {
             return ['success' => false, 'message' => '目标用户不存在'];
@@ -1533,12 +1534,12 @@ public function getRecentActivities($nftId, $limit = 10) {
         $fromUserId = intval($fromUserId);
         $toUserId = intval($toUserId);
         $reason = trim((string)$reason);
+        if ($reason === '') {
+            $reason = '后台批量认领归属订正';
+        }
 
         if ($fromUserId <= 0) {
             return ['success' => 0, 'failed' => 0, 'errors' => ['来源用户无效']];
-        }
-        if ($reason === '') {
-            return ['success' => 0, 'failed' => 0, 'errors' => ['订正原因必填']];
         }
         if ($toUserId <= 0 || !$this->userExists($toUserId)) {
             return ['success' => 0, 'failed' => 0, 'errors' => ['目标用户不存在']];

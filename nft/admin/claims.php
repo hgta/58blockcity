@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableReady) {
             $_POST['claim_id'] ?? 0,
             $_POST['to_user_id'] ?? 0,
             $adminId,
-            $_POST['reason'] ?? ''
+            $_POST['reason'] ?? '',
+            $defaultReason
         );
         $msg = $r['message'];
         $msgType = $r['success'] ? 'success' : 'error';
@@ -66,6 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tableReady) {
 
 // ---------------- 视图与筛选 ----------------
 $view = $_GET['view'] ?? 'records';
+// 订正后保留回到原视图
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['return_view'])) {
+    $view = $_POST['return_view'];
+}
+$defaultReason = '注册缺陷导致误归属，订正回真实用户';
 
 $filters = [
     'nft_code'   => trim($_GET['nft_code'] ?? ''),
@@ -236,49 +242,6 @@ $baseQs = claims_qs($filters, $threshold);
 </nav>
 <?php endif; ?>
 
-<!-- 单条订正弹窗 -->
-<div id="correctModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="admin-card" style="width:460px;max-width:92vw;margin:0;">
-        <div class="admin-card-header">
-            <span class="admin-card-title">认领归属订正</span>
-            <a href="javascript:closeCorrect()" style="color:#94a3b8;">关闭</a>
-        </div>
-        <div class="admin-card-body">
-            <div style="margin-bottom:14px;font-size:14px;color:#94a3b8;">
-                记录 <strong id="cmClaimId" style="color:#e2e8f0;"></strong> ·
-                NFT <strong id="cmNft" style="color:#e2e8f0;"></strong> ·
-                当前归属 <strong id="cmFrom" style="color:#e2e8f0;"></strong>
-            </div>
-            <form method="post">
-                <input type="hidden" name="action" value="correct_one">
-                <input type="hidden" name="claim_id" id="cmClaimIdInput">
-                <div style="margin-bottom:12px;">
-                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">目标用户 ID *</label>
-                    <input type="number" name="to_user_id" required min="1" placeholder="例如 390" style="<?= $inputStyle ?>width:100%;">
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">订正原因 *</label>
-                    <textarea name="reason" required rows="3" placeholder="例如：注册缺陷导致误归属，订正回真实用户" style="<?= $inputStyle ?>width:100%;resize:vertical;"></textarea>
-                </div>
-                <button type="submit" class="admin-btn admin-btn-primary" <?= $tableReady ? '' : 'disabled' ?>>确认订正</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-function openCorrect(id, code, username, userId) {
-    document.getElementById('cmClaimId').textContent = '#' + id;
-    document.getElementById('cmNft').textContent = code;
-    document.getElementById('cmFrom').textContent = (username || '已删除') + ' (#' + userId + ')';
-    document.getElementById('cmClaimIdInput').value = id;
-    document.getElementById('correctModal').style.display = 'flex';
-}
-function closeCorrect() {
-    document.getElementById('correctModal').style.display = 'none';
-}
-</script>
-
 <?php elseif ($view === 'suspicious'): ?>
 <!-- 可疑认领筛查 -->
 <div class="admin-card" style="margin-bottom:20px;">
@@ -338,49 +301,6 @@ function closeCorrect() {
     </div>
 </div>
 
-<!-- 单条订正弹窗 -->
-<div id="correctModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="admin-card" style="width:460px;max-width:92vw;margin:0;">
-        <div class="admin-card-header">
-            <span class="admin-card-title">认领归属订正</span>
-            <a href="javascript:closeCorrect()" style="color:#94a3b8;">关闭</a>
-        </div>
-        <div class="admin-card-body">
-            <div style="margin-bottom:14px;font-size:14px;color:#94a3b8;">
-                记录 <strong id="cmClaimId" style="color:#e2e8f0;"></strong> ·
-                NFT <strong id="cmNft" style="color:#e2e8f0;"></strong> ·
-                当前归属 <strong id="cmFrom" style="color:#e2e8f0;"></strong>
-            </div>
-            <form method="post">
-                <input type="hidden" name="action" value="correct_one">
-                <input type="hidden" name="claim_id" id="cmClaimIdInput">
-                <div style="margin-bottom:12px;">
-                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">目标用户 ID *</label>
-                    <input type="number" name="to_user_id" required min="1" placeholder="例如 390" style="<?= $inputStyle ?>width:100%;">
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">订正原因 *</label>
-                    <textarea name="reason" required rows="3" placeholder="例如：注册缺陷导致误归属，订正回真实用户" style="<?= $inputStyle ?>width:100%;resize:vertical;"></textarea>
-                </div>
-                <button type="submit" class="admin-btn admin-btn-primary" <?= $tableReady ? '' : 'disabled' ?>>确认订正</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-function openCorrect(id, code, username, userId) {
-    document.getElementById('cmClaimId').textContent = '#' + id;
-    document.getElementById('cmNft').textContent = code;
-    document.getElementById('cmFrom').textContent = (username || '已删除') + ' (#' + userId + ')';
-    document.getElementById('cmClaimIdInput').value = id;
-    document.getElementById('correctModal').style.display = 'flex';
-}
-function closeCorrect() {
-    document.getElementById('correctModal').style.display = 'none';
-}
-</script>
-
 <?php else: ?>
 <!-- 批量订正 -->
 <div class="admin-card" style="margin-bottom:20px;">
@@ -412,8 +332,8 @@ function closeCorrect() {
                 </div>
             </div>
             <div style="margin:14px 0;">
-                <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">订正原因 *</label>
-                <textarea name="reason" required rows="2" placeholder="例如：注册缺陷导致误归属，批量订正回真实用户" style="<?= $inputStyle ?>width:100%;max-width:600px;resize:vertical;"><?= isset($_POST['need_confirm']) ? htmlspecialchars($_POST['reason']) : '' ?></textarea>
+                <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">订正原因（选填）</label>
+                <textarea name="reason" rows="2" placeholder="留空则记录为默认原因：后台批量认领归属订正" style="<?= $inputStyle ?>width:100%;max-width:600px;resize:vertical;"><?= isset($_POST['need_confirm']) ? htmlspecialchars($_POST['reason']) : '' ?></textarea>
             </div>
             <button type="submit" class="admin-btn admin-btn-primary" <?= $tableReady ? '' : 'disabled' ?>>
                 <?= isset($_POST['need_confirm']) ? '确认执行订正' : '统计影响并提交' ?>
@@ -468,5 +388,51 @@ function closeCorrect() {
 
 <?php endif; ?>
 </div>
+
+<?php if ($view === 'records' || $view === 'suspicious'): ?>
+<!-- 单条订正弹窗（页面级共用，仅定义一次） -->
+<div id="correctModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="admin-card" style="width:460px;max-width:92vw;margin:0;">
+        <div class="admin-card-header">
+            <span class="admin-card-title">认领归属订正</span>
+            <a href="javascript:void(0)" onclick="closeCorrect()" style="color:#94a3b8;">关闭</a>
+        </div>
+        <div class="admin-card-body">
+            <div style="margin-bottom:14px;font-size:14px;color:#94a3b8;">
+                记录 <strong id="cmClaimId" style="color:#e2e8f0;"></strong> ·
+                NFT <strong id="cmNft" style="color:#e2e8f0;"></strong> ·
+                当前归属 <strong id="cmFrom" style="color:#e2e8f0;"></strong>
+            </div>
+            <form method="post">
+                <input type="hidden" name="action" value="correct_one">
+                <input type="hidden" name="return_view" value="<?= htmlspecialchars($view) ?>">
+                <input type="hidden" name="claim_id" id="cmClaimIdInput">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">目标用户 ID *</label>
+                    <input type="number" name="to_user_id" required min="1" placeholder="例如 390" style="<?= $inputStyle ?>width:100%;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;">订正原因（选填）</label>
+                    <textarea name="reason" rows="3" placeholder="留空则记录为默认原因：<?= htmlspecialchars($defaultReason) ?>" style="<?= $inputStyle ?>width:100%;resize:vertical;"><?= htmlspecialchars($defaultReason) ?></textarea>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" <?= $tableReady ? '' : 'disabled' ?>>确认订正</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCorrect(id, code, username, userId) {
+    document.getElementById('cmClaimId').textContent = '#' + id;
+    document.getElementById('cmNft').textContent = code;
+    document.getElementById('cmFrom').textContent = (username || '已删除') + ' (#' + userId + ')';
+    document.getElementById('cmClaimIdInput').value = id;
+    document.getElementById('correctModal').style.display = 'flex';
+}
+function closeCorrect() {
+    document.getElementById('correctModal').style.display = 'none';
+}
+</script>
+<?php endif; ?>
 
 <?php require_once '../../shared/admin/admin-footer.php'; ?>
