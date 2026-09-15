@@ -1105,14 +1105,39 @@ if (isset($_SESSION['error'])) {
 .city-info, .account-info {
     display: flex;
     flex-direction: column;
-    gap: 10px;
 }
 
+/* 与「交易预览」保持同一视觉体系：标签次级色、数值主色等宽 */
 .info-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
+    align-items: baseline;
+    padding: 10px 0;
     border-bottom: 1px solid var(--bct-border);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.info-item > span {
+    color: var(--bct-text-secondary);
+    font-weight: 400;
+    flex-shrink: 0;
+}
+
+.info-item > strong {
+    color: var(--bct-text);
+    font-weight: 600;
+    font-family: 'Roboto Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    margin-left: 12px;
+    word-break: break-all;
+}
+
+/* 金额类数值沿用主题强调色 */
+.info-item > strong.text-primary {
+    color: var(--bct-accent) !important;
+    font-family: inherit;
 }
 
 .info-item:last-child {
