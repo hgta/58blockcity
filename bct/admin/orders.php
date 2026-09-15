@@ -302,6 +302,7 @@ require_once '../../shared/admin/admin-header.php';
                         <th>方式</th>
                         <th>联系方式</th>
                         <th>状态</th>
+                        <th>有效期</th>
                         <th>发布时间</th>
                         <th style="text-align:center;">操作</th>
                     </tr>
@@ -328,6 +329,16 @@ require_once '../../shared/admin/admin-header.php';
                             </span>
                             <?php if ((int)$o['tx_count'] > 0): ?>
                             <i class="fas fa-exchange-alt" title="已有成交记录" style="color:#60a5fa;font-size:11px;margin-left:4px;"></i>
+                            <?php endif; ?>
+                        </td>
+                        <td style="font-size:12px;color:#94a3b8;white-space:nowrap;">
+                            <?php if (empty($o['expires_at'])): ?>
+                                <span style="color:#64748b;">长期</span>
+                            <?php else: ?>
+                                <?php $isOverdue = ($o['expires_at'] < date('Y-m-d H:i:s')); ?>
+                                <span <?= $isOverdue && in_array($o['status'], ['pending','processing'], true) ? 'style="color:#f6465d;"' : '' ?>>
+                                    <?= date('Y-m-d H:i', strtotime($o['expires_at'])) ?>
+                                </span>
                             <?php endif; ?>
                         </td>
                         <td style="font-size:12px;color:#94a3b8;white-space:nowrap;">
@@ -362,7 +373,7 @@ require_once '../../shared/admin/admin-header.php';
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($orders)): ?>
-                    <tr><td colspan="12" style="text-align:center;color:#64748b;padding:32px;">暂无订单记录</td></tr>
+                    <tr><td colspan="13" style="text-align:center;color:#64748b;padding:32px;">暂无订单记录</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
