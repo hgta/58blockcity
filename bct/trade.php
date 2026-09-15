@@ -189,13 +189,13 @@ if (isset($_SESSION['error'])) {
                 </div>
                 <div class="field-hint">批量模式不提供平台交易（平台交易限制 500 BCT 以下）</div>
 
-                <div class="field-block" id="batchContactGroup" style="margin-top:12px;">
+                <div class="field-block mt-12" id="batchContactGroup">
                     <label class="field-label" for="batch_contact_info">联系方式</label>
                     <input type="text" class="form-control" id="batch_contact_info"
                            placeholder="手机号 / 微信 / QQ（本批次共用）">
                 </div>
 
-                <div class="field-block" id="batchMediatorGroup" style="display:none;margin-top:12px;">
+                <div class="field-block mt-12" id="batchMediatorGroup" style="display:none;">
                     <label class="field-label" for="batch_mediator_id">选择中介（本批次共用）</label>
                     <select class="form-control" id="batch_mediator_id">
                         <option value="">请选择中介</option>
@@ -204,7 +204,7 @@ if (isset($_SESSION['error'])) {
                         <?php endforeach; ?>
                     </select>
                     <?php if (empty($mediators)): ?>
-                    <small class="form-text text-muted">暂无可选中介</small>
+                    <small class="form-text">暂无可选中介</small>
                     <?php endif; ?>
                 </div>
             </div>
@@ -327,18 +327,18 @@ if (isset($_SESSION['error'])) {
                         </div>
 
                         <!-- 数量 / 单价 -->
-                        <div class="row field-inline">
-                            <div class="col-xs-6">
+                        <div class="field-inline">
+                            <div class="field-col">
                                 <label class="field-label" for="amount">交易数量 <span class="unit">BCT</span></label>
                                 <input type="number" class="form-control" id="amount" name="amount"
                                        min="<?= BatchOrderParser::MIN_AMOUNT ?>" max="<?= BatchOrderParser::MAX_AMOUNT ?>" required
-                                       placeholder="数量">
+                                       placeholder="请输入数量">
                             </div>
-                            <div class="col-xs-6">
+                            <div class="field-col">
                                 <label class="field-label" for="price">单价 <span class="unit">元/BCT</span></label>
                                 <input type="number" class="form-control" id="price" name="price"
                                        min="0.01" max="100" step="0.01" required
-                                       placeholder="单价"
+                                       placeholder="请输入单价"
                                        value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 2) : '0.10' ?>">
                             </div>
                         </div>
@@ -689,6 +689,16 @@ if (isset($_SESSION['error'])) {
 }
 .batch-field label { color: var(--bct-text-secondary); }
 
+/* 输入框下方的辅助说明（含中介为空提示） */
+.field-block .form-text,
+.field-block .field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--bct-text-muted);
+}
+
 /* ===== 紧凑表单基元 ===== */
 .field-block { margin-bottom: 16px; }
 .field-label {
@@ -715,7 +725,61 @@ if (isset($_SESSION['error'])) {
     padding: 0 4px;
     border-radius: 3px;
 }
-.field-inline { margin-bottom: 6px; }
+.field-inline {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 6px;
+}
+.field-col { flex: 1 1 0; min-width: 0; }
+.mt-12 { margin-top: 12px; }
+
+/* 输入框统一样式（补足主题未定义的高度与内边距） */
+.field-block .form-control,
+.field-inline .form-control {
+    width: 100%;
+    height: 42px;
+    padding: 9px 13px;
+    font-size: 14px;
+    line-height: 1.4;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+    color: var(--bct-text);
+    box-shadow: none;
+}
+/* select：去掉原生外观并重绘下拉箭头，保证与 input 视觉一致 */
+.field-block select.form-control {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235e6673' d='M6 8.5 1.5 4h9z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+}
+.field-block .form-control:focus,
+.field-inline .form-control:focus {
+    background-color: var(--bct-bg-tertiary);
+    border-color: var(--bct-accent);
+    color: var(--bct-text);
+    box-shadow: 0 0 0 2px rgba(240, 185, 11, 0.2);
+    outline: none;
+}
+.field-block .form-control::placeholder,
+.field-inline .form-control::placeholder {
+    color: var(--bct-text-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+/* 数量/单价：等宽、数字对齐 */
+.field-inline .form-control {
+    font-family: 'Roboto Mono', 'SF Mono', Monaco, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+#amount, #price { font-size: 15px; height: 44px; }
+.field-inline .field-label { margin-bottom: 6px; }
 
 /* 分段控件（交易方向） */
 .segmented {
