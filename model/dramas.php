@@ -65,7 +65,12 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <div class="cc-body">
                     <div class="cc-title"><?= htmlspecialchars($d['title']) ?></div>
-                    <div class="cc-role"><?= intval($d['model_count'] ?? 0) ?> 位演职人员</div>
+                    <?php if (!empty($d['cast_names'])): ?>
+                    <div class="cc-role cc-cast">
+                        <span class="cc-cast-label">主演</span>
+                        <span class="cc-cast-names"><?= htmlspecialchars(implode('、', $d['cast_names'])) ?></span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (!empty($d['tags_arr'])): ?>
                     <div style="margin-top:8px;">
                         <?php foreach (array_slice($d['tags_arr'], 0, 3) as $t): ?><span class="m-tagchip"><?= htmlspecialchars($t) ?></span><?php endforeach; ?>

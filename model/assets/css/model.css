@@ -203,6 +203,11 @@
 }
 .m-dc-cast .avs img:first-child, .m-dc-cast .avs .ph:first-child { margin-left: 0; }
 .m-dc-cast .cnt { font-size: 12px; color: var(--muted); }
+/* 滑轨卡：以主演姓名替代演职人员计数 */
+.m-dc-cast.m-dc-lite .cnt-names {
+    color: var(--text-2); min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* ---------- 模特卡片网格 ----------
    固定列数（而非 auto-fill）：桌面 5 列，配合每页 15 个正好 3 行满，
@@ -499,6 +504,21 @@
 .m-tagchip {
     display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px;
     background: var(--surface-2); color: var(--text-2); margin: 0 6px 6px 0;
+}
+
+/* 短剧卡片上的主演姓名 */
+.cc-cast {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 12.5px; line-height: 1.5; min-width: 0;
+}
+.cc-cast-label {
+    flex-shrink: 0; padding: 0 6px; border-radius: 4px;
+    background: var(--brand-soft); color: var(--brand-ink);
+    font-size: 11px; font-weight: 700; line-height: 18px; height: 18px;
+}
+.cc-cast-names {
+    color: var(--text-2); min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* ---------- 主要演员（对齐红果尺寸：头像 54px / 间距 12px / 单卡高 104px） ---------- */

@@ -1,18 +1,89 @@
 <?php
 class BCTOrder {
     private $pdo;
-    
+
+    /** 有效期默认选项（未选择时使用） */
+    const DEFAULT_DURATION = '30d';
+
+    /** 表示「长期有效、不过期」的选项值 */
+    const DURATION_FOREVER = 'forever';
+
+    /**
+     * 有效期选项定义（选项值 => 展示名 + 过期时间计算方式）
+     *
+     * 集中定义便于前端与后端共用同一份语义，避免前端传任意天数。
+     *  - days: 按天数累加
+     *  - months: 按自然月累加（+3 months 而非 +90 days）
+     *  - forever: 不设置过期时间
+     */
+    private static $durationOptions = [
+        '1d'      => ['label' => '1天',   'days' => 1],
+        '2d'      => ['label' => '2天',   'days' => 2],
+        '7d'      => ['label' => '7天',   'days' => 7],
+        '30d'     => ['label' => '30天',  'days' => 30],
+        '3m'      => ['label' => '3个月', 'months' => 3],
+        'forever' => ['label' => '长期',  'forever' => true],
+    ];
+
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
-    
+
+    /**
+     * 获取有效期选项列表（供页面渲染下拉/分段控件）
+     *
+     * @return array 选项值 => 展示名
+     */
+    public static function getDurationOptions() {
+        $out = [];
+        foreach (self::$durationOptions as $key => $opt) {
+            $out[$key] = $opt['label'];
+        }
+        return $out;
+    }
+
+    /** 选项值是否合法 */
+    public static function isValidDuration($duration) {
+        return is_string($duration) && isset(self::$durationOptions[$duration]);
+    }
+
+    /**
+     * 把有效期选项解析为过期时间
+     *
+     * 「长期」返回 null（不设置过期时间，与 Task.php 以空值判断不过期的约定一致）。
+     * 时间口径：写入与后续过期判定都使用 PHP 时间，不在 SQL 中混用 NOW()，
+     * 避免类似 classes/Auction.php 记录过的时区错位问题。
+     *
+     * @param string $duration 有效期选项值
+     * @param int|null $nowTs  基准时间戳（默认取当前时间）
+     * @return string|null 'Y-m-d H:i:s' 格式的过期时间，长期为 null
+     */
+    public static function resolveExpiresAt($duration, $nowTs = null) {
+        $nowTs = $nowTs === null ? time() : $nowTs;
+
+        if (!self::isValidDuration($duration)) {
+            $duration = self::DEFAULT_DURATION;
+        }
+
+        $opt = self::$durationOptions[$duration];
+
+        if (!empty($opt['forever'])) {
+            return null;
+        }
+        if (isset($opt['months'])) {
+            // 自然月：跨不同长度月份时与固定天数不同
+            return date('Y-m-d H:i:s', strtotime("+{$opt['months']} months", $nowTs));
+        }
+        return date('Y-m-d H:i:s', strtotime("+{$opt['days']} days", $nowTs));
+    }
+
     // 生成订单号
     private function generateOrderNo() {
         return date('YmdHis').mt_rand(1000, 9999);
     }
     
     // 创建订单
-    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null, $durationDays = 0, $mediatorId = null) {
+    public function createOrder($userId, $city, $type, $amount, $tradeType, $contactInfo = null, $userPrice = null, $duration = null, $mediatorId = null) {
         try {
             $this->pdo->beginTransaction();
             
@@ -27,10 +98,19 @@ class BCTOrder {
             // 注：不校验出售订单余额 —— 系统已简化流程，发布订单无需验证余额，
             //     余额在交易完成时才处理。
             
-            // 计算过期时间
-            $expiresAt = ($durationDays > 0) 
-                ? date('Y-m-d H:i:s', strtotime("+{$durationDays} days"))
-                : null;
+            // 计算过期时间（有效期选项 -> 过期时间）
+            // 未指定时使用默认 30 天；兼容按「天数」直接传值的旧调用方式（0 或负数视为长期）
+            if (is_numeric($duration)) {
+                $days = (int)$duration;
+                $expiresAt = ($days > 0)
+                    ? date('Y-m-d H:i:s', strtotime("+{$days} days"))
+                    : null;
+            } else {
+                if ($duration === null || $duration === '') {
+                    $duration = self::DEFAULT_DURATION;
+                }
+                $expiresAt = self::resolveExpiresAt($duration);
+            }
             
             // 创建订单
             $orderNo = $this->generateOrderNo();
@@ -77,6 +157,70 @@ class BCTOrder {
         
         $stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'canceled' WHERE id = ?");
         return $stmt->execute([$orderId]);
+    }
+
+    /**
+     * 处理已超期订单：置为 expired
+     *
+     * 仅处理 status 为 pending / processing 且 expires_at 非空且已早于当前时间的订单。
+     *  - completed（已全部成交）不会被标记过期，避免破坏成交语义
+     *  - canceled（用户已取消）保持用户意图
+     *  - expires_at 为空的「长期」订单永不处理
+     *  - processing（部分成交）过期后剩余未成交数量一并作废
+     *
+     * 幂等：重复执行时已不再是 pending/processing 的行不会被再次更新。
+     * 时间口径：当前时间由 PHP 传入，SQL 中不使用 NOW()，与写入 expires_at 的时区保持一致。
+     *
+     * @param int|null $userId 限定用户（惰性推进时只处理该用户）；null 表示全站
+     * @param string|null $city 限定城市；null 表示不限
+     * @param int $limit 单次处理上限，避免页面请求中做过量写操作
+     * @return int 实际置为过期的订单数
+     */
+    public function expireOverdueOrders($userId = null, $city = null, $limit = 500) {
+        $limit = max(1, (int)$limit);
+        $now = date('Y-m-d H:i:s');
+
+        $sql = "UPDATE bct_orders 
+                SET status = 'expired' 
+                WHERE status IN ('pending','processing') 
+                  AND expires_at IS NOT NULL 
+                  AND expires_at < ?";
+        $params = [$now];
+
+        if ($userId !== null) {
+            $sql .= " AND user_id = ?";
+            $params[] = $userId;
+        }
+        if ($city !== null) {
+            $sql .= " AND city = ?";
+            $params[] = $city;
+        }
+
+        // 限定影响行数，避免单次处理过多；按最早过期优先
+        $sql .= " ORDER BY expires_at ASC LIMIT {$limit}";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * 统计已超期但尚未处理的订单数（用于监控/日志）
+     */
+    public function countOverdueOrders($userId = null) {
+        $sql = "SELECT COUNT(*) FROM bct_orders 
+                WHERE status IN ('pending','processing') 
+                  AND expires_at IS NOT NULL 
+                  AND expires_at < ?";
+        $params = [date('Y-m-d H:i:s')];
+        if ($userId !== null) {
+            $sql .= " AND user_id = ?";
+            $params[] = $userId;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
     }
     
     // 平台交易自动匹配
@@ -366,22 +510,19 @@ class BCTOrder {
 	public function getUserOrders($userId, $type = 'all', $status = 'all', $page = 1, $perPage = 15) {
 		$sql = "SELECT * FROM bct_orders WHERE user_id = ?";
 		$params = [$userId];
-		
-		if ($type === 'buy') { $sql .= " AND type = 'buy'"; $params[] = 'buy'; }
-		elseif ($type === 'sell') { $sql .= " AND type = 'sell'"; $params[] = 'sell'; }
 
-		if ($status === 'active') {
-			$sql .= " AND status IN ('pending','processing')";
-		} elseif ($status === 'pending') {
-			$sql .= " AND status = 'pending'";
-		} elseif ($status === 'completed') {
-			$sql .= " AND status = 'completed'";
+		if ($type === 'buy') { $sql .= " AND type = 'buy'"; }
+		elseif ($type === 'sell') { $sql .= " AND type = 'sell'"; }
+
+		$statusSql = self::buildStatusCondition($status);
+		if ($statusSql !== '') {
+			$sql .= $statusSql;
 		}
-		
-		$sql .= " ORDER BY created_at DESC LIMIT " . (int)$perPage . " OFFSET " . ((int)$page - 1) * (int)$perPage;
-		
+
+		$sql .= " ORDER BY created_at DESC, id DESC LIMIT " . (int)$perPage . " OFFSET " . ((int)$page - 1) * (int)$perPage;
+
 		$stmt = $this->pdo->prepare($sql);
-		$stmt->execute([$userId]);
+		$stmt->execute($params);
 		return $stmt->fetchAll();
 	}
 
@@ -398,17 +539,31 @@ class BCTOrder {
 			$sql .= " AND type = 'sell'";
 		}
 
-		if ($status === 'active') {
-			$sql .= " AND status IN ('pending','processing')";
-		} elseif ($status === 'pending') {
-			$sql .= " AND status = 'pending'";
-		} elseif ($status === 'completed') {
-			$sql .= " AND status = 'completed'";
+		$statusSql = self::buildStatusCondition($status);
+		if ($statusSql !== '') {
+			$sql .= $statusSql;
 		}
 
 		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($params);
 		return (int)$stmt->fetchColumn();
+	}
+
+	/**
+	 * 构造状态筛选条件
+	 *
+	 * 'all' 或空表示不筛选；'active' 表示未完结（pending + processing）；
+	 * 其余为具体状态值（含 expired）。
+	 */
+	public static function buildStatusCondition($status) {
+		$allowed = ['pending', 'processing', 'completed', 'canceled', 'expired'];
+		if ($status === 'active') {
+			return " AND status IN ('pending','processing')";
+		}
+		if (in_array($status, $allowed, true)) {
+			return " AND status = '{$status}'";
+		}
+		return '';
 	}
 
 	/**

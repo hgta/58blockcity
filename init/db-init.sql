@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `bct_orders` (
   `price` decimal(10,2) NOT NULL,
   `total_amount` decimal(10,2) NOT NULL,
   `trade_type` enum('platform','mediator','direct') NOT NULL,
-  `status` enum('pending','processing','completed','canceled') DEFAULT 'pending',
+  `status` enum('pending','processing','completed','canceled','expired') DEFAULT 'pending',
   `counterparty_id` int(11) DEFAULT NULL,
   `mediator_id` int(11) DEFAULT NULL,
   `contact_info` varchar(255) DEFAULT NULL,

@@ -234,8 +234,8 @@ if (!function_exists('renderDramaCard')) {
             </div>
             <div class="<?= $bodyCls ?>">
                 <div class="<?= $titleCls ?>"><?= $title ?></div>
-                <?php if ($rail && $count > 0): ?>
-                <div class="m-dc-cast">
+                <?php if ($rail && !empty($d['cast_names'])): ?>
+                <div class="m-dc-cast m-dc-lite">
                     <div class="avs">
                         <?php foreach (array_slice($models, 0, 3) as $mm): ?>
                             <?php $av = model_img($mm, false); ?>
@@ -246,7 +246,7 @@ if (!function_exists('renderDramaCard')) {
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
-                    <span class="cnt"><?= $count ?> 位演职人员</span>
+                    <span class="cnt cnt-names"><?= htmlspecialchars(implode('、', array_slice($d['cast_names'], 0, 2))) ?></span>
                 </div>
                 <?php elseif (!$rail): ?>
                     <?php if (!empty($d['role_name'])): ?>

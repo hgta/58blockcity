@@ -106,7 +106,7 @@ if (in_array($filterTrade, ['platform', 'mediator', 'direct'], true)) {
     $where[] = 'o.trade_type = ?';
     $params[] = $filterTrade;
 }
-if (in_array($filterStatus, ['pending', 'processing', 'completed', 'canceled'], true)) {
+if (in_array($filterStatus, ['pending', 'processing', 'completed', 'canceled', 'expired'], true)) {
     $where[] = 'o.status = ?';
     $params[] = $filterStatus;
 }
@@ -152,6 +152,7 @@ $stats = $pdo->query("
         SUM(CASE WHEN status='processing' THEN 1 ELSE 0 END) AS processing,
         SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS completed,
         SUM(CASE WHEN status='canceled' THEN 1 ELSE 0 END) AS canceled,
+        SUM(CASE WHEN status='expired' THEN 1 ELSE 0 END) AS expired,
         COALESCE(SUM(CASE WHEN status='completed' THEN total_amount ELSE 0 END), 0) AS completed_amount
     FROM bct_orders
 ")->fetch(PDO::FETCH_ASSOC);
@@ -171,8 +172,20 @@ $returnQuery = http_build_query(array_filter([
 
 $typeLabels  = ['buy' => '买入', 'sell' => '卖出'];
 $tradeLabels = ['platform' => '平台', 'mediator' => '中介', 'direct' => '直接'];
-$statusLabels = ['pending' => '进行中', 'processing' => '处理中', 'completed' => '已完成', 'canceled' => '已取消'];
-$statusBadge = ['pending' => 'warning', 'processing' => 'info', 'completed' => 'success', 'canceled' => 'default'];
+$statusLabels = [
+    'pending'    => '进行中',
+    'processing' => '部分成交',
+    'completed'  => '已完成',
+    'canceled'   => '已取消',
+    'expired'    => '已过期',
+];
+$statusBadge = [
+    'pending'    => 'warning',
+    'processing' => 'info',
+    'completed'  => 'success',
+    'canceled'   => 'default',
+    'expired'    => 'default',
+];
 
 $admin_site_config = ['site' => 'bct', 'page_title' => '交易管理'];
 require_once '../../shared/admin/admin-header.php';
@@ -210,6 +223,11 @@ require_once '../../shared/admin/admin-header.php';
         <div class="stat-icon accent"><i class="fas fa-coins"></i></div>
         <div class="stat-value">¥<?= number_format($stats['completed_amount'] ?? 0, 2) ?></div>
         <div class="stat-label">完成成交额</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon danger"><i class="fas fa-hourglass-end"></i></div>
+        <div class="stat-value"><?= number_format($stats['expired'] ?? 0) ?></div>
+        <div class="stat-label">已过期</div>
     </div>
 </div>
 

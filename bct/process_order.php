@@ -27,6 +27,11 @@ $price = floatval($_POST['price'] ?? 0);
 $tradeType = $_POST['trade_type'] ?? '';
 $mediatorId = intval($_POST['mediator_id'] ?? 0);
 $contactInfo = $_POST['contact_info'] ?? '';
+// 有效期：非法或缺失时回退到默认选项
+$duration = $_POST['duration'] ?? '';
+if (!BCTOrder::isValidDuration($duration)) {
+    $duration = BCTOrder::DEFAULT_DURATION;
+}
 
 if (!in_array($type, ['buy', 'sell']) || empty($city) || $amount <= 0) fail("无效的请求参数", $city);
 // 服务端数量上限校验（与批量发布共用同一取值来源，防止绕过前端 max 属性）
@@ -47,7 +52,9 @@ $order = new BCTOrder($pdo);
 $orderId = $order->createOrder(
     $_SESSION['user_id'], $city, $type, $amount, $tradeType,
     $tradeType === 'direct' ? $contactInfo : null,
-    $price > 0 ? $price : null
+    $price > 0 ? $price : null,
+    $duration,
+    $tradeType === 'mediator' ? $mediatorId : null
 );
 
 if (!$orderId) fail("创建订单失败", $city);

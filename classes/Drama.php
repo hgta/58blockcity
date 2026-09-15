@@ -697,6 +697,9 @@ class Drama
             }
             unset($row);
         }
+
+        // 主演姓名（滑轨卡片展示用，含非模特演员）
+        $rows = $this->attachLeadCastNames($rows, 3);
         return $rows;
     }
 
@@ -739,14 +742,80 @@ class Drama
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['tags_arr'] = $this->decodeTags($row['tags']);
+            $row['cast_names'] = [];   // 主演姓名，稍后批量填充
         }
         unset($row);
+
+        // 批量取各剧主演姓名（避免 N+1）
+        $rows = $this->attachLeadCastNames($rows, 3);
 
         return [
             'list'  => $rows,
             'total' => $total,
             'pages' => max(1, (int)ceil($total / max(1, $perPage))),
         ];
+    }
+
+    /**
+     * 为一批短剧批量填充「主演姓名」列表
+     *
+     * 取值规则：主要演员（is_lead=1）优先，不足则按番位补足，
+     * 统一按「主演优先 → 番位」排序，每部剧最多返回 $limit 个姓名。
+     *
+     * @param array $rows  短剧记录数组（需含 id）
+     * @param int   $limit 每部剧最多返回的姓名数
+     * @return array 已填充 cast_names 的数组
+     */
+    private function attachLeadCastNames(array $rows, $limit = 3)
+    {
+        if (empty($rows)) {
+            return $rows;
+        }
+        $limit = max(1, intval($limit));
+        $ids = [];
+        foreach ($rows as $r) {
+            if (!empty($r['id'])) {
+                $ids[] = intval($r['id']);
+            }
+        }
+        if (empty($ids)) {
+            return $rows;
+        }
+        $ph = implode(',', $ids);
+
+        // 一次性取出这些剧的全部有效演职人员，PHP 侧按剧聚合排序
+        $stmt = $this->pdo->prepare(
+            "SELECT md.drama_id, md.is_lead, md.sort_order,
+                    COALESCE(m.nickname, a.nickname, md.actor_name) AS cast_name
+             FROM model_dramas md
+             LEFT JOIN models m ON md.model_id = m.id
+             LEFT JOIN actors a ON md.actor_id = a.id
+             WHERE md.drama_id IN ($ph)
+               AND COALESCE(m.nickname, a.nickname, md.actor_name) IS NOT NULL
+               AND COALESCE(m.nickname, a.nickname, md.actor_name) <> ''
+               AND (md.model_id IS NULL OR m.status = 'active')
+               AND (md.actor_id IS NULL OR a.status = 'active')
+             ORDER BY md.drama_id ASC, md.is_lead DESC, md.sort_order ASC, md.id ASC"
+        );
+        $stmt->execute();
+
+        $grouped = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $did = intval($c['drama_id']);
+            if (!isset($grouped[$did])) {
+                $grouped[$did] = [];
+            }
+            if (count($grouped[$did]) < $limit) {
+                $grouped[$did][] = $c['cast_name'];
+            }
+        }
+
+        foreach ($rows as &$row) {
+            $did = intval($row['id']);
+            $row['cast_names'] = $grouped[$did] ?? [];
+        }
+        unset($row);
+        return $rows;
     }
 
     /**

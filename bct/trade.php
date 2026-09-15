@@ -9,6 +9,7 @@ require_once 'includes/header.php';
 require_once '../classes/UserBCTAccount.php';
 require_once '../classes/CityBCT.php';
 require_once '../classes/BatchOrderParser.php';
+require_once '../classes/BCTOrder.php';
 
 $account = new UserBCTAccount($pdo);
 $cityBCT = new CityBCT($pdo);
@@ -209,6 +210,17 @@ if (isset($_SESSION['error'])) {
                 </div>
             </div>
 
+            <!-- 有效期（整批共用） -->
+            <div class="field-block">
+                <label class="field-label" for="batch_duration">有效期（整批共用）</label>
+                <select class="form-control" id="batch_duration">
+                    <?php foreach (BCTOrder::getDurationOptions() as $val => $label): ?>
+                    <option value="<?= htmlspecialchars($val) ?>" <?= $val === BCTOrder::DEFAULT_DURATION ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="field-hint">本批次所有挂单共用该有效期，到期后自动取消</div>
+            </div>
+
             <!-- 粘贴区 -->
             <div class="field-block">
                 <label class="field-label" for="batch_text">粘贴挂单</label>
@@ -255,6 +267,7 @@ if (isset($_SESSION['error'])) {
     <input type="hidden" name="trade_type" id="batchTradeTypeInput" value="direct">
     <input type="hidden" name="contact_info" id="batchContactInput" value="">
     <input type="hidden" name="mediator_id" id="batchMediatorInput" value="">
+    <input type="hidden" name="duration" id="batchDurationInput" value="<?= htmlspecialchars(BCTOrder::DEFAULT_DURATION) ?>">
     <input type="hidden" name="batch_text" id="batchTextInput" value="">
 </form>
 
@@ -372,6 +385,17 @@ if (isset($_SESSION['error'])) {
                             <label class="field-label" for="contact_info">联系方式</label>
                             <input type="text" class="form-control" id="contact_info" name="contact_info"
                                    placeholder="手机号 / 微信 / QQ（将展示给交易对方）">
+                        </div>
+
+                        <!-- 有效期 -->
+                        <div class="field-block">
+                            <label class="field-label" for="duration">有效期</label>
+                            <select class="form-control" id="duration" name="duration">
+                                <?php foreach (BCTOrder::getDurationOptions() as $val => $label): ?>
+                                <option value="<?= htmlspecialchars($val) ?>" <?= $val === BCTOrder::DEFAULT_DURATION ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="field-hint">到期后订单将自动取消，不再出现在行情中</div>
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg btn-block btn-publish">
@@ -1434,6 +1458,7 @@ function submitBatch() {
 
     $('#batchContactInput').val(contact);
     $('#batchMediatorInput').val(mediator);
+    $('#batchDurationInput').val($('#batch_duration').val() || '<?= BCTOrder::DEFAULT_DURATION ?>');
     $('#batchTextInput').val(lines.join("\n"));
 
     $('#btnSubmitBatch').prop('disabled', true).text('发布中…');

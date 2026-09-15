@@ -33,6 +33,11 @@ $tradeType = $_POST['trade_type'] ?? '';
 $contactInfo = trim($_POST['contact_info'] ?? '');
 $mediatorId = (int)($_POST['mediator_id'] ?? 0);
 $text = (string)($_POST['batch_text'] ?? '');
+// 有效期：整批共用；非法或缺失时回退到默认选项
+$duration = $_POST['duration'] ?? '';
+if (!BCTOrder::isValidDuration($duration)) {
+    $duration = BCTOrder::DEFAULT_DURATION;
+}
 
 // 方向：整体统一，不混合
 if (!in_array($type, ['buy', 'sell'], true)) {
@@ -89,7 +94,7 @@ foreach ($resolved['orders'] as $o) {
             $tradeType,
             $tradeType === 'direct' ? $contactInfo : null,
             $price,
-            0,
+            $duration,
             $tradeType === 'mediator' ? $mediatorId : null
         );
         if ($orderId) {

@@ -11,9 +11,31 @@ $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 15;
 $userId = $_SESSION['user_id'];
 
+// 状态筛选（空表示全部）；expired 为系统因超期自动取消
+$statusLabels = [
+    'pending'    => '待成交',
+    'processing' => '部分成交',
+    'completed'  => '已完成',
+    'canceled'   => '已取消',
+    'expired'    => '已过期',
+];
+$status = $_GET['status'] ?? '';
+if (!isset($statusLabels[$status])) {
+    $status = '';
+}
+
 $order = new BCTOrder($pdo);
-$orders = $order->getUserOrders($userId, $type, 'all', $page, $perPage);
-$total = $order->getUserOrderCount($userId, $type);
+
+// 惰性推进：先把该用户已超期的挂单置为过期，再查询列表，
+// 保证用户看到的始终是最新状态（全站兜底由 bct/cron/expire_orders.php 负责）
+try {
+    $order->expireOverdueOrders($userId, null, 200);
+} catch (Exception $e) {
+    // 过期推进失败不应影响订单列表展示
+}
+
+$orders = $order->getUserOrders($userId, $type, $status === '' ? 'all' : $status, $page, $perPage);
+$total = $order->getUserOrderCount($userId, $type, $status === '' ? 'all' : $status);
 $totalPages = max(1, (int)ceil($total / $perPage));
 
 // 显示成功/错误消息
@@ -43,6 +65,16 @@ if (isset($_SESSION['error'])) {
             <a href="?type=sell">出售订单</a>
         </li>
     </ul>
+
+    <!-- 状态筛选 -->
+    <div class="status-filter">
+        <span class="status-filter-label">状态：</span>
+        <a href="?type=<?= urlencode($type) ?>" class="status-chip <?= $status === '' ? 'active' : '' ?>">全部</a>
+        <?php foreach ($statusLabels as $k => $v): ?>
+        <a href="?type=<?= urlencode($type) ?>&status=<?= urlencode($k) ?>"
+           class="status-chip <?= $status === $k ? 'active' : '' ?>"><?= htmlspecialchars($v) ?></a>
+        <?php endforeach; ?>
+    </div>
     
     <!-- 订单列表 -->
     <div class="table-responsive">
@@ -91,17 +123,19 @@ if (isset($_SESSION['error'])) {
                         ?>
                     </td>
                     <td>
-                        <?php 
-                        $statusLabels = [
-                            'pending' => ['label' => '待处理', 'class' => 'warning'],
-                            'processing' => ['label' => '处理中', 'class' => 'info'],
-                            'completed' => ['label' => '已完成', 'class' => 'success'],
-                            'canceled' => ['label' => '已取消', 'class' => 'danger']
+                        <?php
+                        $badgeMap = [
+                            'pending'    => ['label' => '待成交',   'class' => 'warning'],
+                            'processing' => ['label' => '部分成交', 'class' => 'info'],
+                            'completed'  => ['label' => '已完成',   'class' => 'success'],
+                            'canceled'   => ['label' => '已取消',   'class' => 'danger'],
+                            'expired'    => ['label' => '已过期',   'class' => 'default'],
                         ];
-                        $status = $order['status'];
+                        $st = $order['status'];
+                        $badge = $badgeMap[$st] ?? ['label' => $st, 'class' => 'default'];
                         ?>
-                        <span class="label label-<?= $statusLabels[$status]['class'] ?>">
-                            <?= $statusLabels[$status]['label'] ?>
+                        <span class="label label-<?= $badge['class'] ?>">
+                            <?= htmlspecialchars($badge['label']) ?>
                         </span>
                     </td>
                     <td>
@@ -109,7 +143,7 @@ if (isset($_SESSION['error'])) {
                             <a href="order_detail.php?id=<?= $order['id'] ?>" class="btn btn-default" title="查看详情">
                                 <i class="glyphicon glyphicon-eye-open"></i>
                             </a>
-                            <?php if ($order['status'] === 'pending'): ?>
+                            <?php if (in_array($order['status'], ['pending', 'processing'], true)): ?>
                             <button onclick="cancelBctOrder(<?= $order['id'] ?>)" class="btn btn-danger" title="取消订单">
                                 <i class="glyphicon glyphicon-remove"></i>
                             </button>
@@ -176,6 +210,40 @@ if (isset($_SESSION['error'])) {
     background: transparent;
     border: none;
     border-bottom: 2px solid var(--bct-accent);
+}
+
+/* 状态筛选 */
+.status-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 18px;
+}
+.status-filter-label {
+    font-size: 13px;
+    color: var(--bct-text-secondary);
+}
+.status-chip {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--bct-border);
+    border-radius: 999px;
+    background: var(--bct-bg-tertiary);
+    color: var(--bct-text-secondary);
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.status-chip:hover {
+    border-color: var(--bct-accent);
+    color: var(--bct-accent);
+    text-decoration: none;
+}
+.status-chip.active {
+    background: var(--bct-accent);
+    border-color: var(--bct-accent);
+    color: #0b0e11;
+    font-weight: 600;
 }
 
 /* 表格 */
