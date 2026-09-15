@@ -251,8 +251,15 @@ class CityBCT {
         return $newPrice;
     }
     
+    /**
+     * 统计待撮合的挂单数量
+     *
+     * 仅统计平台交易（platform）的 pending 订单，与自动撮合的可见范围保持一致，
+     * 避免把 direct / mediator 订单计入供需而影响价格。
+     */
     private function getPendingOrdersCount($city, $type) {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE city = ? AND type = ? AND status = 'pending'");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders 
+            WHERE city = ? AND type = ? AND status = 'pending' AND trade_type = 'platform'");
         $stmt->execute([$city, $type]);
         return $stmt->fetchColumn();
     }

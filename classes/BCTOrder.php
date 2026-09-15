@@ -57,7 +57,10 @@ class BCTOrder {
             
             return $orderId;
         } catch(Exception $e) {
-            $this->pdo->rollBack();
+            // 仅在事务仍然活跃时回滚，避免「无事务可回滚」引发二次异常
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }
@@ -81,36 +84,47 @@ class BCTOrder {
         try {
             $this->pdo->beginTransaction();
             
-            // 获取订单信息
-            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending'");
+            // 获取订单信息（FOR UPDATE 锁定，避免并发重复撮合同一笔订单）
+            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending' FOR UPDATE");
             $stmt->execute([$orderId]);
             $order = $stmt->fetch();
-            
+
             if(!$order) {
                 throw new Exception("订单不存在或不可匹配");
             }
-            
-            // 查找匹配订单：同城市、相反方向、价格交叉、平台交易
+
+            // 自身必须仍是待撮合的平台交易订单
+            if ($order['trade_type'] !== 'platform') {
+                throw new Exception("非平台交易订单，不参与自动撮合");
+            }
+            if ((int)$order['amount'] <= 0) {
+                throw new Exception("订单剩余数量为 0");
+            }
+
+            // 查找匹配订单：同城市、相反方向、价格交叉、平台交易、非自身
             $matchType = $order['type'] == 'buy' ? 'sell' : 'buy';
-            
+
+            // 排除自身（id != ?）并锁定候选行，避免与自己成交
             if ($order['type'] == 'buy') {
                 // 买单：找卖单价格 <= 买单价格的订单，按价格从低到高，同价格按时间优先
                 $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
                     WHERE city = ? AND type = ? AND status = 'pending' 
                     AND trade_type = 'platform' 
+                    AND id <> ?
                     AND price <= ?
-                    ORDER BY price ASC, created_at ASC 
+                    ORDER BY price ASC, created_at ASC, id ASC
                     LIMIT 1 FOR UPDATE");
-                $stmt->execute([$order['city'], $matchType, $order['price']]);
+                $stmt->execute([$order['city'], $matchType, (int)$orderId, $order['price']]);
             } else {
                 // 卖单：找买单价格 >= 卖单价格的订单，按价格从高到低，同价格按时间优先
                 $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
                     WHERE city = ? AND type = ? AND status = 'pending' 
                     AND trade_type = 'platform' 
+                    AND id <> ?
                     AND price >= ?
-                    ORDER BY price DESC, created_at ASC 
+                    ORDER BY price DESC, created_at ASC, id ASC
                     LIMIT 1 FOR UPDATE");
-                $stmt->execute([$order['city'], $matchType, $order['price']]);
+                $stmt->execute([$order['city'], $matchType, (int)$orderId, $order['price']]);
             }
                 
             $matchOrder = $stmt->fetch();
@@ -118,21 +132,28 @@ class BCTOrder {
             if(!$matchOrder) {
                 throw new Exception("暂无匹配订单");
             }
-            
+
+            // 对手方必须属于不同用户，禁止自成交
+            if ((int)$matchOrder['user_id'] === (int)$order['user_id']) {
+                throw new Exception("撮合对手方与自身为同一用户");
+            }
+
             // 确定交易数量
-            $tradeAmount = min($order['amount'], $matchOrder['amount']);
-            
-            // 保存交易前订单数量（用于冻结余额修复）
-            $orderBeforeTrade = $order;
-            $matchBeforeTrade = $matchOrder;
-            
+            $tradeAmount = min((int)$order['amount'], (int)$matchOrder['amount']);
+            if ($tradeAmount <= 0) {
+                throw new Exception("撮合数量无效");
+            }
+
             // 执行交易
             $this->executeTrade($order, $matchOrder, $tradeAmount, 'platform');
             
             $this->pdo->commit();
             return true;
         } catch(Exception $e) {
-            $this->pdo->rollBack();
+            // 仅在事务仍然活跃时回滚，避免「无事务可回滚」引发二次异常
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }
@@ -192,7 +213,10 @@ class BCTOrder {
             $this->pdo->commit();
             return ['success' => true, 'message' => '交易成功'];
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            // 仅在事务仍然活跃时回滚，避免「无事务可回滚」引发二次异常
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -238,23 +262,33 @@ class BCTOrder {
         $this->updateOrderAfterTrade($sellOrder['id'], $amount, $sellOrder['user_id'], $sellOrder['city']);
     }
     
+    /**
+     * 成交后更新订单剩余数量与状态
+     *
+     * 说明：bct_orders.amount 的语义是「剩余可成交数量」。
+     * 使用原子递减（amount = amount - ?）而非「先读后写」，避免并发撮合下
+     * 基于过期快照计算出的剩余量相互覆盖。
+     *
+     * @param int $orderId       订单ID
+     * @param int $tradedAmount  本次成交数量
+     */
     private function updateOrderAfterTrade($orderId, $tradedAmount, $sellerId = null, $city = null) {
-        // 获取订单原始数量
-        $stmt = $this->pdo->prepare("SELECT amount, type, user_id, city FROM bct_orders WHERE id = ?");
-        $stmt->execute([$orderId]);
-        $order = $stmt->fetch();
-        $originalAmount = $order['amount'];
-        
-        if($tradedAmount >= $originalAmount) {
-            // 全部完成
-            $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = 0, status = 'completed' WHERE id = ?");
-            $stmt->execute([$orderId]);
-        } else {
-            // 部分完成
-            $remainingAmount = $originalAmount - $tradedAmount;
-            $stmt = $this->pdo->prepare("UPDATE bct_orders SET amount = ?, status = 'processing' WHERE id = ?");
-            $stmt->execute([$remainingAmount, $orderId]);
+        $tradedAmount = (int)$tradedAmount;
+        if ($tradedAmount <= 0) {
+            return;
         }
+
+        // 原子扣减剩余数量，并用 GREATEST 防止出现负数
+        $stmt = $this->pdo->prepare("UPDATE bct_orders 
+            SET amount = GREATEST(amount - ?, 0) 
+            WHERE id = ?");
+        $stmt->execute([$tradedAmount, $orderId]);
+
+        // 剩余数量为 0 视为全部完成，否则标记为部分成交
+        $stmt = $this->pdo->prepare("UPDATE bct_orders 
+            SET status = CASE WHEN amount <= 0 THEN 'completed' ELSE 'processing' END 
+            WHERE id = ?");
+        $stmt->execute([$orderId]);
     }
 	
     /**
