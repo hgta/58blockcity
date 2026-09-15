@@ -13,6 +13,9 @@ $viewerId = intval($_SESSION['user_id'] ?? 0);
 // 惰性推进状态机：激活到点的 pending 并结算到点的 active
 $auction->tick();
 
+// 首页顶部推荐位（后台手动指定；active/pending 才展示，已结束的自动下线）
+$featuredList = $auction->getFeaturedAuctions(8);
+
 $itemType = in_array($_GET['type'] ?? '', ['block', 'nft'], true) ? $_GET['type'] : '';
 $currency = in_array($_GET['currency'] ?? '', ['popularity', 'cny'], true) ? $_GET['currency'] : '';
 $tab      = in_array($_GET['tab'] ?? '', ['active', 'ended'], true) ? $_GET['tab'] : 'active';
@@ -33,12 +36,19 @@ if ($tab === 'ended') {
     $total    = $result['total'];
     $pages    = $result['pages'];
 } else {
-    // 主推：热拍优先，取进行中的第一件
-    $feed = $auction->getActiveAuctions(1, 12, $itemType, $currency, 'hot')['list'];
-    foreach ($feed as $row) {
+    // 优先推荐位：若后台指定了 active 拍品作为首页顶部推荐，取其作为主推
+    foreach ($featuredList as $row) {
         if ($row['status'] === 'active') { $hero = $row; break; }
     }
-    if (!$hero && !empty($feed)) $hero = $feed[0];
+
+    // 没有推荐位时，热拍优先，取进行中的第一件
+    if (!$hero) {
+        $feed = $auction->getActiveAuctions(1, 12, $itemType, $currency, 'hot')['list'];
+        foreach ($feed as $row) {
+            if ($row['status'] === 'active') { $hero = $row; break; }
+        }
+        if (!$hero && !empty($feed)) $hero = $feed[0];
+    }
 
     // 即将结束滑轨（按剩余时间升序，仅进行中）
     $railPool = $auction->getActiveAuctions(1, 16, $itemType, $currency, 'ending')['list'];
@@ -64,6 +74,35 @@ require_once 'includes/header.php';
 ?>
 
 <div class="ac-wrap">
+
+    <?php if ($tab === 'active' && !empty($featuredList)): ?>
+    <!-- 官方推荐 -->
+    <div class="ac-rail-head" style="margin-top:6px;">
+        <h2><i class="fas fa-star" style="color:#f5a623;"></i> 官方推荐</h2>
+        <span class="ac-muted" style="font-size:12px;">后台精选拍品 · 共 <?= count($featuredList) ?> 件</span>
+    </div>
+    <div class="ac-rail ac-rail-featured" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+        <?php foreach ($featuredList as $r):
+            // 主推已占 hero 位，不再重复强调
+            $isHero = ($hero && $r['id'] == $hero['id']);
+            $fLeft = strtotime($r['end_time']) - time();
+            $fUrg  = $r['status'] === 'active' && $fLeft > 0 && $fLeft <= 300;
+        ?>
+        <a class="ac-rail-item ac-featured-item<?= $isHero ? ' is-hero' : '' ?><?= $fUrg ? ' is-urgent' : '' ?>" href="view.php?id=<?= intval($r['id']) ?>">
+            <div class="ac-featured-tag"><i class="fas fa-star"></i> 推荐</div>
+            <div class="t"><?= htmlspecialchars($r['item_title'] ?? ('拍品 #' . $r['id'])) ?></div>
+            <div class="p"><?= ac_money($r['current_price'] ?? $r['start_price'], $r['currency']) ?></div>
+            <div class="ac-muted" style="font-size:11px;">
+                <?php if ($r['status'] === 'pending'): ?>
+                    <i class="far fa-clock"></i> 即将开拍
+                <?php else: ?>
+                    <?php ac_render_countdown($r, ''); ?>
+                <?php endif; ?>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
     <?php if ($tab === 'active' && $hero):
         $heroCounters = $auction->getCounters($hero);

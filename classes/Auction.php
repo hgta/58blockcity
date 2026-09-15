@@ -994,4 +994,62 @@ class Auction {
         $this->attachStats($rows);
         return $rows;
     }
+
+    /**
+     * 设置官方推荐。on=true 时写 featured_at=NOW()；off 时清空。
+     * 已落槌(sold)/流拍(ended)/取消(canceled)的不允许推荐。
+     */
+    public function setFeatured($auctionId, $on = true) {
+        $id = intval($auctionId);
+        if (!$id) return false;
+        if ($on) {
+            $stmt = $this->pdo->prepare("
+                UPDATE auctions
+                SET featured_at = NOW()
+                WHERE id = ? AND status IN ('pending','active')");
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE auctions SET featured_at = NULL WHERE id = ?");
+        }
+        $stmt->execute([$id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * 首页顶部推荐位：拉取「正在展示」且被官方推荐的拍卖，按推荐时间倒序。
+     * 状态过滤：active/pending —— 已落槌/流拍的即使被推荐也不应在首页展示。
+     */
+    public function getFeaturedAuctions($limit = 8) {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, u.username AS seller_name, u.avatar AS seller_avatar
+            FROM auctions a
+            LEFT JOIN users u ON a.seller_id = u.id
+            WHERE a.featured_at IS NOT NULL
+              AND a.status IN ('pending','active')
+            ORDER BY a.featured_at DESC, a.id DESC
+            LIMIT " . max(1, intval($limit)));
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->attachItemInfo($rows);
+        $this->attachStats($rows);
+        return $rows;
+    }
+
+    /**
+     * 后台「推荐管理」面板用：所有被推荐的（含 sold/ended/canceled 不可见的）。
+     * 方便管理员取消陈旧推荐。
+     */
+    public function getAllFeatured($limit = 30) {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, u.username AS seller_name
+            FROM auctions a
+            LEFT JOIN users u ON a.seller_id = u.id
+            WHERE a.featured_at IS NOT NULL
+            ORDER BY a.featured_at DESC
+            LIMIT " . max(1, intval($limit)));
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->attachItemInfo($rows);
+        $this->attachStats($rows);
+        return $rows;
+    }
 }

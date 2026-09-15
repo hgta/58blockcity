@@ -20,6 +20,24 @@ $auction = new Auction($pdo);
 // 惰性推进状态机（与 api/lot.php 同策略：管理员访问时顺带激活/落槌到点拍品）
 $auction->tick();
 
+// ---- POST 处理：推荐位开关 ----
+$flash = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle_featured') {
+    $aid = intval($_POST['id'] ?? 0);
+    $on  = $_POST['on'] === '1';
+    if ($aid > 0) {
+        $ok = $auction->setFeatured($aid, $on);
+        $flash = $ok
+            ? ($on ? '已推荐到首页顶部' : '已取消推荐')
+            : ($on ? '推荐失败：该拍卖已结束/被取消' : '操作完成');
+    }
+    header('Location: dashboard.php?msg=' . urlencode($flash));
+    exit;
+}
+if (!empty($_GET['msg'])) {
+    $flash = (string)$_GET['msg'];
+}
+
 // ---- 状态统计 ----
 $statusRows = $pdo->query("SELECT status, COUNT(*) AS cnt FROM auctions GROUP BY status")->fetchAll(PDO::FETCH_ASSOC);
 $statusCnt = array_fill_keys(['pending', 'active', 'sold', 'ended', 'canceled'], 0);
@@ -48,6 +66,9 @@ $statusMap = [
     'ended'    => ['已流拍',   'danger'],
     'canceled' => ['已取消',   'default'],
 ];
+
+// ---- 推荐管理面板：所有被推荐的拍品（含已下线） ----
+$featuredList = $auction->getAllFeatured(30);
 
 // ---- 最近拍卖单 ----
 $recentAuctions = $pdo->query("
@@ -128,6 +149,62 @@ function bid_money($amount, $currency) {
         <div class="stat-icon warning"><i class="fas fa-star"></i></div>
         <div class="stat-value"><?= number_format($soldStats['popularity']['amt']) ?></div>
         <div class="stat-label">落槌成交总额（人气值，<?= $soldStats['popularity']['cnt'] ?> 场）</div>
+    </div>
+</div>
+
+<?php if ($flash !== ''): ?>
+<div class="admin-alert admin-alert-success" style="margin-bottom:16px;">
+    <i class="fas fa-check-circle"></i> <?= htmlspecialchars($flash) ?>
+</div>
+<?php endif; ?>
+
+<!-- 推荐管理 -->
+<div class="admin-card" style="margin-bottom:20px;">
+    <div class="admin-card-header">
+        <span class="admin-card-title"><i class="fas fa-star" style="margin-right:8px;color:#f5a623;"></i>首页顶部推荐位（<?= count($featuredList) ?>）</span>
+        <span style="font-size:12px;color:var(--admin-text-muted);">在「拍卖单管理」中点击「设为推荐」即可上墙；此处可一键取消</span>
+    </div>
+    <div class="admin-card-body" style="padding:0;">
+        <?php if (empty($featuredList)): ?>
+            <div class="admin-empty-state"><i class="fas fa-star"></i><h4>暂无推荐拍品</h4><p>去「拍卖单管理」选择一条竞拍中/即将开拍的拍品，点击「设为推荐」即可上墙</p></div>
+        <?php else: ?>
+        <table class="admin-data-table">
+            <thead><tr><th>拍品</th><th>类型</th><th>当前价</th><th>状态</th><th>推荐时间</th><th>操作</th></tr></thead>
+            <tbody>
+                <?php foreach ($featuredList as $f):
+                    $fs = $statusMap[$f['status']] ?? [$f['status'], 'default'];
+                    $isLive = in_array($f['status'], ['pending','active'], true);
+                ?>
+                <tr>
+                    <td>
+                        <a href="../view.php?id=<?= (int)$f['id'] ?>" style="color:var(--admin-accent);font-weight:600;">LOT <?= str_pad((string)$f['id'], 3, '0', STR_PAD_LEFT) ?></a>
+                        <span style="font-size:12px;color:var(--admin-text-muted);">by <?= htmlspecialchars($f['seller_name'] ?? ('用户' . $f['seller_id'])) ?></span>
+                    </td>
+                    <td style="font-size:13px;"><?= $f['item_type'] === 'block' ? '区块' : 'NFT头像' ?></td>
+                    <td style="font-weight:600;"><?= bid_money($f['current_price'] ?? $f['start_price'], $f['currency']) ?></td>
+                    <td>
+                        <span class="admin-badge <?= $fs[1] ?>"><?= $fs[0] ?></span>
+                        <?php if (!$isLive): ?>
+                            <span class="admin-badge default" title="首页已自动下线"><i class="fas fa-eye-slash"></i> 首页已下线</span>
+                        <?php else: ?>
+                            <span class="admin-badge success" title="正在首页展示"><i class="fas fa-eye"></i> 展示中</span>
+                        <?php endif; ?>
+                    </td>
+                    <td style="font-size:12px;color:var(--admin-text-muted);"><?= htmlspecialchars($f['featured_at']) ?></td>
+                    <td>
+                        <form method="post" action="dashboard.php" style="display:inline-block;margin:0;">
+                            <input type="hidden" name="action" value="toggle_featured">
+                            <input type="hidden" name="id" value="<?= (int)$f['id'] ?>">
+                            <input type="hidden" name="on" value="0">
+                            <button class="admin-btn admin-btn-sm admin-btn-secondary" type="submit"><i class="fas fa-times"></i> 取消推荐</button>
+                        </form>
+                        <a class="admin-btn admin-btn-sm admin-btn-secondary" href="../view.php?id=<?= (int)$f['id'] ?>">查看</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
     </div>
 </div>
 

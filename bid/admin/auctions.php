@@ -1,7 +1,7 @@
 <?php
 /**
  * 58拍卖子站 — 拍卖单管理列表
- * 状态/类型筛选 + 分页，只读管理（状态由拍卖引擎自动推进）
+ * 状态/类型筛选 + 分页 + 推荐位开关
  */
 
 require_once '../../config/database.php';
@@ -19,6 +19,27 @@ $auction = new Auction($pdo);
 
 // 惰性推进状态机，保证列表状态准确
 $auction->tick();
+
+// ---- POST 处理：推荐位开关 ----
+$flash = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle_featured') {
+    $aid = intval($_POST['id'] ?? 0);
+    $on  = $_POST['on'] === '1';
+    if ($aid > 0) {
+        $ok = $auction->setFeatured($aid, $on);
+        $flash = $ok
+            ? ($on ? '已推荐到首页顶部' : '已取消推荐')
+            : ($on ? '推荐失败：该拍卖已结束/被取消' : '操作完成');
+    }
+    // 重定向回原筛选状态（避免刷新重复提交）
+    $qs = $_GET;
+    $qs['msg'] = $flash;
+    header('Location: auctions.php?' . http_build_query($qs));
+    exit;
+}
+if (!empty($_GET['msg'])) {
+    $flash = (string)$_GET['msg'];
+}
 
 // ---- 筛选参数 ----
 $statusList = ['pending', 'active', 'sold', 'ended', 'canceled'];
@@ -52,13 +73,13 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 $stmt = $pdo->prepare("
     SELECT a.id, a.item_type, a.item_id, a.seller_id, a.start_price, a.reserve_price,
            a.bid_increment, a.start_time, a.end_time, a.current_price, a.currency,
-           a.status, a.current_bidder_id, a.created_at,
+           a.status, a.current_bidder_id, a.created_at, a.featured_at,
            u.username AS seller_name,
            (SELECT COUNT(*) FROM auction_bids b WHERE b.auction_id = a.id) AS bid_count
     FROM auctions a
     LEFT JOIN users u ON a.seller_id = u.id
     $whereSql
-    ORDER BY a.created_at DESC
+    ORDER BY (a.featured_at IS NOT NULL) DESC, a.created_at DESC
     LIMIT $perPage OFFSET $offset
 ");
 $stmt->execute($params);
@@ -86,6 +107,12 @@ function filterUrl($status, $type, $page) {
     return 'auctions.php' . ($qs ? '?' . http_build_query($qs) : '');
 }
 ?>
+<?php if ($flash !== ''): ?>
+<div class="admin-alert admin-alert-success" style="margin-bottom:16px;">
+    <i class="fas fa-check-circle"></i> <?= htmlspecialchars($flash) ?>
+</div>
+<?php endif; ?>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <span class="admin-card-title"><i class="fas fa-gavel" style="margin-right:8px;color:var(--admin-accent);"></i>拍卖单（<?= number_format($total) ?>）</span>
@@ -113,12 +140,14 @@ function filterUrl($status, $type, $page) {
             <thead>
                 <tr>
                     <th>拍品</th><th>卖家</th><th>起拍价</th><th>当前价</th>
-                    <th>出价</th><th>开拍</th><th>落槌</th><th>状态</th><th>操作</th>
+                    <th>出价</th><th>开拍</th><th>落槌</th><th>状态</th><th>推荐</th><th>操作</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $a): ?>
                 <?php $s = $statusMap[$a['status']] ?? [$a['status'], 'default']; ?>
+                <?php $isFeatured = !empty($a['featured_at']); ?>
+                <?php $canFeature = in_array($a['status'], ['pending', 'active'], true); ?>
                 <tr>
                     <td>
                         <a href="../view.php?id=<?= (int)$a['id'] ?>" style="color:var(--admin-accent);font-weight:600;">LOT <?= str_pad((string)$a['id'], 3, '0', STR_PAD_LEFT) ?></a>
@@ -131,6 +160,23 @@ function filterUrl($status, $type, $page) {
                     <td style="font-size:12px;"><?= date('m-d H:i', strtotime($a['start_time'])) ?></td>
                     <td style="font-size:12px;"><?= date('m-d H:i', strtotime($a['end_time'])) ?></td>
                     <td><span class="admin-badge <?= $s[1] ?>"><?= $s[0] ?></span></td>
+                    <td>
+                        <?php if ($isFeatured): ?>
+                            <span class="admin-badge warning" title="推荐时间：<?= htmlspecialchars($a['featured_at']) ?>"><i class="fas fa-star"></i> 已推荐</span>
+                        <?php endif; ?>
+                        <form method="post" action="auctions.php<?= $_GET ? '?' . htmlspecialchars(http_build_query($_GET)) : '' ?>" style="display:inline-block;margin:0;">
+                            <input type="hidden" name="action" value="toggle_featured">
+                            <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                            <input type="hidden" name="on" value="<?= $isFeatured ? '0' : '1' ?>">
+                            <?php if ($isFeatured): ?>
+                                <button class="admin-btn admin-btn-sm admin-btn-secondary" type="submit" title="取消首页推荐"><i class="fas fa-star-half-alt"></i> 取消</button>
+                            <?php elseif ($canFeature): ?>
+                                <button class="admin-btn admin-btn-sm admin-btn-primary" type="submit" title="推荐到首页顶部"><i class="fas fa-star"></i> 设为推荐</button>
+                            <?php else: ?>
+                                <button class="admin-btn admin-btn-sm admin-btn-secondary" disabled title="已结束的拍卖不可推荐">不可推荐</button>
+                            <?php endif; ?>
+                        </form>
+                    </td>
                     <td><a class="admin-btn admin-btn-sm admin-btn-secondary" href="../view.php?id=<?= (int)$a['id'] ?>">查看</a></td>
                 </tr>
                 <?php endforeach; ?>
