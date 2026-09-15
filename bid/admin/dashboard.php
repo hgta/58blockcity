@@ -8,19 +8,17 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/Auction.php';
 
-// 统一后台框架配置
-$admin_site_config = [
-    'site'       => 'bid',
-    'page_title' => '拍卖管理看板',
-];
-require_once '../../shared/admin/admin-header.php';
+// 鉴权必须早于任何 HTML 输出 —— POST 处理需要 header() 重定向，提前到 admin-header 之前
+require_once '../../shared/admin/admin-auth.php';
+$site = 'bid';
+checkAdminAccess($site);
 
 $auction = new Auction($pdo);
 
 // 惰性推进状态机（与 api/lot.php 同策略：管理员访问时顺带激活/落槌到点拍品）
 $auction->tick();
 
-// ---- POST 处理：推荐位开关 ----
+// ---- POST 处理：推荐位开关（必须在 HTML 输出前完成 redirect） ----
 $flash = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle_featured') {
     $aid = intval($_POST['id'] ?? 0);
@@ -37,6 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggl
 if (!empty($_GET['msg'])) {
     $flash = (string)$_GET['msg'];
 }
+
+// 统一后台框架配置
+$admin_site_config = [
+    'site'       => 'bid',
+    'page_title' => '拍卖管理看板',
+];
+require_once '../../shared/admin/admin-header.php';
 
 // ---- 状态统计 ----
 $statusRows = $pdo->query("SELECT status, COUNT(*) AS cnt FROM auctions GROUP BY status")->fetchAll(PDO::FETCH_ASSOC);
