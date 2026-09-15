@@ -66,6 +66,7 @@ require_once '../../shared/admin/admin-header.php';
     <div class="admin-card">
         <div class="admin-card-header">
             <span class="admin-card-title"><i class="fas fa-file-invoice"></i> BCT 订单概况</span>
+            <a href="orders.php" class="admin-btn admin-btn-sm admin-btn-default">交易管理 <i class="fas fa-angle-right"></i></a>
         </div>
         <div class="admin-card-body">
             <div style="display:flex;justify-content:space-around;text-align:center;">
