@@ -13,7 +13,6 @@ require_once 'includes/auth.php';
 require_once '../classes/BatchOrderParser.php';
 require_once '../classes/BCTOrder.php';
 require_once '../classes/CityBCT.php';
-require_once '../classes/UserBCTAccount.php';
 
 checkLogin();
 
@@ -59,7 +58,6 @@ if (empty($resolved['orders'])) {
 
 $order = new BCTOrder($pdo);
 $cityBCT = new CityBCT($pdo);
-$account = new UserBCTAccount($pdo);
 
 $results = [];
 $successCount = 0;
@@ -70,7 +68,8 @@ foreach ($resolved['orders'] as $o) {
     $amount = (int)$o['amount'];
     $price = (float)$o['price'];
 
-    // 提交前复检（并发下城市价格/余额可能已变化）
+    // 提交前复检（并发下城市信息可能已变化）
+    // 注：不校验余额 —— 系统已简化流程，发布订单（含出售）无需验证余额
     $reason = null;
 
     if ($amount < BatchOrderParser::MIN_AMOUNT || $amount > BatchOrderParser::MAX_AMOUNT) {
@@ -79,12 +78,6 @@ foreach ($resolved['orders'] as $o) {
         $reason = '价格必须为正数';
     } elseif (!$cityBCT->getCityBCT($city)) {
         $reason = '无效的城市';
-    } elseif ($type === 'sell') {
-        $userAccount = $account->getAccount($_SESSION['user_id'], $city);
-        $available = $userAccount ? ((float)$userAccount['balance'] - (float)$userAccount['frozen']) : 0.0;
-        if ($available < $amount) {
-            $reason = '可用余额不足';
-        }
     }
 
     if ($reason === null) {

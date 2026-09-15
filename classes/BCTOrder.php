@@ -24,15 +24,8 @@ class BCTOrder {
             // 计算总金额
             $total = $amount * $price;
             
-            // 如果是出售订单，验证余额（不扣余额，交易完成时才处理）
-            if($type == 'sell') {
-                $account = new UserBCTAccount($this->pdo);
-                $userAccount = $account->getAccount($userId, $city);
-                
-                if(!$userAccount || $userAccount['balance'] < $amount) {
-                    throw new Exception("可用余额不足");
-                }
-            }
+            // 注：不校验出售订单余额 —— 系统已简化流程，发布订单无需验证余额，
+            //     余额在交易完成时才处理。
             
             // 计算过期时间
             $expiresAt = ($durationDays > 0) 

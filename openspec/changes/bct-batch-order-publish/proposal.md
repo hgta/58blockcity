@@ -14,8 +14,9 @@
   - 复用 `city_prices.php` 的解析规则（全角空格归一、按行切分、跳过空行/`#`/`//` 注释、`\s+` 分列、必须 3 列）。
   - 城市匹配：先按 `cities.name` 精确匹配，失败则按 `cities.pinyin` 匹配；均未命中归入「城市不存在」。自建城市（如「鲸探」）与真实城市同属 `cities` 表记录，走同一套匹配逻辑。
   - **同名同价行视为同一条挂单，数量累加**；**同名不同价视为两条独立挂单，不合并**（合并键为「城市 + 价格」）。
-  - 卖单按合并后的数量校验可用余额（`balance - frozen ≥ amount`），累加后余额不足则整条该挂单标记失败。
   - 数量校验范围 `1 .. 1000000`，价格须为正数。
+  - **不做余额校验**：发布订单（含出售）无需验证余额，与既有单条流程及页面提示保持一致。
+- 移除余额校验（决策修正）：`BCTOrder::createOrder()`、`bct/process_order.php`（单条）以及批量预校验/提交中的卖单余额校验一并去除，使单条与批量口径统一。
 - 新增批量发布提交能力，逐条调用订单创建，**允许部分成功**：成功行入库并返回订单号，失败行返回原因，不影响其余行。
 - 单条交易数量上限由 `100000` 调整为 `1000000`（表单、文案、服务端校验同步调整）。
 - **修复**：`bct/process_order.php` 当前仅校验 `amount <= 0`，缺少服务端上限校验（前端 `max` 可被绕过）。本次补齐服务端上限校验。
@@ -36,7 +37,7 @@
 - **前端页面**：`bct/trade.php`（新增批量模式 UI、模式切换、预览表、结果展示；单条数量上限与文案调整）。
 - **新增页面/接口**：批量预校验接口（如 `bct/api/parse_batch_orders.php`）与批量提交处理（如 `bct/process_batch_orders.php`）。
 - **后端类**：`classes/BCTOrder.php` 需支持批量创建编排；解析逻辑建议抽为可复用组件（当前散落在 `bct/admin/city_prices.php` 内）。
-- **服务端校验**：`bct/process_order.php` 补齐数量上限校验。
-- **数据库**：复用现有 `bct_orders`、`cities`、`user_bct_account` 表，无表结构变更。`bct_orders.amount` 为 `int(11)`、`total_amount` 为 `decimal(10,2)`，可容纳 1000000 量级。
-- **依赖其它能力**：城市匹配依赖 `cities` 表（含 `name`/`pinyin`）；余额校验依赖 `user_bct_account`；中介选择依赖 `mediators` 表。
+- **服务端校验**：`bct/process_order.php` 补齐数量上限校验；移除卖单余额校验。
+- **数据库**：复用现有 `bct_orders`、`cities` 表，无表结构变更。`bct_orders.amount` 为 `int(11)`、`total_amount` 为 `decimal(10,2)`，可容纳 1000000 量级。
+- **依赖其它能力**：城市匹配依赖 `cities` 表（含 `name`/`pinyin`）；中介选择依赖 `mediators` 表。
 - **无破坏性变更**：现有单条发布流程与 URL 参数（`?city=`）保持不变。

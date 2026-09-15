@@ -1,7 +1,6 @@
 <?php
 require_once '../config/database.php';
 require_once 'includes/auth.php';
-require_once '../classes/UserBCTAccount.php';
 require_once '../classes/BCTOrder.php';
 require_once '../classes/CityBCT.php';
 require_once '../classes/BatchOrderParser.php';
@@ -42,11 +41,7 @@ if ($tradeType === 'platform' && $amount > 500) fail("平台交易限制500BCT�
 $cityBCT = new CityBCT($pdo);
 if (!$cityBCT->getCityBCT($city)) fail("无效的城市", $city);
 
-if ($type === 'sell') {
-    $account = new UserBCTAccount($pdo);
-    $userAccount = $account->getAccount($_SESSION['user_id'], $city);
-    if (!$userAccount || ($userAccount['balance'] - $userAccount['frozen']) < $amount) fail("可用余额不足", $city);
-}
+// 注：不校验出售订单余额 —— 系统已简化流程，发布订单无需验证余额
 
 $order = new BCTOrder($pdo);
 $orderId = $order->createOrder(

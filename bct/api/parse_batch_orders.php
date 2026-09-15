@@ -56,18 +56,7 @@ try {
             $issues[] = '价格必须为正数';
         }
 
-        // 卖单余额校验：按累加后数量比较可用余额
-        $available = null;
-        if ($type === 'sell' && empty($issues)) {
-            $stmt = $pdo->prepare("SELECT balance, frozen FROM user_bct_account WHERE user_id = ? AND city = ?");
-            $stmt->execute([$_SESSION['user_id'], $o['city']]);
-            $acc = $stmt->fetch();
-            $available = $acc ? ((float)$acc['balance'] - (float)$acc['frozen']) : 0.0;
-            if ($available < $o['amount']) {
-                $issues[] = '可用余额不足（可用 ' . number_format($available) . ' BCT）';
-            }
-        }
-
+        // 注：不对余额做校验 —— 系统已简化流程，发布订单（含出售）无需验证余额
         $ok = empty($issues);
         if ($ok) { $okCount++; } else { $failCount++; }
 
@@ -77,7 +66,6 @@ try {
             'amount' => $o['amount'],
             'lines' => $o['lines'],
             'total' => round($o['amount'] * $o['price'], 2),
-            'available' => $available,
             'ok' => $ok,
             'issues' => $issues,
             'merged' => count($o['lines']) > 1,
