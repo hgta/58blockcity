@@ -161,58 +161,42 @@ if (isset($_SESSION['error'])) {
         </div>
         <div class="card-body">
             <!-- 方向 -->
-            <div class="form-section">
-                <h4><i class="glyphicon glyphicon-transfer"></i> 交易方向</h4>
-                <div class="trade-type-selector">
-                    <button type="button" class="trade-type-option active" data-batch-type="buy">
-                        <i class="glyphicon glyphicon-shopping-cart"></i>
-                        <span>全部买入</span>
-                        <small>本批次全部为买单</small>
+            <div class="field-block">
+                <label class="field-label">交易方向</label>
+                <div class="segmented segmented-type" id="batchTypeSegmented">
+                    <button type="button" class="segment active" data-batch-type="buy">
+                        <i class="glyphicon glyphicon-shopping-cart"></i> 全部买入
                     </button>
-                    <button type="button" class="trade-type-option" data-batch-type="sell">
-                        <i class="glyphicon glyphicon-yen"></i>
-                        <span>全部卖出</span>
-                        <small>本批次全部为卖单</small>
+                    <button type="button" class="segment" data-batch-type="sell">
+                        <i class="glyphicon glyphicon-yen"></i> 全部卖出
                     </button>
                 </div>
-                <small class="form-text text-muted">同一批次方向统一，不支持买入与卖出混合。</small>
+                <div class="field-hint">同一批次方向统一，不支持买入与卖出混合</div>
             </div>
 
             <!-- 交易方式 -->
-            <div class="form-section">
-                <h4><i class="glyphicon glyphicon-option-horizontal"></i> 交易方式</h4>
-                <div class="trade-method-options">
-                    <div class="method-option">
-                        <input type="radio" name="batch_trade_type" value="direct" id="b_direct" checked>
-                        <label for="b_direct">
-                            <div class="method-icon"><i class="glyphicon glyphicon-transfer"></i></div>
-                            <div class="method-info">
-                                <div class="method-title">直接交易</div>
-                                <div class="method-desc">双方直接联系，无手续费</div>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="method-option">
-                        <input type="radio" name="batch_trade_type" value="mediator" id="b_mediator">
-                        <label for="b_mediator">
-                            <div class="method-icon"><i class="glyphicon glyphicon-user"></i></div>
-                            <div class="method-info">
-                                <div class="method-title">中介交易</div>
-                                <div class="method-desc">平台客服中介，手续费2%</div>
-                            </div>
-                        </label>
-                    </div>
+            <div class="field-block">
+                <label class="field-label">交易方式</label>
+                <div class="tabs-method" id="batchMethodTabs">
+                    <button type="button" class="method-tab active" data-batch-method="direct">
+                        <i class="glyphicon glyphicon-transfer"></i> 直接交易
+                        <small>无手续费</small>
+                    </button>
+                    <button type="button" class="method-tab" data-batch-method="mediator">
+                        <i class="glyphicon glyphicon-user"></i> 中介交易
+                        <small>手续费2%</small>
+                    </button>
                 </div>
-                <small class="form-text text-muted">批量模式不提供平台交易（平台交易限制 500 BCT 以下）。</small>
+                <div class="field-hint">批量模式不提供平台交易（平台交易限制 500 BCT 以下）</div>
 
-                <div class="form-group batch-field" id="batchContactGroup" style="margin-top:15px;">
-                    <label for="batch_contact_info">联系方式</label>
+                <div class="field-block" id="batchContactGroup" style="margin-top:12px;">
+                    <label class="field-label" for="batch_contact_info">联系方式</label>
                     <input type="text" class="form-control" id="batch_contact_info"
-                           placeholder="请输入您的手机号、微信或QQ等联系方式（本批次共用）">
+                           placeholder="手机号 / 微信 / QQ（本批次共用）">
                 </div>
 
-                <div class="form-group batch-field" id="batchMediatorGroup" style="display:none;margin-top:15px;">
-                    <label for="batch_mediator_id">选择中介（本批次共用）</label>
+                <div class="field-block" id="batchMediatorGroup" style="display:none;margin-top:12px;">
+                    <label class="field-label" for="batch_mediator_id">选择中介（本批次共用）</label>
                     <select class="form-control" id="batch_mediator_id">
                         <option value="">请选择中介</option>
                         <?php foreach ($mediators as $m): ?>
@@ -226,20 +210,19 @@ if (isset($_SESSION['error'])) {
             </div>
 
             <!-- 粘贴区 -->
-            <div class="form-section">
-                <h4><i class="glyphicon glyphicon-paste"></i> 粘贴挂单</h4>
-                <p class="batch-hint">
-                    每行一条，格式：<code>城市 数量 价格</code>（空格或 Tab 分隔，支持全角空格；<code>#</code> 或 <code>//</code> 开头为注释行）。<br>
-                    城市支持名称或拼音，自建城市同样可直接填写。同一城市同一价格的多行会自动累加数量。<br>
-                    单次数量范围：1 - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT。
-                </p>
-                <textarea id="batch_text" class="batch-textarea" rows="10"
+            <div class="field-block">
+                <label class="field-label" for="batch_text">粘贴挂单</label>
+                <textarea id="batch_text" class="batch-textarea" rows="9"
                           placeholder="<?= htmlspecialchars("吐鲁番 65000 0.03\n西双版纳 60000 0.03\n锡林郭勒 36000 0.03\n鲸探 27000 0.05") ?>"></textarea>
+                <div class="field-hint">
+                    每行一条：<code>城市 数量 价格</code>（支持空格/全角空格/Tab；<code>#</code> 或 <code>//</code> 开头为注释）<br>
+                    城市支持名称或拼音，自建城市可直接填写；同城市同价格自动累加数量
+                </div>
                 <div class="batch-actions">
-                    <button type="button" class="btn btn-default" id="btnParse">
+                    <button type="button" class="btn btn-primary" id="btnParse">
                         <i class="glyphicon glyphicon-search"></i> 识别
                     </button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitBatch" disabled>
+                    <button type="button" class="btn btn-success" id="btnSubmitBatch" disabled>
                         <i class="glyphicon glyphicon-ok"></i> 确认发布
                     </button>
                     <span class="batch-status" id="batchStatus"></span>
@@ -324,115 +307,74 @@ if (isset($_SESSION['error'])) {
                     </div>
 
                     <?php if ($selectedCity && $cityInfo): ?>
-                    <!-- 交易类型选择 -->
-                    <div class="form-section">
-                        <h4><i class="glyphicon glyphicon-transfer"></i> 交易类型</h4>
-                        <div class="trade-type-selector">
-                            <button type="button" class="trade-type-option active" data-type="buy">
-                                <i class="glyphicon glyphicon-shopping-cart"></i>
-                                <span>我要购买</span>
-                                <small>买入人气值</small>
-                            </button>
-                            <button type="button" class="trade-type-option" data-type="sell">
-                                <i class="glyphicon glyphicon-yen"></i>
-                                <span>我要出售</span>
-                                <small>卖出人气值</small>
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- 交易表单 -->
                     <form id="tradeForm" method="post" action="process_order.php">
                         <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                         <input type="hidden" name="city" value="<?= htmlspecialchars($selectedCity) ?>">
                         <input type="hidden" name="type" id="tradeType" value="buy">
-                        
-                        <!-- 交易信息 -->
-                        <div class="form-section">
-                            <h4><i class="glyphicon glyphicon-info-sign"></i> 交易详情</h4>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="amount">交易数量 (BCT)</label>
-                                        <input type="number" class="form-control" id="amount" name="amount" 
-                                               min="<?= BatchOrderParser::MIN_AMOUNT ?>" max="<?= BatchOrderParser::MAX_AMOUNT ?>" required 
-                                               placeholder="请输入交易数量">
-                                        <small class="form-text text-muted">单次交易数量范围：<?= number_format(BatchOrderParser::MIN_AMOUNT) ?> - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="price">单价 (元/BCT)</label>
-                                        <input type="number" class="form-control" id="price" name="price" 
-                                               min="0.01" max="100" step="0.01" required 
-                                               placeholder="请输入单价"
-                                               value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 2) : '0.10' ?>">
-                                        <small class="form-text text-muted">最低价格: 0.01 元</small>
-                                    </div>
-                                </div>
+
+                        <!-- 交易方向 -->
+                        <div class="field-block">
+                            <label class="field-label">交易方向</label>
+                            <div class="segmented segmented-type" id="typeSegmented">
+                                <button type="button" class="segment active" data-type="buy">
+                                    <i class="glyphicon glyphicon-shopping-cart"></i> 购买
+                                </button>
+                                <button type="button" class="segment" data-type="sell">
+                                    <i class="glyphicon glyphicon-yen"></i> 出售
+                                </button>
                             </div>
-                            
-                            <div class="form-group">
-                                <label>交易方式</label>
-                                <div class="trade-method-options">
-								
-                                    <div class="method-option">
-                                        <input type="radio" name="trade_type" value="direct" id="direct" checked>
-                                        <label for="direct">
-                                            <div class="method-icon">
-                                                <i class="glyphicon glyphicon-transfer"></i>
-                                            </div>
-                                            <div class="method-info">
-                                                <div class="method-title">直接交易</div>
-                                                <div class="method-desc">双方直接联系，无手续费</div>
-                                                <div class="method-tip">快捷但需注意风险</div>
-                                            </div>
-                                        </label>
-                                    </div>
-									
-									<div class="form-group" id="contactInfoGroup" style="">
-										<label for="contact_info">联系方式</label>
-										<input type="text" class="form-control" id="contact_info" name="contact_info" 
-											   placeholder="请输入您的手机号、微信或QQ等联系方式">
-										<small class="form-text text-muted">此信息将展示给交易对方</small>
-									</div>
-									
-                                    <div class="method-option">
-                                        <input type="radio" name="trade_type" value="platform" id="platform" >
-                                        <label for="platform">
-                                            <div class="method-icon">
-                                                <i class="glyphicon glyphicon-shopping-cart"></i>
-                                            </div>
-                                            <div class="method-info">
-                                                <div class="method-title">平台交易</div>
-                                                <div class="method-desc">500BCT以下适用，手续费10%</div>
-                                                <div class="method-tip">推荐：安全便捷</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="method-option">
-                                        <input type="radio" name="trade_type" value="mediator" id="mediator">
-                                        <label for="mediator">
-                                            <div class="method-icon">
-                                                <i class="glyphicon glyphicon-user"></i>
-                                            </div>
-                                            <div class="method-info">
-                                                <div class="method-title">中介交易</div>
-                                                <div class="method-desc">平台客服中介，手续费2%</div>
-                                                <div class="method-tip">安全有保障</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                            
-                            
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+
+                        <!-- 数量 / 单价 -->
+                        <div class="row field-inline">
+                            <div class="col-xs-6">
+                                <label class="field-label" for="amount">交易数量 <span class="unit">BCT</span></label>
+                                <input type="number" class="form-control" id="amount" name="amount"
+                                       min="<?= BatchOrderParser::MIN_AMOUNT ?>" max="<?= BatchOrderParser::MAX_AMOUNT ?>" required
+                                       placeholder="数量">
+                            </div>
+                            <div class="col-xs-6">
+                                <label class="field-label" for="price">单价 <span class="unit">元/BCT</span></label>
+                                <input type="number" class="form-control" id="price" name="price"
+                                       min="0.01" max="100" step="0.01" required
+                                       placeholder="单价"
+                                       value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 2) : '0.10' ?>">
+                            </div>
+                        </div>
+                        <div class="field-hint">数量范围 <?= number_format(BatchOrderParser::MIN_AMOUNT) ?> - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT · 最低单价 0.01 元</div>
+
+                        <!-- 交易方式 -->
+                        <div class="field-block">
+                            <label class="field-label">交易方式</label>
+                            <div class="tabs-method">
+                                <button type="button" class="method-tab active" data-method="direct">
+                                    <i class="glyphicon glyphicon-transfer"></i> 直接交易
+                                    <small>无手续费</small>
+                                </button>
+                                <button type="button" class="method-tab" data-method="platform">
+                                    <i class="glyphicon glyphicon-shopping-cart"></i> 平台交易
+                                    <small>手续费10%</small>
+                                </button>
+                                <button type="button" class="method-tab" data-method="mediator">
+                                    <i class="glyphicon glyphicon-user"></i> 中介交易
+                                    <small>手续费2%</small>
+                                </button>
+                            </div>
+                            <input type="hidden" name="trade_type" id="tradeTypeMethod" value="direct">
+                            <div class="method-note" id="methodNote">
+                                <i class="glyphicon glyphicon-info-sign"></i> 双方直接联系，无手续费，快捷但需自行注意风险
+                            </div>
+                        </div>
+
+                        <!-- 联系方式 -->
+                        <div class="field-block" id="contactInfoGroup">
+                            <label class="field-label" for="contact_info">联系方式</label>
+                            <input type="text" class="form-control" id="contact_info" name="contact_info"
+                                   placeholder="手机号 / 微信 / QQ（将展示给交易对方）">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg btn-block btn-publish">
                             <i class="glyphicon glyphicon-ok"></i> 确认发布交易
                         </button>
                     </form>
@@ -747,6 +689,113 @@ if (isset($_SESSION['error'])) {
 }
 .batch-field label { color: var(--bct-text-secondary); }
 
+/* ===== 紧凑表单基元 ===== */
+.field-block { margin-bottom: 16px; }
+.field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bct-text-secondary);
+    margin-bottom: 7px;
+}
+.field-label .unit {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--bct-text-muted);
+}
+.field-hint {
+    font-size: 12px;
+    color: var(--bct-text-muted);
+    margin-top: 6px;
+    line-height: 1.6;
+}
+.field-hint code {
+    color: var(--bct-text-secondary);
+    background: var(--bct-bg-hover);
+    padding: 0 4px;
+    border-radius: 3px;
+}
+.field-inline { margin-bottom: 6px; }
+
+/* 分段控件（交易方向） */
+.segmented {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+}
+.segmented-type { display: flex; width: 100%; }
+.segment {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--bct-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.segment i { margin-right: 4px; }
+.segment:hover { color: var(--bct-text); }
+.segment.active {
+    background: var(--bct-accent);
+    color: #0b0e11;
+    font-weight: 600;
+}
+.segment.active i { color: #0b0e11; }
+
+/* 标签式交易方式 */
+.tabs-method {
+    display: flex;
+    gap: 8px;
+}
+.method-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 9px 6px;
+    background: var(--bct-bg-tertiary);
+    border: 1px solid var(--bct-border);
+    border-radius: var(--bct-radius);
+    color: var(--bct-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.3;
+}
+.method-tab i { font-size: 15px; margin-bottom: 1px; }
+.method-tab small {
+    font-size: 11px;
+    color: var(--bct-text-muted);
+    font-weight: 400;
+}
+.method-tab:hover { border-color: var(--bct-accent); color: var(--bct-text); }
+.method-tab.active {
+    border-color: var(--bct-accent);
+    background: rgba(240, 185, 11, 0.12);
+    color: var(--bct-accent);
+}
+.method-tab.active small { color: var(--bct-accent); opacity: 0.8; }
+.method-note {
+    font-size: 12px;
+    color: var(--bct-text-muted);
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--bct-bg-tertiary);
+    border-radius: 6px;
+    border: 1px solid var(--bct-border);
+}
+.method-note i { color: var(--bct-accent); margin-right: 4px; }
+
+.btn-publish { margin-top: 4px; }
+
 /* 表单区域 */
 .form-section {
     margin-bottom: 30px;
@@ -876,112 +925,8 @@ if (isset($_SESSION['error'])) {
     color: var(--bct-text);
 }
 
-/* 交易类型选择器 */
-.trade-type-selector {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.trade-type-option {
-    background: var(--bct-bg-tertiary);
-    border: 2px solid var(--bct-border);
-    border-radius: var(--bct-radius);
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.trade-type-option:hover {
-    border-color: var(--bct-accent);
-}
-
-.trade-type-option.active {
-    border-color: var(--bct-accent);
-    background: rgba(240, 185, 11, 0.12);
-}
-
-.trade-type-option i {
-    font-size: 24px;
-    color: var(--bct-accent);
-    margin-bottom: 10px;
-}
-
-.trade-type-option span {
-    display: block;
-    font-weight: 600;
-    color: var(--bct-text);
-    margin-bottom: 5px;
-}
-
-.trade-type-option small {
-    color: var(--bct-text-secondary);
-    font-size: 12px;
-}
-
-/* 交易方式选项 */
-.trade-method-options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.method-option input[type="radio"] {
-    display: none;
-}
-
-.method-option label {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    border: 2px solid var(--bct-border);
-    border-radius: var(--bct-radius);
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.method-option input[type="radio"]:checked + label {
-    border-color: var(--bct-accent);
-    background: rgba(240, 185, 11, 0.12);
-}
-
-.method-option label:hover {
-    border-color: var(--bct-accent);
-}
-
-.method-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--bct-bg-hover);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-}
-
-.method-icon i {
-    color: var(--bct-accent);
-}
-
-.method-title {
-    font-weight: 600;
-    color: var(--bct-text);
-    margin-bottom: 2px;
-}
-
-.method-desc {
-    color: var(--bct-text-secondary);
-    font-size: 12px;
-    margin-bottom: 2px;
-}
-
-.method-tip {
-    color: var(--bct-accent);
-    font-size: 11px;
-    font-weight: 500;
-}
+/* 交易方式切换的说明文案 */
+.method-note { margin-bottom: 0; }
 
 /* 行情（紧凑） */
 .quote-card .card-body { padding: 12px 14px; }
@@ -1103,22 +1048,13 @@ if (isset($_SESSION['error'])) {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-    .trade-type-selector {
-        grid-template-columns: 1fr;
-    }
-    
-    .method-option label {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .method-icon {
-        margin-right: 0;
-        margin-bottom: 10px;
-    }
+    .tabs-method { flex-wrap: wrap; }
+    .method-tab { flex: 1 1 30%; font-size: 12px; padding: 8px 4px; }
+    .segment { padding: 8px 10px; font-size: 13px; }
 }
 @media (max-width: 480px) {
     .city-option { font-size: 12px; padding: 4px 10px; }
+    .method-tab small { display: none; }
     button[type="submit"] { width: 100%; padding: 14px; font-size: 16px; }
     input, select, textarea { font-size: 16px; }
 }
@@ -1156,11 +1092,11 @@ $(document).ready(function() {
         }
     });
     
-    // 交易类型切换（仅单条模式）
-    $('.trade-type-option[data-type]').click(function() {
+    // 交易方向切换（仅单条模式）
+    $('#typeSegmented .segment').click(function() {
         const type = $(this).data('type');
         
-        $('.trade-type-option[data-type]').removeClass('active');
+        $('#typeSegmented .segment').removeClass('active');
         $(this).addClass('active');
         
         $('#tradeType').val(type);
@@ -1169,11 +1105,21 @@ $(document).ready(function() {
         updatePreview();
     });
     
-    // 交易方式切换
-    $('input[name="trade_type"]').change(function() {
-        const method = $(this).val();
+    // 交易方式切换（标签式）
+    var methodNotes = {
+        direct: '双方直接联系，无手续费，快捷但需自行注意风险',
+        platform: '平台担保交易，限 500 BCT 以下，手续费 10%，安全便捷',
+        mediator: '平台客服中介，手续费 2%，安全有保障'
+    };
+    $('.method-tab[data-method]').click(function() {
+        const method = $(this).data('method');
         
-        // 显示/隐藏联系方式输入框
+        $('.method-tab[data-method]').removeClass('active');
+        $(this).addClass('active');
+        $('#tradeTypeMethod').val(method);
+        $('#methodNote').html('<i class="glyphicon glyphicon-info-sign"></i> ' + methodNotes[method]);
+        
+        // 直接交易需填写联系方式；平台/中介由平台联系
         if (method === 'direct') {
             $('#contactInfoGroup').show();
         } else {
@@ -1198,7 +1144,7 @@ $(document).ready(function() {
         const amount = parseInt($('#amount').val()) || 0;
         const price = parseFloat($('#price').val()) || 0.01;
         const type = $('#tradeType').val();
-        const method = $('input[name="trade_type"]:checked').val();
+        const method = $('#tradeTypeMethod').val();
         
         // 计算手续费率
         let feeRate = 0;
@@ -1227,16 +1173,18 @@ function initBatchMode() {
     if (!$('#batch_text').length) return;
 
     // 方向切换
-    $('.trade-type-option[data-batch-type]').click(function() {
-        $('.trade-type-option[data-batch-type]').removeClass('active');
+    $('#batchTypeSegmented .segment').click(function() {
+        $('#batchTypeSegmented .segment').removeClass('active');
         $(this).addClass('active');
         $('#batchTypeInput').val($(this).data('batch-type'));
         resetBatchPreview();
     });
 
-    // 交易方式切换
-    $('input[name="batch_trade_type"]').change(function() {
-        var m = $(this).val();
+    // 交易方式切换（标签式）
+    $('#batchMethodTabs .method-tab').click(function() {
+        var m = $(this).data('batch-method');
+        $('#batchMethodTabs .method-tab').removeClass('active');
+        $(this).addClass('active');
         $('#batchTradeTypeInput').val(m);
         if (m === 'mediator') {
             $('#batchContactGroup').hide();
