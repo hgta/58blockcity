@@ -164,6 +164,7 @@
         var lastKey = '';
         var timer = null;
         var stopped = false;
+        var initialStatus = opts.initialStatus || '';
 
         function setText(sel, text) {
             document.querySelectorAll(sel).forEach(function (el) { el.textContent = text; });
@@ -173,6 +174,12 @@
             if (!data || data.success !== true) return;
             var d = data.data || {};
             AuctionUI.setServerNow(data.server_now);
+
+            // 状态变化（即将开拍→竞拍中 / 竞拍中→落槌·流拍）→ 整页刷新，重排竞价台
+            if (initialStatus && d.status && d.status !== initialStatus) {
+                location.reload();
+                return;
+            }
 
             // 倒计时
             var cd = document.getElementById('acCountdown');
@@ -426,7 +433,7 @@
             AuctionUI.initBidForm({ auctionId: page.auctionId, csrf: page.csrf, api: page.apiBid });
             AuctionUI.initWatch({ auctionId: page.auctionId, csrf: page.csrf, api: page.apiWatch });
             if (page.poll) {
-                AuctionUI.initLot({ auctionId: page.auctionId, myId: page.myId, api: page.apiLot });
+                AuctionUI.initLot({ auctionId: page.auctionId, myId: page.myId, api: page.apiLot, initialStatus: page.initialStatus });
             }
         }
     }

@@ -1,7 +1,7 @@
 <?php
 $site_config['footer_name'] = '58拍卖 | BlockCity 拍卖平台';
 $site_config['footer_extra'] = ($site_config['footer_extra'] ?? '')
-    . '<script src="/assets/js/auction.js?v=20260914"></script>';
+    . '<script src="/assets/js/auction.js?v=20260915"></script>';
 ?>
 <!-- 主题切换（明亮 / 暗场）：随页脚渲染，所有 bid 页面可用 -->
 <button id="acThemeToggle" class="ac-theme-toggle" type="button" data-ac-theme="dark"

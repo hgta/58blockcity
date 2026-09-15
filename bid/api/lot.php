@@ -20,6 +20,9 @@ if ($id <= 0) {
 $auction  = new Auction($pdo);
 $viewerId = intval($_SESSION['user_id'] ?? 0);
 
+// 惰性推进状态机：保证停留中的详情页到点自动「开拍 / 落槌」（轻量，有索引）
+$auction->tick();
+
 $snapshot = $auction->getAuctionSnapshot($id, $viewerId);
 if (!$snapshot) {
     echo json_encode(['success' => false, 'message' => '拍卖不存在']);

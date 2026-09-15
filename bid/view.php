@@ -314,7 +314,8 @@ window.AC_PAGE = {
     auctionId: <?= $auctionId ?>,
     myId: <?= $userId ?>,
     csrf: '<?= generateCsrfToken() ?>',
-    poll: <?= $isActive ? 'true' : 'false' ?>,
+    poll: <?= ($isActive || $a['status'] === 'pending') ? 'true' : 'false' ?>,
+    initialStatus: '<?= $a['status'] ?>',
     apiLot: '/api/lot.php',
     apiBid: '/api/bid.php',
     apiWatch: '/api/watch.php'

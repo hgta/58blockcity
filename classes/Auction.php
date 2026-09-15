@@ -30,6 +30,16 @@ class Auction {
 
     public function __construct($pdo) {
         $this->pdo = $pdo;
+        // 关键：把 MySQL 会话时区对齐 PHP 时区。
+        // start/end_time 由用户表单(datetime-local)经 PHP strtotime 解析后入库，
+        // 状态推进(activateStarted/settleExpired)却用 MySQL NOW() 比较——
+        // 两者时区不一致时会出现「时间已过仍是即将开拍/迟迟不落槌」的错位。
+        // 统一为 PHP 偏移后，所有 NOW()/created_at/sold_at 与 PHP time() 完全同基准。
+        try {
+            $this->pdo->exec("SET time_zone = '" . date('P') . "'");
+        } catch (Exception $e) {
+            // 极少数托管环境禁止改会话时区，忽略（保持原行为）
+        }
         $this->block = new Block($pdo);
         $this->nft = new NFT($pdo);
         $this->notify = new Notification($pdo);
