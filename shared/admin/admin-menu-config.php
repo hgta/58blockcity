@@ -41,6 +41,11 @@ $ADMIN_SITES = [
         'url'  => 'https://task.58.tl/admin/dashboard.php',
         'icon' => 'fa-tasks',
     ],
+    'bid' => [
+        'name' => '58拍卖',
+        'url'  => 'https://bid.58.tl/admin/dashboard.php',
+        'icon' => 'fa-gavel',
+    ],
 ];
 
 // 各站点菜单配置
@@ -96,6 +101,10 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-tasks',       'text' => '任务列表',    'url' => 'tasks.php'],
         ['icon' => 'fa-hand-paper',  'text' => '认领管理',    'url' => 'claims.php'],
         ['icon' => 'fa-gavel',       'text' => '争议仲裁',    'url' => 'disputes.php'],
+    ],
+    'bid' => [
+        ['icon' => 'fa-home',        'text' => '拍卖看板',    'url' => 'dashboard.php'],
+        ['icon' => 'fa-gavel',       'text' => '拍卖单管理',  'url' => 'auctions.php'],
     ],
 ];
 
