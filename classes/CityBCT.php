@@ -140,33 +140,52 @@ class CityBCT {
             'active_orders' => 0
         ];
 
+        // 各指标独立容错：任一指标失败不应连累其余指标归零，
+        // 否则首页会出现「总市值变 0、跑马灯空白」这类大面积空白。
+
         // 24h 成交额
-        $stmt = $this->pdo->query("
-            SELECT COALESCE(SUM(amount * price), 0) as volume
-            FROM bct_transactions
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-        ");
-        $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("
+                SELECT COALESCE(SUM(amount * price), 0) as volume
+                FROM bct_transactions
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            ");
+            $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log('getMarketStats total_volume_24h: ' . $e->getMessage());
+        }
 
         // 总市值 = SUM(真实流通量 * cities.bct_current_price)
-        $stmt = $this->pdo->query("
-            SELECT COALESCE(SUM(GREATEST(COALESCE(c.popularity, 0) - COALESCE(c.popularity_consume, 0), 0) * c.bct_current_price), 0) as cap
-            FROM cities c
-        ");
-        $stats['total_market_cap'] = (float)$stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("
+                SELECT COALESCE(SUM(GREATEST(COALESCE(c.popularity, 0) - COALESCE(c.popularity_consume, 0), 0) * c.bct_current_price), 0) as cap
+                FROM cities c
+            ");
+            $stats['total_market_cap'] = (float)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log('getMarketStats total_market_cap: ' . $e->getMessage());
+        }
 
         // 涨跌城市数
-        $changes = $this->get24hChanges();
-        foreach ($changes as $change) {
-            if ($change > 0) $stats['gainers_count']++;
-            elseif ($change < 0) $stats['losers_count']++;
+        try {
+            $changes = $this->get24hChanges();
+            foreach ($changes as $change) {
+                if ($change > 0) $stats['gainers_count']++;
+                elseif ($change < 0) $stats['losers_count']++;
+            }
+        } catch (Exception $e) {
+            error_log('getMarketStats 24hChanges: ' . $e->getMessage());
         }
 
         // 活跃订单数
-        $stmt = $this->pdo->query("
-            SELECT COUNT(*) FROM bct_orders WHERE status IN ('pending', 'processing')
-        ");
-        $stats['active_orders'] = (int)$stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) FROM bct_orders WHERE status IN ('pending', 'processing')
+            ");
+            $stats['active_orders'] = (int)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log('getMarketStats active_orders: ' . $e->getMessage());
+        }
 
         return $stats;
     }
