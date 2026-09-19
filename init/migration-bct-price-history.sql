@@ -27,25 +27,29 @@ BEGIN
     ) THEN
         CREATE TABLE `bct_price_history` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
-            `city` varchar(100) NOT NULL COMMENT '城市/词条名',
+            -- 显式对齐 cities.name 的排序规则（utf8mb4_unicode_ci），
+            -- 否则与 cities 表 JOIN/子查询比较时会报 #1267 Illegal mix of collations
+            `city` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '城市/词条名',
             `price` decimal(10,2) NOT NULL COMMENT '变更后的当前价',
             `base_price` decimal(10,2) DEFAULT NULL COMMENT '变更时的基础价',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
             PRIMARY KEY (`id`),
             KEY `idx_city_created` (`city`, `created_at`),
             KEY `idx_created` (`created_at`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='BCT 城市价格历史（由 updatePrice 埋点写入）';
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='BCT 城市价格历史（由 updatePrice 埋点写入）';
     END IF;
 
     -- 2. 为存量城市补初始快照（仅当该城市尚无任何历史记录时），
     --    使历史表上线即有数据，避免冷启动期指标长期为空。
+    --    显式 COLLATE 对齐排序规则，避免 #1267 Illegal mix of collations。
     INSERT INTO `bct_price_history` (`city`, `price`, `base_price`, `created_at`)
     SELECT c.`name`, c.`bct_current_price`, c.`bct_base_price`, NOW()
     FROM `cities` c
     WHERE c.`name` IS NOT NULL
       AND c.`bct_current_price` IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM `bct_price_history` h WHERE h.`city` = c.`name`
+          SELECT 1 FROM `bct_price_history` h
+          WHERE h.`city` = c.`name` COLLATE utf8mb4_unicode_ci
       );
 END$$
 

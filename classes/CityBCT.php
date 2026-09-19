@@ -200,11 +200,11 @@ class CityBCT {
                 SELECT c.name AS city,
                     -- 当前价：该城市最新一条历史（24h 内无记录时即为那条未变的价格）
                     (SELECT h.price FROM bct_price_history h
-                     WHERE h.city = c.name COLLATE utf8mb4_general_ci
+                     WHERE h.city = c.name
                      ORDER BY h.created_at DESC, h.id DESC LIMIT 1) AS cur_price,
                     -- 前价：24 小时前及之前的最后一条
                     (SELECT h.price FROM bct_price_history h
-                     WHERE h.city = c.name COLLATE utf8mb4_general_ci
+                     WHERE h.city = c.name
                        AND h.created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
                      ORDER BY h.created_at DESC, h.id DESC LIMIT 1) AS prev_price
                 FROM cities c
