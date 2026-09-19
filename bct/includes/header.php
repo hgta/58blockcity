@@ -16,6 +16,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../','icon'=>'home','text'=>'返回首页'],
     ['url'=>'../market.php','icon'=>'chart-line','text'=>'行情'],
     ['url'=>'../trade.php','icon'=>'exchange-alt','text'=>'交易'],
+    ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
 $site_config['schema_search'] = $site_config['schema_search'] ?? 'https://bct.58.tl/search?q={search_term_string}';
 $site_config['main_class'] = 'bct-exchange';

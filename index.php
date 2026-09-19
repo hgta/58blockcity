@@ -399,7 +399,9 @@ $letters = range('A', 'Z');
                 <div>
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">帮助支持</h4>
                     <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
-                        <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1" style="color:#64748b;">使用指南</a></li>
+                        <li><a href="https://help.58.tl/" style="color:#64748b;">帮助中心</a></li>
+                        <li><a href="https://help.58.tl/faq" style="color:#64748b;">常见问题</a></li>
+                        <li><a href="https://help.58.tl/ask" style="color:#64748b;">AI 助手答疑</a></li>
                         <li><a href="https://www.blockcity.pub/?iclc=1" style="color:#64748b;">加入DAO</a></li>
                         <li><a href="https://www.blockcity.biz/naquba/" style="color:#64748b;">元宇宙店铺</a></li>
                         <li><a href="news.php" style="color:#64748b;">区块新闻</a></li>
@@ -446,5 +448,22 @@ $letters = range('A', 'Z');
         'description' => '基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。',
         'publisher_id' => 'https://www.58.tl/#organization',
     ]) ?>
+
+    <?php
+    // AI 助手悬浮窗 + 场景化帮助引导（change: help-center-ai-assistant）
+    $__aiWidgetOn = true;
+    try {
+        if (isset($pdo) && $pdo instanceof PDO) {
+            $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_widget_enabled'")->fetchColumn();
+            if ($r === '0') $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_assistant_enabled'")->fetchColumn();
+            if ($r === '0') $__aiWidgetOn = false;
+        }
+    } catch (Exception $e) {}
+    if ($__aiWidgetOn):
+    ?>
+    <script src="/js/ai-client.js" defer></script>
+    <script src="/js/ai-widget.js" defer></script>
+    <?php endif; ?>
+    <script src="/js/help-guide.js" defer></script>
 </body>
 </html>

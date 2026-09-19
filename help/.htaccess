@@ -1,0 +1,37 @@
+# 帮助中心 动态路由 + 旧静态页301
+# change: help-center-ai-assistant
+# 兼容两种部署：help.58.tl 独立域名(docroot=help/) 或 www.58.tl/help/ 子路径
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# ---------- 旧静态页 301 → 新地址 ----------
+RewriteRule ^help\.html$                          index.php [R=301,L]
+RewriteRule ^glossary\.html$                      glossary [R=301,L]
+RewriteRule ^buy-blocks-guide\.html$              article/buy-blocks-guide [R=301,L]
+RewriteRule ^create-city\.html$                   article/create-city-guide [R=301,L]
+RewriteRule ^why-create-city\.html$               article/why-create-city [R=301,L]
+RewriteRule ^why-create-city-business\.html$      article/why-create-city-business [R=301,L]
+RewriteRule ^why-create-city-celebrity\.html$     article/why-create-city-celebrity [R=301,L]
+RewriteRule ^why-create-city-community\.html$     article/why-create-city-community [R=301,L]
+RewriteRule ^why-create-city-influencer\.html$    article/why-create-city-influencer [R=301,L]
+RewriteRule ^why-create-city-organization\.html$  article/why-create-city-organization [R=301,L]
+
+# ---------- 动态路由 ----------
+RewriteRule ^category/([a-z0-9-]+)/?$   index.php?route=category&slug=$1 [L,QSA]
+RewriteRule ^article/([a-z0-9-]+)/?$    index.php?route=article&slug=$1  [L,QSA]
+RewriteRule ^search/?$                  index.php?route=search           [L,QSA]
+RewriteRule ^faq/?$                     index.php?route=faq              [L,QSA]
+RewriteRule ^glossary/?$                index.php?route=glossary         [L,QSA]
+RewriteRule ^ask/?$                     index.php?route=ask              [L,QSA]
+RewriteRule ^sitemap\.xml$              index.php?route=sitemap          [L]
+</IfModule>
+
+# 文章反馈接口直接放行
+<FilesMatch "^api\-">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</FilesMatch>
+
+DirectoryIndex index.php

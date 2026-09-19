@@ -202,7 +202,7 @@ require_once 'includes/header.php';
                     <input class="ac-input" type="number" name="amount" step="0.01" min="<?= $minBid ?>" value="<?= $minBid ?>" required>
                     <button type="submit" class="ac-btn ac-btn-primary"><i class="fas fa-gavel"></i> 出价</button>
                 </form>
-                <div class="ac-hint">
+                <div class="ac-hint" data-help-hint="bid-guide">
                     出价即代表接受拍卖规则。最后 <?= intval($extendWindow / 60) ?> 分钟内出价将自动顺延 <?= intval($extendStep / 60) ?> 分钟（最多 <?= $maxExtend ?> 次）。
                 </div>
                 <?php elseif (!$userId): ?>

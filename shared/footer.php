@@ -73,7 +73,9 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
             <div class="footer-col">
                 <h4>帮助支持</h4>
                 <ul>
-                    <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1"><i class="fas fa-book"></i> 使用指南</a></li>
+                    <li><a href="https://help.58.tl/"><i class="fas fa-book"></i> 帮助中心</a></li>
+                    <li><a href="https://help.58.tl/faq"><i class="fas fa-circle-question"></i> 常见问题</a></li>
+                    <li><a href="https://help.58.tl/ask"><i class="fas fa-robot"></i> AI 助手答疑</a></li>
                     <li><a href="https://www.blockcity.pub/?iclc"><i class="fas fa-map-marked-alt"></i> 进入城市区块</a></li>
                     <li><a href="https://www.blockcity.pub/?iclc=1"><i class="fas fa-users"></i> 加入 DAO</a></li>
                 </ul>
@@ -114,6 +116,23 @@ if (!empty($site_config['footer_extra'])) {
 
 <script src="/city/city.js"></script>
 <script>getCityInfo();</script>
+
+<?php
+// AI 助手悬浮窗 + 场景化帮助引导（change: help-center-ai-assistant）
+$__aiWidgetOn = true;
+try {
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_widget_enabled'")->fetchColumn();
+        if ($r === '0') $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_assistant_enabled'")->fetchColumn();
+        if ($r === '0') $__aiWidgetOn = false;
+    }
+} catch (Exception $e) { /* 表未建则默认开 */ }
+if ($__aiWidgetOn):
+?>
+<script src="https://www.58.tl/js/ai-client.js" defer></script>
+<script src="https://www.58.tl/js/ai-widget.js" defer></script>
+<?php endif; ?>
+<script src="https://www.58.tl/js/help-guide.js" defer></script>
 
 <!-- 回到顶部 -->
 <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部" style="position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:#ff6b00;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer;z-index:999;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:opacity 0.3s;">↑</button>

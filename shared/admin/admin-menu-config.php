@@ -55,6 +55,13 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-users',       'text' => '用户管理', 'url' => 'users.php'],
         ['icon' => 'fa-store',       'text' => '店铺管理', 'url' => 'shops.php'],
         ['icon' => 'fa-comments',    'text' => '评论管理', 'url' => 'reviews.php'],
+        ['icon' => 'fa-book',        'text' => '帮助分类', 'url' => 'help-categories.php'],
+        ['icon' => 'fa-file-lines',  'text' => '帮助文章', 'url' => 'help-articles.php'],
+        ['icon' => 'fa-circle-question', 'text' => 'FAQ管理', 'url' => 'help-faq.php'],
+        ['icon' => 'fa-book-bookmark',    'text' => '术语表', 'url' => 'help-glossary.php'],
+        ['icon' => 'fa-robot',       'text' => 'AI渠道配置', 'url' => 'ai-providers.php'],
+        ['icon' => 'fa-comments-dollar','text' => 'AI对话记录', 'url' => 'ai-chat-logs.php'],
+        ['icon' => 'fa-inbox',       'text' => '留言工单', 'url' => 'ai-tickets.php'],
     ],
     'block' => [
         ['icon' => 'fa-home',        'text' => '管理看板', 'url' => 'dashboard.php'],

@@ -1362,7 +1362,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $cityBreadcrum
         }
     </style>
 	
-<div class="city-header">
+<div class="city-header" data-help-complex="buy-blocks-guide">
     <div class="container">
         <h1 class="city-title"><?= htmlspecialchars($city_name) ?>区块城市</h1>
         <p class="city-subtitle">认领城市区块 · 共建元宇宙城市版图</p>

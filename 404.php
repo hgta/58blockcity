@@ -32,6 +32,11 @@
         <h2>页面不存在</h2>
         <p>您访问的页面可能已被移除或地址错误</p>
         <a href="/block/">返回区块城市首页</a>
+        <div style="margin-top:18px;font-size:14px;color:#999">
+            迷路了？<a href="https://help.58.tl/" style="background:none;padding:0;color:#ff6b00;text-decoration:underline;font-size:14px">帮助中心</a>
+            ·
+            <a href="https://help.58.tl/ask" style="background:none;padding:0;color:#ff6b00;text-decoration:underline;font-size:14px">问 AI 助手</a>
+        </div>
     </div>
 </body>
 </html>

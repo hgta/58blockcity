@@ -13,6 +13,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../rankings/','icon'=>'trophy','text'=>'排行榜'],
     ['url'=>'../author/list.php','icon'=>'palette','text'=>'作者库'],
     ['url'=>'../shop/list.php','icon'=>'store','text'=>'店铺列表'],
+    ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
 // 站内信从顶栏隐藏（个人中心内仍可访问）；购物车移到右侧用户区
 $site_config['show_message'] = false;

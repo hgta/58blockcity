@@ -14,7 +14,9 @@
         </div>
         <div class="footer-col">
             <h4>帮助支持</h4>
-            <a href="https://www.blockcity.vip/pages/index/help/?iclc=1">使用指南</a>
+            <a href="https://help.58.tl/">帮助中心</a>
+            <a href="https://help.58.tl/faq">常见问题</a>
+            <a href="https://help.58.tl/ask">AI 助手答疑</a>
             <a href="https://www.blockcity.pub/?iclc">进入城市区块</a>
             <a href="https://www.blockcity.pub/?iclc=1">加入 DAO</a>
         </div>
@@ -46,6 +48,23 @@
 <script>
 (function(){var b=document.getElementById('back-to-top');window.addEventListener('scroll',function(){b.style.display=window.scrollY>300?'block':'none'});})();
 </script>
+
+<?php
+// AI 助手悬浮窗 + 场景化帮助引导（change: help-center-ai-assistant）
+$__aiWidgetOn = true;
+try {
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_widget_enabled'")->fetchColumn();
+        if ($r === '0') $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_assistant_enabled'")->fetchColumn();
+        if ($r === '0') $__aiWidgetOn = false;
+    }
+} catch (Exception $e) {}
+if ($__aiWidgetOn):
+?>
+<script src="https://www.58.tl/js/ai-client.js" defer></script>
+<script src="https://www.58.tl/js/ai-widget.js" defer></script>
+<?php endif; ?>
+<script src="https://www.58.tl/js/help-guide.js" defer></script>
 
 </body>
 </html>

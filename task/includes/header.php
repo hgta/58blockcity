@@ -16,6 +16,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url' => '/create.php',  'icon' => 'plus-circle',         'text' => '发布任务'],
     ['url' => '/find.php',    'icon' => 'hand-holding-heart',  'text' => '找承接人'],
     ['url' => '/my.php',      'icon' => 'user',                'text' => '我的任务'],
+    ['url' => 'https://help.58.tl/', 'icon' => 'circle-question', 'text' => '帮助'],
 ];
 // 登录/个人中心等共享链接用域名根绝对路径，避免 user/ 等子目录相对路径错乱
 $site_config['url_dashboard'] = '/user/dashboard.php';

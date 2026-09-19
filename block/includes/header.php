@@ -96,6 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
             <a href="/purchase_list.php"><i class="fas fa-hand-holding-usd"></i>求购</a>
             <a href="/claim_list.php"><i class="fas fa-hand-holding-heart"></i>认领</a>
             <a href="/top200city.php"><i class="fas fa-trophy"></i>排行</a>
+            <a href="https://help.58.tl/" target="_blank"><i class="fas fa-circle-question"></i>帮助</a>
             <?php if ($isLoggedIn): ?>
             <a href="/messages/"><i class="fas fa-envelope"></i>站内信</a>
             <a href="/user/dashboard.php"><i class="fas fa-user"></i><?= htmlspecialchars(mb_substr($_SESSION['username'] ?? '我', 0, 4)) ?></a>

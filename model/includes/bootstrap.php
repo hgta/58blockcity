@@ -191,6 +191,7 @@ if (!function_exists('model_site_config')) {
                 ['url' => '/dramas.php',           'icon' => 'film',           'text' => '短剧'],
                 ['url' => '/rankings.php',         'icon' => 'trophy',         'text' => '排行榜'],
                 ['url' => '/apply.php',            'icon' => 'user-plus',      'text' => '申请加入'],
+                ['url' => 'https://help.58.tl/',   'icon' => 'circle-question','text' => '帮助'],
             ],
             'theme_color' => '#E8467C',
             'show_message' => false,

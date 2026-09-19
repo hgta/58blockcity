@@ -126,5 +126,14 @@ foreach ($allCities as $c) {
     </div>
 </main>
 
+<footer style="text-align:center;padding:26px 16px;color:#8d9199;font-size:13px;border-top:1px solid #f0f0f0">
+    <a href="https://help.58.tl/" style="color:#8d9199;margin:0 6px">帮助中心</a>·
+    <a href="https://help.58.tl/ask" style="color:#8d9199;margin:0 6px">AI 助手</a>·
+    <a href="/" style="color:#8d9199;margin:0 6px">返回首页</a>
+</footer>
+<script src="https://www.58.tl/js/ai-client.js" defer></script>
+<script src="https://www.58.tl/js/ai-widget.js" defer></script>
+<script src="https://www.58.tl/js/help-guide.js" defer></script>
+
 </body>
 </html>

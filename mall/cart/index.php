@@ -594,7 +594,7 @@ function normalizeImageUrl($imageUrl) {
         </div>
         
         <?php if (empty($cartItems)): ?>
-            <div class="empty-cart">
+            <div class="empty-cart" data-help-empty="mall-shopping-guide">
                 <div class="empty-cart-icon">
                     <i class="fas fa-shopping-cart"></i>
                 </div>

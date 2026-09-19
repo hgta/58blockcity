@@ -18,6 +18,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../index.php','icon'=>'users','text'=>'浏览互访圈'],
     ['url'=>'../circles/create.php','icon'=>'plus-circle','text'=>'创建互访圈'],
     ['url'=>'../rankings/index.php','icon'=>'trophy','text'=>'排行榜'],
+    ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="stylesheet" href="/assets/css/main.css">';
 

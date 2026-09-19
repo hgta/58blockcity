@@ -13,6 +13,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../nft/claim_list.php','icon'=>'hand-holding-heart','text'=>'认领'],
     ['url'=>'../nft/sale_list.php','icon'=>'tag','text'=>'售卖'],
     ['url'=>'../nft/purchase_list.php','icon'=>'hand-holding-usd','text'=>'求购'],
+    ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
 require_once __DIR__ . '/../../shared/header.php';
 

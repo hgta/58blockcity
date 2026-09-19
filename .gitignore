@@ -2,6 +2,9 @@
 config/database.php
 config/seo.php
 
+# AI 助手主密钥（服务器生成，绝不入库）
+config/ai-master.key
+
 # 系统文件
 .DS_Store
 Thumbs.db
