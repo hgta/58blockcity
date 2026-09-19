@@ -36,10 +36,50 @@ class CityBCT {
         return $stmt->fetch();
     }
     
-    // 更新城市人气值当前价
+    /**
+     * 更新城市人气值当前价
+     *
+     * 这里是所有改价途径（后台单行保存、后台批量设置、autoAdjustPrice 自动调价）
+     * 的唯一收口，因此价格历史在此埋点即可覆盖全部路径。
+     *
+     * 历史记录遵循两条约束：
+     *  - 仅在价格实际发生变化时写入，避免自动调价反复以同价调用产生冗余记录
+     *  - 记录失败不阻断价格更新（历史是派生数据，不应影响主流程）
+     */
     public function updatePrice($city, $newPrice) {
+        $newPrice = round((float)$newPrice, 2);
+
+        // 读取当前价与基础价：用于判断是否真的变化，以及记录当时的基础价
+        $stmt = $this->pdo->prepare("SELECT bct_current_price, bct_base_price FROM cities WHERE name = ?");
+        $stmt->execute([$city]);
+        $before = $stmt->fetch();
+        if (!$before) {
+            return false;
+        }
+
         $stmt = $this->pdo->prepare("UPDATE cities SET bct_current_price = ?, bct_price_updated = NOW(), updated_at = NOW() WHERE name = ?");
-        return $stmt->execute([$newPrice, $city]);
+        $ok = $stmt->execute([$newPrice, $city]);
+
+        // 价格未变化则不重复记录
+        if ($ok && round((float)$before['bct_current_price'], 2) !== $newPrice) {
+            $this->recordPriceHistory($city, $newPrice, $before['bct_base_price']);
+        }
+
+        return $ok;
+    }
+
+    /**
+     * 记录一条价格历史
+     *
+     * 容错：历史表写入异常不应影响价格更新主流程，因此这里吞掉异常并记录日志。
+     */
+    private function recordPriceHistory($city, $price, $basePrice = null) {
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO bct_price_history (city, price, base_price, created_at) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$city, $price, $basePrice, date('Y-m-d H:i:s')]);
+        } catch (Exception $e) {
+            error_log("recordPriceHistory failed for [{$city}]: " . $e->getMessage());
+        }
     }
     
     // 更新城市人气值基础价
@@ -131,21 +171,48 @@ class CityBCT {
         return $stats;
     }
 
-    // 获取所有城市 24h 涨跌幅
+    /**
+     * 获取所有城市的 24h 涨跌幅（批量，一次查询返回全部城市）
+     *
+     * 数据源为 bct_price_history（由 updatePrice 埋点写入），不再依赖
+     * bct_transactions —— 后者仅由平台交易撮合写入，而平台交易限 500 BCT，
+     * 大额挂单走 direct/mediator 永不成交，导致该表结构性为空、涨跌恒为 0。
+     *
+     * 口径为「时间点对齐」：
+     *   cur  = 城市最新一条历史价；若近 24h 无记录则回退为该最新一条（价格未变）
+     *   prev = 24 小时前及之前的最后一条历史价
+     * 与旧实现「要求前价落在 [24h,48h] 窗口内」相比，不因窗口内缺记录而丢弃城市。
+     *
+     * 性能：全部计算在单条 SQL 内完成，避免对 421 个城市逐个查询（N+1）。
+     *
+     * @return array [city => change_pct]，无任何历史记录的城市不出现在结果中
+     */
     public function get24hChanges() {
         $changes = [];
         $stmt = $this->pdo->query("
             SELECT t.city,
-                (t.current_price - COALESCE(t.prev_price, t.current_price)) / NULLIF(COALESCE(t.prev_price, t.current_price), 0) * 100 as change_pct
+                CASE
+                    WHEN t.cur_price IS NULL OR t.cur_price = 0 THEN 0
+                    WHEN t.prev_price IS NULL THEN 0
+                    ELSE (t.cur_price - t.prev_price) / t.prev_price * 100
+                END AS change_pct
             FROM (
                 SELECT c.name AS city,
-                    (SELECT price FROM bct_transactions WHERE city = c.name COLLATE utf8mb4_general_ci AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY created_at DESC LIMIT 1) as current_price,
-                    (SELECT price FROM bct_transactions WHERE city = c.name COLLATE utf8mb4_general_ci AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) AND created_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY created_at DESC LIMIT 1) as prev_price
+                    -- 当前价：该城市最新一条历史（24h 内无记录时即为那条未变的价格）
+                    (SELECT h.price FROM bct_price_history h
+                     WHERE h.city = c.name COLLATE utf8mb4_general_ci
+                     ORDER BY h.created_at DESC, h.id DESC LIMIT 1) AS cur_price,
+                    -- 前价：24 小时前及之前的最后一条
+                    (SELECT h.price FROM bct_price_history h
+                     WHERE h.city = c.name COLLATE utf8mb4_general_ci
+                       AND h.created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                     ORDER BY h.created_at DESC, h.id DESC LIMIT 1) AS prev_price
                 FROM cities c
             ) t
+            WHERE t.cur_price IS NOT NULL
         ");
         while ($row = $stmt->fetch()) {
-            $changes[$row['city']] = round($row['change_pct'], 2);
+            $changes[$row['city']] = round((float)$row['change_pct'], 2);
         }
         return $changes;
     }
@@ -171,18 +238,31 @@ class CityBCT {
         return (float)$stmt->fetchColumn();
     }
 
-    // 获取城市 24h 最高/最低成交价
+    /**
+     * 获取城市 24h 最高/最低价
+     *
+     * 数据源为 bct_price_history（价格历史），不再是成交流水。
+     * 无 24h 内记录时返回 0，表示无数据 —— 不以其它数据填充。
+     */
     public function getCity24hHighLow($city) {
         $stmt = $this->pdo->prepare("
             SELECT COALESCE(MAX(price), 0) as high, COALESCE(MIN(price), 0) as low
-            FROM bct_transactions
+            FROM bct_price_history
             WHERE city = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
         ");
         $stmt->execute([$city]);
         return $stmt->fetch();
     }
 
-    // 获取城市价格历史（折线/OHLC）
+    /**
+     * 获取城市价格走势（折线/OHLC）
+     *
+     * 数据源为 bct_price_history（价格历史）。
+     *
+     * 注意 volume 字段：成交量必须来自真实成交（bct_transactions），而该表
+     * 结构性为空（见 get24hChanges 注释）。这里显式返回 0 而非用「调价次数」
+     * 等数据冒充，待成交流水机制建立后再接入。
+     */
     public function getPriceHistory($city, $interval = '24h') {
         $intervalMap = [
             '1h' => ['start' => 'INTERVAL 1 HOUR', 'group' => '%Y-%m-%d %H:%i'],
@@ -197,11 +277,10 @@ class CityBCT {
                 DATE_FORMAT(created_at, ?) as time_key,
                 MIN(price) as low,
                 MAX(price) as high,
-                SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at ASC), ',', 1) as open,
-                SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at DESC), ',', 1) as close,
-                SUM(amount) as volume,
+                SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at ASC, id ASC), ',', 1) as open,
+                SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at DESC, id DESC), ',', 1) as close,
                 MIN(created_at) as first_time
-            FROM bct_transactions
+            FROM bct_price_history
             WHERE city = ? AND created_at >= DATE_SUB(NOW(), {$cfg['start']})
             GROUP BY time_key
             ORDER BY first_time ASC
@@ -217,7 +296,8 @@ class CityBCT {
                 'high' => (float)$row['high'],
                 'low' => (float)$row['low'],
                 'close' => (float)$row['close'],
-                'volume' => (float)$row['volume']
+                // 成交量依赖成交流水（bct_transactions），当前该表无记录，故为 0
+                'volume' => 0.0
             ];
         }
         return $history;

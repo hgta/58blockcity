@@ -85,6 +85,26 @@ CREATE TABLE IF NOT EXISTS `bct_transactions` (
 -- --------------------------------------------------------
 
 --
+-- 表的结构 `bct_price_history`
+--
+-- BCT 城市价格历史：由 CityBCT::updatePrice() 埋点写入，
+-- 用于涨跌城市/涨跌榜/24h 高低价/价格走势等行情指标。
+--
+
+CREATE TABLE IF NOT EXISTS `bct_price_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `city` varchar(100) NOT NULL COMMENT '城市/词条名',
+  `price` decimal(10,2) NOT NULL COMMENT '变更后的当前价',
+  `base_price` decimal(10,2) DEFAULT NULL COMMENT '变更时的基础价',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_city_created` (`city`,`created_at`),
+  KEY `idx_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='BCT 城市价格历史（由 updatePrice 埋点写入）';
+
+-- --------------------------------------------------------
+
+--
 -- 表的结构 `blocks`
 --
 
