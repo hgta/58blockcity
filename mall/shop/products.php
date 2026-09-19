@@ -1936,19 +1936,27 @@ if (videoInput && videoArea) {
 
 // Canvas 截取视频当前帧作为封面（AJAX 上传，避免 base64 超过 post_max_size）
 function captureVideoFrame() {
-    if (!captureEl.src || captureEl.readyState < 2) {
+    // 优先从用户实际拖动/暂停的预览播放器截帧，隐藏 captureEl 未同步 currentTime 恒停在第 0 帧
+    var previewEl = videoArea ? videoArea.querySelector('video') : null;
+    var srcEl = null;
+    if (previewEl && previewEl.readyState >= 2 && previewEl.videoWidth > 0) {
+        srcEl = previewEl;
+    } else if (captureEl.src && captureEl.readyState >= 2 && captureEl.videoWidth > 0) {
+        srcEl = captureEl;
+    }
+    if (!srcEl) {
         thumbPreview.innerHTML = '<span style="color:#fca5a5;">视频未就绪，请稍后再试</span>';
         return;
     }
     try {
         var maxW = 800;
-        var vw = captureEl.videoWidth || 640;
-        var vh = captureEl.videoHeight || 480;
+        var vw = srcEl.videoWidth || 640;
+        var vh = srcEl.videoHeight || 480;
         var ratio = Math.min(maxW / vw, 1.0);
         videoCanvas.width = Math.round(vw * ratio);
         videoCanvas.height = Math.round(vh * ratio);
         var ctx = videoCanvas.getContext('2d');
-        ctx.drawImage(captureEl, 0, 0, videoCanvas.width, videoCanvas.height);
+        ctx.drawImage(srcEl, 0, 0, videoCanvas.width, videoCanvas.height);
 
         // Canvas → Blob → AJAX 上传
         videoCanvas.toBlob(function(blob) {
