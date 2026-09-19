@@ -392,6 +392,7 @@ function requireCsrf() {
  * @param int    $maxWidth 最大宽度（像素）
  * @return string 最终存储路径（相对 uploads/...）
  */
+if (!function_exists('compressImage')) {
 function compressImage($srcPath, $dir, $origName, $maxWidth = 1200) {
     $info = getimagesize($srcPath);
     if (!$info) {
@@ -448,3 +449,6 @@ function compressImage($srcPath, $dir, $origName, $maxWidth = 1200) {
 
     return str_replace('../', '', $newPath);
 }
+}
+
+
