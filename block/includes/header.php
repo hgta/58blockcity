@@ -8,7 +8,12 @@ $isLoggedIn = isLoggedIn();
 $site_config['title']       = 'BlockCity区块市场 - 区块交易平台 | 58 BlockCity';
 $site_config['description'] = 'BlockCity区块城市区块交易平台，支持200+城市区块地图浏览、跨区相邻区块合并认领、区块买卖交易。';
 $site_config['keywords']    = '58,区块,区块城市,BlockCity,DAO,区块交易,区块认领';
-$site_config['canonical_url'] = 'https://block.58.tl/';
+// canonical：按当前请求 URL 生成（此前写死为首页，导致所有内页 canonical 都指向首页，
+// 是「只收录首页」的直接原因之一）。页面可传值覆盖，如详情页需固定路径。
+if (empty($site_config['canonical_url'])) {
+    require_once __DIR__ . '/../../classes/SeoHelper.php';
+    $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
+}
 $site_config['og_image']    = 'https://58.tl/assets/images/og-block.jpg';
 // 全局品牌实体（与主域共用同一 @id，聚合为同一组织）
 require_once __DIR__ . '/../../shared/organization.php';

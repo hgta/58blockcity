@@ -2,7 +2,11 @@
 $site_config['title']       = $site_config['title'] ?? '58人气值购物商城 - BCT商城平台 | 58 Mall';
 $site_config['description'] = $site_config['description'] ?? '人气值商城是基于区块城市BlockCity的BCT商城交易平台，支持BCT人气值支付、多种商品分类、免费开店上架商品。';
 $site_config['keywords']    = $site_config['keywords'] ?? '58,人气值,BCT,区块城市,BlockCity,商城,购物,BCT支付,人气值购物';
-$site_config['canonical_url'] = $site_config['canonical_url'] ?? 'https://mall.58.tl/';
+// canonical：按当前请求 URL 生成（此前默认写死为首页，导致内页 canonical 都指向首页）
+if (empty($site_config['canonical_url'])) {
+    require_once __DIR__ . '/../../classes/SeoHelper.php';
+    $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
+}
 $site_config['og_image']    = $site_config['og_image'] ?? 'https://58.tl/assets/images/og-mall.jpg';
 $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '人气值';
