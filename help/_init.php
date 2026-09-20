@@ -4,9 +4,8 @@
  * change: help-center-ai-assistant (task 2.1)
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once __DIR__ . '/../includes/session.php';
 
 date_default_timezone_set('Asia/Shanghai');
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);

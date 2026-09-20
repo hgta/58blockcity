@@ -1,6 +1,6 @@
 <?php
 // 我的申请 - 申请状态查看页
-if (session_status() === PHP_SESSION_NONE) session_start();
+// 会话由 includes/auth.php 统一初始化（设置跨子站 cookie domain），勿在此 session_start()
 require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Application.php';

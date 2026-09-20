@@ -8,7 +8,7 @@ require_once '../../classes/Author.php';
 require_once '../../classes/SeoHelper.php';
 require_once '../author/card.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+// 会话已由上面的 includes/auth.php 初始化（含跨子站 cookie domain）
 if (empty($_SESSION['user_id'])) {
     header('Location: ../auth/login.php?redirect=' . urlencode('../user/following.php'));
     exit;

@@ -4,7 +4,8 @@
  * 数据源：cities 表（管理后台「同步数据」一键更新，见 classes/CitySyncer.php）
  * 排序：?sort=activated 按开启区块数 / ?sort=population 按居民人数 / 默认综合排名
  */
-session_start();
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once __DIR__ . '/includes/session.php';
 require_once __DIR__ . '/config/database.php';
 
 $sort = isset($_GET['sort']) ? (string)$_GET['sort'] : '';

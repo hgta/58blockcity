@@ -13,8 +13,9 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/City.php';
 require_once __DIR__ . '/includes/city-portal-render.php';
 
-// 登录态：导航按钮随会话切换（session 须在一切输出前开启）
-session_start();
+// 登录态：导航按钮随会话切换
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once __DIR__ . '/includes/session.php';
 
 // 缓存有效期（秒）：TTL 内直接吐缓存文件；批量重生成由 city/build-static.php 覆盖
 if (!defined('CITY_PORTAL_CACHE_TTL')) {

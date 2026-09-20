@@ -27,11 +27,17 @@
     })();
     </script>
 <?php
-session_start();
+// 会话统一由 includes/auth.php 初始化（设置 .58.tl 跨子站 cookie domain）。
+// 不要在此处直接 session_start()，否则会用默认 domain 启动，
+// 导致登录页（.58.tl）写入的 session 在本页读不到。
 require_once 'config/database.php';
+require_once 'includes/auth.php';
 require_once 'classes/City.php';
 require_once 'classes/SeoHelper.php';
 require_once 'shared/organization.php';
+// 触发登录态判定：isLoggedIn() 内部会在 session 为空时
+// 尝试用 remember_me cookie 自动登录，仅检查 $_SESSION 会漏掉这种情况。
+$isLoggedIn = isLoggedIn();
 $city = new City($pdo);
 $hotCities = $city->getHotCitiesList(18);
 $citiesByLetter = $city->getCitiesByLetter();
@@ -171,7 +177,7 @@ $letters = range('A', 'Z');
 				<a href="https://v.58.tl/" class="nav-button">互访圈</a>
 				<a href="https://bid.58.tl/" class="nav-button">拍卖</a>
 				<a href="https://task.58.tl/" class="nav-button">任务广场</a>
-				<?php if (isset($_SESSION['user_id'])): ?>
+				<?php if ($isLoggedIn): ?>
 					<a href="https://block.58.tl/user/dashboard.php" class="nav-button" style="background:#ff6b00;color:#fff;">个人中心</a>
 					<a href="auth/logout.php" class="nav-button">退出</a>
 				<?php else: ?>

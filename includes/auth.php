@@ -6,41 +6,9 @@
  * 各子站的 includes/auth.php 为透明代理。
  */
 
-// 统一常量
-if (!defined('AUTH_COOKIE_DOMAIN')) {
-    define('AUTH_COOKIE_DOMAIN', '.58.tl');
-}
-if (!defined('AUTH_REMEMBER_DAYS')) {
-    define('AUTH_REMEMBER_DAYS', 30);
-}
-if (!defined('AUTH_REGENERATE_SECONDS')) {
-    define('AUTH_REGENERATE_SECONDS', 1800); // 30分钟
-}
-if (!defined('AUTH_IDLE_TIMEOUT')) {
-    define('AUTH_IDLE_TIMEOUT', 3600); // 1小时无操作 session 过期
-}
-
-// 启动会话并进行合理配置
-if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params([
-        'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
-        'path'     => '/',
-        'domain'   => AUTH_COOKIE_DOMAIN,
-        'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-    
-    session_start();
-    
-    // 防止会话固定攻击：定期重新生成 session ID
-    if (empty($_SESSION['_regenerated_at'])) {
-        $_SESSION['_regenerated_at'] = time();
-    } elseif (time() - $_SESSION['_regenerated_at'] > AUTH_REGENERATE_SECONDS) {
-        session_regenerate_id(true);
-        $_SESSION['_regenerated_at'] = time();
-    }
-}
+// 统一常量的定义与会话启动已抽到 includes/session.php，
+// 保证「设置 cookie domain → 启动会话」的顺序在全站唯一。
+require_once __DIR__ . '/session.php';
 
 /**
  * 检查用户是否已登录，包含自动登录功能
@@ -134,6 +102,16 @@ function checkLogin() {
     if (isSessionExpired()) {
         $_SESSION = [];
         session_destroy();
+        // session_destroy() 后需重新设置 cookie 参数再启动，
+        // 否则新会话 cookie domain 退回默认值，跨子站登录态会丢失
+        session_set_cookie_params([
+            'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
+            'path'     => '/',
+            'domain'   => AUTH_COOKIE_DOMAIN,
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
         // 不调用 logout()，保留 remember_me cookie 让 isLoggedIn() 自动登录
     }

@@ -19,13 +19,32 @@
  */
 
 if (!isset($site_config)) { die('缺少站点配置'); }
-if (session_status() === PHP_SESSION_NONE) session_start();
+// 会话统一初始化（设置跨子站 cookie domain .58.tl）。
+// 若调用方已用默认参数 session_start()，此处无法再改 domain，
+// 故入口页应先 require includes/session.php 再输出。
+require_once __DIR__ . '/../includes/session.php';
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+// 统一判定登录态：isLoggedIn() 会在 session 为空时尝试用 remember_me cookie
+// 自动登录。仅检查 $_SESSION['user_id'] 会漏掉「记住我」的用户。
+// 需 $pdo 已就绪（auth.php 的 attemptAutoLogin 依赖它）。
+if (!isset($isLoggedIn)) {
+    $isLoggedIn = false;
+    $authFile = __DIR__ . '/../includes/auth.php';
+    if (isset($pdo) && file_exists($authFile)) {
+        require_once $authFile;
+        if (function_exists('isLoggedIn')) {
+            $isLoggedIn = isLoggedIn();
+        }
+    } else {
+        $isLoggedIn = isset($_SESSION['user_id']);
+    }
+}
 
 // 加载通知数据（全站通用）
 $notification_count = 0;
 $notifications = [];
-if (isset($_SESSION['user_id']) && isset($pdo)) {
+if ($isLoggedIn && isset($pdo)) {
     if (!class_exists('Notification')) {
         $notifyClassPath = __DIR__ . '/../classes/Notification.php';
         if (file_exists($notifyClassPath)) {
@@ -41,7 +60,7 @@ if (isset($_SESSION['user_id']) && isset($pdo)) {
 
 // 加载站内信未读数
 $message_unread = 0;
-if (isset($_SESSION['user_id']) && isset($pdo) && !isset($message_unread_computed)) {
+if ($isLoggedIn && isset($pdo) && !isset($message_unread_computed)) {
     if (!class_exists('Message')) {
         $msgClassPath = __DIR__ . '/../classes/Message.php';
         if (file_exists($msgClassPath)) { require_once $msgClassPath; }
@@ -232,7 +251,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
             <?php if (($site_config['show_cart'] ?? false)): ?>
                 <a href="<?= $site_config['url_cart'] ?? '../cart/index.php' ?>" class="nav-button"><i class="fas fa-shopping-cart"></i> 购物车</a>
             <?php endif; ?>
-            <?php if (isset($_SESSION['user_id'])): ?>
+            <?php if ($isLoggedIn): ?>
                 <div class="dropdown d-inline-block">
                     <a href="#" class="nav-button" id="notificationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-bell"></i>

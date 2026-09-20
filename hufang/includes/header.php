@@ -24,9 +24,13 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="st
 
 
 // 计算当前用户未读通知数与最近通知列表（用于头部下拉）
+// 用 isLoggedIn() 而非直接读 $_SESSION，以支持 remember_me 自动登录
+if (!isset($isLoggedIn)) {
+    $isLoggedIn = function_exists('isLoggedIn') ? isLoggedIn() : isset($_SESSION['user_id']);
+}
 $notification_count = 0;
 $notifications = [];
-if (isset($_SESSION['user_id'])) {
+if ($isLoggedIn) {
     if (!isset($pdo)) {
         require_once __DIR__ . '/../../config/database.php';
     }

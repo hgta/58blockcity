@@ -4,7 +4,8 @@
  * 子站调用: require_once $sharedPath . 'user/messages.php';
  */
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once dirname(__DIR__, 2) . '/includes/session.php';
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
     exit;

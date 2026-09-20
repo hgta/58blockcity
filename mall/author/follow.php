@@ -4,7 +4,7 @@ require_once '../../config/database.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Author.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+// 会话已由上面的 includes/auth.php 初始化（含跨子站 cookie domain）
 header('Content-Type: application/json; charset=utf-8');
 
 $userId = $_SESSION['user_id'] ?? 0;

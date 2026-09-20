@@ -13,7 +13,8 @@
     <link rel="manifest" href="/site.webmanifest" />
     <script src="/city/city.js"></script>
 <?php
-session_start();
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once 'includes/session.php';
 require_once 'config/database.php';
 require_once 'classes/City.php';
 $city = new City($pdo);

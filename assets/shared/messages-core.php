@@ -5,7 +5,8 @@
  */
 if (!defined('MSG_ROOT')) die('请先定义 MSG_ROOT 常量');
 
-session_start();
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once MSG_ROOT . '/includes/session.php';
 require_once MSG_ROOT . '/config/database.php';
 require_once MSG_ROOT . '/classes/Message.php';
 require_once MSG_ROOT . '/classes/User.php';

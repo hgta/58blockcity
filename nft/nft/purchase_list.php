@@ -5,7 +5,8 @@ require_once '../../classes/City.php';
 require_once '../../classes/PurchaseRequest.php';
 
 // 可选登录，无需强制
-session_start();
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once '../../includes/session.php';
 $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $_SESSION['user_id'] ?? 0;
 

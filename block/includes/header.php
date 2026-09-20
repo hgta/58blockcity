@@ -1,6 +1,9 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-$isLoggedIn = isset($_SESSION['user_id']);
+// 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
+require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/auth.php';
+// 用 isLoggedIn() 而非直接读 $_SESSION，以支持 remember_me 自动登录
+$isLoggedIn = isLoggedIn();
 
 $site_config['title']       = 'BlockCity区块市场 - 区块交易平台 | 58 BlockCity';
 $site_config['description'] = 'BlockCity区块城市区块交易平台，支持200+城市区块地图浏览、跨区相邻区块合并认领、区块买卖交易。';
