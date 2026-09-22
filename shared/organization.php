@@ -42,7 +42,7 @@ if (!function_exists('organization_json_ld')) {
             'url'         => 'https://www.58.tl/',
             'logo'        => [
                 '@type'  => 'ImageObject',
-                'url'    => 'https://58.tl/apple-touch-icon.png',
+                'url'    => 'https://www.58.tl/apple-touch-icon.png',
                 'width'  => 180,
                 'height' => 180,
             ],

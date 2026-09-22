@@ -62,7 +62,7 @@ require_once 'includes/header.php';
         ?>
         <div class="club-post-row">
           <div class="club-post-avatar">
-            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" loading="lazy" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" loading="lazy" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
           </div>
           <div class="club-post-body">
             <a class="club-post-title" href="<?= $pUrl ?>">

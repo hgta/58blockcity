@@ -201,7 +201,7 @@ if (isset($_SESSION['error'])) {
                             <div class="avatar-upload">
                                 <div class="avatar-preview">
                                     <img src="<?= htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')) ?>" 
-                                         id="avatarPreview" class="avatar-img" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                         id="avatarPreview" class="avatar-img" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                 </div>
                                 <div class="avatar-upload-controls">
                                     <input type="file" id="avatar" name="avatar" accept="image/*" 
@@ -247,7 +247,7 @@ if (isset($_SESSION['error'])) {
                     <div class="account-summary">
                         <div class="account-avatar">
                             <img src="<?= htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')) ?>" 
-                                 class="avatar-img-large" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                 class="avatar-img-large" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                         </div>
                         <div class="account-details">
                             <h4><?= htmlspecialchars($userData['username']) ?></h4>

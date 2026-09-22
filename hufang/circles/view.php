@@ -82,7 +82,7 @@ $site_config['title']       = SeoHelper::title($circleName . ' - 58互访圈');
 $site_config['description'] = SeoHelper::description($circleDesc, '58互访圈');
 $site_config['keywords']    = '58,互访圈,区块城市,' . $circleName . ',' . $circleCity . ',城市社交';
 $site_config['canonical_url'] = $canonicalUrl;
-$site_config['og_image']    = 'https://58.tl/assets/images/og-hufang.jpg';
+$site_config['og_image']    = 'https://www.58.tl/assets/images/og-hufang.jpg';
 $site_config['og_type']     = 'website';
 
 // 互访圈 Organization 结构化数据
@@ -122,7 +122,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
     <div class="circle-view-header">
         <div class="circle-basic-info">
             <img src="<?= htmlspecialchars(User::avatarUrl($ownerInfo['avatar'] ?? '')) ?>"
-                 class="circle-owner-avatar" alt="<?= htmlspecialchars($ownerInfo['username']) ?>" style="width:64px;height:64px;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                 class="circle-owner-avatar" alt="<?= htmlspecialchars($ownerInfo['username']) ?>" style="width:64px;height:64px;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
             
             <div class="circle-title">
                 <h1><?= htmlspecialchars($circleInfo['name']) ?></h1>
@@ -186,7 +186,7 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '') . $circleJsonLd 
                                 <div class="visit-item status-<?= $visit['status'] ?>">
                                     <div class="visit-user">
                                         <img src="<?= htmlspecialchars(User::avatarUrl($visit['avatar'] ?? '')) ?>"
-                                             class="avatar" alt="<?= htmlspecialchars($visit['username']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:50%;flex-shrink:0;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                             class="avatar" alt="<?= htmlspecialchars($visit['username']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:50%;flex-shrink:0;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                         <div class="user-info">
                                             <span class="username"><?= htmlspecialchars($visit['applicant_circle_name']) ?></span>
                                             <span class="visit-date"><?= date('Y-m-d', strtotime($visit['created_at'])) ?></span>

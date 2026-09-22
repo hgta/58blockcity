@@ -44,7 +44,7 @@ require_once '../includes/header.php';
     <div class="club-card">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
         <div class="club-author-avatar" style="width:64px;height:64px;font-size:24px;">
-          <img src="<?= htmlspecialchars(User::avatarUrl($avatar)) ?>" alt="<?= htmlspecialchars($username) ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+          <img src="<?= htmlspecialchars(User::avatarUrl($avatar)) ?>" alt="<?= htmlspecialchars($username) ?>" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
         </div>
         <div>
           <div class="club-author-name" style="font-size:20px;"><?= htmlspecialchars($username) ?></div>

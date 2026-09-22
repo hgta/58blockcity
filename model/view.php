@@ -114,7 +114,7 @@ if ($videoCover !== '') {
 } elseif ($modelAvatar !== '') {
     $ogImage = $modelAvatar;
 } else {
-    $ogImage = 'https://58.tl/assets/images/default.jpg';
+    $ogImage = 'https://www.58.tl/assets/images/default.jpg';
 }
 
 $personExtra = [

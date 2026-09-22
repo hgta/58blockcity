@@ -129,7 +129,7 @@ if (!function_exists('ac_render_bids')) {
             $avatar = $b['bidder_avatar'] ?? '';
             echo '<div class="ac-bid-row' . ($isMe ? ' is-me' : '') . '">';
             echo '<div class="ac-bid-who">';
-            echo '<img class="ac-bid-avatar" alt="" src="' . htmlspecialchars($avatar ?: 'https://58.tl/assets/images/default.jpg') . '">';
+            echo '<img class="ac-bid-avatar" alt="" src="' . htmlspecialchars($avatar ?: 'https://www.58.tl/assets/images/default.jpg') . '">';
             echo '<span>' . htmlspecialchars(ac_bidder_label($b, $viewerId)) . '</span>';
             echo '</div>';
             echo '<div style="display:flex;align-items:center;gap:12px;">';

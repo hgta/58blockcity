@@ -52,7 +52,7 @@ require_once '../includes/header.php';
     <div class="dash-card">
         <div class="dash-head">
             <div class="dash-avatar">
-                <img src="<?= htmlspecialchars(User::avatarUrl($avatar)) ?>" alt="" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                <img src="<?= htmlspecialchars(User::avatarUrl($avatar)) ?>" alt="" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
             </div>
             <div>
                 <div class="dash-name"><?= htmlspecialchars($username) ?></div>

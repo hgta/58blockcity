@@ -26,8 +26,10 @@ RewriteRule ^mall/model/([0-9]+)-.*\.html$ mall/model/view.php?id=$1 [B,L,QSA]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
-# 规范化 www 与非 www（请按实际主域名选择其一）
-# 选项 A：强制 www
+# 规范化 www 与非 www
+# 主域已确定为 www.58.tl（见 openspec/changes/www-canonical-normalization）。
+# 生产环境由 nginx 处理 301（见 docs/nginx-rewrite.conf 第 1b 节）。
+# 若使用 Apache 且未在 nginx 层处理，取消下面两行注释：
 # RewriteCond %{HTTP_HOST} ^58\.tl$ [NC]
 # RewriteRule ^(.*)$ https://www.58.tl/$1 [L,R=301]
 

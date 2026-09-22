@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="value">
                                 <div class="user-info">
                                     <img src="<?= htmlspecialchars(User::avatarUrl($currentUserId == $visitInfo['visitor_id'] ? $ownerInfo['avatar'] : $visitorInfo['avatar'] ?? '')) ?>" 
-                                         class="avatar-sm" alt="用户头像" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                         class="avatar-sm" alt="用户头像" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                     <span><?= htmlspecialchars($currentUserId == $visitInfo['visitor_id'] ? $ownerInfo['username'] : $visitorInfo['username']) ?></span>
                                 </div>
                             </div>

@@ -108,7 +108,7 @@ $orgJsonLd = organization_json_ld();
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <?php endif; ?>
-    <link rel="icon" href="https://58.tl/assets/images/favicon.ico">
+    <link rel="icon" href="https://www.58.tl/assets/images/favicon.ico">
     <?php if (!empty($_SESSION['csrf_token'])): ?>
     <meta name="csrf-token" content="<?= $_SESSION['csrf_token'] ?>">
     <?php endif; ?>
@@ -130,16 +130,16 @@ $orgJsonLd = organization_json_ld();
     </script>
     <?= $orgJsonLd ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://58.tl/assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://58.tl/assets/css/main.css">
+    <link rel="stylesheet" href="https://www.58.tl/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://58.tl/assets/js/main.js"></script>
-    <script src="https://58.tl/assets/js/message-modal.js"></script>
+    <script src="https://www.58.tl/assets/js/main.js"></script>
+    <script src="https://www.58.tl/assets/js/message-modal.js"></script>
     <!-- 头像全局常量（JS 端与 User::avatarUrl() 保持一致） -->
     <script>
-    window.AVATAR_BASE = 'https://58.tl/assets/images/';
-    window.DEFAULT_AVATAR = 'https://58.tl/assets/images/default.jpg';
+    window.AVATAR_BASE = 'https://www.58.tl/assets/images/';
+    window.DEFAULT_AVATAR = 'https://www.58.tl/assets/images/default.jpg';
     </script>
     <?= $extra_head ?>
     <!-- 51.LA 统计 -->

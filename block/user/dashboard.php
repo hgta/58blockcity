@@ -59,7 +59,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                     <div class="avatar-container">
                         <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" 
                              alt="<?= htmlspecialchars($userInfo['username']) ?>" 
-                             class="avatar-img" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                             class="avatar-img" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                     </div>
                     <h3><?= htmlspecialchars($userInfo['username']) ?></h3>
                     <p class="text-muted"><?= htmlspecialchars($userInfo['city'] ?? '未设置城市') ?></p>

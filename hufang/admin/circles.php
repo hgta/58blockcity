@@ -118,7 +118,7 @@ require_once '../../shared/admin/admin-header.php';
                             </td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:8px;">
-                                    <img src="<?= htmlspecialchars(User::avatarUrl($creator['avatar'] ?? '')) ?>" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                    <img src="<?= htmlspecialchars(User::avatarUrl($creator['avatar'] ?? '')) ?>" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                     <span><?= htmlspecialchars($creator['username']) ?></span>
                                 </div>
                             </td>

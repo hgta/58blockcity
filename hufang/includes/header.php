@@ -9,7 +9,7 @@ if (empty($site_config['canonical_url'])) {
     require_once __DIR__ . '/../../classes/SeoHelper.php';
     $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
 }
-$site_config['og_image']    = $site_config['og_image'] ?? 'https://58.tl/assets/images/og-hufang.jpg';
+$site_config['og_image']    = $site_config['og_image'] ?? 'https://www.58.tl/assets/images/og-hufang.jpg';
 $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '互访圈';
 $site_config['logo_tag']    = $site_config['logo_tag'] ?? '城市间互访交流平台';

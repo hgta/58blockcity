@@ -162,11 +162,11 @@ $images = getFilteredImageFiles($imageDir, $allowedExtensions, $maxDisplayCount,
             <div class="image-item">
                 <div class="image-container" onclick="showRenameForm('<?php echo md5($image); ?>')">
                     <?php if ($ext === 'svg'): ?>
-                        <object type="image/svg+xml" data="<?php echo 'https://58.tl/assets/nfts/' . $image;//$imageDir . $image; ?>">
+                        <object type="image/svg+xml" data="<?php echo 'https://www.58.tl/assets/nfts/' . $image;//$imageDir . $image; ?>">
                             SVG图像无法显示
                         </object>
                     <?php else: ?>
-                        <img src="<?php echo 'https://58.tl/assets/nfts/' . $image;//$imageDir . $image; ?>" alt="<?php echo $image; ?>">
+                        <img src="<?php echo 'https://www.58.tl/assets/nfts/' . $image;//$imageDir . $image; ?>" alt="<?php echo $image; ?>">
                     <?php endif; ?>
                 </div>
                 

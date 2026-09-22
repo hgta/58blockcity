@@ -94,7 +94,7 @@ if (!empty($authorInfo['avatar'])) {
     // 用户头像（作者未设置专属头像时）— 统一走全站 avatarUrl()
     $authorAvatar = User::avatarUrl($authorInfo['user_avatar']);
 }
-$ogImage = $authorAvatar ? (strpos($authorAvatar, '://') !== false ? $authorAvatar : 'https://mall.58.tl/' . ltrim($authorAvatar, '/')) : 'https://58.tl/assets/images/og-mall.jpg';
+$ogImage = $authorAvatar ? (strpos($authorAvatar, '://') !== false ? $authorAvatar : 'https://mall.58.tl/' . ltrim($authorAvatar, '/')) : 'https://www.58.tl/assets/images/og-mall.jpg';
 $site_config['og_image']    = $ogImage;
 $site_config['og_type']     = 'profile';
 
@@ -241,7 +241,7 @@ require_once '../includes/header.php';
         <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;">
             <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#f0f0f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
                 <?php if ($msgAvatar): ?>
-                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                <img src="<?= htmlspecialchars($msgAvatar) ?>" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                 <?php else: ?>
                 <i class="fas fa-user" style="color:#ccc;font-size:18px;"></i>
                 <?php endif; ?>

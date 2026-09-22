@@ -16,7 +16,7 @@ require_once dirname(__DIR__, 2) . '/classes/User.php';
                  class="rounded-circle mb-2" 
                  width="80" 
                  height="80"
-                 alt="管理员头像" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                 alt="管理员头像" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
             <h6 class="text-white mb-1"><?= htmlspecialchars($_SESSION['username']) ?></h6>
             <span class="badge bg-primary">系统管理员</span>
         </div>

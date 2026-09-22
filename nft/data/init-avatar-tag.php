@@ -190,7 +190,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片管理器</title>
-     <link href="https://58.tl/assets/css/select2.min.css" rel="stylesheet" />
+     <link href="https://www.58.tl/assets/css/select2.min.css" rel="stylesheet" />
 	
 	<!-- 确保使用最新版Select2 -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

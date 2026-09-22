@@ -156,7 +156,7 @@ if (!function_exists('city_portal_render')) {
         $popularity = (int)($city['popularity'] ?? 0);
         $areaCode  = (string)($city['area_code'] ?? '');
         $enterUrl  = $areaCode !== '' ? "https://www.blockcity.pub/{$areaCode}?iclc" : 'https://www.blockcity.pub/?iclc';
-        $pageUrl   = 'https://58.tl/city/' . $pinyin . '.html';
+        $pageUrl   = 'https://www.58.tl/city/' . $pinyin . '.html';
 
         $cityEnc = rawurlencode($cityName);
 

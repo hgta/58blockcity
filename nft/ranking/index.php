@@ -181,7 +181,7 @@ function avatarUrl($avatar) {
                                 <span class="rank"><?= $index + 1 ?></span>
                                 <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
                                      style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                     onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['claim_count'] ?? 0 ?>个头像</span>
                             </li>
@@ -198,7 +198,7 @@ function avatarUrl($avatar) {
                                 <span class="rank"><?= $index + 1 ?></span>
                                 <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
                                      style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                     onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['listing_count'] ?? 0 ?>次挂售</span>
                             </li>
@@ -215,7 +215,7 @@ function avatarUrl($avatar) {
                                 <span class="rank"><?= $index + 1 ?></span>
                                 <img src="<?= htmlspecialchars(avatarUrl($user['avatar'])) ?>" 
                                      style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                     onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                 <span class="name"><?= htmlspecialchars($user['username'] ?? '未知用户') ?></span>
                                 <span class="value"><?= $user['transaction_count'] ?? 0 ?>笔成交</span>
                             </li>

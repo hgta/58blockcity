@@ -8,7 +8,7 @@
 $ADMIN_SITES = [
     'main' => [
         'name' => '总控后台',
-        'url'  => 'https://58.tl/admin/dashboard.php',
+        'url'  => 'https://www.58.tl/admin/dashboard.php',
         'icon' => 'fa-home',
     ],
     'block' => [

@@ -109,7 +109,7 @@ require_once 'includes/header.php';
             $stars = $sum ? str_repeat('★', (int)round($sum['avg'])) . str_repeat('☆', 5 - (int)round($sum['avg'])) : ''; ?>
             <div class="fd-card">
                 <div class="fd-top">
-                    <div class="fd-avatar"><img src="<?= htmlspecialchars(User::avatarUrl((string)($s['avatar'] ?? ''))) ?>" alt="avatar" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'"></div>
+                    <div class="fd-avatar"><img src="<?= htmlspecialchars(User::avatarUrl((string)($s['avatar'] ?? ''))) ?>" alt="avatar" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'"></div>
                     <div>
                         <div class="fd-name"><?= htmlspecialchars($s['username'] ?? ('用户' . $s['user_id'])) ?></div>
                         <div class="fd-stats">

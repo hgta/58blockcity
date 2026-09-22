@@ -61,8 +61,8 @@ if (!function_exists('model_media')) {
      *
      * 站点存在多套并行的上传目录，不能靠猜域名，改为「文件系统探测 + 规则兜底」：
      *
-     *   1) 头像：      根/assets/images/uploads/avatars/...  → https://58.tl/assets/images/uploads/avatars/...
-     *   2) 模特图：    根/assets/images/uploads/models/...   → https://58.tl/assets/images/uploads/models/...
+     *   1) 头像：      根/assets/images/uploads/avatars/...  → https://www.58.tl/assets/images/uploads/avatars/...
+     *   2) 模特图：    根/assets/images/uploads/models/...   → https://www.58.tl/assets/images/uploads/models/...
      *   3) 商品图：    mall/assets/uploads/products/...      → https://mall.58.tl/assets/uploads/products/...
      *   4) 短剧封面：  mall/assets/uploads/dramas/...        → https://mall.58.tl/assets/uploads/dramas/...
      *
@@ -104,13 +104,13 @@ if (!function_exists('model_media')) {
         // 候选物理路径 → URL 前缀（顺序即优先级）
         $candidates = [
             // 主站图片目录（头像 / 模特图）
-            [APP_ROOT . '/assets/images/' . $norm, 'https://58.tl/assets/images/'],
+            [APP_ROOT . '/assets/images/' . $norm, 'https://www.58.tl/assets/images/'],
             // mall 上传目录（商品图 / 短剧封面 / 演员头像）
             [APP_ROOT . '/mall/assets/' . $norm,   'https://mall.58.tl/assets/'],
             // 演员头像目录（后端存 assets/uploads/actors/...，此处直接命中）
             [APP_ROOT . '/mall/assets/uploads/' . $norm, 'https://mall.58.tl/assets/uploads/'],
             // 根 assets 直连（历史 / 兜底）
-            [APP_ROOT . '/assets/' . $norm,        'https://58.tl/assets/'],
+            [APP_ROOT . '/assets/' . $norm,        'https://www.58.tl/assets/'],
             [APP_ROOT . '/mall/assets/images/' . $norm, 'https://mall.58.tl/assets/images/'],
         ];
 
@@ -123,7 +123,7 @@ if (!function_exists('model_media')) {
             }
         }
         // 都探测不到（如本地无上传文件）：按主站图片目录兜底
-        return $cache[$norm] = 'https://58.tl/assets/images/' . $norm;
+        return $cache[$norm] = 'https://www.58.tl/assets/images/' . $norm;
     }
 }
 
@@ -140,7 +140,7 @@ if (!function_exists('model_img')) {
         if (!empty($model['user_avatar'])) {
             return User::avatarUrl($model['user_avatar']);
         }
-        return $defaultFallback ? 'https://58.tl/assets/images/default.jpg' : '';
+        return $defaultFallback ? 'https://www.58.tl/assets/images/default.jpg' : '';
     }
 }
 
@@ -150,7 +150,7 @@ if (!function_exists('model_default_img')) {
      */
     function model_default_img()
     {
-        return 'https://58.tl/assets/images/default.jpg';
+        return 'https://www.58.tl/assets/images/default.jpg';
     }
 }
 
@@ -181,7 +181,7 @@ if (!function_exists('model_site_config')) {
             'description' => '58 模特库汇集人气模特个人主页、作品图集与短视频，并可发现模特参演的短剧作品，支持关注与在线申请加入。',
             'keywords'    => '58模特,模特库,模特,短剧,红果短剧,模特申请,模特招募',
             'canonical_url' => MODEL_BASE_URL . '/',
-            'og_image'    => 'https://58.tl/assets/images/default.jpg',
+            'og_image'    => 'https://www.58.tl/assets/images/default.jpg',
             'logo_main'   => '58',
             'logo_sub'    => '模特库',
             'logo_tag'    => '模特 · 短剧',

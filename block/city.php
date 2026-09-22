@@ -247,7 +247,7 @@ $site_config['description'] = SeoHelper::description(
 );
 $site_config['keywords']    = "{$cityName}区块城市,{$cityName}元宇宙,58同城{$cityName},{$cityName}数字经济,{$cityName}区块地图" . ($cityArea ? ",{$cityArea}" : '');
 $site_config['canonical_url'] = $canonicalUrl;
-$site_config['og_image']    = 'https://58.tl/assets/images/og-city-' . SeoHelper::slug($cityName) . '.jpg';
+$site_config['og_image']    = 'https://www.58.tl/assets/images/og-city-' . SeoHelper::slug($cityName) . '.jpg';
 $site_config['og_type']     = 'website';
 $site_config['city_name_for_schema'] = $cityName;
 

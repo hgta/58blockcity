@@ -137,7 +137,7 @@ if ($p['type'] === 'post') {
         'datePublished' => $p['created_at'],
         'dateModified' => $p['updated_at'] ?? $p['created_at'],
         'mainEntityOfPage' => $canonical,
-        'image' => $firstImage ? 'https://58.tl/' . ltrim($firstImage, '/') : 'https://58.tl/assets/images/og-club.jpg',
+        'image' => $firstImage ? 'https://www.58.tl/' . ltrim($firstImage, '/') : 'https://www.58.tl/assets/images/og-club.jpg',
         'interactionStatistic' => [
             ['@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/LikeAction', 'userInteractionCount' => intval($p['like_count'])],
             ['@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/CommentAction', 'userInteractionCount' => intval($p['comment_count'])],
@@ -152,7 +152,7 @@ $site_config['canonical_url'] = $canonical;
 $site_config['og_url'] = $canonical;
 $site_config['og_type'] = $p['type'] === 'post' ? 'article' : 'website';
 if (!empty($imgs)) {
-    $site_config['og_image'] = 'https://58.tl/' . ltrim($imgs[0], '/');
+    $site_config['og_image'] = 'https://www.58.tl/' . ltrim($imgs[0], '/');
 }
 require_once 'includes/header.php';
 ?>
@@ -181,7 +181,7 @@ require_once 'includes/header.php';
 
       <div class="club-author-row">
         <div class="club-author-avatar">
-          <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+          <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= htmlspecialchars($p['username'] ?? '') ?>" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
         </div>
         <div style="flex:1;">
           <div class="club-author-name">
@@ -264,7 +264,7 @@ require_once 'includes/header.php';
         ?>
         <div class="club-comment-item">
           <div class="club-comment-head">
-            <img src="<?= htmlspecialchars($cAvatar) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+            <img src="<?= htmlspecialchars($cAvatar) ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
             <span class="club-comment-user"><?= htmlspecialchars($c['username'] ?? '用户#' . $c['user_id']) ?></span>
             <span class="club-comment-time"><?= date('m-d H:i', strtotime($c['created_at'])) ?></span>
           </div>

@@ -14,7 +14,7 @@ if (empty($site_config['canonical_url'])) {
     require_once __DIR__ . '/../../classes/SeoHelper.php';
     $site_config['canonical_url'] = SeoHelper::canonicalTargetUrl();
 }
-$site_config['og_image']    = 'https://58.tl/assets/images/og-block.jpg';
+$site_config['og_image']    = 'https://www.58.tl/assets/images/og-block.jpg';
 // 全局品牌实体（与主域共用同一 @id，聚合为同一组织）
 require_once __DIR__ . '/../../shared/organization.php';
 $orgJsonLd = organization_json_ld();

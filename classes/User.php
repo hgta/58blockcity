@@ -266,8 +266,8 @@ class User {
      * @return string 完整头像 URL
      */
     public static function avatarUrl($avatar) {
-        $default = 'https://58.tl/assets/images/default.jpg';
-        $base    = 'https://58.tl/assets/images/';
+        $default = 'https://www.58.tl/assets/images/default.jpg';
+        $base    = 'https://www.58.tl/assets/images/';
         $avatar  = trim((string)$avatar);
 
         // 空 / default 占位 → 默认图

@@ -57,7 +57,8 @@ return [
     'baidu_site'  => 'www.58.tl',
 
     // 站点主域名（用于生成 canonical）
-    'site_domain' => '58.tl',
+    // 主站主域（与 baidu_site / canonical / 实体 @id 保持一致，统一带 www）
+    'site_domain' => 'www.58.tl',
 
     // 公开的子域名列表（用于 sitemap 生成）
     'subdomains'  => [
@@ -80,5 +81,5 @@ return [
     'sitemap_ping_enabled' => false,
 
     // 默认 og 图片（当页面没有专属图片时使用）
-    'default_og_image' => 'https://58.tl/assets/images/og-main.jpg',
+    'default_og_image' => 'https://www.58.tl/assets/images/og-main.jpg',
 ];

@@ -160,7 +160,7 @@ $cities = $city->getAllCities();
             <div class="user-sidebar">
                 <div class="user-profile-card">
                     <img src="<?php echo htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')); ?>" 
-                         alt="<?php echo htmlspecialchars($userData['username']); ?>" class="user-avatar" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                         alt="<?php echo htmlspecialchars($userData['username']); ?>" class="user-avatar" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                     <h4><?php echo htmlspecialchars($userData['username']); ?></h4>
                     <p><?php echo htmlspecialchars($userData['city']); ?></p>
                 </div>
@@ -252,7 +252,7 @@ $cities = $city->getAllCities();
                     <h4>头像设置</h4> 
                         <div class="current-avatar">
                             <img src="<?php echo htmlspecialchars(User::avatarUrl($userData['avatar'] ?? '')); ?>" 
-                                 alt="当前头像" class="avatar-preview" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                 alt="当前头像" class="avatar-preview" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                         </div>
                         <div class="form-group">
                             <label for="avatar">选择新头像</label>

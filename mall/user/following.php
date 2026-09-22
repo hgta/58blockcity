@@ -83,7 +83,7 @@ require_once '../includes/header.php';
 
                 <div class="sidebar-card user-sidebar-card text-center">
                     <div class="user-avatar mb-3">
-                        <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                        <img src="<?= htmlspecialchars(User::avatarUrl($userInfo['avatar'] ?? '')) ?>" alt="" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                     </div>
                     <h6 class="mb-1"><?= htmlspecialchars($userInfo['username']) ?></h6>
                     <p class="text-muted small mb-2"><?= htmlspecialchars($userInfo['email']) ?></p>

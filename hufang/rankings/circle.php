@@ -138,7 +138,7 @@ $circles = $pdo->query($sql)->fetchAll();
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <img src="<?= htmlspecialchars(User::avatarUrl($circle['owner_avatar'] ?? '')) ?>" 
-                                             class="avatar-xs mr-2" style="width:28px;height:28px;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://58.tl/assets/images/default.jpg'">
+                                             class="avatar-xs mr-2" style="width:28px;height:28px;object-fit:cover;flex-shrink:0;" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                         <?= htmlspecialchars($circle['owner_name']) ?>
                                     </div>
                                 </td>
