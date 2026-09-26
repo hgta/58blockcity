@@ -30,7 +30,8 @@ date_default_timezone_set('Asia/Shanghai');
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
 ini_set('display_errors', '0');
 
-checkAdmin();
+// API 版管理员校验：失败返回 JSON 401/403，而非 302 重定向到不存在的登录页
+checkAdminApi();
 
 // ---------- 输出工具 ----------
 function tc_out(array $data, int $code = 200) {

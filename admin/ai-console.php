@@ -114,7 +114,11 @@ require_once '../shared/admin/admin-header.php';
         var opts = body ? {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.assign({action: action}, body))}
                         : {};
         var r = await fetch(CONSOLE_API + (body ? '' : '?action=' + action), opts);
-        return r.json();
+        var text = await r.text();
+        var j = null;
+        try { j = JSON.parse(text); } catch (e) {}
+        if (!j) throw new Error('HTTP ' + r.status + ' 返回非 JSON（内容开头：' + text.replace(/\s+/g, ' ').slice(0, 80) + '）');
+        return j;
     }
     function scrollChat() { var b = $('chatBox'); b.scrollTop = b.scrollHeight; }
     function addMsg(role, html) {
@@ -134,6 +138,7 @@ require_once '../shared/admin/admin-header.php';
     async function loadSessions() {
         try {
             var res = await api('sessions');
+            if (!res.ok) throw new Error(res.msg || '获取会话列表失败');
             var list = (res.data && (res.data.sessions || res.data.items || res.data)) || [];
             if (!Array.isArray(list)) list = [];
             $('sessionList').innerHTML = list.length ? '' : '<div style="color:#64748b;padding:12px;text-align:center;font-size:12px;">暂无会话，点右上「+ 新建」</div>';
@@ -189,7 +194,11 @@ require_once '../shared/admin/admin-header.php';
         $('chatBox').innerHTML = '<div style="color:#64748b;padding:12px;">加载历史消息…</div>';
         try {
             var res = await fetch(CONSOLE_API + '?action=messages&id=' + encodeURIComponent(id));
-            var j = await res.json();
+            var text = await res.text();
+            var j = null;
+            try { j = JSON.parse(text); } catch (e) {}
+            if (!j) throw new Error('HTTP ' + res.status + ' 返回非 JSON（内容开头：' + text.replace(/\s+/g, ' ').slice(0, 80) + '）');
+            if (!j.ok) throw new Error(j.msg || '获取历史消息失败');
             var msgs = (j.data && (j.data.messages || j.data.items || j.data)) || [];
             $('chatBox').innerHTML = '';
             if (!Array.isArray(msgs) || !msgs.length) {
@@ -225,6 +234,11 @@ require_once '../shared/admin/admin-header.php';
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({action: 'chat', session_id: curSession.id, message: text})
             });
+            if (!resp.ok) {
+                var et = await resp.text(), em = '';
+                try { em = JSON.parse(et).msg || ''; } catch (e2) {}
+                throw new Error(em || ('HTTP ' + resp.status + ' ' + et.replace(/\s+/g, ' ').slice(0, 80)));
+            }
             var reader = resp.body.getReader();
             var dec = new TextDecoder();
             var buf = '';

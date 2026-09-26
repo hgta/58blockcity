@@ -247,6 +247,45 @@ function checkAdmin() {
 }
 
 /**
+ * API 版管理员校验（供 fetch/AJAX 端点使用）
+ *
+ * 失败时返回 JSON 错误而非 302 重定向：
+ * fetch 会自动跟随重定向，且 API 目录下的 ../auth/login.php 并不存在，
+ * 最终拿到 404/登录页 HTML（<!DOCTYPE 开头），前端 r.json() 会报
+ * "Unexpected token '<', "<!DOCTYPE "... is not valid JSON"。
+ */
+function checkAdminApi() {
+    if (isSessionExpired()) {
+        $_SESSION = [];
+        session_destroy();
+        // 与 checkLogin 一致：重新按统一参数启动会话，保留 remember_me 自动登录
+        session_set_cookie_params([
+            'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
+            'path'     => '/',
+            'domain'   => AUTH_COOKIE_DOMAIN,
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        session_start();
+    }
+
+    if (!isLoggedIn()) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'msg' => '未登录或登录已过期，请刷新页面重新登录'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'msg' => '无管理员权限'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['last_activity'] = time();
+}
+
+/**
  * 强制要求登录（API/页面通用入口）
  * 未登录则重定向到登录页。不再依赖各处重复的 isset($_SESSION['user_id'])。
  * 
