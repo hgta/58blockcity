@@ -67,7 +67,7 @@ require_once '../shared/admin/admin-header.php';
         <h3 id="distillTitle" style="margin:0 0 12px;font-size:16px;color:#f1f5f9;"></h3>
         <div id="distillForm" style="display:grid;gap:10px;"></div>
         <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;">
-            <button class="admin-btn admin-btn-secondary" onclick="closeDistill()">取消</button>
+            <button id="distillCancel" class="admin-btn admin-btn-secondary">取消</button>
             <button id="distillSubmit" class="admin-btn admin-btn-primary">提交</button>
         </div>
         <div id="distillResult" style="margin-top:10px;font-size:13px;"></div>
@@ -294,8 +294,7 @@ require_once '../shared/admin/admin-header.php';
     }
 
     // ---------- 沉淀弹层 ----------
-    function closeDistill() { $('distillModal').style.display = 'none'; }
-    function field(label, name, val, ta) {
+    function closeDistill() { $('distillModal').style.display = 'none'; }    function field(label, name, val, ta) {
         return '<div><label style="display:block;font-size:12px;margin-bottom:4px;color:#94a3b8;">' + label + '</label>'
             + (ta
                 ? '<textarea name="' + name + '" rows="' + ta + '" style="width:100%;background:#0b1220;border:1px solid #334155;border-radius:6px;color:#f1f5f9;padding:8px;font-size:12px;">' + esc(val) + '</textarea>'
@@ -325,6 +324,7 @@ require_once '../shared/admin/admin-header.php';
                 $('distillResult').innerHTML = res.ok
                     ? '<span style="color:#22c55e">已创建 FAQ 草稿 #' + res.data.faq_id + '，请到「FAQ管理」完善发布</span>'
                     : '<span style="color:#ef4444">' + esc(res.msg) + '</span>';
+                if (res.ok) setTimeout(closeDistill, 1500);
             });
     }
     function openDistillArticle() {
@@ -338,6 +338,7 @@ require_once '../shared/admin/admin-header.php';
                 $('distillResult').innerHTML = res.ok
                     ? '<span style="color:#22c55e">已创建文章草稿 #' + res.data.article_id + '，请到「帮助文章」编辑发布</span>'
                     : '<span style="color:#ef4444">' + esc(res.msg) + '</span>';
+                if (res.ok) setTimeout(closeDistill, 1500);
             });
     }
     function openDistillMemory(isPublish) {
@@ -402,6 +403,10 @@ require_once '../shared/admin/admin-header.php';
     $('chatInput').onkeydown = function (e) { if (e.ctrlKey && e.key === 'Enter') send(); };
     $('btnSavePrompt').onclick = function () { savePrompt($('promptText').value.trim()); };
     $('btnResetPrompt').onclick = function () { if (confirm('确认恢复内置默认人设？')) { $('promptText').value = ''; savePrompt(''); } };
+
+    // 弹层关闭：取消按钮 + 点遮罩空白处（closeDistill 在闭包内，不能内联 onclick）
+    $('distillCancel').onclick = closeDistill;
+    $('distillModal').onclick = function (e) { if (e.target === this) closeDistill(); };
 
     loadSessions(); loadPrompt(); loadUnmatched();
 })();
