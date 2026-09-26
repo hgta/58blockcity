@@ -18,7 +18,7 @@ $presets = [
     'kimi'     => ['name' => 'Kimi',          'endpoint' => 'https://api.moonshot.cn/v1',    'model' => 'moonshot-v1-8k',       'hint' => 'platform.moonshot.cn 获取'],
     'zhipu'    => ['name' => '智谱 GLM',       'endpoint' => 'https://open.bigmodel.cn/api/paas/v4', 'model' => 'glm-4-flash',   'hint' => 'bigmodel.cn 获取'],
     'openai'   => ['name' => 'OpenAI',        'endpoint' => 'https://api.openai.com/v1',     'model' => 'gpt-4o-mini',          'hint' => '需海外网络环境'],
-    'hermes'   => ['name' => 'Hermes Agent（本机）', 'endpoint' => 'http://127.0.0.1:8787/v1', 'model' => 'hermes',           'hint' => '服务器已部署的 Hermes 智能体，改为你实际的 api-server 端口'],
+    'hermes'   => ['name' => 'Hermes Agent（本机）', 'endpoint' => 'http://127.0.0.1:8642/v1', 'model' => 'hermes-agent',     'hint' => '服务器已部署的 Hermes 智能体，端口以 api-server 实际配置为准'],
     'custom'   => ['name' => '自定义（OpenAI 兼容）', 'endpoint' => '', 'model' => '', 'hint' => '任何 OpenAI 兼容端点'],
 ];
 
@@ -74,8 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $row = $stmt->fetch();
             if ($row) {
                 $res = AiProvider::testConnection($row);
+                $p = new AiProvider($row);
                 $testResult = [
                     'name' => $row['name'],
+                    'url' => $p->endpointUrl(),
                     'ok' => $res['ok'],
                     'msg' => $res['ok'] ? '连接成功，模型响应正常：' . mb_substr($res['answer'], 0, 60)
                                        : '失败：' . $res['error'],
@@ -119,7 +121,8 @@ require_once '../shared/admin/admin-header.php';
 <?= $actionMsg ?>
 <?php if ($testResult): ?>
 <div class="admin-alert <?= $testResult['ok'] ? 'admin-alert-success' : 'admin-alert-error' ?>">
-    <b>测试 [<?= htmlspecialchars($testResult['name']) ?>]</b>：<?= htmlspecialchars($testResult['msg']) ?>
+    <b>测试 [<?= htmlspecialchars($testResult['name']) ?>]</b>：<?= htmlspecialchars($testResult['msg']) ?><br>
+    <span style="font-family:monospace;font-size:11px;color:#94a3b8;">请求地址：<?= htmlspecialchars($testResult['url']) ?></span>
 </div>
 <?php endif; ?>
 

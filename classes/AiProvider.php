@@ -48,10 +48,18 @@ class AiProvider
 
     private function baseUrl()
     {
-        $u = rtrim($this->row['endpoint'], '/');
+        $u = rtrim(trim($this->row['endpoint']), '/');
+        // 容错：用户填了完整路径则先剥离，避免拼出 .../chat/completions/v1/chat/completions
+        if (preg_match('#/chat/completions$#', $u)) $u = preg_replace('#/chat/completions$#', '', $u);
         // 允许填到域名或 /v1，统一补全到 /v1
         if (!preg_match('#/v\d+$#', $u)) $u .= '/v1';
         return $u;
+    }
+
+    /** 归一化后的完整请求 URL（后台测试展示用） */
+    public function endpointUrl()
+    {
+        return $this->baseUrl() . '/chat/completions';
     }
 
     /**
@@ -137,10 +145,13 @@ class AiProvider
         $this->touch($errno === 0 && $httpCode >= 200 && $httpCode < 300 && $answer !== '');
 
         if ($errno !== 0) {
-            return ['ok' => false, 'answer' => $answer, 'error' => '网络错误(' . $errno . '): ' . $errmsg];
+            return ['ok' => false, 'answer' => $answer, 'error' => '网络错误(' . $errno . '): ' . $errmsg . ' [' . $url . ']'];
         }
         if ($httpCode >= 400) {
-            return ['ok' => false, 'answer' => $answer, 'error' => 'HTTP ' . $httpCode . ($errBuf !== '' ? ': ' . mb_substr($errBuf, 0, 200) : '')];
+            // 非流式时正文在 $answer（尚未解析），流式时错误摘要在 $errBuf
+            $body = !$stream && $answer !== '' ? trim($answer) : $errBuf;
+            return ['ok' => false, 'answer' => $answer, 'error' => 'HTTP ' . $httpCode . ' [' . $url . ']'
+                . ($body !== '' ? ': ' . mb_substr($body, 0, 200) : '')];
         }
         if ($answer === '') {
             return ['ok' => false, 'answer' => '', 'error' => '空响应' . ($errBuf !== '' ? ': ' . mb_substr($errBuf, 0, 200) : '')];
