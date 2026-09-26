@@ -62,6 +62,8 @@ function ai_sse($data) {
 }
 /** 早期错误（SSE 头未发出前）：输出 JSON */
 function ai_sse_error($msg, $code = 500) {
+    // 不要用 5xx：Cloudflare 会把源站 5xx 替换成自带 HTML 错误页，前端无法解析
+    if ($code >= 500) $code = 200;
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['ok' => false, 'msg' => $msg], JSON_UNESCAPED_UNICODE);

@@ -27,6 +27,8 @@ if (preg_match('#^https://([a-z0-9-]+\.)*58\.tl$#i', $origin)) {
 header('Content-Type: application/json; charset=utf-8');
 
 function tj_out($ok, $msg = '', $code = 200) {
+    // 不要用 5xx：Cloudflare 会把源站 5xx 替换成自带 HTML 错误页，前端无法解析
+    if ($code >= 500) $code = 200;
     http_response_code($code);
     echo json_encode(['ok' => $ok, 'msg' => $msg], JSON_UNESCAPED_UNICODE);
     exit;

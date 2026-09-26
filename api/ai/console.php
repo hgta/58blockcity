@@ -35,6 +35,9 @@ checkAdminApi();
 
 // ---------- 输出工具 ----------
 function tc_out(array $data, int $code = 200) {
+    // 注意：业务错误不要用 5xx——Cloudflare 会把源站 5xx 响应替换成自带的 HTML 错误页，
+    // 前端 r.json() 随即报 "Unexpected token '<'"。统一 200 + ok:false 承载错误信息
+    if ($code >= 500) $code = 200;
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_UNICODE);

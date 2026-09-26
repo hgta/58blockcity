@@ -55,7 +55,11 @@ class HermesClient
         if (!$row) { $err = '未找到启用的 Hermes 渠道（后台 AI 渠道配置中新增，选择 Hermes 预置模板）'; return null; }
         $key = $row['api_key_cipher'] !== '' ? SecureCrypto::decrypt($row['api_key_cipher']) : '';
         if ($key === null || $key === '') { $err = 'Hermes 渠道 API Key 解密失败，请在后台重新保存该渠道'; return null; }
-        $c = new self(rtrim($row['endpoint'], '/'), $key);
+        // 渠道 endpoint 通常是为 OpenAI 兼容层配置的（如 http://127.0.0.1:8642/v1），
+        // 而原生会话接口（/api/sessions 等）挂在服务根路径下，需剥离末尾的 /v1 或 /api
+        $base = rtrim($row['endpoint'], '/');
+        $base = preg_replace('#/(v1|api)$#i', '', $base);
+        $c = new self(rtrim($base, '/'), $key);
         return $c;
     }
 

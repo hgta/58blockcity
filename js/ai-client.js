@@ -25,16 +25,19 @@ window.AiChat = (function () {
   }
 
   function readSse(res, cb) {
-    if (!res.ok) {
-      // 错误响应：兼容 JSON 与 SSE 两种格式
+    var ct = (res.headers.get('content-type') || '').toLowerCase();
+    // 错误/降级响应：非 SSE（JSON 错误体，含被网关包装的 5xx）同样按错误处理
+    if (!res.ok || (ct.indexOf('text/event-stream') === -1 && ct.indexOf('application/json') !== -1)) {
       res.text().then(function (t) {
         var m = '';
         try { m = JSON.parse(t).msg || ''; } catch (e) {
           var mt = t.match(/data:\s*(\{[\s\S]*?\})/);
           if (mt) { try { m = JSON.parse(mt[1]).msg || ''; } catch (e2) {} }
         }
-        cb.onLimit && cb.onLimit(m || ('请求失败(' + res.status + ')'));
-      }).catch(function () { cb.onLimit && cb.onLimit('网络异常'); });
+        if (!m) m = '请求失败(' + res.status + ')';
+        if (res.status === 429) { cb.onLimit && cb.onLimit(m); }
+        else { cb.onError && cb.onError(m); }
+      }).catch(function () { cb.onError && cb.onError('网络异常'); });
       return;
     }
     var reader = res.body.getReader();
