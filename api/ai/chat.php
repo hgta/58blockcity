@@ -262,7 +262,12 @@ try {
 
 if (!$res['ok']) {
     error_log('[ai-chat] ' . $res['error']);
-    ai_sse(['type' => 'error', 'msg' => 'AI 助手暂时开小差了，请稍后再试，或到帮助中心留言', 'log_id' => $logId]);
+    $errMsg = 'AI 助手暂时开小差了，请稍后再试，或到帮助中心留言';
+    // 管理员登录状态下附带真实原因，便于后台自助排查（普通访客不显示）
+    if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        $errMsg .= '（调试：' . $res['error'] . '）';
+    }
+    ai_sse(['type' => 'error', 'msg' => $errMsg, 'log_id' => $logId]);
     exit;
 }
 
