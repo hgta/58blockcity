@@ -59,5 +59,11 @@ data/city-profiles/*.json
 # 任务广场凭证截图上传（运行时生成）
 task/uploads/
 
+# 用户上传的运行时内容（头像/区块图/商品图等，不入库）
+assets/images/uploads/
+assets/uploads/
+block/uploads/
+mall/assets/uploads/
+
 # playwright-cli 会话快照
 .playwright-cli/
