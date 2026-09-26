@@ -31,14 +31,28 @@ class HermesClient
 
     /**
      * 从数据库装载 Hermes 渠道
+     * 识别规则：preset='hermes' 优先；否则按端点特征兜底（127.0.0.1/localhost + 8642 等本机 Hermes 部署）
      * @return HermesClient|null 失败返回 null（无渠道/Hermes 未启用），错误写回 $err
      */
     public static function load(PDO $db, &$err = '')
     {
+        // 1) 按 preset 精确匹配
         $stmt = $db->prepare("SELECT * FROM ai_providers WHERE preset = 'hermes' AND is_enabled = 1 ORDER BY is_default DESC, id LIMIT 1");
         $stmt->execute();
         $row = $stmt->fetch();
-        if (!$row) { $err = '未找到启用的 Hermes 渠道（后台 AI 渠道配置中新增）'; return null; }
+
+        // 2) 兜底：老渠道 preset 可能是 custom，按端点特征识别本机 Hermes
+        if (!$row) {
+            $rows = $db->query("SELECT * FROM ai_providers WHERE is_enabled = 1 ORDER BY is_default DESC, sort_order, id")->fetchAll();
+            foreach ($rows as $r) {
+                $ep = (string)$r['endpoint'];
+                if (preg_match('#^https?://(127\.0\.0\.1|localhost)(:\d+)?/?#i', $ep)
+                    && (strpos($ep, '8642') !== false || stripos($r['name'], 'hermes') !== false)) {
+                    $row = $r; break;
+                }
+            }
+        }
+        if (!$row) { $err = '未找到启用的 Hermes 渠道（后台 AI 渠道配置中新增，选择 Hermes 预置模板）'; return null; }
         $key = $row['api_key_cipher'] !== '' ? SecureCrypto::decrypt($row['api_key_cipher']) : '';
         if ($key === null || $key === '') { $err = 'Hermes 渠道 API Key 解密失败，请在后台重新保存该渠道'; return null; }
         $c = new self(rtrim($row['endpoint'], '/'), $key);

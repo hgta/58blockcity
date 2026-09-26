@@ -32,6 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $name = trim($_POST['name'] ?? '');
             $endpoint = trim($_POST['endpoint'] ?? '');
             $model = trim($_POST['model'] ?? '');
+            $preset = trim($_POST['preset'] ?? 'custom');
+            if (!preg_match('/^[a-z0-9-]{1,30}$/', $preset)) $preset = 'custom';
             $sort = (int)($_POST['sort_order'] ?? 0);
             $limit = (int)($_POST['daily_limit'] ?? 0);
             $enabled = isset($_POST['is_enabled']) ? 1 : 0;
@@ -42,19 +44,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 if ($id > 0) {
                     if ($apiKeyPlain !== '') {
-                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, sort_order=?, daily_limit=?, is_enabled=?, api_key_cipher=? WHERE id=?")
-                            ->execute([$name, $endpoint, $model, $sort, $limit, $enabled, SecureCrypto::encrypt($apiKeyPlain), $id]);
+                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, preset=?, sort_order=?, daily_limit=?, is_enabled=?, api_key_cipher=? WHERE id=?")
+                            ->execute([$name, $endpoint, $model, $preset, $sort, $limit, $enabled, SecureCrypto::encrypt($apiKeyPlain), $id]);
                     } else {
-                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, sort_order=?, daily_limit=?, is_enabled=? WHERE id=?")
-                            ->execute([$name, $endpoint, $model, $sort, $limit, $enabled, $id]);
+                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, preset=?, sort_order=?, daily_limit=?, is_enabled=? WHERE id=?")
+                            ->execute([$name, $endpoint, $model, $preset, $sort, $limit, $enabled, $id]);
                     }
                     $actionMsg = '<div class="admin-alert admin-alert-success">渠道已更新</div>';
                 } else {
                     if ($apiKeyPlain === '') {
                         $actionMsg = '<div class="admin-alert admin-alert-error">新增渠道必须填写 API Key</div>';
                     } else {
-                        $pdo->prepare("INSERT INTO ai_providers (name, endpoint, api_key_cipher, model, sort_order, daily_limit, is_enabled) VALUES (?,?,?,?,?,?,?)")
-                            ->execute([$name, $endpoint, SecureCrypto::encrypt($apiKeyPlain), $model, $sort, $limit, $enabled]);
+                        $pdo->prepare("INSERT INTO ai_providers (name, endpoint, api_key_cipher, model, preset, sort_order, daily_limit, is_enabled) VALUES (?,?,?,?,?,?,?,?)")
+                            ->execute([$name, $endpoint, SecureCrypto::encrypt($apiKeyPlain), $model, $preset, $sort, $limit, $enabled]);
                         $actionMsg = '<div class="admin-alert admin-alert-success">渠道已创建（Key 已加密存储）</div>';
                     }
                 }
@@ -184,6 +186,7 @@ require_once '../shared/admin/admin-header.php';
         <form method="POST">
             <input type="hidden" name="action" value="save">
             <input type="hidden" name="id" value="<?= $editing['id'] ?? 0 ?>">
+            <input type="hidden" name="preset" id="fPreset" value="<?= htmlspecialchars($editing['preset'] ?? 'custom') ?>">
             <div style="margin-bottom:12px;">
                 <label style="display:block;font-size:13px;margin-bottom:4px;">快速预置</label>
                 <select id="presetSel" style="padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
@@ -225,6 +228,7 @@ require_once '../shared/admin/admin-header.php';
   sel.addEventListener('change', function () {
     var p = presets[sel.value];
     if (!p) return;
+    document.getElementById('fPreset').value = sel.value; // preset 随模板联动入库
     if (!document.getElementById('fName').value) document.getElementById('fName').value = p.name;
     if (!document.getElementById('fEndpoint').value) document.getElementById('fEndpoint').value = p.endpoint;
     if (!document.getElementById('fModel').value) document.getElementById('fModel').value = p.model;
