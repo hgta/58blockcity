@@ -1,6 +1,6 @@
 ## 1. 前置探测与基础设施
 
-- [ ] 1.1 服务器探测 Hermes 原生会话 API 参数结构（POST /api/sessions 请求体、X-Hermes-Session-Key/Id 头行为、fork 与 messages 返回格式），产出参数速查记录；若会话创建不支持初始 system prompt，确定「首条消息注入人设」回退方案
+- [x] 1.1 服务器探测 Hermes 原生会话 API 参数结构（POST /api/sessions 请求体、X-Hermes-Session-Key/Id 头行为、fork 与 messages 返回格式），产出参数速查记录；若会话创建不支持初始 system prompt，确定「首条消息注入人设」回退方案（结论：支持 system_prompt 字段，无需回退；记忆写入需带用途声明，详见 design.md 探测结论）
 - [x] 1.2 `init/migration-admin-ai-console.sql`：`system_settings` 新增 `ai_assistant_system_prompt`（初始为空，回退默认）；无需其他表结构变更
 - [x] 1.3 `classes/HermesClient.php`：封装 Hermes 原生 API（会话 CRUD/fork/历史/会话内流式对话），从 `ai_providers` 取 `preset='hermes'` 渠道端点与 key（SecureCrypto 解密），服务端注入 `X-Hermes-Session-Key`（admin/assistant 分区），统一错误包装（不可达/鉴权失败/超时）
 

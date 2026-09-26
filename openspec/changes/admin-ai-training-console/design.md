@@ -106,4 +106,13 @@ api/ai/console.php（服务端代理，checkAdmin）
 
 ## Open Questions
 
-（D5 的 Hermes 会话参数结构已在 Risks 中给出探测回退方案，无阻塞项。）
+（无阻塞项。任务 1.1 探测已由服务器实测完成，结论如下。）
+
+## 探测结论（2026-09-26 服务器实测，任务 1.1 产出）
+
+- 会话列表：`GET /api/sessions` → `{"object":"list","data":[{id,title,preview,message_count,last_active,…}]}`
+- 创建会话：`POST /api/sessions` 接受 `{title, system_prompt}`（`has_system_prompt` 置位确认生效），返回 `201` + `{"object":"hermes.session","session":{id,…}}` —— **id 在 `.session.id` 路径**
+- `X-Hermes-Session-Key` 头创建/对话均正常，分区隔离机制可用
+- **记忆写入标准（重要）**：Hermes 拒绝无用途说明的裸内容写入（"不符合记忆存储标准"，且用户消息不能以"系统指令"提升权限）；给出用途与"跨会话稳定生效"声明后可写入，或建议写入 `blockcity-58tl-assistant` 技能。已据此调整祈使句包装（带用途声明），并在自动验证中检测"已写入/已保存/DONE"
+- 跨会话验证诚实（未记住会如实回答），验证机制可靠
+- 前端解析：`HermesClient`/console 页面 JS 已做多形态字段兼容，与实测结构吻合
