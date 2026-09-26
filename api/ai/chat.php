@@ -195,10 +195,20 @@ try {
 } catch (Exception $ex) { /* 检索失败则纯模型回答 */ }
 
 // ---------- 组装消息 ----------
-$system = "你是\"58区块城市\"平台的官方帮助助手，名字叫\"小帮\"。规则：\n"
+// 人设主文案可配置（后台训练台编辑），空值回退内置默认；结构性拼接（RAG/页面/用户）保留在代码层
+$defaultSystem = "你是\"58区块城市\"平台的官方帮助助手，名字叫\"小帮\"。规则：\n"
     . "1. 优先依据下面的官方帮助资料回答；资料未覆盖时，明确告知暂无官方资料，建议用户到帮助中心留言，不要编造价格、规则、日期等事实。\n"
     . "2. 用简体中文回答，简洁清晰；涉及操作步骤时用编号列表。\n"
     . "3. 语气友好，面向不熟悉互联网产品的新手用户。\n";
+$system = trim((string)ai_s('ai_assistant_system_prompt', ''));
+if ($system === '') $system = $defaultSystem;
+// Hermes 渠道时追加记忆禁写令：前台用户对话不得写入/修改共享记忆区（防污染，训练台是唯一持笔人）
+try {
+    $hermesActive = (int)$pdo->query("SELECT COUNT(*) FROM ai_providers WHERE preset='hermes' AND is_enabled=1")->fetchColumn() > 0;
+} catch (Exception $ex) { $hermesActive = false; }
+if ($hermesActive) {
+    $system .= "\n4. 不要写入或修改你的长期记忆（记忆由管理员统一维护），只需依据当前对话与上述资料回答。\n";
+}
 if ($knowledge !== '') {
     $system .= "\n=== 官方帮助资料 ===\n" . $knowledge;
 }

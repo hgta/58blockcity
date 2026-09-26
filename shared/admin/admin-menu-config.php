@@ -60,6 +60,7 @@ $ADMIN_MENUS = [
         ['icon' => 'fa-circle-question', 'text' => 'FAQ管理', 'url' => 'help-faq.php'],
         ['icon' => 'fa-book-bookmark',    'text' => '术语表', 'url' => 'help-glossary.php'],
         ['icon' => 'fa-robot',       'text' => 'AI渠道配置', 'url' => 'ai-providers.php'],
+        ['icon' => 'fa-graduation-cap', 'text' => 'AI训练台', 'url' => 'ai-console.php'],
         ['icon' => 'fa-comments-dollar','text' => 'AI对话记录', 'url' => 'ai-chat-logs.php'],
         ['icon' => 'fa-inbox',       'text' => '留言工单', 'url' => 'ai-tickets.php'],
     ],

@@ -91,13 +91,18 @@ class AiProvider
         ], JSON_UNESCAPED_UNICODE);
 
         $ch = curl_init($url);
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $this->apiKey,
+        ];
+        // Hermes 渠道：记忆分区隔离（前台小帮共享 assistant 区），配合 api/ai/chat.php 的记忆禁写令
+        if (($this->row['preset'] ?? '') === 'hermes') {
+            $headers[] = 'X-Hermes-Session-Key: web:58tl:assistant';
+        }
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $this->apiKey,
-            ],
+            CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_CONNECTTIMEOUT => self::TIMEOUT_CONNECT,
             CURLOPT_TIMEOUT        => (int)$timeout,
             CURLOPT_SSL_VERIFYPEER => false,
