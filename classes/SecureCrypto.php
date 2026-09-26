@@ -35,12 +35,24 @@ class SecureCrypto
         // 自动生成（仅首次）
         $hex = bin2hex(random_bytes(32));
         $dir = dirname(self::KEY_FILE);
-        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new RuntimeException('无法创建密钥目录: ' . $dir . '（' . self::lastError() . '）');
+        }
         if (file_put_contents(self::KEY_FILE, $hex) === false) {
-            throw new RuntimeException('无法写入密钥文件: ' . self::KEY_FILE);
+            throw new RuntimeException(
+                '无法写入密钥文件: ' . self::KEY_FILE . '（' . self::lastError()
+                . '）请检查目录属主/权限（如 www 用户可写），或手动生成该文件'
+            );
         }
         chmod(self::KEY_FILE, 0600);
         return self::$key = hex2bin($hex);
+    }
+
+    /** 最近一次 PHP 错误信息（用于异常提示） */
+    private static function lastError(): string
+    {
+        $e = error_get_last();
+        return ($e['message'] ?? '未知错误') . (isset($e['file']) ? ' @ ' . $e['file'] . ':' . $e['line'] : '');
     }
 
     public static function encrypt(string $plain): string
