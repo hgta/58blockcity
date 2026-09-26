@@ -166,26 +166,32 @@ require_once '../shared/admin/admin-header.php';
     async function newSession() {
         var title = prompt('会话标题（用于区分调教主题）', '训练 ' + new Date().toLocaleDateString());
         if (title === null) return;
-        var res = await api('create_session', {title: title});
-        if (!res.ok) return alert('创建失败：' + res.msg);
-        var s = res.data || {};
-        await loadSessions();
-        openSession(sessionId(s) || '', s.title || title);
+        try {
+            var res = await api('create_session', {title: title});
+            if (!res.ok) return alert('创建失败：' + res.msg);
+            var s = res.data || {};
+            await loadSessions();
+            openSession(sessionId(s) || '', s.title || title);
+        } catch (e) { alert('创建失败：' + e.message); }
     }
     async function forkSession(id) {
         if (!confirm('基于该会话分叉出新实验会话？')) return;
-        var res = await api('fork_session', {id: id});
-        if (!res.ok) return alert('分叉失败：' + res.msg);
-        await loadSessions();
-        var s = res.data || {};
-        openSession(sessionId(s) || '', (sessionTitle(s)) + '（分叉）');
+        try {
+            var res = await api('fork_session', {id: id});
+            if (!res.ok) return alert('分叉失败：' + res.msg);
+            await loadSessions();
+            var s = res.data || {};
+            openSession(sessionId(s) || '', (sessionTitle(s)) + '（分叉）');
+        } catch (e) { alert('分叉失败：' + e.message); }
     }
     async function delSession(id) {
         if (!confirm('确认删除该会话？')) return;
-        var res = await api('delete_session', {id: id});
-        if (!res.ok) return alert('删除失败：' + res.msg);
-        if (curSession && curSession.id === id) { curSession = null; $('curSessionLabel').textContent = ''; $('chatBox').innerHTML = ''; }
-        loadSessions();
+        try {
+            var res = await api('delete_session', {id: id});
+            if (!res.ok) return alert('删除失败：' + res.msg);
+            if (curSession && curSession.id === id) { curSession = null; $('curSessionLabel').textContent = ''; $('chatBox').innerHTML = ''; }
+            loadSessions();
+        } catch (e) { alert('删除失败：' + e.message); }
     }
 
     async function openSession(id, title) {
