@@ -134,7 +134,9 @@ class AiProvider
             return $len;
         };
         curl_setopt($ch, CURLOPT_WRITEFUNCTION, $write);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        // 注意：不要在此设置 CURLOPT_RETURNTRANSFER=false——PHP curl 中它会将 write method
+        // 重置为 STDOUT，导致上面的 WRITEFUNCTION 回调被丢弃、响应体直接漏出到输出
+        // （默认即 false，无需显式设置）
 
         curl_exec($ch);
         $errno = curl_errno($ch);
