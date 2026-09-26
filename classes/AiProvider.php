@@ -154,7 +154,8 @@ class AiProvider
                 . ($body !== '' ? ': ' . mb_substr($body, 0, 200) : '')];
         }
         if ($answer === '') {
-            return ['ok' => false, 'answer' => '', 'error' => '空响应' . ($errBuf !== '' ? ': ' . mb_substr($errBuf, 0, 200) : '')];
+            return ['ok' => false, 'answer' => '', 'error' => '空响应(HTTP ' . $httpCode . ') [' . $url . ']'
+                . ($errBuf !== '' ? ': ' . mb_substr($errBuf, 0, 200) : '')];
         }
 
         // 非流式：解析 JSON 提取 answer
