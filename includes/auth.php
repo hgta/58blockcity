@@ -66,7 +66,11 @@ function attemptAutoLogin($token) {
             $stmt->execute([':token' => $token]);
             
             // 更新cookie（domain 统一，跨子站共享）
-            setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
+            // headers_sent 防御：部分页面在输出 HTML 后才判定登录态，
+            // 此时再 setcookie 会报 "headers already sent"，跳过即可（滑动续期下个无输出页面补做）
+            if (!headers_sent()) {
+                setcookie('remember_me', $token, time() + 86400 * AUTH_REMEMBER_DAYS, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
+            }
             
             return true;
         }
@@ -75,7 +79,9 @@ function attemptAutoLogin($token) {
     }
     
     // 清除无效的cookie
-    setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
+    if (!headers_sent()) {
+        setcookie('remember_me', '', time() - 3600, '/', AUTH_COOKIE_DOMAIN, isset($_SERVER['HTTPS']), true);
+    }
     return false;
 }
 

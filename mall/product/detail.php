@@ -3,6 +3,13 @@
 require_once __DIR__ . '/../../includes/session.php';
 
 require_once '../../config/database.php';
+
+// 页面模板会在输出 HTML 之后才包含 shared/header.php，
+// 其中 isLoggedIn() 可能触发 remember_me 自动登录的 setcookie()。
+// 为避免 "headers already sent"，这里在任何输出前预计算登录态，
+// shared/header.php 检测到 $isLoggedIn 已设置时不会重复调用。
+require_once __DIR__ . '/../../includes/auth.php';
+$isLoggedIn = isLoggedIn();
  
 
 // 加载相关类
