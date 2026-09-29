@@ -125,6 +125,12 @@ require_once 'includes/header.php';
                 <span class="ac-badge ac-badge-live"><span class="ac-live-dot"></span> 正在落槌</span>
             </div>
             <h2 class="ac-hero-title"><?= htmlspecialchars($hero['item_title'] ?? ('拍品 #' . $hero['id'])) ?></h2>
+            <?php $heroDesc = ac_seller_description_text($hero, 180); ?>
+            <?php if ($heroDesc !== ''): ?>
+            <p class="ac-hero-desc"><?= htmlspecialchars($heroDesc) ?>
+                <a href="view.php?id=<?= intval($hero['id']) ?>" style="color:var(--brand);white-space:nowrap;">查看全部 →</a>
+            </p>
+            <?php endif; ?>
 
             <div class="ac-panel-row">
                 <div>

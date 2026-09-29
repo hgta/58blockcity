@@ -195,4 +195,26 @@ if (!function_exists('ac_render_seller_description')) {
         if ($html === '') return '';
         return '<div class="ac-seller-desc">' . $html . '</div>';
     }
+
+    /**
+     * 卖家描述纯文本摘要（列表/首页主推卡片用，不渲染富文本）
+     * 去除 Markdown 标记 → 压空白 → 按字数截断；为空返回 ''
+     */
+    function ac_seller_description_text($auction, $maxChars = 160) {
+        $md = isset($auction['description']) ? trim((string)$auction['description']) : '';
+        if ($md === '') return '';
+        // 去图片/链接保留文字
+        $t = preg_replace('/!\[([^\]]*)\]\([^)]*\)/u', '$1', $md);
+        $t = preg_replace('/\[([^\]]*)\]\([^)]*\)/u', '$1', $t);
+        // 去行内/块级标记符号
+        $t = preg_replace('/[#>*_`~\|\[\]()]/u', '', $t);
+        // 去行首有序/无序列表标记（- 尺码 / 1. 尺码 → 尺码）
+        $t = preg_replace('/^\s*(?:[-+*]|\d+[.)])\s+/mu', '', $t);
+        // 压缩空白
+        $t = trim(preg_replace('/\s+/u', ' ', $t));
+        if ($t === '') return '';
+        $len = mb_strlen($t, 'UTF-8');
+        if ($len <= $maxChars) return $t;
+        return mb_substr($t, 0, $maxChars, 'UTF-8') . '…';
+    }
 }

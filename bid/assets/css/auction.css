@@ -146,6 +146,13 @@ html[data-ac-theme="light"] body.auction-body {
 .ac-hero-media .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 56px; color: var(--hl); }
 .ac-hero-info { padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; }
 .ac-hero-title { font-size: 26px; font-weight: 800; line-height: 1.25; margin: 0; }
+/* 主推卡片卖家描述摘要（纯文本，180 字截断） */
+.ac-hero-desc {
+    margin: 8px 0 0; font-size: 13.5px; line-height: 1.65;
+    color: var(--muted);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; text-overflow: ellipsis;
+}
 .ac-hero-foot { display: flex; gap: 10px; align-items: center; margin-top: auto; }
 
 /* ---------- LOT 编号 ---------- */
