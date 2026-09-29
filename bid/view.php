@@ -71,6 +71,14 @@ $reserveRatio = $reserve ? min(100, round(floatval($a['current_price'] ?? $a['st
 $detailUrl = ac_item_cross_url($a);
 $typeLabel = ac_item_type_label($a['item_type']);
 
+// 分享信息（弹窗卡片 + 各渠道链接）
+$shareUrl   = 'https://bid.58.tl/view.php?id=' . $auctionId;
+$shareTitle = trim(($a['item_title'] ?? ('拍品 #' . $auctionId)) . ' ' . ac_lot_no($auctionId));
+$shareDesc  = ac_seller_description_text($a, 100);
+if ($shareDesc === '') {
+    $shareDesc = '58拍卖 · ' . ($a['item_title'] ?? ('拍品 #' . $auctionId)) . '，秒级倒计时，价高者得。';
+}
+
 // 商品图集（≥2 张时启用轮播；空图集退化单图）
 $galleryImgs = [];
 if ($a['item_type'] === 'product' && !empty($a['item_images']) && is_array($a['item_images'])) {
@@ -256,6 +264,9 @@ require_once 'includes/header.php';
                 <button type="button" class="ac-btn ac-btn-ghost ac-btn-block" id="acWatchBtn" data-watching="<?= $isWatching ? '1' : '0' ?>">
                     <i class="<?= $isWatching ? 'fas' : 'far' ?> fa-star"></i> <?= $isWatching ? '已关注' : '关注' ?>
                 </button>
+                <button type="button" class="ac-btn ac-btn-ghost ac-btn-block" onclick="openShareModal()" aria-label="分享拍品" title="分享拍品">
+                    <i class="fas fa-share-alt"></i> 分享
+                </button>
             </div>
 
             <?php if ($bidMsg): ?><div class="ac-alert ac-alert-ok"><?= htmlspecialchars($bidMsg) ?></div><?php endif; ?>
@@ -419,5 +430,236 @@ window.AC_SERVER_NOW = <?= time() ?>;
         startX = null;
     }, { passive: true });
 })();
+</script>
+
+<!-- ===== 分享弹窗（与 mall 商品详情同款交互） ===== -->
+<div class="ac-share-backdrop" id="shareModal" onclick="if(event.target === this) closeShareModal()" aria-hidden="true">
+    <div class="ac-share-modal" role="dialog" aria-modal="true" aria-labelledby="acShareTitle">
+        <div class="ac-share-header">
+            <div class="ac-share-title" id="acShareTitle"><i class="fas fa-share-alt"></i> 分享拍品</div>
+            <button type="button" class="ac-share-close" onclick="closeShareModal()" aria-label="关闭"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="ac-share-card">
+            <?php if ($img): ?>
+            <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($a['item_title'] ?? '') ?>">
+            <?php else: ?>
+            <span class="ac-share-card-ph"><i class="fas fa-image"></i></span>
+            <?php endif; ?>
+            <div class="ac-share-card-info">
+                <div class="ac-share-card-name"><?= htmlspecialchars($a['item_title'] ?? ('拍品 #' . $auctionId)) ?></div>
+                <div class="ac-share-card-price">
+                    <?= $isOver && $a['status'] === 'sold'
+                        ? '成交 ' . ac_money($a['final_price'] ?? $a['current_price'], $a['currency'])
+                        : '当前价 ' . ac_money($a['current_price'] ?? $a['start_price'], $a['currency']) ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- 二维码：服务端端点生成，扫码直达拍品页 -->
+        <div class="ac-share-qrcode">
+            <img class="ac-share-qr-img" id="shareQrImg"
+                 src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='160' height='160' fill='%23f1f5f9'/><text x='50%25' y='50%25' font-size='12' fill='%2394a3b8' text-anchor='middle' dominant-baseline='middle'>加载中…</text></svg>"
+                 alt="拍品分享二维码">
+            <div class="ac-share-qr-tip"><i class="fab fa-weixin"></i> 微信扫一扫，分享给好友</div>
+        </div>
+
+        <!-- 渠道按钮 -->
+        <div class="ac-share-channels">
+            <button type="button" class="ac-share-channel" onclick="copyShareLink(this)">
+                <span class="ac-share-icon copy"><i class="fas fa-copy"></i></span>
+                <span>复制链接</span>
+            </button>
+            <button type="button" class="ac-share-channel" onclick="shareToWechat(this)" title="微信内可直接发送给朋友，外部请用上方二维码扫码">
+                <span class="ac-share-icon wechat"><i class="fab fa-weixin"></i></span>
+                <span>微信好友</span>
+            </button>
+            <a class="ac-share-channel" target="_blank" rel="noopener"
+               href="https://service.weibo.com/share/share.php?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($shareTitle . ' ' . $shareDesc) ?>">
+                <span class="ac-share-icon weibo"><i class="fab fa-weibo"></i></span>
+                <span>微博</span>
+            </a>
+            <a class="ac-share-channel" target="_blank" rel="noopener"
+               href="https://connect.qq.com/widget/shareqq/index.html?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($shareTitle) ?>&desc=<?= urlencode($shareDesc) ?>&site=58拍卖">
+                <span class="ac-share-icon qq"><i class="fab fa-qq"></i></span>
+                <span>QQ</span>
+            </a>
+            <a class="ac-share-channel" target="_blank" rel="noopener"
+               href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=<?= urlencode($shareUrl) ?>&title=<?= urlencode($shareTitle) ?>&desc=<?= urlencode($shareDesc) ?>&site=58拍卖">
+                <span class="ac-share-icon qzone"><i class="fas fa-star"></i></span>
+                <span>QQ空间</span>
+            </a>
+            <a class="ac-share-channel" target="_blank" rel="noopener"
+               href="https://www.douban.com/share/service?href=<?= urlencode($shareUrl) ?>&name=<?= urlencode($shareTitle) ?>&text=<?= urlencode($shareDesc) ?>">
+                <span class="ac-share-icon douban"><i class="fas fa-book"></i></span>
+                <span>豆瓣</span>
+            </a>
+            <button type="button" class="ac-share-channel" id="shareNative" onclick="nativeShare()" style="display:none;">
+                <span class="ac-share-icon more"><i class="fas fa-ellipsis-h"></i></span>
+                <span>更多</span>
+            </button>
+            <button type="button" class="ac-share-channel" id="shareNative2" onclick="nativeShare()" style="display:none;">
+                <span class="ac-share-icon link"><i class="fas fa-share-square"></i></span>
+                <span>系统分享</span>
+            </button>
+        </div>
+
+        <!-- 链接行 -->
+        <div class="ac-share-linkrow">
+            <input type="text" class="ac-share-linkinput" id="shareLinkInput" value="<?= htmlspecialchars($shareUrl) ?>" readonly>
+            <button type="button" class="ac-share-linkcopy" id="shareLinkCopyBtn" onclick="copyShareLinkFromInput(this)">复制</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== 分享功能（与 mall 商品详情页同款降级策略） =====
+var SHARE_URL       = <?= json_encode($shareUrl) ?>;
+var SHARE_TITLE     = <?= json_encode($shareTitle) ?>;
+var SHARE_DESC      = <?= json_encode($shareDesc) ?>;
+var SHARE_HAS_NATIVE = (typeof navigator !== 'undefined' && !!navigator.share);
+
+function openShareModal() {
+    var modal = document.getElementById('shareModal');
+    if (!modal) return;
+
+    // 二维码按需懒加载（服务端 PNG 端点）
+    var qrImg = document.getElementById('shareQrImg');
+    if (qrImg && qrImg.dataset.loaded !== '1') {
+        qrImg.src = '/api/qrcode.php?size=200&url=' + encodeURIComponent(SHARE_URL);
+        qrImg.dataset.loaded = '1';
+    }
+
+    // 渠道 href 已服务端渲染；JS 仅负责显隐原生分享按钮
+    document.getElementById('shareNative').style.display  = SHARE_HAS_NATIVE ? 'flex' : 'none';
+    document.getElementById('shareNative2').style.display = SHARE_HAS_NATIVE ? 'flex' : 'none';
+
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // 自动选中链接方便复制
+    setTimeout(function () {
+        var inp = document.getElementById('shareLinkInput');
+        if (inp) { inp.focus(); inp.setSelectionRange(0, inp.value.length); }
+    }, 50);
+}
+
+function closeShareModal() {
+    var modal = document.getElementById('shareModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+// ESC 关闭（图集轮播已占用左右键，仅 ESC）
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeShareModal();
+});
+
+// 分享给微信好友：
+// - 微信内置浏览器：WeixinJSBridge 唤起「发送给朋友」
+// - 移动端支持原生分享：调系统面板（含微信/QQ 候选）
+// - 桌面端：聚焦二维码 + 复制链接提示扫码
+function shareToWechat(btn) {
+    try {
+        if (typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge && WeixinJSBridge.invoke) {
+            WeixinJSBridge.invoke('sendAppMessage', {
+                'appid': '', 'img_url': '', 'img_width': '200', 'img_height': '200',
+                'link': SHARE_URL, 'desc': SHARE_DESC, 'title': SHARE_TITLE
+            }, function (res) { /* noop */ });
+            return;
+        }
+    } catch (e) { /* 忽略，继续降级 */ }
+
+    if (SHARE_HAS_NATIVE && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        nativeShare();
+        return;
+    }
+
+    var qrArea = document.querySelector('.ac-share-qrcode');
+    var tip    = document.querySelector('.ac-share-qr-tip');
+    if (qrArea) {
+        qrArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        qrArea.style.transition = 'box-shadow .25s';
+        qrArea.style.boxShadow = '0 0 0 3px #07c160, 0 0 18px rgba(7,193,96,.35)';
+        setTimeout(function () { qrArea.style.boxShadow = ''; }, 2200);
+    }
+    if (tip) {
+        tip.innerHTML = '<i class="fab fa-weixin"></i> 请用微信扫一扫上方二维码，分享给好友';
+    }
+    shareCopyText(SHARE_URL, btn);
+}
+
+// 通用复制：clipboard API + execCommand 退化
+function shareCopyText(text, btnEl) {
+    var onOk = function () {
+            showShareToast('链接已复制，快去分享吧～');
+            if (btnEl) {
+                var orig = btnEl.dataset.origText || btnEl.textContent;
+                btnEl.dataset.origText = orig;
+                btnEl.textContent = '已复制';
+                if (btnEl.classList) btnEl.classList.add('copied');
+                setTimeout(function () {
+                    btnEl.textContent = orig;
+                    if (btnEl.classList) btnEl.classList.remove('copied');
+                }, 1800);
+            }
+        },
+        onFail = function () {
+            var tmp = document.createElement('input');
+            tmp.value = text;
+            tmp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+            document.body.appendChild(tmp);
+            tmp.select();
+            try {
+                document.execCommand('copy');
+                onOk();
+            } catch (e) {
+                showShareToast('复制失败，请手动复制', true);
+            }
+            document.body.removeChild(tmp);
+        };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onOk, onFail);
+    } else {
+        onFail();
+    }
+}
+
+function copyShareLink(btn) { shareCopyText(SHARE_URL, btn); }
+function copyShareLinkFromInput(btn) {
+    var inp = document.getElementById('shareLinkInput');
+    shareCopyText(inp ? inp.value : SHARE_URL, btn);
+}
+
+// Web Share API（移动端原生分享面板）
+function nativeShare() {
+    if (!navigator.share) {
+        showShareToast('当前环境不支持系统分享');
+        return;
+    }
+    navigator.share({ title: SHARE_TITLE, text: SHARE_DESC, url: SHARE_URL })
+        .catch(function (err) {
+            if (err && err.name !== 'AbortError') console.warn('分享失败:', err);
+        });
+}
+
+// 简易 toast
+function showShareToast(msg, isError) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 18px;border-radius:24px;color:#fff;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.2);' +
+        (isError ? 'background:#ef4444;' : 'background:#10b981;');
+    document.body.appendChild(t);
+    setTimeout(function () {
+        t.style.transition = 'opacity .3s, top .3s';
+        t.style.opacity = '0';
+        t.style.top = '12px';
+        setTimeout(function () { t.remove(); }, 320);
+    }, 1600);
+}
 </script>
 <?php require_once 'includes/footer.php'; ?>

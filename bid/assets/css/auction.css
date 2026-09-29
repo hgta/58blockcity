@@ -454,6 +454,151 @@ html[data-ac-theme="light"] body.auction-body {
 
 /* ---------- 商品选择网格（bid-mall-product-auction） ---------- */
 .ac-item-grid-prod { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); max-height: 360px; }
+
+/* ---------- 分享弹窗（拍品详情页，与 mall 商品详情同款交互，主题变量适配暗色） ---------- */
+.ac-share-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 9998;
+    display: none; align-items: center; justify-content: center;
+    padding: 16px;
+    animation: acShareFadeIn .2s ease;
+}
+.ac-share-backdrop.show { display: flex; }
+@keyframes acShareFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.ac-share-modal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    width: 100%; max-width: 420px;
+    padding: 24px 22px 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    position: relative;
+    animation: acShareSlideUp .25s ease;
+}
+@keyframes acShareSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.ac-share-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.ac-share-title { font-size: 17px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.ac-share-title i { color: var(--brand); }
+.ac-share-close {
+    width: 32px; height: 32px;
+    border: none; background: var(--surface-2);
+    border-radius: 50%; cursor: pointer;
+    color: var(--muted); font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+}
+.ac-share-close:hover { background: var(--line); color: var(--text); }
+
+/* 拍品卡片 */
+.ac-share-card {
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.ac-share-card img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+.ac-share-card-ph {
+    width: 56px; height: 56px; border-radius: 8px; flex: none;
+    background: var(--inset, var(--surface-2)); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 18px;
+}
+.ac-share-card-info { flex: 1; min-width: 0; }
+.ac-share-card-name {
+    font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ac-share-card-price { font-size: 13px; color: var(--live); font-weight: 700; }
+
+/* 二维码区 */
+.ac-share-qrcode {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    transition: box-shadow .25s;
+}
+.ac-share-qr-img {
+    width: 160px; height: 160px;
+    border-radius: 8px; background: #fff; padding: 6px;
+    border: 1px solid var(--line);
+}
+.ac-share-qr-tip { margin-top: 8px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.ac-share-qr-tip i { color: #07c160; }
+
+/* 渠道按钮网格 */
+.ac-share-channels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.ac-share-channel {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 4px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all .15s;
+    cursor: pointer;
+}
+.ac-share-channel:hover {
+    background: color-mix(in srgb, var(--brand) 8%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--brand) 30%, transparent);
+    color: var(--text); text-decoration: none;
+    transform: translateY(-1px);
+}
+.ac-share-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px;
+}
+.ac-share-icon.wechat { background: #07c160; }
+.ac-share-icon.weibo  { background: #e6162d; }
+.ac-share-icon.qq    { background: #12b7f5; }
+.ac-share-icon.qzone { background: #ffc107; color: #fff; }
+.ac-share-icon.copy  { background: #6366f1; }
+.ac-share-icon.more  { background: #475569; }
+.ac-share-icon.douban { background: #2e8b57; }
+.ac-share-icon.link  { background: #0ea5e9; }
+
+/* 复制链接行 */
+.ac-share-linkrow {
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.ac-share-linkinput {
+    flex: 1; min-width: 0;
+    border: none; background: transparent;
+    font-size: 13px; color: var(--muted);
+    outline: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ac-share-linkcopy {
+    border: none; background: var(--brand); color: #fff;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer; flex: none;
+    transition: opacity .15s;
+}
+.ac-share-linkcopy:hover { opacity: .88; }
+.ac-share-linkcopy.copied { background: #16a34a; }
+
+@media (max-width: 480px) {
+    .ac-share-modal { padding: 20px 16px 14px; }
+    .ac-share-channels { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .ac-share-channel { padding: 8px 2px; font-size: 11px; }
+    .ac-share-icon { width: 32px; height: 32px; font-size: 16px; }
+    .ac-share-qr-img { width: 140px; height: 140px; }
+}
 /* 多店铺分组标题（单店铺时不渲染） */
 .ac-prod-shop-group {
     display: flex; align-items: center; gap: 8px;
