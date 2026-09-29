@@ -23,7 +23,7 @@ $site_config['url_register']  = '/auth/register.php';
 $site_config['body_class'] = trim(($site_config['body_class'] ?? '') . ' auction-body');
 $site_config['main_class'] = trim(($site_config['main_class'] ?? '') . ' auction-shell');
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '')
-    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260914">'
+    . '<link rel="stylesheet" href="/assets/css/auction.css?v=20260929">'
     // 首屏即应用主题，避免闪烁：优先读取用户选择，否则跟随系统偏好
     . '<script>(function(){try{var t=localStorage.getItem("ac_theme");'
     . 'if(t!=="light"&&t!=="dark"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}'
