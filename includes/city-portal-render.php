@@ -558,6 +558,8 @@ if (!function_exists('city_portal_render')) {
                     <div class="cp-footer-qr">
                         <figure><img src="/images/qr-discount.png" alt="7.5折购地"><figcaption>7.5折购地</figcaption></figure>
                         <figure><img src="/images/qr-customer-service.png" alt="客服微信"><figcaption>客服微信</figcaption></figure>
+                        <figure><img src="/images/qr-zhongchuang.png" alt="加入众创"><figcaption>加入众创</figcaption></figure>
+                        <figure><img src="/images/qr-gongzhonghao.jpg" alt="官方公众号"><figcaption>官方公众号</figcaption></figure>
                     </div>
                 </div>
                 <div>

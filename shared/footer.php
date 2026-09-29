@@ -96,6 +96,14 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                         <img src="https://www.58.tl/images/qr-customer-service.png" alt="客服微信">
                         <span>客服微信</span>
                     </div>
+                    <div class="qr-item">
+                        <img src="https://www.58.tl/images/qr-zhongchuang.png" alt="加入众创">
+                        <span>加入众创</span>
+                    </div>
+                    <div class="qr-item">
+                        <img src="https://www.58.tl/images/qr-gongzhonghao.jpg" alt="官方公众号">
+                        <span>官方公众号</span>
+                    </div>
                 </div>
             </div>
             <div class="footer-col footer-contact">
