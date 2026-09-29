@@ -29,6 +29,15 @@ $errors = [];
 $success = '';
 $user = new User($pdo);
 
+// 城市数据库（用于注册表单的城市选择器）
+$cityOptions = [];
+try {
+    $stmt = $pdo->query("SELECT name, pinyin, is_hot FROM cities WHERE status = 'active' OR status IS NULL ORDER BY is_hot DESC, rank ASC, pinyin ASC LIMIT 1000");
+    $cityOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $cityOptions = [];
+}
+
 if (isLoggedIn()) {
     header('Location: ' . $site_config['redirect_after_login']);
     exit;
@@ -47,6 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!preg_match('/[a-zA-Z]/', $password) || !preg_match('/[0-9]/', $password)) $errors[] = '密码需包含字母和数字';
     if ($password !== $confirmPassword) $errors[] = '两次密码不一致';
     
+    // 城市名归一化：拼音 / 非标准输入映射回城市库中的标准名称
+    $city = normalizeCityName($city, $cityOptions);
+
     if (empty($errors)) {
         try {
             $userId = $user->register($username, $email, $password, $city);
@@ -63,12 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 获取城市列表
-$cities = [];
-try {
-    $stmt = $pdo->query("SELECT name FROM cities ORDER BY rank LIMIT 100");
-    $cities = $stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (Exception $e) {}
 ?>
 <?php include $site_config['includes_path'] . 'header.php'; ?>
 
@@ -125,12 +131,12 @@ try {
         </div>
         <div class="form-group">
             <label>所在城市</label>
-            <input type="text" name="city" list="cityList" value="<?= htmlspecialchars($_POST['city'] ?? '') ?>" placeholder="选择或输入城市">
-            <datalist id="cityList">
-                <?php foreach ($cities as $c): ?>
-                    <option value="<?= htmlspecialchars($c) ?>">
-                <?php endforeach; ?>
-            </datalist>
+            <?php
+            $cityPickerName  = 'city';
+            $cityPickerValue = $_POST['city'] ?? '';
+            $cityPickerId    = 'cityPicker';
+            include $sharedIncludes . '/city_picker.php';
+            ?>
         </div>
         <button type="submit" class="btn-register">注册</button>
     </form>

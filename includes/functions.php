@@ -107,6 +107,41 @@ function isValidEmail($email) {
 }
 
 /**
+ * 城市名归一化
+ *
+ * 把用户在注册/补全表单里填写的城市（可能是拼音，或大小写不一致的名称）
+ * 映射回 cities 城市数据库中的标准城市名；未收录的城市按原输入保留。
+ *
+ * @param string $input       用户输入
+ * @param array  $cityOptions cities 表数据（每项含 name / pinyin）
+ * @return string 标准城市名
+ */
+if (!function_exists('normalizeCityName')) {
+function normalizeCityName($input, array $cityOptions = []) {
+    $input = trim((string)$input);
+    if ($input === '') {
+        return '';
+    }
+
+    $lower = strtolower(str_replace([' ', '-'], '', $input));
+
+    foreach ($cityOptions as $city) {
+        $name = is_array($city) ? (string)($city['name'] ?? '') : (string)$city;
+        if ($name === '') {
+            continue;
+        }
+        $pinyin = is_array($city) ? strtolower((string)($city['pinyin'] ?? '')) : '';
+
+        if ($name === $input || ($pinyin !== '' && $pinyin === $lower)) {
+            return $name;
+        }
+    }
+
+    return $input;
+}
+}
+
+/**
  * 获取客户端IP地址
  */
 if (!function_exists('getClientIp')) {

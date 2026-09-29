@@ -33,6 +33,15 @@ $errors = [];
 $wechatAuth = new WechatAuth($pdo);
 $user = new User($pdo);
 
+// 城市数据库（用于补全表单的城市选择器）
+$cityOptions = [];
+try {
+    $stmt = $pdo->query("SELECT name, pinyin, is_hot FROM cities WHERE status = 'active' OR status IS NULL ORDER BY is_hot DESC, rank ASC, pinyin ASC LIMIT 1000");
+    $cityOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $cityOptions = [];
+}
+
 // ---- 前置校验：必须有扫码上下文 ----
 $pendingOpenid = $_SESSION['wechat_pending_openid'] ?? '';
 $pendingExpiry = $_SESSION['wechat_pending_expires'] ?? 0;
@@ -91,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email    = trim($_POST['email'] ?? '');
             $phone    = trim($_POST['phone'] ?? '');
             $password = $_POST['password'] ?? '';
-            $city     = trim($_POST['city'] ?? '');
+            $city     = normalizeCityName($_POST['city'] ?? '', $cityOptions);
 
             $userId = $wechatAuth->createUserFromWechat(
                 $pendingOpenid,
@@ -119,12 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 获取城市列表
-$cities = [];
-try {
-    $stmt = $pdo->query("SELECT name FROM cities ORDER BY rank LIMIT 100");
-    $cities = $stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (Exception $e) {}
 ?>
 <?php include $site_config['includes_path'] . 'header.php'; ?>
 
@@ -195,12 +198,12 @@ try {
             </div>
             <div class="form-group">
                 <label>所在城市</label>
-                <input type="text" name="city" list="wcCityList" value="<?= htmlspecialchars($_POST['city'] ?? '') ?>" placeholder="选择或输入城市">
-                <datalist id="wcCityList">
-                    <?php foreach ($cities as $c): ?>
-                        <option value="<?= htmlspecialchars($c) ?>">
-                    <?php endforeach; ?>
-                </datalist>
+                <?php
+                $cityPickerName  = 'city';
+                $cityPickerValue = $_POST['city'] ?? '';
+                $cityPickerId    = 'wcCityPicker';
+                include $sharedIncludes . '/city_picker.php';
+                ?>
             </div>
             <button type="submit" class="btn-primary">完成注册</button>
         </form>
