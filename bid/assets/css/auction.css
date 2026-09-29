@@ -447,6 +447,17 @@ html[data-ac-theme="light"] body.auction-body {
 
 /* ---------- 商品选择网格（bid-mall-product-auction） ---------- */
 .ac-item-grid-prod { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); max-height: 360px; }
+/* 多店铺分组标题（单店铺时不渲染） */
+.ac-prod-shop-group {
+    display: flex; align-items: center; gap: 8px;
+    margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: var(--text);
+}
+.ac-prod-shop-group:first-child { margin-top: 4px; }
+.ac-prod-shop-group i { color: var(--brand); font-size: 12px; }
+.ac-prod-shop-group .cnt {
+    margin-left: auto; font-size: 11.5px; font-weight: 400; color: var(--muted);
+    background: var(--surface-2); border-radius: 999px; padding: 1px 9px;
+}
 .ac-item-opt-prod { display: flex; flex-direction: column; padding: 6px; }
 .ac-item-opt-prod .ac-prod-thumb {
     width: 100%; aspect-ratio: 1/1; object-fit: cover;

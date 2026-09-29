@@ -46,17 +46,20 @@ $myNfts = $nstmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 获取用户店铺与店内可拍卖商品（店铺 active + 商品 active + stock>=1 +
 // 不在 pending/active 拍卖中 + 无未完成常规订单——与后端互斥校验口径一致）
-$myShop = null;
 $myProducts = [];
-$shopStmt = $pdo->prepare("SELECT id, shop_name, status FROM shops WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+// 多店铺：查询该用户所有营业中店铺的可拍商品（带店铺名，前端按店铺分组展示）
+$shopStmt = $pdo->prepare("SELECT COUNT(*) AS total, SUM(status = 'active') AS active_cnt FROM shops WHERE user_id = ?");
 $shopStmt->execute([$userId]);
-$myShop = $shopStmt->fetch(PDO::FETCH_ASSOC);
-$shopUsable = $myShop && $myShop['status'] === 'active';
+$shopStats = $shopStmt->fetch(PDO::FETCH_ASSOC);
+$hasShop = intval($shopStats['total'] > 0);
+$shopUsable = intval($shopStats['active_cnt'] ?? 0) > 0;
 if ($shopUsable) {
     $pstmt = $pdo->prepare("
-        SELECT p.id, p.name, p.main_image, p.price_bct, p.price_cny, p.stock
+        SELECT p.id, p.name, p.main_image, p.price_bct, p.price_cny, p.stock, p.shop_id, s.shop_name
         FROM products p
-        WHERE p.shop_id = ?
+        JOIN shops s ON p.shop_id = s.id
+        WHERE s.user_id = ?
+          AND s.status = 'active'
           AND p.status = 'active'
           AND p.stock >= 1
           AND NOT EXISTS (
@@ -68,7 +71,7 @@ if ($shopUsable) {
               WHERE oi.product_id = p.id AND o.status IN ('pending','paid','shipped'))
         ORDER BY p.created_at DESC
         LIMIT 100");
-    $pstmt->execute([$myShop['id']]);
+    $pstmt->execute([$userId]);
     $myProducts = $pstmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -214,7 +217,7 @@ require_once 'includes/header.php';
             <!-- 商品选择 -->
             <div class="ac-field <?= $editItemType === 'product' ? '' : 'ac-hidden' ?>" id="product-select">
                 <label>选择商城商品（仅 1 件 1 拍，落槌自动生成商城订单）</label>
-                <?php if (!$myShop): ?>
+                <?php if (!$hasShop): ?>
                     <div class="ac-guide-empty">
                         <i class="fas fa-store"></i>
                         <div class="t">您还没有店铺</div>
@@ -223,7 +226,7 @@ require_once 'includes/header.php';
                 <?php elseif (!$shopUsable): ?>
                     <div class="ac-guide-empty">
                         <i class="fas fa-store-slash"></i>
-                        <div class="t">店铺当前不可营业（<?= htmlspecialchars($myShop['shop_name']) ?> · <?= htmlspecialchars($myShop['status']) ?>）</div>
+                        <div class="t">您的店铺当前均未营业，无法发起商品拍卖</div>
                         <a href="https://mall.58.tl/shop/manage.php" target="_blank" class="ac-btn ac-btn-primary">前往商城店铺后台 →</a>
                     </div>
                 <?php elseif (empty($myProducts)): ?>
@@ -233,20 +236,34 @@ require_once 'includes/header.php';
                         <a href="https://mall.58.tl/shop/products.php" target="_blank" class="ac-btn ac-btn-primary">前往商城后台上架商品 →</a>
                     </div>
                 <?php else: ?>
-                <div class="ac-item-grid ac-item-grid-prod">
-                    <?php foreach ($myProducts as $p): ?>
-                    <div class="ac-item-opt ac-item-opt-prod" data-type="product" data-id="<?= $p['id'] ?>" onclick="selectItem(this, '<?= $p['id'] ?>')">
-                        <?php if ($p['main_image']): ?>
-                        <img class="ac-prod-thumb" src="https://mall.58.tl/<?= ltrim(htmlspecialchars($p['main_image']), '/') ?>" alt="" loading="lazy" onerror="this.style.display='none'">
-                        <?php endif; ?>
-                        <span class="lbl"><?= htmlspecialchars($p['name']) ?></span>
-                        <span class="ac-prod-meta">
-                            <span>Ⓟ <?= number_format(floatval($p['price_bct']), 0) ?> / ¥ <?= number_format(floatval($p['price_cny']), 2) ?></span>
-                            <span class="ac-prod-stock">库存 <?= intval($p['stock']) ?></span>
-                        </span>
+                <?php
+                // 按店铺分组（保持 created_at DESC 的整体顺序，店铺首次出现时输出分组标题）
+                $grouped = [];
+                foreach ($myProducts as $p) { $grouped[$p['shop_id']][] = $p; }
+                $multiShop = count($grouped) > 1;
+                ?>
+                <?php foreach ($grouped as $shopId => $prods): ?>
+                    <?php if ($multiShop): ?>
+                    <div class="ac-prod-shop-group">
+                        <i class="fas fa-store"></i> <?= htmlspecialchars($prods[0]['shop_name']) ?>
+                        <span class="cnt"><?= count($prods) ?> 件</span>
                     </div>
-                    <?php endforeach; ?>
-                </div>
+                    <?php endif; ?>
+                    <div class="ac-item-grid ac-item-grid-prod">
+                        <?php foreach ($prods as $p): ?>
+                        <div class="ac-item-opt ac-item-opt-prod" data-type="product" data-id="<?= $p['id'] ?>" onclick="selectItem(this, '<?= $p['id'] ?>')">
+                            <?php if ($p['main_image']): ?>
+                            <img class="ac-prod-thumb" src="https://mall.58.tl/<?= ltrim(htmlspecialchars($p['main_image']), '/') ?>" alt="" loading="lazy" onerror="this.style.display='none'">
+                            <?php endif; ?>
+                            <span class="lbl"><?= htmlspecialchars($p['name']) ?></span>
+                            <span class="ac-prod-meta">
+                                <span>Ⓟ <?= number_format(floatval($p['price_bct']), 0) ?> / ¥ <?= number_format(floatval($p['price_cny']), 2) ?></span>
+                                <span class="ac-prod-stock">库存 <?= intval($p['stock']) ?></span>
+                            </span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endforeach; ?>
                 <p class="ac-hint" style="margin:8px 0 0;">
                     商品改名 / 改图后拍卖详情页会同步展示最新信息；拍卖期间商品仍可被加购物车，但落槌时若库存不足将整体流拍。
                 </p>
