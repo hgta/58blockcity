@@ -59,7 +59,7 @@ class Auction {
         $sellerId = intval($sellerId);
         $itemId   = intval($itemId);
 
-        if (!in_array($itemType, ['block', 'nft'], true)) return '拍卖品类型无效';
+        if (!in_array($itemType, ['block', 'nft', 'product'], true)) return '拍卖品类型无效';
 
         $startPrice    = floatval($data['start_price'] ?? 0);
         $reservePrice  = isset($data['reserve_price']) && $data['reserve_price'] !== '' ? floatval($data['reserve_price']) : null;
@@ -68,24 +68,32 @@ class Auction {
         $endTime       = $data['end_time'] ?? '';
         $currency      = in_array($data['currency'] ?? '', ['popularity', 'cny'], true) ? $data['currency'] : 'cny';
         $acceptCities  = $data['accept_cities'] ?? [];
+        $description   = isset($data['description']) ? trim((string)$data['description']) : null;
+        if ($description === '') $description = null;
 
         if ($startPrice <= 0) return '请填写有效的起拍价';
         if ($bidIncrement <= 0) return '请填写有效的加价幅度';
         if (empty($startTime) || empty($endTime)) return '请设置起止时间';
         if (strtotime($endTime) <= strtotime($startTime)) return '截止时间必须晚于开始时间';
         if ($reservePrice !== null && $reservePrice < $startPrice) return '底价不能低于起拍价';
+        if ($description !== null && mb_strlen($description) > 5000) return '拍品描述不超过 5000 字';
 
         // 归属校验
-        if (!$this->verifyOwnership($itemType, $itemId, $sellerId)) {
+        if ($itemType === 'product') {
+            $err = $this->checkProductSellable($itemId, $sellerId);
+            if ($err !== null) return $err;
+        } elseif (!$this->verifyOwnership($itemType, $itemId, $sellerId)) {
             return '您不拥有该物品，无法发起拍卖';
         }
 
-        // 互斥校验：是否已有 active 拍卖 / 一口价挂牌
+        // 互斥校验：是否已有 active 拍卖 / 一口价挂牌（product 为常规订单冲突）
         if ($this->isItemInActiveAuction($itemType, $itemId)) {
-            return '该物品已在拍卖中';
+            return $itemType === 'product' ? '该商品已在拍卖中' : '该物品已在拍卖中';
         }
         if ($this->isItemListed($itemType, $itemId)) {
-            return '该物品已在一口价挂牌中，请先取消挂牌';
+            return $itemType === 'product'
+                ? '该商品已有关联的未完成订单，无法发起拍卖'
+                : '该物品已在一口价挂牌中，请先取消挂牌';
         }
 
         // 接受城市（仅人气值货币时有效）
@@ -107,12 +115,13 @@ class Auction {
                  start_time, end_time, current_price, currency, accept_cities, status,
                  bid_count, bidder_count, watch_count, extend_count,
                  auto_extend_seconds, extend_window_seconds, max_extend_times, max_extend_seconds,
-                 created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?, NOW())");
+                 description, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?, ?, NOW())");
         $ok = $stmt->execute([
             $itemType, $itemId, $sellerId, $startPrice, $reservePrice, $bidIncrement,
             $startTime, $endTime, $startPrice, $currency, $acceptCitiesJson, $status,
             self::AUTO_EXTEND_SECONDS, self::EXTEND_WINDOW_SECONDS, self::MAX_EXTEND_TIMES, self::MAX_EXTEND_SECONDS,
+            $description,
         ]);
         return $ok ? intval($this->pdo->lastInsertId()) : '创建拍卖失败';
     }
@@ -127,11 +136,35 @@ class Auction {
             $b = $this->block->getBlockById($itemId);
             return $b && intval($b['owner_id']) === intval($userId);
         }
+        if ($itemType === 'product') {
+            return $this->checkProductSellable($itemId, $userId) === null;
+        }
         // nft：item_id 指向 nft_city_user.id
         $stmt = $this->pdo->prepare("SELECT user_id FROM nft_city_user WHERE id = ? AND is_current = 1");
         $stmt->execute([$itemId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row && intval($row['user_id']) === intval($userId);
+    }
+
+    /**
+     * 商品可拍性校验（归属 + 店铺 + 商品 + 库存 四合一）
+     * @return string|null 全部通过返回 null，否则返回对应错误信息
+     */
+    private function checkProductSellable($productId, $sellerId) {
+        $stmt = $this->pdo->prepare("
+            SELECT p.id, p.stock, p.status,
+                   s.user_id AS shop_owner_id, s.status AS shop_status
+            FROM products p
+            JOIN shops s ON p.shop_id = s.id
+            WHERE p.id = ?");
+        $stmt->execute([intval($productId)]);
+        $rec = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$rec) return '商品不存在';
+        if (intval($rec['shop_owner_id']) !== intval($sellerId)) return '您不拥有该商品所属店铺';
+        if ($rec['shop_status'] !== 'active') return '店铺当前未营业，无法发起拍卖';
+        if ($rec['status'] !== 'active') return '该商品当前不可拍（下架/售罄/草稿）';
+        if (intval($rec['stock']) < 1) return '该商品当前库存不足';
+        return null;
     }
 
     /**
@@ -154,6 +187,16 @@ class Auction {
                 SELECT COUNT(*) FROM block_listings
                 WHERE (block_id = ? OR merged_block_id = ?) AND status IN ('listed','pending')");
             $stmt->execute([$itemId, $itemId]);
+            return $stmt->fetchColumn() > 0;
+        }
+        if ($itemType === 'product') {
+            // 商品：检查是否存在关联的未完成常规订单，避免同一件商品被两次成交
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*)
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.id
+                WHERE oi.product_id = ? AND o.status IN ('pending','paid','shipped')");
+            $stmt->execute([$itemId]);
             return $stmt->fetchColumn() > 0;
         }
         // nft：item_id 指向 nft_city_user.id，需先取 nft_id + city_id
@@ -356,25 +399,38 @@ class Auction {
                 return;
             }
 
-            // 成交：转移所有权
-            $this->transferOwnership($a['item_type'], intval($a['item_id']), $bidderId, $price);
+            // 成交：转移所有权（product 返回订单 id，其余返回 null）
+            $wonOrderId = $this->transferOwnership($auctionId, $a['item_type'], intval($a['item_id']), $bidderId, $price);
 
             $stmt = $this->pdo->prepare("
                 UPDATE auctions SET status = 'sold', final_price = ?, sold_at = NOW(), updated_at = NOW()
                 WHERE id = ?");
             $stmt->execute([$price, $auctionId]);
 
-            // 通知买卖双方
-            $this->notify->sendSystemNotify(
-                $bidderId, 'auction_won', $auctionId,
-                '恭喜！您已赢得拍卖，物品所有权已转移给您。',
-                'https://bid.58.tl/view.php?id=' . $auctionId
-            );
-            $this->notify->sendSystemNotify(
-                intval($a['seller_id']), 'auction_sold', $auctionId,
-                '您的拍卖已成交，成交价 ' . number_format($price, 2) . '。',
-                'https://bid.58.tl/view.php?id=' . $auctionId
-            );
+            // 通知买卖双方（商品拍品通知带 mall 订单链接）
+            if ($a['item_type'] === 'product' && $wonOrderId) {
+                $this->notify->sendSystemNotify(
+                    $bidderId, 'auction_won_product', $auctionId,
+                    '恭喜！您已拍得商品，订单已生成，请前往商城完成付款（订单 7 天内有效）。',
+                    'https://mall.58.tl/user/order_detail.php?id=' . intval($wonOrderId)
+                );
+                $this->notify->sendSystemNotify(
+                    intval($a['seller_id']), 'auction_sold_product', $auctionId,
+                    '您的商品拍卖已成交，成交价 ' . number_format($price, 2) . '，系统已自动生成订单。',
+                    'https://bid.58.tl/view.php?id=' . $auctionId
+                );
+            } else {
+                $this->notify->sendSystemNotify(
+                    $bidderId, 'auction_won', $auctionId,
+                    '恭喜！您已赢得拍卖，物品所有权已转移给您。',
+                    'https://bid.58.tl/view.php?id=' . $auctionId
+                );
+                $this->notify->sendSystemNotify(
+                    intval($a['seller_id']), 'auction_sold', $auctionId,
+                    '您的拍卖已成交，成交价 ' . number_format($price, 2) . '。',
+                    'https://bid.58.tl/view.php?id=' . $auctionId
+                );
+            }
 
             $this->pdo->commit();
         } catch (Exception $e) {
@@ -385,8 +441,11 @@ class Auction {
 
     /**
      * 成交转移所有权
+     * block/nft：转移物品归属并写交易流水，返回 null
+     * product：原子扣库存 + 创建 pending 订单（7 天有效）+ 写 order_items，返回订单 id
+     *          任一环节失败抛异常，由 settle() 的事务整体回滚（视为流拍）
      */
-    private function transferOwnership($itemType, $itemId, $buyerId, $price) {
+    private function transferOwnership($auctionId, $itemType, $itemId, $buyerId, $price) {
         if ($itemType === 'block') {
             $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = ?, updated_at = NOW() WHERE id = ?");
             $stmt->execute([$buyerId, $itemId]);
@@ -397,22 +456,69 @@ class Auction {
                 INSERT INTO transactions (block_id, seller_id, buyer_id, price, transaction_type, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, 'resale', 'completed', NOW(), NOW())");
             $stmt->execute([$itemId, $sellerId, $buyerId, $price]);
-        } else {
-            // nft：item_id 指向 nft_city_user.id
-            $ncu = $this->pdo->prepare("SELECT nft_id, city_id, user_id FROM nft_city_user WHERE id = ?");
-            $ncu->execute([$itemId]);
-            $rec = $ncu->fetch(PDO::FETCH_ASSOC);
-            if (!$rec) return;
-            $sellerId = intval($rec['user_id']);
-            // 转移当前持有给买家
-            $stmt = $this->pdo->prepare("UPDATE nft_city_user SET user_id = ?, is_listed = 0 WHERE id = ?");
-            $stmt->execute([$buyerId, $itemId]);
-            // 写 NFT 交易流水
-            $stmt = $this->pdo->prepare("
-                INSERT INTO nft_transactions (nft_id, seller_id, buyer_id, price, currency, transaction_type, status, city_id, completed_at, created_at)
-                VALUES (?, ?, ?, ?, 'popularity', 'platform', 'completed', ?, NOW(), NOW())");
-            $stmt->execute([$rec['nft_id'], $sellerId, $buyerId, $price, $rec['city_id']]);
+            return null;
         }
+        if ($itemType === 'product') {
+            // 原子扣库存：rowCount=0 表示商品已下架/库存不足 → 整体回滚视为流拍
+            $stmt = $this->pdo->prepare("
+                UPDATE products
+                SET stock = stock - 1, sold_count = sold_count + 1, updated_at = NOW()
+                WHERE id = ? AND stock >= 1 AND status = 'active'");
+            $stmt->execute([$itemId]);
+            if ($stmt->rowCount() === 0) {
+                throw new Exception('该商品已下架或库存不足，无法成交');
+            }
+
+            // 取商品 + 店铺信息（订单字段）
+            $pStmt = $this->pdo->prepare("
+                SELECT p.id, p.shop_id, p.name, p.main_image, p.status, s.user_id AS shop_owner_id
+                FROM products p
+                LEFT JOIN shops s ON p.shop_id = s.id
+                WHERE p.id = ?");
+            $pStmt->execute([$itemId]);
+            $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$prod) {
+                throw new Exception('商品不存在，无法成交');
+            }
+
+            // 创建订单：status='pending'，expire_at = +7 天（拍卖订单独立于常规 30 分钟）
+            $lotNo   = 'LOT ' . str_pad(intval($auctionId), 3, '0', STR_PAD_LEFT);
+            $orderNo = 'O' . date('YmdHis') . mt_rand(1000, 9999);
+            $oStmt = $this->pdo->prepare("
+                INSERT INTO orders
+                    (order_no, user_id, shop_id, total_amount, payment_city, payment_amount,
+                     payment_block_id, buyer_note, shipping_address, status, expire_at)
+                VALUES (?, ?, ?, ?, '', ?, '', ?, '', 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY))");
+            $oStmt->execute([
+                $orderNo, intval($buyerId), intval($prod['shop_id']), $price, $price,
+                '拍卖 ' . $lotNo . ' 成交',
+            ]);
+            $orderId = intval($this->pdo->lastInsertId());
+
+            // 写订单条目：quantity=1，unit_price=成交价，名称/主图取当前快照
+            $oiStmt = $this->pdo->prepare("
+                INSERT INTO order_items
+                    (order_id, product_id, product_name, product_image, quantity, unit_price, total_price, created_at)
+                VALUES (?, ?, ?, ?, 1, ?, ?, NOW())");
+            $oiStmt->execute([$orderId, $itemId, $prod['name'], $prod['main_image'], $price, $price]);
+
+            return $orderId;
+        }
+        // nft：item_id 指向 nft_city_user.id
+        $ncu = $this->pdo->prepare("SELECT nft_id, city_id, user_id FROM nft_city_user WHERE id = ?");
+        $ncu->execute([$itemId]);
+        $rec = $ncu->fetch(PDO::FETCH_ASSOC);
+        if (!$rec) return null;
+        $sellerId = intval($rec['user_id']);
+        // 转移当前持有给买家
+        $stmt = $this->pdo->prepare("UPDATE nft_city_user SET user_id = ?, is_listed = 0 WHERE id = ?");
+        $stmt->execute([$buyerId, $itemId]);
+        // 写 NFT 交易流水
+        $stmt = $this->pdo->prepare("
+            INSERT INTO nft_transactions (nft_id, seller_id, buyer_id, price, currency, transaction_type, status, city_id, completed_at, created_at)
+            VALUES (?, ?, ?, ?, 'popularity', 'platform', 'completed', ?, NOW(), NOW())");
+        $stmt->execute([$rec['nft_id'], $sellerId, $buyerId, $price, $rec['city_id']]);
+        return null;
     }
 
     /* ========== 卖家管理 ========== */
@@ -473,6 +579,12 @@ class Auction {
         if (intval($a['seller_id']) !== $sellerId) return ['ok' => false, 'msg' => '无权操作该拍卖'];
         if ($a['status'] !== 'pending') return ['ok' => false, 'msg' => '仅「未开始」的拍卖可编辑'];
 
+        // 商品拍品：编辑时再次校验商品仍可拍（可能已被店主下架 / 库存清零）
+        if ($a['item_type'] === 'product') {
+            $err = $this->checkProductSellable(intval($a['item_id']), $sellerId);
+            if ($err !== null) return ['ok' => false, 'msg' => $err];
+        }
+
         // 校验（与 createAuction 一致）
         $startPrice    = floatval($data['start_price'] ?? 0);
         $reservePrice  = isset($data['reserve_price']) && $data['reserve_price'] !== '' ? floatval($data['reserve_price']) : null;
@@ -480,6 +592,11 @@ class Auction {
         $startTime     = $data['start_time'] ?? '';
         $endTime       = $data['end_time'] ?? '';
         $currency      = in_array($data['currency'] ?? '', ['popularity', 'cny'], true) ? $data['currency'] : 'cny';
+        $description   = array_key_exists('description', $data) ? trim((string)$data['description']) : $a['description'];
+        if ($description === '') $description = null;
+        if ($description !== null && mb_strlen($description) > 5000) {
+            return ['ok' => false, 'msg' => '拍品描述不超过 5000 字'];
+        }
 
         if ($startPrice <= 0) return ['ok' => false, 'msg' => '请填写有效的起拍价'];
         if ($bidIncrement <= 0) return ['ok' => false, 'msg' => '请填写有效的加价幅度'];
@@ -503,12 +620,13 @@ class Auction {
             UPDATE auctions
             SET start_price = ?, reserve_price = ?, bid_increment = ?,
                 start_time = ?, end_time = ?, currency = ?, accept_cities = ?,
-                current_price = ?, status = ?, updated_at = NOW()
+                current_price = ?, status = ?, description = ?,
+                updated_at = NOW()
             WHERE id = ?");
         $stmt->execute([
             $startPrice, $reservePrice, $bidIncrement,
             $startTime, $endTime, $currency, $acceptCitiesJson,
-            $startPrice, $status, $auctionId,
+            $startPrice, $status, $description, $auctionId,
         ]);
         return ['ok' => true, 'msg' => '修改已保存'];
     }
@@ -584,7 +702,7 @@ class Auction {
         $offset = (max(1, intval($page)) - 1) * intval($perPage);
         $where = ["a.status IN ('pending','active')"];
         $params = [];
-        if (in_array($itemType, ['block', 'nft'], true)) {
+        if (in_array($itemType, ['block', 'nft', 'product'], true)) {
             $where[] = "a.item_type = ?";
             $params[] = $itemType;
         }
@@ -632,7 +750,7 @@ class Auction {
         $offset = (max(1, intval($page)) - 1) * intval($perPage);
         $where = ["a.status IN ('sold','ended')"];
         $params = [];
-        if (in_array($itemType, ['block', 'nft'], true)) {
+        if (in_array($itemType, ['block', 'nft', 'product'], true)) {
             $where[] = "a.item_type = ?";
             $params[] = $itemType;
         }
@@ -709,6 +827,16 @@ class Auction {
                 // 保留 blocks.id 作为详情页参数（ auctions.item_id 已等同 blocks.id，显式同步防后续变动）
                 $a['block_id'] = intval($b['id'] ?? $a['item_id']);
             }
+        } elseif ($a['item_type'] === 'product') {
+            $pStmt = $this->pdo->prepare("
+                SELECT p.id, p.shop_id, p.name, p.main_image, p.images, p.price_bct, p.price_cny,
+                       s.shop_name
+                FROM products p
+                LEFT JOIN shops s ON p.shop_id = s.id
+                WHERE p.id = ?");
+            $pStmt->execute([intval($a['item_id'])]);
+            $p = $pStmt->fetch(PDO::FETCH_ASSOC);
+            $this->mapProductItem($a, $p);
         } else {
             $ncu = $this->pdo->prepare("
                 SELECT ncu.id, ncu.nft_id, ncu.city_id, c.name AS city_name, n.code, n.base_image
@@ -735,15 +863,18 @@ class Auction {
     private function attachItemInfo(array &$rows) {
         if (empty($rows)) return;
 
-        $blockIds = [];
-        $ncuIds   = [];
+        $blockIds   = [];
+        $ncuIds     = [];
+        $productIds = [];
         foreach ($rows as $r) {
             if ($r['item_type'] === 'block') $blockIds[] = intval($r['item_id']);
+            elseif ($r['item_type'] === 'product') $productIds[] = intval($r['item_id']);
             else $ncuIds[] = intval($r['item_id']);
         }
 
-        $blockMap = [];
-        $nftMap   = [];
+        $blockMap   = [];
+        $nftMap     = [];
+        $productMap = [];
 
         if (!empty($blockIds)) {
             $in = implode(',', array_fill(0, count($blockIds), '?'));
@@ -772,6 +903,20 @@ class Auction {
             }
         }
 
+        if (!empty($productIds)) {
+            $in = implode(',', array_fill(0, count($productIds), '?'));
+            $stmt = $this->pdo->prepare("
+                SELECT p.id, p.shop_id, p.name, p.main_image, p.images, p.price_bct, p.price_cny,
+                       s.shop_name
+                FROM products p
+                LEFT JOIN shops s ON p.shop_id = s.id
+                WHERE p.id IN ($in)");
+            $stmt->execute($productIds);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $p) {
+                $productMap[intval($p['id'])] = $p;
+            }
+        }
+
         foreach ($rows as &$r) {
             if ($r['item_type'] === 'block') {
                 $b = $blockMap[intval($r['item_id'])] ?? null;
@@ -780,6 +925,9 @@ class Auction {
                     : ('区块 #' . $r['item_id']);
                 $r['item_image'] = (!empty($b['display_image'])) ? 'https://block.58.tl/' . ltrim($b['display_image'], '/') : null;
                 $r['block_id']   = intval($r['item_id']);
+            } elseif ($r['item_type'] === 'product') {
+                $p = $productMap[intval($r['item_id'])] ?? null;
+                $this->mapProductItem($r, $p);
             } else {
                 $n = $nftMap[intval($r['item_id'])] ?? null;
                 $r['item_title'] = $n ? ('NFT头像 #' . $n['code'] . '（' . $n['city_name'] . '）') : ('NFT头像 #' . $r['item_id']);
@@ -788,6 +936,48 @@ class Auction {
             }
         }
         unset($r);
+    }
+
+    /**
+     * 商品图片 URL 归一化：mall 相对路径 → 跨站绝对路径；绝对 URL 原样返回
+     */
+    private static function mallImageUrl($path) {
+        if (empty($path)) return null;
+        if (preg_match('#^https?://#i', $path)) return $path;
+        return 'https://mall.58.tl/' . ltrim($path, '/');
+    }
+
+    /**
+     * 商品拍品展示字段映射（getAuctionById 与 attachItemInfo 共用）
+     * @param array $r  拍卖行（引用），写入 item_* 字段
+     * @param array|null $p products + shops 记录（可为 null，商品可能已被删除）
+     */
+    private function mapProductItem(array &$r, $p) {
+        if (!$p) {
+            $r['item_title'] = '商品 #' . $r['item_id'];
+            $r['item_image'] = null;
+            $r['item_images'] = [];
+            $r['item_cross_url'] = 'https://mall.58.tl/product/detail.php?id=' . intval($r['item_id']);
+            return;
+        }
+        // 实时取商品名（用户决策：允许商品编辑，拍卖展示跟随最新）
+        $r['item_title'] = $p['name'] ?? ('商品 #' . $r['item_id']);
+        $r['item_image'] = self::mallImageUrl($p['main_image'] ?? '');
+
+        // 图集：products.images JSON → 跨站绝对 URL 数组；空则退化单图
+        $imgs = [];
+        if (!empty($p['images'])) {
+            $decoded = json_decode($p['images'], true);
+            if (is_array($decoded)) $imgs = $decoded;
+        }
+        if (empty($imgs) && !empty($p['main_image'])) $imgs = [$p['main_image']];
+        $r['item_images'] = array_values(array_filter(array_map([get_called_class(), 'mallImageUrl'], $imgs)));
+
+        $r['item_price_bct']    = floatval($p['price_bct'] ?? 0);
+        $r['item_price_cny']    = floatval($p['price_cny'] ?? 0);
+        $r['item_shop_id']      = intval($p['shop_id'] ?? 0);
+        $r['item_shop_name']    = $p['shop_name'] ?? '';
+        $r['item_cross_url']    = 'https://mall.58.tl/product/detail.php?id=' . intval($r['item_id']);
     }
 
     /**

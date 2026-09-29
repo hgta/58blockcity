@@ -44,6 +44,34 @@ $nstmt = $pdo->prepare("
 $nstmt->execute([$userId]);
 $myNfts = $nstmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 获取用户店铺与店内可拍卖商品（店铺 active + 商品 active + stock>=1 +
+// 不在 pending/active 拍卖中 + 无未完成常规订单——与后端互斥校验口径一致）
+$myShop = null;
+$myProducts = [];
+$shopStmt = $pdo->prepare("SELECT id, shop_name, status FROM shops WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+$shopStmt->execute([$userId]);
+$myShop = $shopStmt->fetch(PDO::FETCH_ASSOC);
+$shopUsable = $myShop && $myShop['status'] === 'active';
+if ($shopUsable) {
+    $pstmt = $pdo->prepare("
+        SELECT p.id, p.name, p.main_image, p.price_bct, p.price_cny, p.stock
+        FROM products p
+        WHERE p.shop_id = ?
+          AND p.status = 'active'
+          AND p.stock >= 1
+          AND NOT EXISTS (
+              SELECT 1 FROM auctions a
+              WHERE a.item_type = 'product' AND a.item_id = p.id AND a.status IN ('pending','active'))
+          AND NOT EXISTS (
+              SELECT 1 FROM order_items oi
+              JOIN orders o ON oi.order_id = o.id
+              WHERE oi.product_id = p.id AND o.status IN ('pending','paid','shipped'))
+        ORDER BY p.created_at DESC
+        LIMIT 100");
+    $pstmt->execute([$myShop['id']]);
+    $myProducts = $pstmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 // 所有城市（用于接受支付城市选择）
 $allCities = $city->getAllCities();
 
@@ -56,6 +84,7 @@ $fv = [
     'end_time'      => $editAuction ? date('Y-m-d\TH:i', strtotime($editAuction['end_time'])) : '',
     'currency'      => $editAuction ? $editAuction['currency'] : 'cny',
     'accept_cities' => $editAuction ? (json_decode($editAuction['accept_cities'] ?? '[]', true) ?: []) : [],
+    'description'   => $editAuction ? ($editAuction['description'] ?? '') : '',
 ];
 $selectedItemId = $editAuction ? intval($editAuction['item_id']) : 0;
 
@@ -70,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'end_time'      => $_POST['end_time'] ?? '',
         'currency'      => $_POST['currency'] ?? 'cny',
         'accept_cities' => $_POST['accept_cities'] ?? [],
+        'description'   => $_POST['description'] ?? '',
     ];
     // 保留用户输入
     $fv = [
@@ -80,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'end_time'      => !empty($data['end_time']) ? date('Y-m-d\TH:i', strtotime($data['end_time'])) : '',
         'currency'      => $data['currency'],
         'accept_cities' => is_array($data['accept_cities']) ? $data['accept_cities'] : [],
+        'description'   => $data['description'],
     ];
 
     if ($editId > 0) {
@@ -99,7 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$editItemType = $editAuction ? $editAuction['item_type'] : 'nft';
+$editItemType = isset($_POST['item_type']) && in_array($_POST['item_type'], ['block', 'nft', 'product'], true)
+    ? $_POST['item_type']
+    : ($editAuction ? $editAuction['item_type'] : 'nft');
 
 $site_config['title'] = ($editId > 0 ? '编辑拍卖' : '发起拍卖') . ' - 58拍卖';
 require_once 'includes/header.php';
@@ -123,6 +156,7 @@ require_once 'includes/header.php';
                 <div class="ac-radio-row">
                     <label><input type="radio" name="item_type" value="block" <?= $editItemType === 'block' ? 'checked' : '' ?> onchange="switchItemType('block')"> 区块</label>
                     <label><input type="radio" name="item_type" value="nft" <?= $editItemType === 'nft' ? 'checked' : '' ?> onchange="switchItemType('nft')"> NFT 头像</label>
+                    <label><input type="radio" name="item_type" value="product" <?= $editItemType === 'product' ? 'checked' : '' ?> onchange="switchItemType('product')"> 商城商品</label>
                 </div>
             </div>
 
@@ -174,6 +208,48 @@ require_once 'includes/header.php';
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- 商品选择 -->
+            <div class="ac-field <?= $editItemType === 'product' ? '' : 'ac-hidden' ?>" id="product-select">
+                <label>选择商城商品（仅 1 件 1 拍，落槌自动生成商城订单）</label>
+                <?php if (!$myShop): ?>
+                    <div class="ac-guide-empty">
+                        <i class="fas fa-store"></i>
+                        <div class="t">您还没有店铺</div>
+                        <a href="https://mall.58.tl/apply/create.php" target="_blank" class="ac-btn ac-btn-primary">前往商城创建店铺 →</a>
+                    </div>
+                <?php elseif (!$shopUsable): ?>
+                    <div class="ac-guide-empty">
+                        <i class="fas fa-store-slash"></i>
+                        <div class="t">店铺当前不可营业（<?= htmlspecialchars($myShop['shop_name']) ?> · <?= htmlspecialchars($myShop['status']) ?>）</div>
+                        <a href="https://mall.58.tl/shop/manage.php" target="_blank" class="ac-btn ac-btn-primary">前往商城店铺后台 →</a>
+                    </div>
+                <?php elseif (empty($myProducts)): ?>
+                    <div class="ac-guide-empty">
+                        <i class="fas fa-box-open"></i>
+                        <div class="t">暂无可拍卖商品（需上架中且库存 ≥ 1）</div>
+                        <a href="https://mall.58.tl/shop/products.php" target="_blank" class="ac-btn ac-btn-primary">前往商城后台上架商品 →</a>
+                    </div>
+                <?php else: ?>
+                <div class="ac-item-grid ac-item-grid-prod">
+                    <?php foreach ($myProducts as $p): ?>
+                    <div class="ac-item-opt ac-item-opt-prod" data-type="product" data-id="<?= $p['id'] ?>" onclick="selectItem(this, '<?= $p['id'] ?>')">
+                        <?php if ($p['main_image']): ?>
+                        <img class="ac-prod-thumb" src="https://mall.58.tl/<?= ltrim(htmlspecialchars($p['main_image']), '/') ?>" alt="" loading="lazy" onerror="this.style.display='none'">
+                        <?php endif; ?>
+                        <span class="lbl"><?= htmlspecialchars($p['name']) ?></span>
+                        <span class="ac-prod-meta">
+                            <span>Ⓟ <?= number_format(floatval($p['price_bct']), 0) ?> / ¥ <?= number_format(floatval($p['price_cny']), 2) ?></span>
+                            <span class="ac-prod-stock">库存 <?= intval($p['stock']) ?></span>
+                        </span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <p class="ac-hint" style="margin:8px 0 0;">
+                    商品改名 / 改图后拍卖详情页会同步展示最新信息；拍卖期间商品仍可被加购物车，但落槌时若库存不足将整体流拍。
+                </p>
                 <?php endif; ?>
             </div>
 
@@ -233,7 +309,26 @@ require_once 'includes/header.php';
                 </p>
             </div>
 
-            <button type="submit" class="ac-btn ac-btn-primary ac-btn-block" onclick="return validateSubmit()">
+            <div class="ac-field" id="description-field">
+                <label>
+                    <i class="fas fa-align-left"></i> 拍品描述（选填，Markdown）
+                    <span id="desc-count" class="ac-muted" style="font-size:12px;margin-left:8px;">0 / 5000</span>
+                </label>
+                <div class="ac-md-toolbar" id="md-toolbar">
+                    <button type="button" class="ac-md-btn" data-md="**" data-end="**" title="粗体"><i class="fas fa-bold"></i></button>
+                    <button type="button" class="ac-md-btn" data-md="*" data-end="*" title="斜体"><i class="fas fa-italic"></i></button>
+                    <button type="button" class="ac-md-btn" data-md="[" data-end="](https://)" title="链接"><i class="fas fa-link"></i></button>
+                    <button type="button" class="ac-md-btn" data-md="`" data-end="`" title="代码"><i class="fas fa-code"></i></button>
+                    <button type="button" class="ac-md-btn" data-md="\n- " data-end="" title="列表"><i class="fas fa-list-ul"></i></button>
+                    <span style="flex:1;"></span>
+                    <a class="ac-md-hint" href="#markdown-cheatsheet" onclick="return false;">支持 Markdown · 5000 字上限</a>
+                </div>
+                <textarea id="description" name="description" rows="8" maxlength="5000"
+                          placeholder="例如：&#10;## 拍品来源&#10;2024 年首发，全新未拆封&#10;&#10;**特别说明**&#10;- 仅展示&#10;- 不议价&#10;&#10;[更多图集](https://...)"
+                          style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;"><?= htmlspecialchars($fv['description'] ?? '') ?></textarea>
+            </div>
+
+            <button type="submit" class="ac-btn ac-btn-primary ac-btn-block" id="auction-submit" onclick="return validateSubmit()">
                 <i class="fas fa-gavel"></i> <?= $editId > 0 ? '保存修改' : '发布拍卖' ?>
             </button>
         </form>
@@ -244,6 +339,8 @@ require_once 'includes/header.php';
 function switchItemType(type) {
     document.getElementById('block-select').classList.toggle('ac-hidden', type !== 'block');
     document.getElementById('nft-select').classList.toggle('ac-hidden', type !== 'nft');
+    var prod = document.getElementById('product-select');
+    if (prod) prod.classList.toggle('ac-hidden', type !== 'product');
     document.getElementById('item_id').value = '';
     document.querySelectorAll('.ac-item-opt').forEach(function (el) { el.classList.remove('active'); });
 }
@@ -256,9 +353,58 @@ function selectItem(el, id) {
 function toggleCities(show) {
     document.getElementById('accept-cities-group').classList.toggle('ac-hidden', !show);
 }
+
+// --- Markdown 工具栏 + 字数统计 ---
+(function () {
+    var ta  = document.getElementById('description');
+    var cnt = document.getElementById('desc-count');
+    var btn = document.getElementById('auction-submit');
+    if (!ta) return;
+
+    function updateCount() {
+        var n = ta.value.length;
+        cnt.textContent = n + ' / 5000';
+        cnt.style.color = n > 5000 ? 'var(--live)' : (n > 4500 ? '#f5a623' : '');
+        if (btn) btn.disabled = n > 5000;
+    }
+    ta.addEventListener('input', updateCount);
+    updateCount();
+
+    // 工具栏：在当前选区两侧插入语法片段
+    document.querySelectorAll('.ac-md-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var md  = b.getAttribute('data-md')  || '';
+            var end = b.getAttribute('data-end') || '';
+            var s = ta.selectionStart, e = ta.selectionEnd;
+            var before = ta.value.substring(0, s);
+            var mid    = ta.value.substring(s, e) || '文本';
+            var after  = ta.value.substring(e);
+            ta.value = before + md + mid + end + after;
+            // 把光标放回 mid 之后
+            var pos = (before + md + mid).length;
+            ta.selectionStart = ta.selectionEnd = pos;
+            ta.focus();
+            updateCount();
+        });
+    });
+
+    // URL 锚点为 #description 时：滚动到字段并聚焦
+    if (window.location.hash === '#description') {
+        setTimeout(function () {
+            ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            ta.focus({ preventScroll: true });
+        }, 100);
+    }
+})();
+
 function validateSubmit() {
     if (!document.getElementById('item_id').value) {
         alert('请选择一个拍卖品');
+        return false;
+    }
+    var desc = document.getElementById('description');
+    if (desc && desc.value.length > 5000) {
+        alert('拍品描述超过 5000 字上限');
         return false;
     }
     return true;

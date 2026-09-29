@@ -16,7 +16,7 @@ $auction->tick();
 // 首页顶部推荐位（后台手动指定；active/pending 才展示，已结束的自动下线）
 $featuredList = $auction->getFeaturedAuctions(8);
 
-$itemType = in_array($_GET['type'] ?? '', ['block', 'nft'], true) ? $_GET['type'] : '';
+$itemType = in_array($_GET['type'] ?? '', ['block', 'nft', 'product'], true) ? $_GET['type'] : '';
 $currency = in_array($_GET['currency'] ?? '', ['popularity', 'cny'], true) ? $_GET['currency'] : '';
 $tab      = in_array($_GET['tab'] ?? '', ['active', 'ended'], true) ? $_GET['tab'] : 'active';
 $sort     = in_array($_GET['sort'] ?? '', ['hot', 'ending', 'new', 'price'], true) ? $_GET['sort'] : 'hot';
@@ -68,8 +68,8 @@ $soldList = $auction->getRecentlySold(8);
 
 $sortLabels = ['hot' => '热拍中', 'ending' => '即将结束', 'price' => '价格', 'new' => '最新'];
 
-$site_config['title'] = '竞价大厅 - 58拍卖 | 区块 · NFT 在线拍卖';
-$site_config['description'] = '58拍卖竞价大厅：秒级倒计时、实时叫价、自动延时防狙击，区块与 NFT 头像价高者得。';
+$site_config['title'] = '竞价大厅 - 58拍卖 | 区块 · NFT · 商品在线拍卖';
+$site_config['description'] = '58拍卖竞价大厅：秒级倒计时、实时叫价、自动延时防狙击，区块、NFT 头像与商城商品价高者得。';
 require_once 'includes/header.php';
 ?>
 
@@ -188,6 +188,7 @@ require_once 'includes/header.php';
         <a class="ac-chip <?= $itemType === '' ? 'active' : '' ?>" href="<?= ac_q(['type' => '', 'page' => 1]) ?>">全部</a>
         <a class="ac-chip <?= $itemType === 'block' ? 'active' : '' ?>" href="<?= ac_q(['type' => 'block', 'page' => 1]) ?>">区块</a>
         <a class="ac-chip <?= $itemType === 'nft' ? 'active' : '' ?>" href="<?= ac_q(['type' => 'nft', 'page' => 1]) ?>">NFT 头像</a>
+        <a class="ac-chip <?= $itemType === 'product' ? 'active' : '' ?>" href="<?= ac_q(['type' => 'product', 'page' => 1]) ?>">商品</a>
     </div>
 
     <?php if ($tab === 'active'): ?>

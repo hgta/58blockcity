@@ -1,5 +1,7 @@
 <?php
 // classes/Order.php
+require_once __DIR__ . '/Notification.php';
+
 class Order {
     private $pdo;
     
@@ -76,8 +78,9 @@ class Order {
     
     /**
      * 创建订单
+     * @param int $expireMinutes 过期分钟数（默认 30 分钟；拍卖成交订单传 7*24*60 = 7 天）
      */
-    public function createOrder($data) {
+    public function createOrder($data, $expireMinutes = 30) {
         $inTransaction = $this->pdo->inTransaction();
         try {
             if (!$inTransaction) {
@@ -90,7 +93,7 @@ class Order {
             $stmt = $this->pdo->prepare("
                 INSERT INTO orders 
                 (order_no, user_id, shop_id, total_amount, payment_city, payment_amount, payment_block_id, buyer_note, shipping_address, status, expire_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', DATE_ADD(NOW(), INTERVAL ? MINUTE))
             ");
             
             $stmt->execute([
@@ -103,7 +106,7 @@ class Order {
                 $data['payment_block_id'] ?? '',
                 $data['buyer_note'] ?? '',
                 $data['shipping_address'] ?? '',
-                'pending'
+                max(1, intval($expireMinutes))
             ]);
             
             $orderId = $this->pdo->lastInsertId();
@@ -461,15 +464,73 @@ class Order {
             $cancelSql = "UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = ?";
             $cancelStmt = $this->pdo->prepare($cancelSql);
             $cancelStmt->execute([$orderId]);
-            
+
             $this->pdo->commit();
             error_log("订单 {$orderId} 已自动取消（超时未支付）");
+
+            // 通知买家（拍卖订单使用独立类型与文案，含 mall 订单详情链接）
+            try {
+                $buyerStmt = $this->pdo->prepare("SELECT user_id, buyer_note FROM orders WHERE id = ?");
+                $buyerStmt->execute([$orderId]);
+                $order = $buyerStmt->fetch(PDO::FETCH_ASSOC);
+                if ($order) {
+                    $isAuction = strpos($order['buyer_note'] ?? '', '拍卖 LOT') === 0;
+                    $notify = new Notification($this->pdo);
+                    if ($isAuction) {
+                        $notify->sendSystemNotify(
+                            intval($order['user_id']), 'auction_expired_product', intval($orderId),
+                            '您的拍卖订单已过期自动取消，商品库存已还原，可在商城重新下单。',
+                            'https://mall.58.tl/user/order_detail.php?id=' . intval($orderId)
+                        );
+                    } else {
+                        $notify->sendSystemNotify(
+                            intval($order['user_id']), 'order_expired', intval($orderId),
+                            '订单超时未支付已自动取消，商品库存已还原。',
+                            'https://mall.58.tl/user/order_detail.php?id=' . intval($orderId)
+                        );
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("过期订单通知失败: " . $e->getMessage());
+            }
             return true;
         } catch (Exception $e) {
             $this->pdo->rollBack();
             error_log("自动取消过期订单失败: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * 批量过期处理：扫描 status='pending' AND expire_at < NOW() 的订单，
+     * 逐单调用 autoCancelExpiredOrder()（回滚库存 + 置 cancelled + 通知买家）。
+     * 供订单中心页惰性触发与 cron 兜底共用（拍卖订单 7 天、常规订单 30 分钟一视同仁）。
+     *
+     * @param int|null $userId 限定某用户的订单（null = 全站）
+     * @param int $limit 单次处理上限，避免页面请求中做过量写操作
+     * @return int 实际置为过期的订单数
+     */
+    public function expireOverdueOrders($userId = null, $limit = 200) {
+        $limit = max(1, (int)$limit);
+        $params = [];
+        $sql = "SELECT id FROM orders WHERE status = 'pending' AND expire_at IS NOT NULL AND expire_at < NOW()";
+        if ($userId !== null) {
+            $sql .= " AND user_id = ?";
+            $params[] = intval($userId);
+        }
+        $sql .= " ORDER BY expire_at ASC LIMIT " . $limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->autoCancelExpiredOrder(intval($id))) {
+                $count++;
+            }
+        }
+        return $count;
     }
     
     /**

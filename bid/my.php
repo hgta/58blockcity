@@ -37,6 +37,23 @@ $myAuctions = $auction->getMyAuctions($userId);
 $myBids     = $auction->getMyBids($userId);
 $myWatched  = $auction->getMyWatched($userId);
 
+// 商品拍品得标订单链接：按落槌时写入的 buyer_note 精确反查（仅得标行触发，带缓存）；
+// 查不到时回退 mall 订单中心。
+$wonOrderCache = [];
+$wonOrderUrl = function ($auctionId, $winnerId) use ($pdo, &$wonOrderCache) {
+    $auctionId = intval($auctionId);
+    if (!isset($wonOrderCache[$auctionId])) {
+        $note  = '拍卖 ' . ac_lot_no($auctionId) . ' 成交';
+        $ostmt = $pdo->prepare("SELECT id FROM orders WHERE user_id = ? AND buyer_note = ? ORDER BY id DESC LIMIT 1");
+        $ostmt->execute([intval($winnerId), $note]);
+        $oid   = $ostmt->fetchColumn();
+        $wonOrderCache[$auctionId] = $oid
+            ? 'https://mall.58.tl/user/order_detail.php?id=' . intval($oid)
+            : 'https://mall.58.tl/user/orders.php';
+    }
+    return $wonOrderCache[$auctionId];
+};
+
 // 竞价视角状态分组
 $groups = ['leading' => [], 'outbid' => [], 'won' => [], 'lost' => []];
 $bidIds = [];
@@ -139,8 +156,8 @@ require_once 'includes/header.php';
                 </div>
                 <div class="ac-row-side">
                     <?php if ($a['status'] === 'pending'): ?>
-                        <a class="ac-btn ac-btn-ghost" style="padding:7px 12px;font-size:12px;" href="create.php?edit=<?= intval($a['id']) ?>">
-                            <i class="fas fa-pen"></i> 编辑
+                        <a class="ac-btn ac-btn-ghost" style="padding:7px 12px;font-size:12px;" href="create.php?edit=<?= intval($a['id']) ?>#description">
+                            <i class="fas fa-pen"></i> <?= !empty(trim((string)($a['description'] ?? ''))) ? '编辑描述' : '写描述' ?>
                         </a>
                     <?php endif; ?>
                     <?php if ($canCancel): ?>
@@ -206,7 +223,14 @@ require_once 'includes/header.php';
                                 <i class="fas fa-gavel"></i> 再次出价
                             </a>
                         <?php elseif ($key === 'won'): ?>
-                            <span class="ac-muted" style="font-size:12px;">成交 <?= ac_money($a['final_price'] ?? $a['current_price'], $a['currency']) ?></span>
+                            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                                <span class="ac-muted" style="font-size:12px;">成交 <?= ac_money($a['final_price'] ?? $a['current_price'], $a['currency']) ?></span>
+                                <?php if ($a['item_type'] === 'product'): ?>
+                                    <a class="ac-btn ac-btn-primary" style="padding:8px 14px;font-size:13px;" href="<?= htmlspecialchars($wonOrderUrl($a['id'], $a['current_bidder_id'])) ?>" target="_blank" rel="noopener">
+                                        <i class="fas fa-receipt"></i> 前往订单 →
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         <?php else: ?>
                             <a class="ac-btn ac-btn-ghost" style="padding:8px 14px;font-size:13px;" href="view.php?id=<?= intval($a['id']) ?>">查看</a>
                         <?php endif; ?>

@@ -52,6 +52,37 @@ if (!function_exists('ac_cd_class')) {
     }
 }
 
+if (!function_exists('ac_item_cross_url')) {
+    /**
+     * 按 item_type 派生跨子站详情链接（统一入口，未知/缺主键返回空串）
+     * - product → https://mall.58.tl/product/detail.php?id=X
+     * - block   → https://block.58.tl/block/view.php?id=X
+     * - nft     → https://nft.58.tl/nft/view.php?id=X
+     */
+    function ac_item_cross_url($auction) {
+        if (!empty($auction['item_cross_url'])) return $auction['item_cross_url'];
+        $type = $auction['item_type'] ?? '';
+        $id   = intval($auction['item_id'] ?? 0);
+        if ($type === 'product') return 'https://mall.58.tl/product/detail.php?id=' . $id;
+        if ($type === 'block' && !empty($auction['block_id'])) {
+            return 'https://block.58.tl/block/view.php?id=' . intval($auction['block_id']);
+        }
+        if ($type === 'nft' && !empty($auction['nft_id'])) {
+            return 'https://nft.58.tl/nft/view.php?id=' . intval($auction['nft_id']);
+        }
+        return '';
+    }
+}
+
+if (!function_exists('ac_item_type_label')) {
+    /** 拍品类型中文标签 */
+    function ac_item_type_label($itemType) {
+        if ($itemType === 'product') return '商城商品';
+        if ($itemType === 'nft') return 'NFT 头像';
+        return '区块';
+    }
+}
+
 if (!function_exists('ac_render_countdown')) {
     /**
      * 输出倒计时结构（前端 auction.js 逐秒刷新）
@@ -148,5 +179,20 @@ if (!function_exists('ac_price_delta')) {
         $now   = floatval($auction['current_price'] ?? $start);
         if ($start <= 0 || empty($auction['current_bidder_id'])) return null;
         return ($now - $start) / $start * 100;
+    }
+}
+
+if (!function_exists('ac_render_seller_description')) {
+    /**
+     * 输出拍品卖家描述（Markdown）。description 为 NULL/空串时输出空串。
+     * 由调用方决定是否整体渲染区块。
+     */
+    function ac_render_seller_description($auction) {
+        $md = isset($auction['description']) ? trim((string)$auction['description']) : '';
+        if ($md === '') return '';
+        require_once __DIR__ . '/../../classes/MarkdownSafe.php';
+        $html = MarkdownSafe::render($md);
+        if ($html === '') return '';
+        return '<div class="ac-seller-desc">' . $html . '</div>';
     }
 }

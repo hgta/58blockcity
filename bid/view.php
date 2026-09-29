@@ -67,12 +67,14 @@ $isOver    = in_array($a['status'], ['sold', 'ended', 'canceled'], true);
 $reserve   = $a['reserve_price'] !== null ? floatval($a['reserve_price']) : null;
 $reserveRatio = $reserve ? min(100, round(floatval($a['current_price'] ?? $a['start_price']) / $reserve * 100)) : 0;
 
-// 子站详情链接
-$detailUrl = '';
-if ($a['item_type'] === 'nft' && !empty($a['nft_id'])) {
-    $detailUrl = 'https://nft.58.tl/nft/view.php?id=' . intval($a['nft_id']);
-} elseif ($a['item_type'] === 'block' && !empty($a['block_id'])) {
-    $detailUrl = 'https://block.58.tl/block/view.php?id=' . intval($a['block_id']);
+// 子站详情链接（由 ac_item_cross_url 统一派生：product/block/nft）
+$detailUrl = ac_item_cross_url($a);
+$typeLabel = ac_item_type_label($a['item_type']);
+
+// 商品图集（≥2 张时启用轮播；空图集退化单图）
+$galleryImgs = [];
+if ($a['item_type'] === 'product' && !empty($a['item_images']) && is_array($a['item_images'])) {
+    $galleryImgs = array_values(array_filter($a['item_images'], function ($u) { return is_string($u) && $u !== ''; }));
 }
 
 $extendWindow  = intval($a['extend_window_seconds'] ?? 0) ?: 120;
@@ -89,6 +91,9 @@ require_once 'includes/header.php';
     <div style="display:flex;align-items:center;gap:12px;margin:6px 0 16px;flex-wrap:wrap;">
         <a class="ac-muted" style="font-size:13px;" href="index.php"><i class="fas fa-chevron-left"></i> 竞价大厅</a>
         <span class="ac-lotno"><?= ac_lot_no($a['id']) ?></span>
+        <?php if ($a['item_type'] === 'product'): ?>
+            <span class="ac-badge ac-badge-soft"><i class="fas fa-store"></i> 商品</span>
+        <?php endif; ?>
         <?php ac_status_badge($a); ?>
         <?php if (!empty($a['extend_count'])): ?>
             <span class="ac-badge ac-badge-hot">已顺延 <?= intval($a['extend_count']) ?> 次</span>
@@ -100,6 +105,26 @@ require_once 'includes/header.php';
         <div>
             <div class="ac-stage">
                 <div class="ac-stage-media">
+                    <?php if (count($galleryImgs) >= 2): ?>
+                    <!-- 商品图集轮播（≥2 张图时启用；无 JS 时显示第一张） -->
+                    <div class="ac-stage-gallery" id="acGallery"
+                         data-count="<?= count($galleryImgs) ?>"
+                         data-cur="0"
+                         data-imgs="<?= htmlspecialchars(json_encode($galleryImgs, JSON_UNESCAPED_SLASHES)) ?>">
+                        <div class="ac-gal-main">
+                            <img id="acGalMain" src="<?= htmlspecialchars($galleryImgs[0]) ?>" alt="<?= htmlspecialchars($a['item_title'] ?? '') ?>">
+                            <button type="button" class="ac-gal-btn ac-gal-prev" aria-label="上一张" onclick="acGalNav(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <button type="button" class="ac-gal-btn ac-gal-next" aria-label="下一张" onclick="acGalNav(1)"><i class="fas fa-chevron-right"></i></button>
+                            <span class="ac-gal-idx" id="acGalIdx">1 / <?= count($galleryImgs) ?></span>
+                        </div>
+                        <div class="ac-gal-thumbs">
+                            <?php foreach ($galleryImgs as $i => $g): ?>
+                            <img src="<?= htmlspecialchars($g) ?>" data-idx="<?= $i ?>" class="<?= $i === 0 ? 'active' : '' ?>"
+                                 onclick="acGalGo(<?= $i ?>)" loading="lazy" alt="<?= htmlspecialchars(($a['item_title'] ?? '') . ' 图' . ($i + 1)) ?>">
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <?php if ($detailUrl): ?>
                         <a href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" rel="noopener" style="display:block;width:100%;height:100%;">
                     <?php endif; ?>
@@ -109,19 +134,20 @@ require_once 'includes/header.php';
                         <span class="ph"><i class="fas fa-image"></i></span>
                     <?php endif; ?>
                     <?php if ($detailUrl): ?></a><?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 <div class="ac-stage-meta">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                         <div style="min-width:0;">
                             <h1 style="font-size:20px;font-weight:800;margin:0 0 6px;"><?= htmlspecialchars($a['item_title'] ?? ('拍品 #' . $a['id'])) ?></h1>
                             <div class="ac-muted" style="font-size:12px;">
-                                <?= $a['item_type'] === 'nft' ? 'NFT 头像' : '区块' ?> ·
+                                <?= $typeLabel ?> ·
                                 卖家 <?= htmlspecialchars($a['seller_name'] ?? ('用户#' . $a['seller_id'])) ?>
                             </div>
                         </div>
                         <?php if ($detailUrl): ?>
                             <a class="ac-btn ac-btn-ghost" style="font-size:13px;padding:8px 14px;" href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" rel="noopener">
-                                <i class="fas fa-external-link-alt"></i> 查看<?= $a['item_type'] === 'nft' ? '头像' : '区块' ?>详情
+                                <i class="fas fa-external-link-alt"></i> <?= $a['item_type'] === 'product' ? '查看商品详情' : ('查看' . ($a['item_type'] === 'nft' ? '头像' : '区块') . '详情') ?>
                             </a>
                         <?php endif; ?>
                     </div>
@@ -278,10 +304,28 @@ require_once 'includes/header.php';
 
     <!-- 信息区 -->
     <div class="ac-sections">
+        <?php if ($a['item_type'] === 'product'): ?>
+        <div class="ac-section">
+            <h3><i class="fas fa-store" style="color:var(--brand);"></i> 商品信息</h3>
+            <ul style="padding-left:0;list-style:none;">
+                <li>商品原价：Ⓟ <?= number_format(floatval($a['item_price_bct'] ?? 0), 0) ?> / ¥ <?= number_format(floatval($a['item_price_cny'] ?? 0), 2) ?></li>
+                <?php if (!empty($a['item_shop_id'])): ?>
+                <li>店铺：<a href="https://mall.58.tl/shop/view.php?id=<?= intval($a['item_shop_id']) ?>" target="_blank" rel="noopener" style="color:var(--brand);"><?= htmlspecialchars($a['item_shop_name'] ?: ('店铺#' . $a['item_shop_id'])) ?></a></li>
+                <?php endif; ?>
+                <li>成交后自动生成商城订单，付款 / 发货在商城完成。</li>
+            </ul>
+            <?php if ($detailUrl): ?>
+            <a class="ac-btn ac-btn-primary" style="width:100%;box-sizing:border-box;" href="<?= htmlspecialchars($detailUrl) ?>" target="_blank" rel="noopener">
+                <i class="fas fa-external-link-alt"></i> 查看商品详情 →
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <div class="ac-section">
             <h3><i class="fas fa-cube" style="color:var(--brand);"></i> 拍品信息</h3>
             <ul style="padding-left:0;list-style:none;">
-                <li>类型：<?= $a['item_type'] === 'nft' ? 'NFT 头像' : '区块' ?></li>
+                <li>类型：<?= $typeLabel ?></li>
                 <li>编号：<?= ac_lot_no($a['id']) ?></li>
                 <li>起拍价：<?= ac_money($a['start_price'], $a['currency']) ?></li>
                 <li>加价幅度：<?= ac_money($a['bid_increment'], $a['currency']) ?></li>
@@ -290,6 +334,16 @@ require_once 'includes/header.php';
                 <li>落槌：<?= date('Y-m-d H:i', strtotime($a['end_time'])) ?></li>
             </ul>
         </div>
+
+        <?php if (!empty(trim((string)($a['description'] ?? '')))): ?>
+        <div class="ac-section">
+            <h3>
+                <i class="fas fa-align-left" style="color:var(--brand);"></i> 卖家描述
+                <a data-stub="report" href="#" onclick="return false;" style="font-size:12px;color:var(--muted);margin-left:auto;font-weight:400;">举报</a>
+            </h3>
+            <?= ac_render_seller_description($a) ?>
+        </div>
+        <?php endif; ?>
 
         <div class="ac-section">
             <h3><i class="fas fa-user" style="color:var(--brand);"></i> 卖家</h3>
@@ -321,5 +375,49 @@ window.AC_PAGE = {
     apiWatch: '/api/watch.php'
 };
 window.AC_SERVER_NOW = <?= time() ?>;
+</script>
+<script>
+// --- 商品图集轮播（无图集时本段不执行） ---
+(function () {
+    var gal = document.getElementById('acGallery');
+    if (!gal) return;
+    var imgs = [];
+    try { imgs = JSON.parse(gal.getAttribute('data-imgs') || '[]'); } catch (e) { return; }
+    if (imgs.length < 2) return;
+
+    var main = document.getElementById('acGalMain');
+    var idxEl = document.getElementById('acGalIdx');
+    var thumbs = gal.querySelectorAll('.ac-gal-thumbs img');
+    var cur = 0;
+
+    function render() {
+        main.src = imgs[cur];
+        if (idxEl) idxEl.textContent = (cur + 1) + ' / ' + imgs.length;
+        thumbs.forEach(function (t) {
+            t.classList.toggle('active', parseInt(t.getAttribute('data-idx'), 10) === cur);
+        });
+    }
+    window.acGalGo = function (i) {
+        cur = (i + imgs.length) % imgs.length;
+        render();
+    };
+    window.acGalNav = function (d) {
+        acGalGo(cur + d);
+    };
+    // 键盘左右键切换
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') acGalNav(-1);
+        if (e.key === 'ArrowRight') acGalNav(1);
+    });
+    // 移动端滑动手势
+    var startX = null;
+    main.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
+    main.addEventListener('touchend', function (e) {
+        if (startX === null) return;
+        var dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 40) acGalNav(dx < 0 ? 1 : -1);
+        startX = null;
+    }, { passive: true });
+})();
 </script>
 <?php require_once 'includes/footer.php'; ?>
