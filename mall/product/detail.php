@@ -771,6 +771,214 @@ $productSchema = SeoHelper::productSchema([
     .product-info h1 { font-size: 18px; }
     .price-current { font-size: 22px; }
 }
+
+/* 分享按钮（与购买按钮同行） */
+.btn-share {
+    background: #fff;
+    color: #334155;
+    border: 2px solid #e2e8f0;
+    flex: 0 0 auto;
+    min-width: 64px;
+    padding: 12px 16px;
+}
+.btn-share:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+    color: #1e293b;
+    transform: translateY(-2px);
+}
+
+/* 分享弹窗 */
+.share-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: shareFadeIn .2s ease;
+}
+.share-modal-backdrop.show { display: flex; }
+@keyframes shareFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.share-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px 22px 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    position: relative;
+    animation: shareSlideUp .25s ease;
+}
+@keyframes shareSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.share-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.share-modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.share-modal-title i { color: #2563eb; }
+.share-modal-close {
+    width: 32px; height: 32px;
+    border: none; background: #f1f5f9;
+    border-radius: 50%; cursor: pointer;
+    color: #64748b; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+}
+.share-modal-close:hover { background: #e2e8f0; color: #1e293b; }
+
+.share-modal-product {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.share-modal-product img {
+    width: 56px; height: 56px;
+    object-fit: cover; border-radius: 8px;
+    border: 1px solid #e2e8f0; flex: none;
+}
+.share-modal-product-info { flex: 1; min-width: 0; }
+.share-modal-product-name {
+    font-size: 14px; font-weight: 600; color: #1e293b;
+    margin-bottom: 4px;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+}
+.share-modal-product-price {
+    font-size: 13px; color: #e74c3c; font-weight: 700;
+}
+
+/* 二维码区 */
+.share-qrcode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px;
+    background: linear-gradient(135deg, #f8fafc, #fff);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+.share-qrcode-img {
+    width: 160px; height: 160px;
+    border-radius: 8px;
+    background: #fff;
+    padding: 6px;
+    border: 1px solid #f1f5f9;
+}
+.share-qrcode-tip {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+    display: flex; align-items: center; gap: 4px;
+}
+.share-qrcode-tip i { color: #07c160; }
+
+/* 渠道按钮网格 */
+.share-channels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.share-channel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid transparent;
+    color: #334155;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all .15s;
+    cursor: pointer;
+}
+.share-channel:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e293b;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+.share-channel-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 18px;
+}
+.share-channel-icon.wechat  { background: #07c160; }
+.share-channel-icon.weibo    { background: #e6162d; }
+.share-channel-icon.qq      { background: #12b7f5; }
+.share-channel-icon.qzone   { background: #ffc107; color: #fff; }
+.share-channel-icon.copy    { background: #6366f1; }
+.share-channel-icon.more    { background: #475569; }
+.share-channel-icon.douban  { background: #2e8b57; }
+.share-channel-icon.link    { background: #0ea5e9; }
+
+/* 复制链接行 */
+.share-link-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+.share-link-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #475569;
+    outline: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.share-link-copy {
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: none;
+    transition: background .15s;
+}
+.share-link-copy:hover { background: #1d4ed8; }
+.share-link-copy.copied { background: #16a34a; }
+
+@media (max-width: 480px) {
+    .share-modal { padding: 20px 16px 14px; }
+    .share-channels { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .share-channel { padding: 8px 2px; font-size: 11px; }
+    .share-channel-icon { width: 32px; height: 32px; font-size: 16px; }
+    .share-qrcode-img { width: 140px; height: 140px; }
+}
     </style>
     <!-- 51.LA 统计 -->
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
@@ -991,6 +1199,9 @@ $productSchema = SeoHelper::productSchema([
                         </button>
                         <button type="button" class="btn btn-buy" onclick="buyNow(<?php echo $productId; ?>, this)">
                             <i class="fas fa-bolt"></i> 立即购买
+                        </button>
+                        <button type="button" class="btn btn-share" onclick="openShareModal()" aria-label="分享商品" title="分享商品">
+                            <i class="fas fa-share-alt"></i> 分享
                         </button>
                     </div>
                 </form>
@@ -1498,6 +1709,226 @@ $productSchema = SeoHelper::productSchema([
             };
             reader.readAsDataURL(file);
         });
+    }
+    </script>
+
+    <!-- 分享弹窗 -->
+    <div class="share-modal-backdrop" id="shareModal" onclick="if(event.target === this) closeShareModal()" aria-hidden="true">
+        <div class="share-modal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+            <div class="share-modal-header">
+                <div class="share-modal-title" id="shareModalTitle">
+                    <i class="fas fa-share-alt"></i> 分享商品
+                </div>
+                <button type="button" class="share-modal-close" onclick="closeShareModal()" aria-label="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="share-modal-product">
+                <img src="<?= htmlspecialchars($mainImagePath ? '../' . $mainImagePath : '../assets/images/default-product.jpg') ?>"
+                     alt="<?= htmlspecialchars($productDetail['name']) ?>">
+                <div class="share-modal-product-info">
+                    <div class="share-modal-product-name"><?= htmlspecialchars($productDetail['name']) ?></div>
+                    <div class="share-modal-product-price">
+                        <?php if ($productDetail['price_bct'] > 0): ?>
+                            <span class="bct-symbol">Ⓟ</span><?= number_format($productDetail['price_bct'], 0) ?> 人气值
+                        <?php else: ?>
+                            ¥<?= number_format($productDetail['price_cny'], 2) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 二维码：用服务端 endpoint 生成，扫码打开商品详情 -->
+            <div class="share-qrcode">
+                <img class="share-qrcode-img"
+                     id="shareQrImg"
+                     src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='160' height='160' fill='%23f1f5f9'/><text x='50%25' y='50%25' font-size='12' fill='%2394a3b8' text-anchor='middle' dominant-baseline='middle'>加载中…</text></svg>"
+                     alt="商品分享二维码">
+                <div class="share-qrcode-tip">
+                    <i class="fas fa-weixin"></i> 微信扫一扫，分享给好友
+                </div>
+            </div>
+
+            <!-- 渠道按钮 -->
+            <div class="share-channels">
+                <button type="button" class="share-channel" onclick="copyShareLink(this)">
+                    <span class="share-channel-icon copy"><i class="fas fa-copy"></i></span>
+                    <span>复制链接</span>
+                </button>
+                <a href="#" class="share-channel" id="shareWechat" target="_blank" rel="noopener">
+                    <span class="share-channel-icon wechat"><i class="fab fa-weixin"></i></span>
+                    <span>微信好友</span>
+                </a>
+                <a href="#" class="share-channel" id="shareWeibo" target="_blank" rel="noopener">
+                    <span class="share-channel-icon weibo"><i class="fab fa-weibo"></i></span>
+                    <span>微博</span>
+                </a>
+                <a href="#" class="share-channel" id="shareQQ" target="_blank" rel="noopener">
+                    <span class="share-channel-icon qq"><i class="fab fa-qq"></i></span>
+                    <span>QQ</span>
+                </a>
+                <a href="#" class="share-channel" id="shareQZone" target="_blank" rel="noopener">
+                    <span class="share-channel-icon qzone"><i class="fas fa-star"></i></span>
+                    <span>QQ空间</span>
+                </a>
+                <a href="#" class="share-channel" id="shareDouban" target="_blank" rel="noopener">
+                    <span class="share-channel-icon douban"><i class="fas fa-book"></i></span>
+                    <span>豆瓣</span>
+                </a>
+                <button type="button" class="share-channel" id="shareNative" onclick="nativeShare()" style="display:none;">
+                    <span class="share-channel-icon more"><i class="fas fa-ellipsis-h"></i></span>
+                    <span>更多</span>
+                </button>
+                <button type="button" class="share-channel" id="shareNative2" onclick="nativeShare()" style="display:none;">
+                    <span class="share-channel-icon link"><i class="fas fa-share-square"></i></span>
+                    <span>系统分享</span>
+                </button>
+            </div>
+
+            <!-- 链接行 -->
+            <div class="share-link-row">
+                <input type="text" class="share-link-input" id="shareLinkInput" value="<?= htmlspecialchars($canonicalUrl) ?>" readonly>
+                <button type="button" class="share-link-copy" id="shareLinkCopyBtn" onclick="copyShareLinkFromInput(this)">复制</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ===== 分享功能 =====
+    var SHARE_URL     = <?= json_encode($canonicalUrl) ?>;
+    var SHARE_TITLE   = <?= json_encode($productDetail['name']) ?>;
+    var SHARE_DESC    = <?= json_encode($productDesc) ?>;
+    var SHARE_HAS_NATIVE = (typeof navigator !== 'undefined' && !!navigator.share);
+
+    function openShareModal() {
+        var modal = document.getElementById('shareModal');
+        if (!modal) return;
+
+        // 装载二维码（服务端 PNG），首次打开后再加载更省首屏
+        var qrImg = document.getElementById('shareQrImg');
+        if (qrImg && qrImg.dataset.loaded !== '1') {
+            qrImg.src = '../api/qrcode.php?size=200&url=' + encodeURIComponent(SHARE_URL);
+            qrImg.dataset.loaded = '1';
+        }
+
+        // 配置渠道链接
+        var enc = encodeURIComponent;
+        document.getElementById('shareWeibo').href =
+            'https://service.weibo.com/share/share.php?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE + ' - ' + SHARE_DESC);
+        document.getElementById('shareQQ').href =
+            'https://connect.qq.com/widget/shareqq/index.html?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE) + '&desc=' + enc(SHARE_DESC) + '&site=58人气值商城';
+        document.getElementById('shareQZone').href =
+            'https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE) + '&desc=' + enc(SHARE_DESC) + '&site=58人气值商城';
+        document.getElementById('shareDouban').href =
+            'https://www.douban.com/share/service?href=' + enc(SHARE_URL) + '&name=' + enc(SHARE_TITLE) + '&text=' + enc(SHARE_DESC);
+
+        // 移动端原生分享按钮显隐
+        document.getElementById('shareNative').style.display  = SHARE_HAS_NATIVE ? 'flex' : 'none';
+        document.getElementById('shareNative2').style.display = SHARE_HAS_NATIVE ? 'flex' : 'none';
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        // 自动选中链接方便复制
+        setTimeout(function() {
+            var inp = document.getElementById('shareLinkInput');
+            if (inp) { inp.focus(); inp.setSelectionRange(0, inp.value.length); }
+        }, 50);
+    }
+
+    function closeShareModal() {
+        var modal = document.getElementById('shareModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    // ESC 关闭分享弹窗
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeShareModal();
+    });
+
+    // 通用复制：复制到剪贴板，兼容新旧浏览器
+    function shareCopyText(text, btnEl) {
+        var onOk = function() {
+                showShareToast('链接已复制，快去分享吧～');
+                if (btnEl) {
+                    var orig = btnEl.dataset.origText || btnEl.textContent;
+                    btnEl.dataset.origText = orig;
+                    btnEl.textContent = '已复制';
+                    if (btnEl.classList) btnEl.classList.add('copied');
+                    setTimeout(function() {
+                        btnEl.textContent = orig;
+                        if (btnEl.classList) btnEl.classList.remove('copied');
+                    }, 1800);
+                }
+            },
+            onFail = function() {
+                // 退化方案：临时 input + execCommand
+                var tmp = document.createElement('input');
+                tmp.value = text;
+                tmp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+                document.body.appendChild(tmp);
+                tmp.select();
+                try {
+                    document.execCommand('copy');
+                    onOk();
+                } catch (e) {
+                    showShareToast('复制失败，请手动复制', true);
+                }
+                document.body.removeChild(tmp);
+            };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(onOk, onFail);
+        } else {
+            onFail();
+        }
+    }
+
+    // 复制链接按钮（带反馈）
+    function copyShareLink(btn) {
+        shareCopyText(SHARE_URL, btn);
+    }
+    function copyShareLinkFromInput(btn) {
+        var inp = document.getElementById('shareLinkInput');
+        shareCopyText(inp ? inp.value : SHARE_URL, btn);
+    }
+
+    // Web Share API（移动端原生分享面板）
+    function nativeShare() {
+        if (!navigator.share) {
+            showShareToast('当前环境不支持系统分享');
+            return;
+        }
+        navigator.share({
+            title: SHARE_TITLE,
+            text: SHARE_DESC,
+            url: SHARE_URL
+        }).catch(function(err) {
+            // 用户取消不报错
+            if (err && err.name !== 'AbortError') {
+                console.warn('分享失败:', err);
+            }
+        });
+    }
+
+    // 简易 toast（避免与已有 showToast 冲突）
+    function showShareToast(msg, isError) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 18px;border-radius:24px;color:#fff;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.2);' +
+            (isError ? 'background:#ef4444;' : 'background:#10b981;');
+        document.body.appendChild(t);
+        setTimeout(function() {
+            t.style.transition = 'opacity .3s, top .3s';
+            t.style.opacity = '0';
+            t.style.top = '12px';
+            setTimeout(function() { t.remove(); }, 320);
+        }, 1600);
     }
     </script>
 
