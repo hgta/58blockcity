@@ -20,7 +20,7 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../rankings/index.php','icon'=>'trophy','text'=>'排行榜'],
     ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
-$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="stylesheet" href="/assets/css/main.css">';
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '') . '<link rel="stylesheet" href="/assets/css/main.css?v=20260929">';
 
 
 // 计算当前用户未读通知数与最近通知列表（用于头部下拉）

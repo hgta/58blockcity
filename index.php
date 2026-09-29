@@ -415,17 +415,23 @@ $letters = range('A', 'Z');
                 </div>
                 <div>
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">关注我们</h4>
-                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                        <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
-                        <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
-                        <img src="/images/qr-zhongchuang.png" alt="加入众创" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
-                        <img src="/images/qr-gongzhonghao.jpg" alt="官方公众号" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
-                    </div>
-                    <div style="font-size:10px;color:#64748b;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
-                        <span style="width:80px;text-align:center;">7.5折购地</span>
-                        <span style="width:80px;text-align:center;">客服微信</span>
-                        <span style="width:80px;text-align:center;">加入众创</span>
-                        <span style="width:80px;text-align:center;">官方公众号</span>
+                    <div style="display:grid;grid-template-columns:repeat(2,80px);gap:12px;">
+                        <div style="text-align:center;">
+                            <img src="/images/qr-discount.png" alt="7.5折购地" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                            <span style="display:block;font-size:10px;color:#64748b;margin-top:6px;">7.5折购地</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <img src="/images/qr-customer-service.png" alt="客服微信" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                            <span style="display:block;font-size:10px;color:#64748b;margin-top:6px;">客服微信</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <img src="/images/qr-zhongchuang.png" alt="加入众创" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                            <span style="display:block;font-size:10px;color:#64748b;margin-top:6px;">加入众创</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <img src="/images/qr-gongzhonghao.jpg" alt="官方公众号" style="width:80px;height:80px;max-width:80px;max-height:80px;background:#fff;border-radius:6px;padding:3px;display:block;">
+                            <span style="display:block;font-size:10px;color:#64748b;margin-top:6px;">官方公众号</span>
+                        </div>
                     </div>
                 </div>
                 <div>

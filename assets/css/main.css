@@ -3539,12 +3539,11 @@ header {
     width: 16px;
     text-align: center;
 }
+/* 四个二维码固定 2×2 网格：上面 7.5折购地/客服微信，下面 加入众创/官方公众号 */
 .qr-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 75px);
     gap: 12px;
-    flex-wrap: wrap;
-    max-width: 180px;
-    row-gap: 12px;
 }
 .qr-item {
     text-align: center;
@@ -3586,7 +3585,6 @@ header {
 }
 @media (max-width: 576px) {
     .footer-grid { grid-template-columns: 1fr; }
-    .qr-group { justify-content: flex-start; }
 }
 
 /* ===== Block 子站点列表页通用样式 ===== */

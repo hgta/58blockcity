@@ -215,7 +215,7 @@ if (!function_exists('city_portal_render')) {
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="stylesheet" href="/city/city.css" type="text/css" media="all" />
     <!-- v=20260906：升级缓存指纹，强制浏览器/CDN 重新拉取新样式（旧版 css 无 5 列统计/9 区/页脚样式） -->
-    <link rel="stylesheet" href="/assets/css/city-portal.css?v=20260906" type="text/css" media="all" />
+    <link rel="stylesheet" href="/assets/css/city-portal.css?v=20260929" type="text/css" media="all" />
     <script>
     var _hmt=_hmt||[];
     (function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();

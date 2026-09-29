@@ -30,7 +30,7 @@ $site_config['description'] = '浏览 ' . e($selectedCity) . ' 的全部互访�
 $site_config['keywords']    = '58,互访圈,' . e($selectedCity) . ',城市互访,BlockCity';
 $__hfMap = SeoHelper::primaryDomainMap('hufang');
 $site_config['canonical_url'] = 'https://' . (!empty($__hfMap['primary']) ? $__hfMap['primary'] : 'v.58.tl') . '/circles/all.php';
-$site_config['extra_head']  = '<link rel="stylesheet" href="../assets/css/main.css">';
+$site_config['extra_head']  = '<link rel="stylesheet" href="../assets/css/main.css?v=20260929">';
 
 require_once '../includes/header.php';
 ?>

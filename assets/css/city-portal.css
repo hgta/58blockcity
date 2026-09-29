@@ -787,10 +787,11 @@ header .nav-button:hover {
     margin: 0;
 }
 
+/* 四个二维码固定 2×2 网格（上：7.5折购地/客服微信，下：加入众创/官方公众号） */
 .cp-footer-qr {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 80px);
     gap: 12px;
-    flex-wrap: wrap;
 }
 
 .cp-footer-qr figure {

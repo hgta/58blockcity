@@ -39,7 +39,7 @@ $orgJsonLd = organization_json_ld();
     <?= $orgJsonLd ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css">
+    <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20260929">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.58.tl/assets/js/main.js"></script>
@@ -71,20 +71,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 }
 
 .block-container{max-width:1200px;margin:0 auto;padding:20px}
-.block-footer{background:#2d3748;color:#a0aec0;margin-top:40px}
-.block-footer-inner{max-width:1200px;margin:0 auto;padding:30px 20px;display:grid;grid-template-columns:1fr 1fr 1fr 200px 1fr;gap:20px}
-.footer-col h4{color:#fff;font-size:14px;margin-bottom:10px;font-weight:600}
-.footer-col a,.footer-col p{display:block;color:#a0aec0;font-size:13px;text-decoration:none;padding:3px 0;transition:color .15s;margin:0}
-.footer-col a:hover{color:#ff6b00}
-.footer-about p{font-size:12px;line-height:1.6}
-.qr-group{display:flex;gap:10px;margin-top:4px}
-.qr-item{text-align:center}
-.qr-item img{width:90px;height:90px;border-radius:6px;display:block;margin-bottom:4px}
-.qr-item span{font-size:11px;color:#a0aec0}
-.footer-contact p i{margin-right:6px;width:14px}
-.block-copyright{text-align:center;padding:16px 20px;font-size:12px;color:#718096;border-top:1px solid #4a5568}
-@media(max-width:900px){.block-footer-inner{grid-template-columns:repeat(2,1fr)}.qr-group{justify-content:flex-start}}
-@media(max-width:480px){.block-footer-inner{grid-template-columns:1fr}}
+/* 页脚样式已统一到 assets/css/main.css（shared/footer.php），
+   此处不再定义 .block-footer / .footer-col / .qr-* 等，避免覆盖全站页脚样式 */
 </style>
 </head>
 <body>
