@@ -1756,23 +1756,27 @@ $productSchema = SeoHelper::productSchema([
                     <span class="share-channel-icon copy"><i class="fas fa-copy"></i></span>
                     <span>复制链接</span>
                 </button>
-                <a href="#" class="share-channel" id="shareWechat" target="_blank" rel="noopener">
+                <button type="button" class="share-channel" id="shareWechat" onclick="shareToWechat(this)" title="微信内可直接发送给朋友，外部请用上方二维码扫码">
                     <span class="share-channel-icon wechat"><i class="fab fa-weixin"></i></span>
                     <span>微信好友</span>
-                </a>
-                <a href="#" class="share-channel" id="shareWeibo" target="_blank" rel="noopener">
+                </button>
+                <a class="share-channel" id="shareWeibo" target="_blank" rel="noopener"
+                   href="https://service.weibo.com/share/share.php?url=<?= urlencode($canonicalUrl) ?>&title=<?= urlencode($productDetail['name'] . ' - ' . $productDesc) ?>">
                     <span class="share-channel-icon weibo"><i class="fab fa-weibo"></i></span>
                     <span>微博</span>
                 </a>
-                <a href="#" class="share-channel" id="shareQQ" target="_blank" rel="noopener">
+                <a class="share-channel" id="shareQQ" target="_blank" rel="noopener"
+                   href="https://connect.qq.com/widget/shareqq/index.html?url=<?= urlencode($canonicalUrl) ?>&title=<?= urlencode($productDetail['name']) ?>&desc=<?= urlencode($productDesc) ?>&site=58人气值商城">
                     <span class="share-channel-icon qq"><i class="fab fa-qq"></i></span>
                     <span>QQ</span>
                 </a>
-                <a href="#" class="share-channel" id="shareQZone" target="_blank" rel="noopener">
+                <a class="share-channel" id="shareQZone" target="_blank" rel="noopener"
+                   href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=<?= urlencode($canonicalUrl) ?>&title=<?= urlencode($productDetail['name']) ?>&desc=<?= urlencode($productDesc) ?>&site=58人气值商城">
                     <span class="share-channel-icon qzone"><i class="fas fa-star"></i></span>
                     <span>QQ空间</span>
                 </a>
-                <a href="#" class="share-channel" id="shareDouban" target="_blank" rel="noopener">
+                <a class="share-channel" id="shareDouban" target="_blank" rel="noopener"
+                   href="https://www.douban.com/share/service?href=<?= urlencode($canonicalUrl) ?>&name=<?= urlencode($productDetail['name']) ?>&text=<?= urlencode($productDesc) ?>">
                     <span class="share-channel-icon douban"><i class="fas fa-book"></i></span>
                     <span>豆瓣</span>
                 </a>
@@ -1805,25 +1809,14 @@ $productSchema = SeoHelper::productSchema([
         var modal = document.getElementById('shareModal');
         if (!modal) return;
 
-        // 装载二维码（服务端 PNG），首次打开后再加载更省首屏
+        // 配置二维码（按需懒加载）
         var qrImg = document.getElementById('shareQrImg');
         if (qrImg && qrImg.dataset.loaded !== '1') {
             qrImg.src = '../api/qrcode.php?size=200&url=' + encodeURIComponent(SHARE_URL);
             qrImg.dataset.loaded = '1';
         }
 
-        // 配置渠道链接
-        var enc = encodeURIComponent;
-        document.getElementById('shareWeibo').href =
-            'https://service.weibo.com/share/share.php?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE + ' - ' + SHARE_DESC);
-        document.getElementById('shareQQ').href =
-            'https://connect.qq.com/widget/shareqq/index.html?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE) + '&desc=' + enc(SHARE_DESC) + '&site=58人气值商城';
-        document.getElementById('shareQZone').href =
-            'https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=' + enc(SHARE_URL) + '&title=' + enc(SHARE_TITLE) + '&desc=' + enc(SHARE_DESC) + '&site=58人气值商城';
-        document.getElementById('shareDouban').href =
-            'https://www.douban.com/share/service?href=' + enc(SHARE_URL) + '&name=' + enc(SHARE_TITLE) + '&text=' + enc(SHARE_DESC);
-
-        // 移动端原生分享按钮显隐
+        // 渠道 href 已由服务端渲染；JS 仅负责显隐原生分享按钮
         document.getElementById('shareNative').style.display  = SHARE_HAS_NATIVE ? 'flex' : 'none';
         document.getElementById('shareNative2').style.display = SHARE_HAS_NATIVE ? 'flex' : 'none';
 
@@ -1850,6 +1843,50 @@ $productSchema = SeoHelper::productSchema([
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeShareModal();
     });
+
+    // 分享给微信好友
+    // 浏览器无法直接打开微信 App。
+    // - 在微信内置浏览器：通过 WeixinJSBridge 唤起「发送给朋友」面板
+    // - 在普通浏览器：聚焦二维码区域，提示用户用微信扫码；同时把链接复制到剪贴板
+    // - 移动端原生分享可用：调 navigator.share，由系统决定是否出现微信
+    function shareToWechat(btn) {
+        // 1) 微信内置浏览器：调原生分享面板（需引入微信 JSSDK 才稳定；本项目未装，做轻量探测）
+        try {
+            if (typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge && WeixinJSBridge.invoke) {
+                WeixinJSBridge.invoke('sendAppMessage', {
+                    'appid': '',
+                    'img_url': '',
+                    'img_width': '200',
+                    'img_height': '200',
+                    'link': SHARE_URL,
+                    'desc': SHARE_DESC,
+                    'title': SHARE_TITLE
+                }, function(res) { /* noop */ });
+                return;
+            }
+        } catch (e) { /* 忽略，继续降级 */ }
+
+        // 2) 移动端：优先走系统面板（含微信/QQ 等候选）
+        if (SHARE_HAS_NATIVE && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            nativeShare();
+            return;
+        }
+
+        // 3) 桌面端 / 不支持原生分享：聚焦二维码 + 复制链接 + 提示
+        var qrArea = document.querySelector('.share-qrcode');
+        var tip    = document.querySelector('.share-qrcode-tip');
+        if (qrArea) {
+            qrArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            qrArea.style.transition = 'box-shadow .25s';
+            qrArea.style.boxShadow = '0 0 0 3px #07c160, 0 0 18px rgba(7,193,96,.35)';
+            qrArea.style.borderRadius = '12px';
+            setTimeout(function() { qrArea.style.boxShadow = ''; }, 2200);
+        }
+        if (tip) {
+            tip.innerHTML = '<i class="fas fa-weixin"></i> 请用微信扫一扫上方二维码，分享给好友';
+        }
+        shareCopyText(SHARE_URL, btn);
+    }
 
     // 通用复制：复制到剪贴板，兼容新旧浏览器
     function shareCopyText(text, btnEl) {
