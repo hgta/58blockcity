@@ -4,7 +4,7 @@
  *
  * 重置通道（按优先级）：
  *   ① 微信通道：在公众号对话框发送「重置」→ 收到一次性链接 → 设置新密码
- *   ② 人工兜底：邮件联系 support@58.tl，管理员在后台核实身份后重置
+ *   ② 人工兜底：联系官方客服微信（BitPFP），管理员在后台核实身份后重置
  */
 
 if (!isset($site_config)) {
@@ -73,9 +73,9 @@ $__wechatName = defined('WECHAT_ACCOUNT_NAME') ? WECHAT_ACCOUNT_NAME : '58区块
 
     <div class="fp-manual">
         <b>方式二：人工兜底</b><br>
-        若无法使用微信（如账号未绑定微信、链接已过期等），请发送邮件至
-        <a href="mailto:support@58.tl">support@58.tl</a>，
-        注明您的用户名和注册邮箱/手机号，管理员核实身份后会为您重置密码。
+        若无法使用微信（如账号未绑定微信、链接已过期等），可直接联系官方客服
+        （微信号：<b>BitPFP</b>），注明您的用户名和注册邮箱/手机号，
+        管理员核实身份后会为您重置密码。
     </div>
 
     <div class="fp-footer">
