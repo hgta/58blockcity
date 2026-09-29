@@ -36,8 +36,17 @@ $sharedIncludes = dirname(__DIR__) . '/includes';
 
 require_once $site_config['db_path'];
 require_once $site_config['class_path'] . 'User.php';
+require_once $site_config['class_path'] . 'WechatAuth.php';
 require_once $sharedIncludes . '/functions.php';
 require_once $sharedIncludes . '/auth.php';
+
+// 微信公众号配置（未配置时使用默认值，扫码登录面板仍可展示）
+$__wechatCfg = dirname(__DIR__) . '/config/wechat.php';
+if (is_file($__wechatCfg)) {
+    require_once $__wechatCfg;
+}
+$__qrUrl        = defined('WECHAT_QR_URL') ? WECHAT_QR_URL : 'https://www.58.tl/qrcode_for_gh.jpg';
+$__wechatName   = defined('WECHAT_ACCOUNT_NAME') ? WECHAT_ACCOUNT_NAME : '58区块城市';
 
 $error = '';
 $user = new User($pdo);
@@ -61,9 +70,60 @@ if (isset($_GET['redirect']) && is_string($_GET['redirect'])) {
 
 // 处理登录
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $remember = isset($_POST['remember']);
+
+    // ---- 微信扫码登录：输入公众号下发的 6 位验证码 ----
+    if (($_POST['action'] ?? '') === 'wechat_code') {
+        $code = trim($_POST['wechat_code'] ?? '');
+
+        // 验证码尝试限流：10 次失败锁 5 分钟（防穷举 6 位码）
+        if (($_SESSION['wx_code_attempts'] ?? 0) >= 10) {
+            if (time() - ($_SESSION['wx_code_last'] ?? 0) < 300) {
+                $error = '尝试次数过多，请 5 分钟后再试';
+            } else {
+                $_SESSION['wx_code_attempts'] = 0;
+            }
+        }
+
+        if (empty($error)) {
+            if (!preg_match('/^\d{6}$/', $code)) {
+                $error = '请输入公众号回复的 6 位数字验证码';
+            }
+        }
+
+        if (empty($error)) {
+            $wechatAuth = new WechatAuth($pdo);
+            $openid = $wechatAuth->consumeCode($code, WechatAuth::CODE_PURPOSE_LOGIN);
+
+            if ($openid === null) {
+                $_SESSION['wx_code_attempts'] = ($_SESSION['wx_code_attempts'] ?? 0) + 1;
+                $_SESSION['wx_code_last'] = time();
+                $error = '验证码无效或已过期，请在公众号重新获取（发送任意消息即可）';
+            } else {
+                $wxUser = $wechatAuth->getUserByOpenid($openid);
+                if ($wxUser && $wxUser['status'] !== 'active') {
+                    $error = '账户已被禁用，请联系管理员';
+                } elseif ($wxUser) {
+                    handleLogin($wxUser['id'], $wxUser['username'], $wxUser['email'] ?? '', $wxUser['role'], true);
+                    $redirectUrl = $_SESSION['redirect_url'] ?? $site_config['redirect_after_login'];
+                    unset($_SESSION['redirect_url']);
+                    header('Location: ' . $redirectUrl);
+                    exit;
+                } else {
+                    // 未绑定账号 → 进入「补全邮箱/手机 → 建号」流程
+                    $_SESSION['wechat_pending_openid'] = $openid;
+                    $_SESSION['wechat_pending_expires'] = time() + 600; // 10 分钟内完成补全
+                    header('Location: wechat_complete.php');
+                    exit;
+                }
+            }
+        }
+    }
+
+    // ---- 账号密码登录 ----
+    elseif (empty($_POST['action'])) {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $remember = isset($_POST['remember']);
     
     if (empty($username) || empty($password)) {
         $error = '用户名和密码不能为空';
@@ -101,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+    }
 }
 ?>
 <?php include $site_config['includes_path'] . 'header.php'; ?>
@@ -123,6 +184,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .btn-login:hover { background:#e05d00; }
 .login-footer { text-align:center; margin-top:20px; font-size:14px; color:#666; }
 .login-footer a { color:#ff6b00; font-weight:bold; }
+
+/* 登录方式 Tab */
+.login-tabs { display:flex; margin-bottom:22px; border-bottom:2px solid #eee; }
+.login-tabs button { flex:1; padding:12px 8px; background:none; border:none; border-bottom:3px solid transparent; font-size:15px; color:#999; cursor:pointer; margin-bottom:-2px; }
+.login-tabs button.active { color:#ff6b00; border-bottom-color:#ff6b00; font-weight:bold; }
+.login-panel { display:none; }
+.login-panel.active { display:block; }
+
+/* 微信扫码面板 */
+.wx-login { text-align:center; }
+.wx-qr { width:200px; height:200px; border:1px solid #eee; border-radius:10px; padding:8px; margin:0 auto 12px; display:block; background:#fff; }
+.wx-steps { text-align:left; background:#f9f9f9; border-radius:8px; padding:14px 16px; margin-bottom:18px; font-size:13.5px; color:#666; line-height:1.9; }
+.wx-steps b { color:#333; }
+.wx-code-input { letter-spacing:8px; text-align:center; font-size:22px !important; font-weight:bold; }
 </style>
 
 <div class="login-container">
@@ -135,27 +210,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
     
-    <form class="login-form" action="login.php" method="POST">
-        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-        <div class="form-group">
-            <label for="username">用户名</label>
-            <input type="text" id="username" name="username" required 
-                   value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
+    <div class="login-tabs">
+        <button type="button" id="tabPwd" class="active" onclick="switchLoginTab('pwd')">账号登录</button>
+        <button type="button" id="tabWx" onclick="switchLoginTab('wx')">微信扫码登录</button>
+    </div>
+
+    <div id="panelPwd" class="login-panel active">
+        <form class="login-form" action="login.php" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required 
+                       value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember" value="1">
+                <label for="remember">30天内自动登录</label>
+            </div>
+            <button type="submit" class="btn-login">登录</button>
+        </form>
+    </div>
+
+    <div id="panelWx" class="login-panel">
+        <div class="wx-login">
+            <img class="wx-qr" src="<?= htmlspecialchars($__qrUrl) ?>" alt="微信扫码关注登录">
+            <div class="wx-steps">
+                <b>① 微信扫码</b>：使用微信扫上方二维码，关注公众号「<?= htmlspecialchars($__wechatName) ?>」<br>
+                <b>② 获取验证码</b>：关注后公众号会自动回复一个 6 位数字验证码<br>
+                <b>③ 输入验证码</b>：在下方输入即可登录；新用户将自动进入注册流程
+            </div>
+            <form action="login.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                <input type="hidden" name="action" value="wechat_code">
+                <div class="form-group">
+                    <input type="text" class="wx-code-input" name="wechat_code" inputmode="numeric"
+                           pattern="\d{6}" maxlength="6" placeholder="······" required
+                           autocomplete="one-time-code" title="请输入公众号回复的6位验证码">
+                </div>
+                <button type="submit" class="btn-login">验证并登录</button>
+            </form>
+            <p style="font-size:12px;color:#999;margin-top:10px;">验证码 5 分钟内有效；已关注的用户在公众号发送任意消息即可重新获取</p>
         </div>
-        <div class="form-group">
-            <label for="password">密码</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <div class="remember-me">
-            <input type="checkbox" id="remember" name="remember" value="1">
-            <label for="remember">30天内自动登录</label>
-        </div>
-        <button type="submit" class="btn-login">登录</button>
-    </form>
+    </div>
     
     <div class="login-footer">
         <p>没有账号？ <a href="register.php">立即注册</a> • <a href="forgot_password.php">忘记密码？</a></p>
     </div>
 </div>
+
+<script>
+function switchLoginTab(tab) {
+    document.getElementById('panelPwd').classList.toggle('active', tab === 'pwd');
+    document.getElementById('panelWx').classList.toggle('active', tab === 'wx');
+    document.getElementById('tabPwd').classList.toggle('active', tab === 'pwd');
+    document.getElementById('tabWx').classList.toggle('active', tab === 'wx');
+}
+// 验证码错误时自动切回微信 Tab
+<?php if (!empty($error) && ($_POST['action'] ?? '') === 'wechat_code'): ?>
+switchLoginTab('wx');
+<?php endif; ?>
+</script>
 
 <?php include $site_config['includes_path'] . 'footer.php'; ?>

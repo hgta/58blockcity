@@ -1,14 +1,13 @@
 <?php
 /**
- * 互访圈子站 · 找回密码（代理到共享页：微信通道重置 + 人工兜底）
- * 原页面是"发送重置链接"的假表单（无后端处理），已废弃。
+ * 互访圈子站 · 微信扫码注册补全（代理到共享页）
  */
 $site_config = [
     'name'                   => '互访圈',
-    'desc'                   => '找回您的账户密码',
+    'desc'                   => '完成注册，开启城市之旅',
     'redirect_after_login'   => '../user/dashboard.php',
     'db_path'                => '../../config/database.php',
     'class_path'             => '../../classes/',
     'includes_path'          => '../includes/',
 ];
-require_once '../../auth/forgot_password.php';
+require_once '../../auth/wechat_complete.php';

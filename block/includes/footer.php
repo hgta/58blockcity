@@ -1,70 +1,14 @@
-</div><!-- .block-container -->
-<footer class="block-footer">
-    <div class="block-footer-inner">
-        <div class="footer-col footer-about">
-            <h4>关于我们</h4>
-            <p>58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合 BlockCity DAO 社区治理，为用户提供区块浏览、认领交易的一站式体验。</p>
-        </div>
-        <div class="footer-col">
-            <h4>快速链接</h4>
-            <a href="https://www.58.tl/"><i class="fas fa-home"></i> 平台首页</a>
-            <a href="https://bct.58.tl/"><i class="fas fa-coins"></i> BCT 交易</a>
-            <a href="https://mall.58.tl/"><i class="fas fa-shopping-bag"></i> 人气商城</a>
-            <a href="https://v.58.tl/"><i class="fas fa-users"></i> 互访圈</a>
-        </div>
-        <div class="footer-col">
-            <h4>帮助支持</h4>
-            <a href="https://help.58.tl/">帮助中心</a>
-            <a href="https://help.58.tl/faq">常见问题</a>
-            <a href="https://help.58.tl/ask">AI 助手答疑</a>
-            <a href="https://www.blockcity.pub/?iclc">进入城市区块</a>
-            <a href="https://www.blockcity.pub/?iclc=1">加入 DAO</a>
-        </div>
-        <div class="footer-col footer-qr">
-            <h4>专属福利</h4>
-            <div class="qr-group">
-                <div class="qr-item">
-                    <img src="/images/qr-discount.png" alt="7.5折购地">
-                    <span>7.5折购地</span>
-                </div>
-                <div class="qr-item">
-                    <img src="/images/qr-customer-service.png" alt="客服微信">
-                    <span>客服微信</span>
-                </div>
-            </div>
-        </div>
-        <div class="footer-col footer-contact">
-            <h4>联系我们</h4>
-            <p><i class="fas fa-envelope"></i> support@58.tl</p>
-            <p><i class="fas fa-globe"></i> www.58.tl</p>
-            <p><i class="fas fa-map-marker-alt"></i> 元宇宙同城生态</p>
-        </div>
-    </div>
-    <div class="block-copyright">&copy; 2026 58区块交易市场 | BlockCity DAO 版权所有</div>
-</footer>
-
-<!-- 回到顶部 -->
-<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部" style="position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:#ff6b00;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer;z-index:999;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);">↑</button>
-<script>
-(function(){var b=document.getElementById('back-to-top');window.addEventListener('scroll',function(){b.style.display=window.scrollY>300?'block':'none'});})();
-</script>
-
 <?php
-// AI 助手悬浮窗 + 场景化帮助引导（change: help-center-ai-assistant）
-$__aiWidgetOn = true;
-try {
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_widget_enabled'")->fetchColumn();
-        if ($r === '0') $r = @$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_assistant_enabled'")->fetchColumn();
-        if ($r === '0') $__aiWidgetOn = false;
-    }
-} catch (Exception $e) {}
-if ($__aiWidgetOn):
+/**
+ * 区块子站页脚：收编到全站统一页脚（shared/footer.php）
+ * 原独立 .block-footer 模板内容与共享页脚重复，已废弃。
+ * 页面容器为 .block-container（非 <main>），通过 footer_no_main 跳过 </main>。
+ */
+if (!isset($site_config)) {
+    $site_config = [];
+}
+$site_config['footer_name']  = $site_config['footer_name'] ?? '58区块交易市场 | BlockCity DAO';
+$site_config['footer_no_main'] = true;
 ?>
-<script src="https://www.58.tl/js/ai-client.js" defer></script>
-<script src="https://www.58.tl/js/ai-widget.js" defer></script>
-<?php endif; ?>
-<script src="https://www.58.tl/js/help-guide.js" defer></script>
-
-</body>
-</html>
+</div><!-- .block-container -->
+<?php require_once __DIR__ . '/../../shared/footer.php';

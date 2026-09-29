@@ -1,11 +1,16 @@
 <?php
 /**
- * 共享底部组件
- * $site_config['footer_name'] = '58区块交易市场';
+ * 全站统一页脚（唯一页脚实现）
+ * 各子站 includes/footer.php 均为代理，指向本文件。
+ * $site_config['footer_name']  = '58区块交易市场 | BlockCity DAO'
+ * $site_config['footer_extra'] = 额外 HTML（子站追加脚本等）
+ * $site_config['footer_no_main'] = true 时跳过 </main>（子站容器非 <main>，如 block 用 .block-container）
  */
 $footerName = $site_config['footer_name'] ?? '58 BlockCity';
 ?>
+<?php if (empty($site_config['footer_no_main'])): ?>
 </main>
+<?php endif; ?>
 
 <!-- 跨子站引流 -->
 <div class="cross-site-links" style="max-width:1200px;margin:30px auto 0;padding:0 15px;">
@@ -114,8 +119,8 @@ if (!empty($site_config['footer_extra'])) {
 }
 ?>
 
-<script src="/city/city.js"></script>
-<script>getCityInfo();</script>
+<script src="https://www.58.tl/city/city.js"></script>
+<script>if (typeof getCityInfo === 'function' && document.getElementById('userCity')) getCityInfo();</script>
 
 <?php
 // AI 助手悬浮窗 + 场景化帮助引导（change: help-center-ai-assistant）
