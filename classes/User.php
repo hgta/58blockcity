@@ -67,16 +67,16 @@ class User {
 			$params = [$searchTerm, $searchTerm, $searchTerm];
 		}
 		
-		$sql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+		$sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+		$params[] = (int)$perPage;
+		$params[] = (int)$offset;
 		
 		$stmt = $this->pdo->prepare($sql);
 		
-		// 绑定命名参数
+		// 统一使用位置参数绑定，避免命名参数与位置参数混用导致 HY093 错误
 		foreach ($params as $key => $value) {
-			$stmt->bindValue($key + 1, $value);
+			$stmt->bindValue($key + 1, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
 		}
-		$stmt->bindValue(':limit', (int)$perPage, PDO::PARAM_INT);
-		$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
 		
 		$stmt->execute();
 		return $stmt->fetchAll();
