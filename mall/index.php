@@ -57,14 +57,12 @@ if ($userId && $topAuthorIds) {
     $stmt->execute([$userId]);
     $topAuthorFollowed = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
 }
-?>
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>58人气值购物商城 - BCT商城平台</title>
-    <style>
+// 文档结构统一走 mall/includes/header.php → shared/header.php。
+// （此前本页自带一套完整 head，与 header.php 形成「双 head」，
+//  og:* 全部落在 body 内的第二个 head 中，搜索引擎无法解析 —— 本处即修复任务 F）
+$site_config['title']      = $site_config['title'] ?? '58人气值购物商城 - BCT商城平台';
+$site_config['extra_head'] = <<<'MALL_INDEX_STYLE'
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -510,9 +508,9 @@ if ($userId && $topAuthorIds) {
             .author-mini-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         }
     </style>
-</head>
-<body>
-    <?php include 'includes/header.php'; ?>
+MALL_INDEX_STYLE;
+include 'includes/header.php';
+?>
     
     <div class="container">
         <!-- Banner + 搜索 -->
