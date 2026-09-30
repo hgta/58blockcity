@@ -98,7 +98,8 @@ $letters = range('A', 'Z');
         .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
         .btn-outline { border:1.5px solid rgba(255,255,255,.55); color:#fff; }
         .btn-outline:hover { background:rgba(255,255,255,.12); }
-        .hero-right { font-size:44px; opacity:.9; }
+        /* 首屏视觉元素：真实栅格地块图（原为 emoji 占位，搜索引擎无法索引） */
+        .hero-right img { width:96px; height:96px; object-fit:contain; display:block; border-radius:12px; filter:drop-shadow(0 6px 16px rgba(0,0,0,.18)); }
         
         /* 热门城市 */
         .hot-cities { padding:0 0 30px; }
@@ -142,6 +143,7 @@ $letters = range('A', 'Z');
             .user-actions{justify-content:center}
             .hero{flex-direction:column;text-align:center;padding:24px 20px}
             .hero-btns{justify-content:center}
+            .hero-right img{width:80px;height:80px}
             .hot-city-grid{grid-template-columns:repeat(3,1fr)}
             .city-grid{grid-template-columns:repeat(4,1fr)}
             .eco-grid{grid-template-columns:repeat(2,1fr)}
@@ -242,7 +244,9 @@ $letters = range('A', 'Z');
                         <a href="https://bct.58.tl/" class="btn-outline">了解BCT</a>
                     </div>
                 </div>
-                <div class="hero-right">🏙️</div>
+                <div class="hero-right">
+                    <img src="/assets/images/hero-block.png" alt="58区块城市 数字地块示意图" width="96" height="96">
+                </div>
             </div>
         </div>
     </div>

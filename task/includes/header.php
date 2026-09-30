@@ -8,6 +8,7 @@ $site_config['title']       = $site_config['title'] ?? '任务广场 - 58 区块
 $site_config['description'] = $site_config['description'] ?? '任务广场：发布悬赏找代互访、代打卡、代做市长等线下小任务，众包领取赚人气值/现金，验收结算并双向评价沉淀信誉。';
 $site_config['keywords']    = $site_config['keywords'] ?? '任务,悬赏,代互访,代打卡,代做市长,众包,人气值,现金,58,区块城市,BlockCity,互访圈';
 $site_config['canonical_url'] = $site_config['canonical_url'] ?? 'https://task.58.tl/';
+$site_config['og_image']    = $site_config['og_image'] ?? 'https://www.58.tl/assets/images/og-task.jpg';
 $site_config['logo_main']   = $site_config['logo_main'] ?? '58';
 $site_config['logo_sub']    = $site_config['logo_sub'] ?? '任务';
 $site_config['logo_tag']    = $site_config['logo_tag'] ?? '悬赏众包 · 任务广场';

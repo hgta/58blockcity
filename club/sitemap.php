@@ -17,21 +17,36 @@ $now = date('Y-m-d');
 
 $urls = [];
 
-function club_node(&$urls, $loc, $priority, $freq, $lastmod)
+function club_node(&$urls, $loc, $priority, $freq, $lastmod, array $images = [])
 {
-    $urls[] = ['loc' => $loc, 'priority' => $priority, 'freq' => $freq, 'lastmod' => $lastmod];
+    $urls[] = ['loc' => $loc, 'priority' => $priority, 'freq' => $freq, 'lastmod' => $lastmod, 'images' => $images];
 }
 
 // 首页
 club_node($urls, CLUB_BASE . '/', '1.0', 'daily', $now);
 
-// 帖子详情
+// 帖子详情（带正文配图，供图片搜索收录）
 try {
-    $stmt = $pdo->query("SELECT id, title, content, updated_at FROM posts WHERE status='active' ORDER BY id DESC LIMIT 5000");
+    $stmt = $pdo->query("SELECT id, title, content, images, updated_at FROM posts WHERE status='active' ORDER BY id DESC LIMIT 5000");
     while ($p = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $lastmod = !empty($p['updated_at']) ? date('Y-m-d', strtotime($p['updated_at'])) : $now;
         $title   = !empty($p['title']) ? $p['title'] : $p['content'];
-        club_node($urls, SeoHelper::postUrl($p['id'], $title), '0.7', 'weekly', $lastmod);
+
+        $images = [];
+        $raw = json_decode($p['images'] ?? '', true);
+        if (is_array($raw)) {
+            foreach ($raw as $img) {
+                $img = ltrim((string)$img, '/');
+                if ($img === '') continue;
+                $images[] = [
+                    'loc'   => CLUB_BASE . '/' . $img,
+                    'title' => mb_substr(strip_tags((string)$title), 0, 80),
+                ];
+                if (count($images) >= 10) break;   // 单帖最多 10 张，避免 sitemap 过大
+            }
+        }
+
+        club_node($urls, SeoHelper::postUrl($p['id'], $title), '0.7', 'weekly', $lastmod, $images);
     }
 } catch (Exception $e) {
     // posts 表不存在时跳过
@@ -39,13 +54,20 @@ try {
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 ?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 <?php foreach ($urls as $u): ?>
   <url>
     <loc><?= htmlspecialchars($u['loc']) ?></loc>
     <lastmod><?= htmlspecialchars($u['lastmod']) ?></lastmod>
     <changefreq><?= htmlspecialchars($u['freq']) ?></changefreq>
     <priority><?= htmlspecialchars($u['priority']) ?></priority>
+<?php foreach (($u['images'] ?? []) as $img): ?>
+    <image:image>
+      <image:loc><?= htmlspecialchars($img['loc']) ?></image:loc>
+      <image:title><?= htmlspecialchars($img['title']) ?></image:title>
+    </image:image>
+<?php endforeach; ?>
   </url>
 <?php endforeach; ?>
 </urlset>

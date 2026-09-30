@@ -137,7 +137,7 @@ if ($p['type'] === 'post') {
         'datePublished' => $p['created_at'],
         'dateModified' => $p['updated_at'] ?? $p['created_at'],
         'mainEntityOfPage' => $canonical,
-        'image' => $firstImage ? 'https://www.58.tl/' . ltrim($firstImage, '/') : 'https://www.58.tl/assets/images/og-club.jpg',
+        'image' => $firstImage ? 'https://club.58.tl/' . ltrim($firstImage, '/') : 'https://www.58.tl/assets/images/og-club.jpg',
         'interactionStatistic' => [
             ['@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/LikeAction', 'userInteractionCount' => intval($p['like_count'])],
             ['@type' => 'InteractionCounter', 'interactionType' => 'https://schema.org/CommentAction', 'userInteractionCount' => intval($p['comment_count'])],
@@ -152,7 +152,7 @@ $site_config['canonical_url'] = $canonical;
 $site_config['og_url'] = $canonical;
 $site_config['og_type'] = $p['type'] === 'post' ? 'article' : 'website';
 if (!empty($imgs)) {
-    $site_config['og_image'] = 'https://www.58.tl/' . ltrim($imgs[0], '/');
+    $site_config['og_image'] = 'https://club.58.tl/' . ltrim($imgs[0], '/');
 }
 require_once 'includes/header.php';
 ?>

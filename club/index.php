@@ -173,6 +173,15 @@ require_once 'includes/header.php';
               <?php if (!empty($p['view_count'])): ?><span><i class="far fa-eye"></i> <?= $p['view_count'] ?></span><?php endif; ?>
             </div>
           </div>
+          <?php if (!empty($imgs)): ?>
+          <!-- 帖子首图缩略图：列表页有真实内容图，供搜索引擎抓取 -->
+          <a class="club-post-thumb" href="<?= $pUrl ?>" tabindex="-1" aria-hidden="true">
+            <img src="/<?= htmlspecialchars(ltrim($imgs[0], '/')) ?>"
+                 alt="<?= htmlspecialchars(mb_substr($p['type'] === 'post' && $p['title'] ? $p['title'] : $p['content'], 0, 30)) ?>"
+                 loading="lazy"
+                 onerror="this.parentNode.style.display='none'">
+          </a>
+          <?php endif; ?>
         </div>
         <?php endforeach; ?>
       </div>
