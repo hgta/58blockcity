@@ -623,26 +623,33 @@ class Model
      * ============================================================ */
 
     /**
-     * 首页 Hero 主推模特：「有封面图（video_cover）的模特按周轮换」
-     * - 候选池：video_cover 非空的活跃模特，按粉丝数排序
+     * 首页 Hero 主推模特：「有视觉素材的模特按周轮换」
+     * - 候选池：有封面图 / 生活照 / 关联在售商品图的活跃模特（首页拼贴墙取材）
      * - 轮换：offset = 年周序号 % 池子大小，每周一自动换人，无需存储
-     * - 兜底：池子为空（无人配封面）时回退「有视频优先，其次粉丝数」
+     * - 兜底：池子为空时回退「有视频优先，其次粉丝数」
      */
     public function getHeroModel()
     {
-        $cols = "SELECT m.*, u.username, u.avatar as user_avatar
-                 FROM models m LEFT JOIN users u ON m.user_id = u.id
-                 WHERE m.status = 'active' AND m.video_cover IS NOT NULL AND m.video_cover <> ''";
+        $materialWhere = "m.status = 'active' AND (
+                (m.video_cover IS NOT NULL AND m.video_cover <> '')
+             OR (m.daily_photos IS NOT NULL AND m.daily_photos <> '')
+             OR EXISTS (SELECT 1 FROM products p
+                        WHERE p.model_id = m.id AND p.status = 'active'
+                          AND ((p.main_image IS NOT NULL AND p.main_image <> '')
+                            OR (p.images IS NOT NULL AND p.images <> ''))))";
         $poolSize = intval($this->pdo->query(
-            "SELECT COUNT(*) FROM models m
-             WHERE m.status = 'active' AND m.video_cover IS NOT NULL AND m.video_cover <> ''"
+            "SELECT COUNT(*) FROM models m WHERE {$materialWhere}"
         )->fetchColumn());
 
         if ($poolSize > 0) {
             $week = intval(date('oW')); // ISO 年周，如 202640
             $offset = $week % $poolSize;
             $stmt = $this->pdo->query(
-                $cols . " ORDER BY m.follower_count DESC, m.id DESC LIMIT 1 OFFSET {$offset}"
+                "SELECT m.*, u.username, u.avatar as user_avatar
+                 FROM models m LEFT JOIN users u ON m.user_id = u.id
+                 WHERE {$materialWhere}
+                 ORDER BY m.follower_count DESC, m.id DESC
+                 LIMIT 1 OFFSET {$offset}"
             );
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($row) {

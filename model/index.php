@@ -47,29 +47,41 @@ $heroKind   = $heroModel ? Model::videoKind($heroModel['video_url'] ?? '') : '';
 $heroUrl    = $heroModel ? SeoHelper::modelUrl($heroModel['id'], $heroModel['nickname'] ?? '') : '';
 $heroFans   = $heroModel ? Model::formatFollower(intval($heroModel['follower_count'] ?? 0)) : '0';
 
-// Hero 大图：视频封面 → 作品图集首图 → 日常照片首图 → 头像
-// （Hero 是全屏展示位，需要足够大的视觉主体，不能只有小头像）
-$heroCover = '';
+// Hero 大图素材墙：视频封面 + 作品图集（商品照片）+ 生活照 + 头像，合并去重
+// （Hero 是全屏展示位，单找一张大图很难，用多张素材拼贴填充；
+//   外链图片（如微博）加载失败时前端用头像兜底，不出现黑洞）
+$heroImages = [];
 if ($heroModel) {
     if (!empty($heroModel['video_cover'])) {
-        $heroCover = model_media($heroModel['video_cover']);
+        $heroImages[] = model_media($heroModel['video_cover']);
     }
-    if ($heroCover === '') {
-        $heroStrips = $modelObj->getModelImageStrips([intval($heroModel['id'])], 1);
-        if (!empty($heroStrips[$heroModel['id']][0])) {
-            $heroCover = model_media($heroStrips[$heroModel['id']][0]);
+    $heroStrips = $modelObj->getModelImageStrips([intval($heroModel['id'])], 8);
+    if (!empty($heroStrips[$heroModel['id']])) {
+        foreach ($heroStrips[$heroModel['id']] as $img) {
+            $heroImages[] = model_media($img);
         }
     }
-    if ($heroCover === '' && !empty($heroModel['daily_photos'])) {
+    if (!empty($heroModel['daily_photos'])) {
         $daily = json_decode($heroModel['daily_photos'], true);
-        if (is_array($daily) && !empty($daily[0])) {
-            $heroCover = model_media($daily[0]);
+        if (is_array($daily)) {
+            foreach ($daily as $img) {
+                $heroImages[] = model_media($img);
+            }
         }
     }
-    if ($heroCover === '' && $heroAvatar !== '') {
-        $heroCover = $heroAvatar;
+    $heroImages = array_values(array_unique(array_filter($heroImages)));
+    if (empty($heroImages) && $heroAvatar !== '') {
+        $heroImages[] = $heroAvatar;
+    }
+    if (count($heroImages) > 9) {
+        $heroImages = array_slice($heroImages, 0, 9);
+    }
+    // 拼贴布局只支持 2-6 / 9 张的整格填充，7-8 张裁到 6 张
+    if (in_array(count($heroImages), [7, 8], true)) {
+        $heroImages = array_slice($heroImages, 0, 6);
     }
 }
+$heroCover = $heroImages[0] ?? '';
 ?>
 
 <?php if ($heroModel): ?>
@@ -83,8 +95,21 @@ if ($heroModel) {
         <?php elseif ($heroKind === 'embed'): ?>
             <iframe src="<?= htmlspecialchars($heroModel['video_url']) ?>" loading="lazy"
                     allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <?php elseif (count($heroImages) >= 2): ?>
+            <?php $heroFallback = $heroAvatar !== '' ? $heroAvatar : 'https://www.58.tl/assets/images/default.jpg'; ?>
+            <div class="m-hero-collage c<?= count($heroImages) ?>">
+                <?php foreach ($heroImages as $src): ?>
+                    <img src="<?= htmlspecialchars($src) ?>"
+                         alt="<?= htmlspecialchars($heroModel['nickname'] ?? '模特') ?>"
+                         data-fallback="<?= htmlspecialchars($heroFallback) ?>"
+                         onerror="this.onerror=null;this.src=this.dataset.fallback;">
+                <?php endforeach; ?>
+            </div>
         <?php elseif ($heroCover): ?>
-            <img src="<?= htmlspecialchars($heroCover) ?>" alt="<?= htmlspecialchars($heroModel['nickname'] ?? '模特') ?>">
+            <img src="<?= htmlspecialchars($heroCover) ?>"
+                 alt="<?= htmlspecialchars($heroModel['nickname'] ?? '模特') ?>"
+                 data-fallback="<?= htmlspecialchars($heroAvatar !== '' ? $heroAvatar : 'https://www.58.tl/assets/images/default.jpg') ?>"
+                 onerror="this.onerror=null;this.src=this.dataset.fallback;">
         <?php endif; ?>
     </div>
     <div class="m-hero-shade"></div>

@@ -98,6 +98,27 @@
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0;
 }
 .m-hero-media img { filter: saturate(.98); }
+
+/* ---------- Hero 素材拼贴墙（无视频时：封面+商品图+生活照合并填充） ---------- */
+.m-hero-collage {
+    position: absolute; inset: 0;
+    display: grid; gap: 4px;
+    background: #1c1c1a;
+}
+.m-hero-collage img {
+    position: static; inset: auto;
+    width: 100%; height: 100%; min-height: 0;
+    object-fit: cover; display: block;
+}
+.m-hero-collage.c2 { grid-template-columns: 1fr 1fr; }
+.m-hero-collage.c3 { grid-template-columns: 1.4fr 1fr; }
+.m-hero-collage.c3 img:first-child { grid-row: span 2; }
+.m-hero-collage.c4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.m-hero-collage.c5 { grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; }
+.m-hero-collage.c5 img:first-child { grid-column: span 2; grid-row: span 2; }
+.m-hero-collage.c6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; }
+.m-hero-collage.c9 { grid-template-columns: repeat(6, 1fr); grid-template-rows: 1fr 1fr; }
+.m-hero-collage.c9 img:first-child { grid-column: span 2; grid-row: span 2; }
 .m-hero-shade {
     position: absolute; inset: 0;
     background: linear-gradient(90deg, rgba(10,10,10,.82) 0%, rgba(10,10,10,.5) 42%, rgba(10,10,10,.12) 100%);
