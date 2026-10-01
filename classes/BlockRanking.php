@@ -11,7 +11,8 @@
  *   listed 挂牌中：block_listings(seller_id, status='listed')
  *   wanted 求购中：purchase_requests(user_id, status='active')
  *
- * 账号过滤：排除 users.role='admin' 与 users.status<>'active'。
+ * 账号过滤：默认不过滤 role / status（持有即事实，管理员与站长的区块同样计入）；
+ *   如需隐藏测试号/系统号，在 HIDDEN_USER_IDS 里列 users.id。
  * 名次规则：RANK() 并列语义（同值同名次、后续名次跳号），user_id 升序为稳定 tie-break。
  * 合并组口径：以"该用户自己的合并组"为准去重子块（与 Block::getUserMergedBlockIndex 一致）；
  *   若历史数据存在组 owner 与子块 owner 不一致，各用户计数仍以自身行 + 自身组自洽，不会抛错。
@@ -23,6 +24,27 @@ class BlockRanking
 {
     const DEFAULT_SORT = 'blocks';
     const TOP_LIMIT    = 50;
+
+    /**
+     * 榜单隐藏账号（users.id 列表）。
+     *
+     * 默认空数组：管理员、站长与任意状态账号都参与排名——持有区块是客观事实，
+     * 早期版本排除 role='admin' 会导致"站长自己的 500 多块不上榜"，与实际持仓矛盾。
+     * 需要屏蔽测试号/系统号时用 setHiddenUserIds([...])（页面脚注会自动说明有账号被隐藏）。
+     *
+     * @var int[]
+     */
+    public static $hiddenUserIds = [];
+
+    public static function setHiddenUserIds(array $ids)
+    {
+        self::$hiddenUserIds = array_map('intval', $ids);
+    }
+
+    public static function hiddenUserIds()
+    {
+        return self::$hiddenUserIds;
+    }
 
     /** 维度定义：metric 为聚合字段名（与 aggregate() 输出键对应） */
     private static $sortDefs = [
@@ -80,16 +102,22 @@ class BlockRanking
             return $this->agg;
         }
 
-        // 1) 可上榜用户（排除管理员 / 非 active）
+        // 1) 参与用户（默认全部用户；仅跳过 $hiddenUserIds 里显式隐藏的账号）
+        $hidden = [];
+        foreach (self::$hiddenUserIds as $hid) {
+            $hidden[(int)$hid] = true;
+        }
+
         $users = [];
         try {
-            $stmt = $this->pdo->query(
-                "SELECT id, username, avatar FROM users
-                 WHERE (role IS NULL OR role <> 'admin') AND status = 'active'"
-            );
+            $stmt = $this->pdo->query("SELECT id, username, avatar FROM users");
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $u) {
-                $users[(int)$u['id']] = [
-                    'user_id'  => (int)$u['id'],
+                $uid = (int)$u['id'];
+                if (isset($hidden[$uid])) {
+                    continue; // 测试号 / 系统号：显式隐藏
+                }
+                $users[$uid] = [
+                    'user_id'  => $uid,
                     'username' => (string)$u['username'],
                     'avatar'   => (string)$u['avatar'],
                     'blocks'   => 0,

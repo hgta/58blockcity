@@ -64,3 +64,23 @@ WHERE EXISTS (
 见 design.md 新增的「实施期修订」一节：聚合改为类内 PHP 完成（千级数据）、名次为 PHP RANK 计算、
 页面 title 沿用 header 默认值（与城市榜一致；`block/includes/header.php:8` 无条件赋值会覆盖预置 title，
 城市详情页也存在同样现象，建议另行立项修复）。
+
+## 上线后修订验证（2026-10-01，站长不在榜 BUG 修复）
+
+触发：线上截图显示站长（持有 505 块 / 645 票 / 70 城 / ¥396,146）未出现在用户榜，页面也未渲染
+"我的名次条"——即 `aggregate()` 的 `role='admin'` 过滤把本人排除了。详见 design.md「上线后修订」。
+
+改动：`classes/BlockRanking.php`（过滤条件 + 隐藏名单）、`block/user-ranking.php`（脚注 + 未纳入提示）。
+
+验证（SQLite 同构库，**30 用例全部通过**）：
+
+- 管理员（`role='admin'`）与站长的真实持仓现在出现在榜上，并能被 `getUserRank()` 定位（修复前返回 null）
+- `status='inactive'` 账号同样参与（持有即事实）
+- 合并组双口径仍正确：2 单块 + 1 组（3 子块）→ blocks=3 / votes=5 / merged=1 / cities=2
+- 总价值 = 5 个子块官方计价之和（6369，合并组子块只计一次）
+- 隐藏名单生效：`setHiddenUserIds([3])` 后该账号从榜上消失、`getUserRank()` 返回 null、参与人数减 1，
+  其余账号不受影响；隐藏名单清空后恢复
+- 回归：`reserved` 不计入任何维度、无持仓用户不上榜、投票数/城市数/挂牌中/求购中维度排序正确
+- `php -l` 全部改动文件通过（`block/user-ranking.php`、`classes/BlockRanking.php`）
+
+临时测试脚本已删除，不进仓库。

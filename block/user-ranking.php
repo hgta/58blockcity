@@ -136,6 +136,11 @@ function ur_fmt($metric, $val)
                 <?php endif; ?>
             </div>
         </div>
+    <?php elseif ($currentUserId): ?>
+        <!-- 登录了但账号未被统计（如被 HIDDEN_USER_IDS 隐藏）：明确告知，避免"我明明有区块却没上榜"的困惑 -->
+        <div class="my-rank-bar">
+            <div class="my-rank-meta">当前账号未纳入排行统计。</div>
+        </div>
     <?php endif; ?>
 
     <?php if (empty($rows) && !($myRank && !$myRank['in_board'])): ?>
@@ -215,7 +220,7 @@ function ur_fmt($metric, $val)
 
         <div class="rank-footnote">
             口径说明：仅统计已认领（sold）区块；「区块数」按实际口径（合并组整组计 1 块），「投票数」按拆开口径（合并组子块逐块各计 1 票）；
-            「总价值」按区块官方计价汇总；已排除管理员与封禁账号；同名次为并列（后续名次跳号）。
+            「总价值」按区块官方计价汇总；全体持有账号均参与排名（含管理员）<?= count(BlockRanking::$hiddenUserIds) ? '，另有 ' . count(BlockRanking::$hiddenUserIds) . ' 个测试账号未纳入' : '' ?>；同名次为并列（后续名次跳号）。
         </div>
     <?php endif; ?>
 </div>
