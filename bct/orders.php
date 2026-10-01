@@ -1,6 +1,7 @@
 <?php
 require_once '../config/database.php';
 require_once 'includes/auth.php';
+require_once 'includes/expiry-display.php';
 require_once '../classes/BCTOrder.php';
 
 $bctOrder = new BCTOrder($pdo);
@@ -159,7 +160,7 @@ require_once 'includes/header.php';
                     <th>挂单人</th>
                     <th>交易方式</th>
                     <th>联系方式</th>
-                    <th>有效期</th>
+                    <th>剩余有效期</th>
                     <th>发布时间</th>
                     <th>操作</th>
                 </tr>
@@ -206,7 +207,8 @@ require_once 'includes/header.php';
                             <a href="<?= htmlspecialchars($loginUrl) ?>" style="font-size:12px;"><i class="fas fa-lock"></i> 登录后可见</a>
                         <?php endif; ?>
                     </td>
-                    <td><?= $o['expires_at'] ? date('m-d H:i', strtotime($o['expires_at'])) : '长期' ?></td>
+                    <?php list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], $inTrade); ?>
+                    <td class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
                     <td class="text-muted" style="white-space:nowrap;"><?= date('m-d H:i', strtotime($o['created_at'])) ?></td>
                     <td style="white-space:nowrap;">
                         <?php if ($isMine): ?>
@@ -345,6 +347,15 @@ require_once 'includes/header.php';
 }
 .btn-outline:hover { border-color: var(--bct-accent); color: var(--bct-accent); }
 .text-muted { color: var(--bct-text-muted); }
+
+/* 剩余有效期分级（bct-hall-expiry-display） */
+.bct-hall-table td.exp-ok       { color: var(--bct-text-secondary); }
+.bct-hall-table td.exp-warn     { color: var(--bct-accent); font-weight: 600; }
+.bct-hall-table td.exp-danger   { color: #e67e22; font-weight: 600; }
+.bct-hall-table td.exp-critical { color: #e05656; font-weight: 600; }
+.bct-hall-table td.exp-expired  { color: #e05656; text-decoration: line-through; }
+.bct-hall-table td.exp-trade    { color: var(--bct-text-secondary); font-style: italic; cursor: help; }
+.bct-hall-table td.has-tip      { cursor: help; }
 
 /* 接单确认弹窗 */
 .claim-modal { position: fixed; inset: 0; z-index: 9999; }

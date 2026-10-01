@@ -1,6 +1,7 @@
 <?php
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
+require_once '../includes/expiry-display.php';
 require_once '../../classes/BCTOrder.php';
 require_once '../../classes/UserHoldings.php';
 
@@ -217,6 +218,15 @@ require_once '../includes/header.php';
 .hall-hint a { color: var(--bct-accent); }
 .hall-hint strong { color: var(--bct-text); }
 .hall-contact-value { color: var(--bct-accent); word-break: break-all; font-size: 13px; }
+
+/* 剩余有效期分级（与挂单大厅同口径，bct-hall-expiry-display） */
+.dash-wrap td.exp-ok       { color: var(--bct-text-secondary); }
+.dash-wrap td.exp-warn     { color: var(--bct-accent); font-weight: 600; }
+.dash-wrap td.exp-danger   { color: #e67e22; font-weight: 600; }
+.dash-wrap td.exp-critical { color: #e05656; font-weight: 600; }
+.dash-wrap td.exp-expired  { color: #e05656; text-decoration: line-through; }
+.dash-wrap td.exp-trade    { color: var(--bct-text-secondary); font-style: italic; cursor: help; }
+.dash-wrap td.has-tip      { cursor: help; }
 </style>
 
 <div class="dash-wrap" style="padding-top:20px;">
@@ -451,7 +461,7 @@ require_once '../includes/header.php';
                 <thead>
                     <tr>
                         <th>订单号</th><th>类型</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
-                        <th>交易方式</th><th>状态</th><th>操作</th>
+                        <th>交易方式</th><th>状态</th><th>剩余有效期</th><th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -485,6 +495,11 @@ require_once '../includes/header.php';
                             <?php if ($myClaim): ?><span class="badge badge-info">交易中</span>
                             <?php else: ?><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span><?php endif; ?>
                         </td>
+                        <?php if ($tab === 'completed'): ?>
+                        <td class="exp-ok">已结束</td>
+                        <?php else: list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], (bool)$myClaim); ?>
+                        <td class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
+                        <?php endif; ?>
                         <td>
                             <?php if ($myClaim): ?>
                             <a href="dashboard.php#claims" class="btn btn-sm btn-primary">对方已接单 · 去处理</a>
