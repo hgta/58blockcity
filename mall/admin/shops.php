@@ -251,8 +251,18 @@ require_once '../../shared/admin/admin-header.php';
                         <td><?= $shopItem['id'] ?></td>
                         <td>
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <?php if (!empty($shopItem['shop_logo'])): ?>
-                                    <img src="<?= htmlspecialchars($shopItem['shop_logo']) ?>" style="width:36px;height:36px;border-radius:6px;object-fit:cover;">
+                                <?php if (!empty($shopItem['shop_logo'])):
+                                    // 相对路径（assets/uploads/...）需回到 mall 根；绝对/协议地址原样使用
+                                    $logoSrc = preg_match('#^(https?:)?//#i', $shopItem['shop_logo']) || strpos($shopItem['shop_logo'], '/') === 0
+                                        ? $shopItem['shop_logo']
+                                        : '../' . ltrim($shopItem['shop_logo'], '/');
+                                ?>
+                                    <img src="<?= htmlspecialchars($logoSrc) ?>"
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                                         style="width:36px;height:36px;border-radius:6px;object-fit:cover;">
+                                    <div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:none;align-items:center;justify-content:center;color:#64748b;">
+                                        <i class="fas fa-store"></i>
+                                    </div>
                                 <?php else: ?>
                                     <div style="width:36px;height:36px;border-radius:6px;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;">
                                         <i class="fas fa-store"></i>
