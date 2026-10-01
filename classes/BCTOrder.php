@@ -152,6 +152,9 @@ class BCTOrder {
         $order = $stmt->fetch();
         
         if (!$order) return false;
+
+        // 交易中（有活跃接单）的订单不允许直接取消，需先在交易里放弃
+        if ($this->getActiveClaim($orderId)) return false;
         
         // 卖单：余额未扣过，取消时不需退还
         
@@ -185,6 +188,12 @@ class BCTOrder {
                 WHERE status IN ('pending','processing') 
                   AND expires_at IS NOT NULL 
                   AND expires_at < ?";
+
+        // 有活跃接单（交易中）的订单不做过期处理：
+        // 释放/完成由接单流程（放弃、超时释放、确认收款）负责，避免交易中的订单被误置过期
+        $sql .= " AND NOT EXISTS (
+                    SELECT 1 FROM bct_order_claims c
+                    WHERE c.order_id = bct_orders.id AND c.status IN ('matched','buyer_confirmed'))";
         $params = [$now];
 
         if ($userId !== null) {
@@ -629,6 +638,7 @@ class BCTOrder {
 	private function buildHallConditions($filters, &$params) {
 		$sql = " FROM bct_orders o
 			LEFT JOIN users u ON o.user_id = u.id
+			LEFT JOIN bct_order_claims c ON c.order_id = o.id AND c.status IN ('matched','buyer_confirmed')
 			WHERE o.status IN ('pending', 'processing')";
 		$params = [];
 
@@ -672,7 +682,7 @@ class BCTOrder {
 		$sql .= " ORDER BY " . $orderBy
 			. " LIMIT " . $perPage . " OFFSET " . (($page - 1) * $perPage);
 
-		$sql = "SELECT o.*, u.username" . $sql;
+		$sql = "SELECT o.*, u.username, c.status AS claim_status, c.buyer_side_user_id AS claim_buyer_id, c.seller_side_user_id AS claim_seller_id" . $sql;
 
 		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($params);
@@ -689,6 +699,368 @@ class BCTOrder {
 		$stmt = $this->pdo->prepare($sql);
 		$stmt->execute($params);
 		return (int)$stmt->fetchColumn();
+	}
+
+	// ==================== 直接交易接单流程（bct-direct-trade-claim-flow） ====================
+
+	/** 接单后买方未确认付款的超时释放时限（小时） */
+	const CLAIM_STALE_HOURS = 24;
+
+	/**
+	 * 获取订单当前活跃的接单（claim）
+	 * @return array|null 无活跃接单时返回 null
+	 */
+	public function getActiveClaim($orderId) {
+		$stmt = $this->pdo->prepare("SELECT * FROM bct_order_claims
+			WHERE order_id = ? AND status IN ('matched','buyer_confirmed')
+			ORDER BY id DESC LIMIT 1");
+		$stmt->execute([(int)$orderId]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	/**
+	 * 获取用户参与中的接单列表（个人中心"进行中的交易"）
+	 */
+	public function getUserActiveClaims($userId) {
+		$stmt = $this->pdo->prepare("SELECT c.*,
+				o.order_no, o.city, o.type, o.amount, o.price, o.total_amount, o.contact_info,
+				ub.username AS buyer_side_name, us.username AS seller_side_name
+			FROM bct_order_claims c
+			JOIN bct_orders o ON o.id = c.order_id
+			LEFT JOIN users ub ON ub.id = c.buyer_side_user_id
+			LEFT JOIN users us ON us.id = c.seller_side_user_id
+			WHERE c.status IN ('matched','buyer_confirmed')
+				AND (c.buyer_side_user_id = ? OR c.seller_side_user_id = ?)
+			ORDER BY c.created_at DESC");
+		$stmt->execute([(int)$userId, (int)$userId]);
+		return $stmt->fetchAll();
+	}
+
+	/**
+	 * 用户接单统计（为后续信用体系预留）
+	 */
+	public function countUserClaimStats($userId) {
+		$stats = ['completed' => 0, 'abandoned' => 0, 'active' => 0];
+
+		$stmt = $this->pdo->prepare("SELECT status, COUNT(*) AS c FROM bct_order_claims
+			WHERE buyer_side_user_id = ? OR seller_side_user_id = ? GROUP BY status");
+		$stmt->execute([(int)$userId, (int)$userId]);
+		foreach ($stmt->fetchAll() as $row) {
+			if ($row['status'] === 'completed') $stats['completed'] = (int)$row['c'];
+			if ($row['status'] === 'abandoned') $stats['abandoned'] = (int)$row['c'];
+			if (in_array($row['status'], ['matched', 'buyer_confirmed'], true)) $stats['active'] += (int)$row['c'];
+		}
+		return $stats;
+	}
+
+	/**
+	 * 接单：把待成交的直接交易单锁定为"交易中"（意向锁）
+	 *
+	 * 角色推导：挂售单(sell)接单人为买方一侧；求购单(buy)接单人为卖方一侧。
+	 * 并发防护：事务内 FOR UPDATE 锁订单行后再校验活跃 claim，杜绝重复接单。
+	 *
+	 * @return array ['success'=>bool, 'message'=>string, 'claim_id'=>int, 'poster_id'=>int, 'taker_id'=>int]
+	 */
+	public function claimOrder($orderId, $takerId) {
+		try {
+			$this->pdo->beginTransaction();
+
+			$stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			$order = $stmt->fetch();
+			if (!$order) throw new Exception('订单不存在');
+			if ($order['trade_type'] !== 'direct') throw new Exception('该订单类型不适用接单流程');
+			if ($order['status'] !== 'pending') throw new Exception('该订单当前不可接单');
+			if ((int)$order['user_id'] === (int)$takerId) throw new Exception('不能接自己的挂单');
+
+			$stmt = $this->pdo->prepare("SELECT id FROM bct_order_claims
+				WHERE order_id = ? AND status IN ('matched','buyer_confirmed') FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			if ($stmt->fetch()) throw new Exception('该订单交易中，暂不可接单');
+
+			if ($order['type'] === 'sell') {
+				$buyerSide = (int)$takerId;
+				$sellerSide = (int)$order['user_id'];
+			} else {
+				$buyerSide = (int)$order['user_id'];
+				$sellerSide = (int)$takerId;
+			}
+
+			$stmt = $this->pdo->prepare("INSERT INTO bct_order_claims
+				(order_id, buyer_side_user_id, seller_side_user_id) VALUES (?, ?, ?)");
+			$stmt->execute([(int)$orderId, $buyerSide, $sellerSide]);
+			$claimId = (int)$this->pdo->lastInsertId();
+
+			$stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'processing', counterparty_id = ? WHERE id = ?");
+			$stmt->execute([(int)$takerId, (int)$orderId]);
+
+			$this->pdo->commit();
+
+			// 通知挂单人
+			$posterId = (int)$order['user_id'];
+			$takerName = $this->fetchUsername((int)$takerId);
+			$sideText = $order['type'] === 'sell' ? '求购' : '出售';
+			$this->notify((int)$takerId, $posterId, sprintf(
+				"【BCT交易】用户 %s 接了你的%s单【%s】%d BCT @ ¥%s，请与其线下沟通付款与转账。",
+				$takerName, $sideText, $order['city'], (int)$order['amount'], number_format($order['price'], 2)
+			));
+
+			return ['success' => true, 'message' => '接单成功', 'claim_id' => $claimId, 'poster_id' => $posterId, 'taker_id' => (int)$takerId];
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+			return ['success' => false, 'message' => $e->getMessage()];
+		}
+	}
+
+	/**
+	 * 买方一侧确认已付款（线下转账完成后）
+	 */
+	public function buyerConfirmClaim($orderId, $userId) {
+		try {
+			$this->pdo->beginTransaction();
+
+			$stmt = $this->pdo->prepare("SELECT * FROM bct_order_claims
+				WHERE order_id = ? AND status IN ('matched','buyer_confirmed') FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			$claim = $stmt->fetch();
+			if (!$claim) throw new Exception('该订单当前没有进行中的交易');
+			if ((int)$claim['buyer_side_user_id'] !== (int)$userId) throw new Exception('只有买方可以确认付款');
+
+			if ($claim['status'] === 'buyer_confirmed') {
+				$this->pdo->commit();
+				return ['success' => true, 'message' => '已确认付款'];
+			}
+
+			$stmt = $this->pdo->prepare("UPDATE bct_order_claims
+				SET status = 'buyer_confirmed', buyer_confirmed_at = ? WHERE id = ?");
+			$stmt->execute([date('Y-m-d H:i:s'), (int)$claim['id']]);
+			$this->pdo->commit();
+
+			// 通知卖方
+			$buyerName = $this->fetchUsername((int)$claim['buyer_side_user_id']);
+			$this->notify((int)$userId, (int)$claim['seller_side_user_id'], sprintf(
+				"【BCT交易】用户 %s 已确认向你付款（线下转账），请核实到账后在「进行中的交易」里确认收款完成交易。",
+				$buyerName
+			));
+
+			return ['success' => true, 'message' => '已确认付款，等待卖家确认收款'];
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+			return ['success' => false, 'message' => $e->getMessage()];
+		}
+	}
+
+	/**
+	 * 卖方一侧确认已收款 → 交易完成
+	 *
+	 * 完成动作：订单置 completed、claim 置 completed，并写入 bct_transactions 留证
+	 * （手续费 0，不划转平台余额——交易全程线下）。
+	 */
+	public function sellerConfirmClaim($orderId, $userId) {
+		try {
+			$this->pdo->beginTransaction();
+
+			$stmt = $this->pdo->prepare("SELECT * FROM bct_order_claims
+				WHERE order_id = ? AND status IN ('matched','buyer_confirmed') FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			$claim = $stmt->fetch();
+			if (!$claim) throw new Exception('该订单当前没有进行中的交易');
+			if ((int)$claim['seller_side_user_id'] !== (int)$userId) throw new Exception('只有卖方可以确认收款');
+			if ($claim['status'] !== 'buyer_confirmed') throw new Exception('需等待对方先确认付款');
+
+			$stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			$order = $stmt->fetch();
+			if (!$order) throw new Exception('订单不存在');
+
+			$now = date('Y-m-d H:i:s');
+			$stmt = $this->pdo->prepare("UPDATE bct_order_claims
+				SET status = 'completed', seller_confirmed_at = ?, finished_at = ? WHERE id = ?");
+			$stmt->execute([$now, $now, (int)$claim['id']]);
+
+			$stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'completed' WHERE id = ?");
+			$stmt->execute([(int)$orderId]);
+
+			// 交易留证：进入最新成交/24h统计；不调用 UserBCTAccount::transfer
+			require_once __DIR__ . '/BCTTransaction.php';
+			$totalAmount = round((int)$order['amount'] * (float)$order['price'], 2);
+			$tx = new BCTTransaction($this->pdo);
+			$tx->create(
+				(int)$orderId,
+				(int)$claim['seller_side_user_id'],
+				(int)$claim['buyer_side_user_id'],
+				$order['city'],
+				(int)$order['amount'],
+				(float)$order['price'],
+				0,
+				null,
+				$totalAmount,
+				'trade'
+			);
+
+			$this->pdo->commit();
+
+			// 双向通知
+			$this->notify((int)$userId, (int)$claim['buyer_side_user_id'],
+				"【BCT交易】对方已确认收款，你们在【{$order['city']}】的交易已完成（".(int)$order['amount']." BCT @ ¥".number_format($order['price'], 2)."），已计入成交记录。");
+			$this->notify((int)$claim['buyer_side_user_id'], (int)$userId,
+				"【BCT交易】你已确认收款，与对方在【{$order['city']}】的交易已完成（".(int)$order['amount']." BCT @ ¥".number_format($order['price'], 2)."），已计入成交记录。");
+
+			return ['success' => true, 'message' => '交易已完成'];
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+			return ['success' => false, 'message' => $e->getMessage()];
+		}
+	}
+
+	/**
+	 * 放弃交易：买卖任一方在完成前可发起，订单回到待成交并重新开放接单
+	 */
+	public function abandonClaim($orderId, $userId, $reason = null) {
+		try {
+			$this->pdo->beginTransaction();
+
+			$stmt = $this->pdo->prepare("SELECT * FROM bct_order_claims
+				WHERE order_id = ? AND status IN ('matched','buyer_confirmed') FOR UPDATE");
+			$stmt->execute([(int)$orderId]);
+			$claim = $stmt->fetch();
+			if (!$claim) throw new Exception('该订单当前没有进行中的交易');
+			if ((int)$claim['buyer_side_user_id'] !== (int)$userId && (int)$claim['seller_side_user_id'] !== (int)$userId) {
+				throw new Exception('只有交易双方可以放弃交易');
+			}
+
+			$this->endClaimInternal($claim, 'abandoned', (int)$userId, $reason);
+			$this->pdo->commit();
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+			return ['success' => false, 'message' => $e->getMessage()];
+		}
+
+		// 通知对方
+		$counterId = ((int)$claim['buyer_side_user_id'] === (int)$userId)
+			? (int)$claim['seller_side_user_id'] : (int)$claim['buyer_side_user_id'];
+		$myName = $this->fetchUsername((int)$userId);
+		$reasonText = (is_string($reason) && $reason !== '') ? '，原因：' . mb_substr($reason, 0, 50) : '';
+		$this->notify((int)$userId, $counterId, "【BCT交易】用户 {$myName} 放弃了本次交易{$reasonText}，挂单已重新开放。");
+
+		return ['success' => true, 'message' => '交易已放弃，挂单重新开放'];
+	}
+
+	/**
+	 * 释放接单超时（买方 24 小时未确认付款）的 claim：订单回到待成交
+	 *
+	 * 买方已确认付款（buyer_confirmed）的 claim 绝不自动释放——
+	 * 款项可能已线下支付，只提醒卖方，纠纷走后续申诉通道。
+	 *
+	 * @param int|null $userId 惰性推进时限定相关用户；null 表示全站
+	 * @param int $limit 单次处理上限
+	 * @return int 释放数量
+	 */
+	public function releaseStaleClaims($userId = null, $limit = 50) {
+		$limit = max(1, (int)$limit);
+		$cutoff = date('Y-m-d H:i:s', time() - self::CLAIM_STALE_HOURS * 3600);
+
+		$sql = "SELECT c.* FROM bct_order_claims c
+			WHERE c.status = 'matched' AND c.created_at < ?";
+		$params = [$cutoff];
+		if ($userId !== null) {
+			$sql .= " AND (c.buyer_side_user_id = ? OR c.seller_side_user_id = ?)";
+			$params[] = (int)$userId;
+			$params[] = (int)$userId;
+		}
+		$sql .= " ORDER BY c.created_at ASC LIMIT " . $limit;
+
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		$claims = $stmt->fetchAll();
+
+		$released = 0;
+		foreach ($claims as $claim) {
+			try {
+				$this->pdo->beginTransaction();
+
+				// 逐行锁内复核，避免与确认/放弃动作竞争
+				$stmt = $this->pdo->prepare("SELECT * FROM bct_order_claims WHERE id = ? FOR UPDATE");
+				$stmt->execute([(int)$claim['id']]);
+				$locked = $stmt->fetch();
+				if (!$locked || $locked['status'] !== 'matched') {
+					$this->pdo->commit();
+					continue;
+				}
+
+				$this->endClaimInternal($locked, 'released', null, '接单后 ' . self::CLAIM_STALE_HOURS . ' 小时未确认付款，系统自动释放');
+				$this->pdo->commit();
+			} catch (Exception $e) {
+				if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+				continue;
+			}
+			$released++;
+
+			// 双方通知：各自收到来自对方会话的系统消息
+			$buyerId = (int)$claim['buyer_side_user_id'];
+			$sellerId = (int)$claim['seller_side_user_id'];
+			$this->notify($sellerId, $buyerId, "【BCT交易】你接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，挂单重新开放。");
+			$this->notify($buyerId, $sellerId, "【BCT交易】对方 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，你的挂单重新开放。");
+		}
+		return $released;
+	}
+
+	/**
+	 * claim 终态内部方法（事务内调用）：置终态 + 订单回 pending + 清 counterparty
+	 *
+	 * @param array $claim 已锁定的 claim 行
+	 * @param string $finalStatus abandoned / released
+	 * @param int|null $endedBy 发起人用户ID（系统释放为 null）
+	 */
+	private function endClaimInternal($claim, $finalStatus, $endedBy, $reason) {
+		$now = date('Y-m-d H:i:s');
+		$stmt = $this->pdo->prepare("UPDATE bct_order_claims
+			SET status = ?, finished_at = ?, ended_by = ?, reason = ? WHERE id = ?");
+		$stmt->execute([$finalStatus, $now, $endedBy, $reason, (int)$claim['id']]);
+
+		// 订单回到待成交并重新开放接单
+		$stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'pending', counterparty_id = NULL WHERE id = ?");
+		$stmt->execute([(int)$claim['order_id']]);
+	}
+
+	/**
+	 * 接单前预览：订单 + 挂单人用户名 + 当前活跃 claim 状态
+	 */
+	public function getClaimPreview($orderId) {
+		$stmt = $this->pdo->prepare("SELECT o.*, u.username
+			FROM bct_orders o
+			LEFT JOIN users u ON u.id = o.user_id
+			WHERE o.id = ?");
+		$stmt->execute([(int)$orderId]);
+		$order = $stmt->fetch();
+		if (!$order) return null;
+		$order['active_claim'] = $this->getActiveClaim((int)$orderId);
+		return $order;
+	}
+
+	/** 查询用户名（通知文案用），失败返回 "用户#ID" */
+	private function fetchUsername($userId) {
+		try {
+			$stmt = $this->pdo->prepare("SELECT username FROM users WHERE id = ?");
+			$stmt->execute([(int)$userId]);
+			$name = $stmt->fetchColumn();
+			return $name ?: ('用户#' . (int)$userId);
+		} catch (Exception $e) {
+			return '用户#' . (int)$userId;
+		}
+	}
+
+	/** 发送站内信通知（失败仅记日志，不影响交易状态流转） */
+	private function notify($fromUserId, $toUserId, $message) {
+		if (!$fromUserId || !$toUserId || $fromUserId === $toUserId) return;
+		try {
+			require_once __DIR__ . '/Message.php';
+			$msg = new Message($this->pdo);
+			$msg->send($fromUserId, $toUserId, $message);
+		} catch (Exception $e) {
+			error_log('BCT claim notify error: ' . $e->getMessage());
+		}
 	}
 }
 ?>

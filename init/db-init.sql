@@ -85,6 +85,33 @@ CREATE TABLE IF NOT EXISTS `bct_transactions` (
 -- --------------------------------------------------------
 
 --
+-- 表的结构 `bct_order_claims`
+--
+-- BCT 直接交易接单流水：直接交易单被接单（意向锁）后，
+-- 每次接单/确认/放弃/释放记录一条；bct_orders.status 仅作大厅聚合展示态。
+--
+
+CREATE TABLE IF NOT EXISTS `bct_order_claims` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL COMMENT '关联 bct_orders.id',
+  `buyer_side_user_id` int(11) NOT NULL COMMENT '买方一侧用户（挂售单=接单人；求购单=挂单人）',
+  `seller_side_user_id` int(11) NOT NULL COMMENT '卖方一侧用户',
+  `status` enum('matched','buyer_confirmed','completed','abandoned','released') NOT NULL DEFAULT 'matched',
+  `buyer_confirmed_at` datetime DEFAULT NULL,
+  `seller_confirmed_at` datetime DEFAULT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  `ended_by` int(11) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_order_active` (`order_id`,`status`),
+  KEY `idx_user` (`buyer_side_user_id`,`seller_side_user_id`),
+  KEY `idx_status_created` (`status`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='BCT直接交易接单流水';
+
+-- --------------------------------------------------------
+
+--
 -- 表的结构 `bct_price_history`
 --
 -- BCT 城市价格历史：由 CityBCT::updatePrice() 埋点写入，

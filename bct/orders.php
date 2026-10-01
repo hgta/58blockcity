@@ -12,6 +12,13 @@ try {
     error_log('BCT hall expire error: ' . $e->getMessage());
 }
 
+// 惰性推进超时接单（买方 24h 未确认付款的释放回 pending），大厅不展示死锁中的旧交易
+try {
+    $bctOrder->releaseStaleClaims(null, 20);
+} catch (Exception $e) {
+    error_log('BCT hall release claims error: ' . $e->getMessage());
+}
+
 $loggedIn = isLoggedIn();
 $currentUserId = $loggedIn ? (int)$_SESSION['user_id'] : 0;
 $loginUrl = '../auth/login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']);
@@ -164,9 +171,16 @@ require_once 'includes/header.php';
                 <?php foreach ($orders as $o):
                     $isBuy = $o['type'] === 'buy';
                     $isMine = $currentUserId > 0 && (int)$o['user_id'] === $currentUserId;
+                    $inTrade = !empty($o['claim_status']);
+                    $isParty = $inTrade && $currentUserId > 0
+                        && ($currentUserId === (int)($o['claim_buyer_id'] ?? 0) || $currentUserId === (int)($o['claim_seller_id'] ?? 0));
+                    $canClaim = $loggedIn && !$isMine && !$inTrade && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
                 ?>
                 <tr>
-                    <td><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
+                    <td>
+                        <span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span>
+                        <?php if ($inTrade): ?><span class="hall-badge trading"><i class="fas fa-handshake"></i> 交易中</span><?php endif; ?>
+                    </td>
                     <td><a href="city.php?city=<?= urlencode($o['city']) ?>" style="color:var(--bct-text);"><strong><?= htmlspecialchars($o['city']) ?></strong></a></td>
                     <td class="price">¥<?= number_format($o['price'], 2) ?></td>
                     <td><?= number_format($o['amount']) ?></td>
@@ -179,6 +193,11 @@ require_once 'includes/header.php';
                     <td class="hall-contact">
                         <?php if ($o['trade_type'] !== 'direct'): ?>
                             <span class="text-muted"><?= $o['trade_type'] === 'mediator' ? '由中介协调' : '平台撮合' ?></span>
+                        <?php elseif ($inTrade && $isParty): ?>
+                            <strong class="hall-contact-value"><?= htmlspecialchars($o['contact_info'] ?: '未填写') ?></strong>
+                            <div style="font-size:11px;color:var(--bct-text-secondary);">双方可见 · 私信沟通转账</div>
+                        <?php elseif ($inTrade): ?>
+                            <span class="text-muted"><i class="fas fa-lock"></i> 交易中 · 暂不可见</span>
                         <?php elseif (empty($o['contact_info'])): ?>
                             <span class="text-muted">未填写 · 站内信联系</span>
                         <?php elseif ($loggedIn): ?>
@@ -191,14 +210,30 @@ require_once 'includes/header.php';
                     <td class="text-muted" style="white-space:nowrap;"><?= date('m-d H:i', strtotime($o['created_at'])) ?></td>
                     <td style="white-space:nowrap;">
                         <?php if ($isMine): ?>
+                            <?php if ($inTrade): ?>
+                            <a href="user/dashboard.php#claims" class="btn btn-xs btn-primary">交易中 · 去处理</a>
+                            <?php else: ?>
                             <a href="user/orders.php" class="btn btn-xs btn-default">管理</a>
+                            <?php endif; ?>
+                        <?php elseif ($isParty): ?>
+                            <a href="user/dashboard.php#claims" class="btn btn-xs btn-primary">交易详情</a>
                         <?php else: ?>
                             <?php if ($loggedIn): ?>
                             <a href="messages/index.php?with=<?= (int)$o['user_id'] ?>" class="btn btn-xs btn-default" title="站内信联系挂单人"><i class="fas fa-comment-dots"></i> 私信</a>
                             <?php else: ?>
                             <a href="<?= htmlspecialchars($loginUrl) ?>" class="btn btn-xs btn-default"><i class="fas fa-comment-dots"></i> 私信</a>
                             <?php endif; ?>
-                            <a href="trade.php?city=<?= urlencode($o['city']) ?>" class="btn btn-xs btn-primary">交易</a>
+                            <?php if ($o['trade_type'] === 'direct'): ?>
+                                <?php if ($inTrade): ?>
+                                <span class="text-muted" style="font-size:12px;">交易中</span>
+                                <?php elseif ($canClaim): ?>
+                                <button type="button" class="btn btn-xs btn-primary btn-claim"
+                                        data-order-id="<?= (int)$o['id'] ?>"
+                                        data-side="<?= $isBuy ? 'sell' : 'buy' ?>"><?= $isBuy ? '接单（卖给TA）' : '接单（买入）' ?></button>
+                                <?php elseif (!$loggedIn): ?>
+                                <a href="<?= htmlspecialchars($loginUrl) ?>" class="btn btn-xs btn-primary">接单</a>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -234,8 +269,32 @@ require_once 'includes/header.php';
 <div class="card" style="margin-top:24px;">
     <div class="card-body" style="font-size:13px;color:var(--bct-text-secondary);line-height:2;">
         <strong style="color:var(--bct-text);"><i class="fas fa-shield-alt"></i> 交易提示：</strong>
-        直接交易请先与挂单人通过站内信或联系方式充分沟通，确认数量、单价与支付方式后再线下完成交易；
+        直接交易单点击「接单」即锁定该单进入交易中（其他人不可再接、联系方式仅双方可见），随后线下完成转账，
+        <strong style="color:var(--bct-text);">买方在个人中心确认已付款 → 卖方确认已收款</strong>，交易即完成并计入成交记录；接单后 24 小时未确认付款自动释放挂单。
         大额交易建议选择中介交易（手续费 2%）保障双方资金安全；平台交易（限 500 BCT 以下）由系统自动撮合并结算。
+    </div>
+</div>
+
+<!-- 接单确认弹窗 -->
+<div class="claim-modal" id="claimModal" hidden>
+    <div class="claim-modal-mask" data-close="1"></div>
+    <div class="claim-modal-box">
+        <h4><i class="fas fa-handshake"></i> 确认接单</h4>
+        <div class="claim-modal-info">
+            <div class="claim-modal-row"><span>订单</span><strong id="cmOrderNo"></strong></div>
+            <div class="claim-modal-row"><span>方向</span><strong id="cmSide"></strong></div>
+            <div class="claim-modal-row"><span>城市</span><strong id="cmCity"></strong></div>
+            <div class="claim-modal-row"><span>数量</span><strong id="cmAmount"></strong></div>
+            <div class="claim-modal-row"><span>单价</span><strong id="cmPrice"></strong></div>
+            <div class="claim-modal-row"><span>总价</span><strong id="cmTotal" style="color:var(--bct-accent);"></strong></div>
+            <div class="claim-modal-row"><span>挂单人</span><strong id="cmPoster"></strong></div>
+        </div>
+        <p class="claim-modal-tip">接单后该挂单进入「交易中」，其他人将无法再接。请通过站内信/联系方式与对方沟通，线下完成转账后各自在个人中心确认。</p>
+        <div class="claim-error" id="cmError"></div>
+        <div class="claim-modal-btns">
+            <button type="button" class="btn btn-default" data-close="1">再想想</button>
+            <button type="button" class="btn btn-primary" id="cmConfirm"><i class="fas fa-check"></i> 确认接单</button>
+        </div>
     </div>
 </div>
 
@@ -270,6 +329,15 @@ require_once 'includes/header.php';
 }
 .hall-contact-value { color: var(--bct-accent); word-break: break-all; }
 .hall-type-tabs { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.hall-badge.trading {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: rgba(102, 187, 106, 0.15);
+    color: #6bb96a;
+}
 .btn-outline {
     background: transparent;
     border: 1px solid var(--bct-border);
@@ -277,6 +345,92 @@ require_once 'includes/header.php';
 }
 .btn-outline:hover { border-color: var(--bct-accent); color: var(--bct-accent); }
 .text-muted { color: var(--bct-text-muted); }
+
+/* 接单确认弹窗 */
+.claim-modal { position: fixed; inset: 0; z-index: 9999; }
+.claim-modal-mask { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+.claim-modal-box {
+    position: relative; width: 92%; max-width: 420px; margin: 12vh auto 0;
+    background: var(--bct-bg-secondary); border: 1px solid var(--bct-border);
+    border-radius: 12px; padding: 20px;
+}
+.claim-modal-box h4 { margin: 0 0 14px; font-size: 16px; color: var(--bct-text); }
+.claim-modal-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed var(--bct-border); }
+.claim-modal-row span { color: var(--bct-text-secondary); }
+.claim-modal-row strong { color: var(--bct-text); }
+.claim-modal-tip { font-size: 12px; color: var(--bct-text-secondary); line-height: 1.7; margin: 12px 0 16px; }
+.claim-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.claim-modal-box .claim-error { color: #e07b7b; font-size: 12px; margin-top: 8px; min-height: 16px; }
 </style>
+
+<?php if ($loggedIn): ?>
+<script>
+$(function() {
+    var CSRF_TOKEN = '<?= generateCsrfToken() ?>';
+    var modal = document.getElementById('claimModal');
+    var pendingOrderId = 0;
+
+    function fmtMoney(n) { return '¥' + Number(n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+    function fmtInt(n) { return Number(n).toLocaleString('en-US'); }
+
+    function closeModal() { modal.hidden = true; }
+
+    modal.addEventListener('click', function(e) {
+        if (e.target.getAttribute('data-close')) closeModal();
+    });
+
+    document.querySelectorAll('.btn-claim').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            pendingOrderId = parseInt(this.getAttribute('data-order-id'), 10);
+            if (!pendingOrderId) return;
+
+            // 拉取预览（服务端校验可接单状态），再弹窗确认
+            fetch('api/trade_flow.php?action=preview&order_id=' + pendingOrderId, {credentials: 'same-origin'})
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (!d.success) { alert(d.message || '订单状态已变化，请刷新页面'); return; }
+                    if (!d.can_claim) { alert(d.in_trade ? '该订单已被接单，交易中' : '该订单当前不可接单'); return; }
+                    document.getElementById('cmOrderNo').textContent = d.order_no;
+                    document.getElementById('cmSide').textContent = d.type === 'buy' ? '求购单（你来卖）' : '挂售单（你来买）';
+                    document.getElementById('cmCity').textContent = d.city;
+                    document.getElementById('cmAmount').textContent = fmtInt(d.amount) + ' BCT';
+                    document.getElementById('cmPrice').textContent = fmtMoney(d.price);
+                    document.getElementById('cmTotal').textContent = fmtMoney(d.total);
+                    document.getElementById('cmPoster').textContent = d.poster_name;
+                    var errEl = document.getElementById('cmError');
+                    if (errEl) errEl.textContent = '';
+                    modal.hidden = false;
+                })
+                .catch(function() { alert('网络异常，请重试'); });
+        });
+    });
+
+    document.getElementById('cmConfirm').addEventListener('click', function() {
+        var btn = this;
+        btn.disabled = true;
+        var fd = new FormData();
+        fd.append('action', 'claim');
+        fd.append('order_id', pendingOrderId);
+        fd.append('csrf_token', CSRF_TOKEN);
+
+        fetch('api/trade_flow.php', {method: 'POST', body: fd, credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                btn.disabled = false;
+                if (d.success) {
+                    closeModal();
+                    alert('接单成功！该挂单已进入交易中，请到「个人中心 - 进行中的交易」查看对方联系方式并线下沟通转账。');
+                    window.location.reload();
+                } else {
+                    var errEl = document.getElementById('cmError');
+                    if (errEl) errEl.textContent = d.message || '接单失败';
+                    else alert(d.message || '接单失败');
+                }
+            })
+            .catch(function() { btn.disabled = false; alert('网络异常，请重试'); });
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php require_once 'includes/footer.php'; ?>

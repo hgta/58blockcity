@@ -12,6 +12,13 @@ $holdings = new UserHoldings($pdo);
 
 $stats = $order->getUserOrderStats($userId);
 
+// 惰性推进超时接单（买方 24h 未确认付款的释放回 pending）
+try {
+    $order->releaseStaleClaims((int)$userId, 50);
+} catch (Exception $e) {
+    error_log('BCT dashboard release claims error: ' . $e->getMessage());
+}
+
 $tab = $_GET['tab'] ?? 'buy';
 $tab = in_array($tab, ['buy','sell','completed']) ? $tab : 'buy';
 
@@ -75,9 +82,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             header("Location: dashboard.php?tab={$tab}");
             exit;
         } else {
-            $msg = '<div class="alert alert-danger">取消失败</div>';
+            $msg = '<div class="alert alert-danger">取消失败（交易中的订单需先在下方"进行中的交易"里放弃）</div>';
         }
     }
+
+    // ---- 直接交易接单流程动作 ----
+    if (in_array($_POST['action'], ['claim_buyer_confirm', 'claim_seller_confirm', 'claim_abandon'], true) && $oid) {
+        if ($_POST['action'] === 'claim_buyer_confirm') {
+            $res = $order->buyerConfirmClaim($oid, $userId);
+        } elseif ($_POST['action'] === 'claim_seller_confirm') {
+            $res = $order->sellerConfirmClaim($oid, $userId);
+        } else {
+            $res = $order->abandonClaim($oid, $userId, trim((string)($_POST['reason'] ?? '')) ?: null);
+        }
+        $msg = ($res['success'] ?? false)
+            ? '<div class="alert alert-success">' . htmlspecialchars($res['message']) . '</div>'
+            : '<div class="alert alert-danger">' . htmlspecialchars($res['message'] ?? '操作失败') . '</div>';
+        header('Location: dashboard.php?tab=' . urlencode($tab) . '#claims');
+        exit;
+    }
+}
+
+// 我参与中的直接交易接单
+$activeClaims = [];
+try {
+    $activeClaims = $order->getUserActiveClaims((int)$userId);
+} catch (Exception $e) {
+    error_log('BCT dashboard claims error: ' . $e->getMessage());
 }
 
 // 人气值持仓模型（数量 × 城市单价）
@@ -185,6 +216,7 @@ require_once '../includes/header.php';
 }
 .hall-hint a { color: var(--bct-accent); }
 .hall-hint strong { color: var(--bct-text); }
+.hall-contact-value { color: var(--bct-accent); word-break: break-all; font-size: 13px; }
 </style>
 
 <div class="dash-wrap" style="padding-top:20px;">
@@ -318,6 +350,80 @@ require_once '../includes/header.php';
         </div>
     </div>
 
+    <div class="card" style="margin-top:24px;" id="claims">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;font-size:16px;">
+                <i class="fas fa-handshake"></i> 进行中的交易
+                <span style="font-size:12px;font-weight:400;color:var(--bct-text-secondary);margin-left:8px;">线下转账后请各自确认；接单 24 小时未确认付款将自动释放</span>
+            </h3>
+        </div>
+        <?php if (empty($activeClaims)): ?>
+        <div class="text-center" style="padding:32px;color:var(--bct-text-secondary);">
+            <i class="fas fa-mug-hot" style="font-size:36px;display:block;margin-bottom:12px;opacity:.3;"></i>
+            <p style="margin:0;font-size:13px;">暂无进行中的交易 · 可去 <a href="../orders.php" style="color:var(--bct-accent);">挂单大厅</a> 接一单</p>
+        </div>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>城市</th><th>我的角色</th><th>数量</th><th>单价</th><th>总价</th>
+                        <th>对方</th><th>联系方式（挂单人登记）</th><th>当前阶段</th><th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($activeClaims as $c):
+                        $amBuyer = (int)$c['buyer_side_user_id'] === (int)$userId;
+                        $counterName = $amBuyer ? ($c['seller_side_name'] ?: '用户#'.$c['seller_side_user_id']) : ($c['buyer_side_name'] ?: '用户#'.$c['buyer_side_user_id']);
+                        $counterId = $amBuyer ? (int)$c['seller_side_user_id'] : (int)$c['buyer_side_user_id'];
+                        $stageText = $c['status'] === 'buyer_confirmed'
+                            ? ($amBuyer ? '已确认付款 · 待对方确认收款' : '对方已确认付款 · 待你确认收款')
+                            : ($amBuyer ? '待你确认付款' : '待对方确认付款');
+                    ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($c['city']) ?></strong></td>
+                        <td><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
+                        <td><?= number_format((int)$c['amount']) ?> BCT</td>
+                        <td>¥<?= number_format((float)$c['price'], 2) ?></td>
+                        <td>¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
+                        <td>
+                            <a href="../messages/index.php?with=<?= $counterId ?>" title="站内信联系">
+                                <strong><?= htmlspecialchars($counterName) ?></strong>
+                            </a>
+                        </td>
+                        <td class="hall-contact-value"><?= htmlspecialchars($c['contact_info'] ?: '未填写 · 站内信联系') ?></td>
+                        <td style="font-size:12px;"><?= $stageText ?></td>
+                        <td style="white-space:nowrap;">
+                            <?php if ($amBuyer && $c['status'] === 'matched'): ?>
+                            <form method="post" style="display:inline" onsubmit="return confirm('确认你已线下付款给对方？')">
+                                <input type="hidden" name="action" value="claim_buyer_confirm">
+                                <input type="hidden" name="order_id" value="<?= (int)$c['order_id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                <button class="btn btn-xs btn-primary">确认已付款</button>
+                            </form>
+                            <?php elseif (!$amBuyer && $c['status'] === 'buyer_confirmed'): ?>
+                            <form method="post" style="display:inline" onsubmit="return confirm('确认你已收到对方款项？确认后交易完成。')">
+                                <input type="hidden" name="action" value="claim_seller_confirm">
+                                <input type="hidden" name="order_id" value="<?= (int)$c['order_id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                <button class="btn btn-xs btn-primary">确认已收款</button>
+                            </form>
+                            <?php endif; ?>
+                            <form method="post" style="display:inline" onsubmit="return confirm('确定放弃本次交易？挂单将重新开放给其他人。')">
+                                <input type="hidden" name="action" value="claim_abandon">
+                                <input type="hidden" name="order_id" value="<?= (int)$c['order_id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                <button class="btn btn-xs btn-danger">放弃</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+
     <div class="card" style="margin-top:24px;">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <h3 style="margin:0;font-size:16px;">
@@ -360,6 +466,12 @@ require_once '../includes/header.php';
                         $s = $statusMap[$o['status']] ?? [$o['status'], ''];
                         $tradeTypes = ['direct' => '直接交易', 'platform' => '平台交易', 'mediator' => '中介交易'];
                         $isBuy = $o['type'] === 'buy';
+
+                        // 直接交易单：存在活跃接单时展示"交易中"
+                        $myClaim = null;
+                        if ($o['trade_type'] === 'direct' && in_array($o['status'], ['pending','processing'], true)) {
+                            try { $myClaim = $order->getActiveClaim((int)$o['id']); } catch (Exception $e) {}
+                        }
                     ?>
                     <tr>
                         <td style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
@@ -369,9 +481,14 @@ require_once '../includes/header.php';
                         <td>¥<?= number_format($o['price'], 2) ?></td>
                         <td>¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
                         <td style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
-                        <td><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span></td>
                         <td>
-                            <?php if (in_array($o['status'], ['pending','processing'])): ?>
+                            <?php if ($myClaim): ?><span class="badge badge-info">交易中</span>
+                            <?php else: ?><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span><?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($myClaim): ?>
+                            <a href="dashboard.php#claims" class="btn btn-sm btn-primary">对方已接单 · 去处理</a>
+                            <?php elseif (in_array($o['status'], ['pending','processing'])): ?>
                             <form method="post" style="display:inline" onsubmit="return confirm('确定取消该订单?')">
                                 <input type="hidden" name="action" value="cancel">
                                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
@@ -393,7 +510,7 @@ require_once '../includes/header.php';
         <div class="hall-hint">
             <i class="fas fa-info-circle"></i>
             以上挂单会同步展示在 <a href="../orders.php">挂单大厅</a>：
-            <strong>直接交易</strong>单的联系方式对所有登录用户可见，想买/想卖的人看到后会主动私信你，你也可以去大厅主动私信对方；
+            <strong>直接交易</strong>单可被其他用户「接单」，接单后进入上方"进行中的交易"，走 线下转账 → 买方确认付款 → 卖方确认收款 的闭环；
             <strong>平台交易</strong>单（限 500 BCT 以下）由系统自动撮合，无需人工联系；
             <strong>中介交易</strong>单由所选中介协调成交。
         </div>
