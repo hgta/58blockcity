@@ -293,6 +293,7 @@ $(function() {
                         var side = t.order_type === 'buy' ? 'buy' : 'sell';
                         var text = t.order_type === 'buy' ? '买' : '卖';
                         html += '<div class="bct-trade-item">' +
+                            '<span><strong>' + tradeCity + '</strong></span>' +
                             '<span class="side ' + side + '">' + text + '</span>' +
                             '<span class="price">¥' + parseFloat(t.price).toFixed(4) + '</span>' +
                             '<span class="num">' + parseInt(t.amount).toLocaleString() + '</span>' +

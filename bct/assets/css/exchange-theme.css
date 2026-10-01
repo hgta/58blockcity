@@ -327,20 +327,32 @@
   max-height: 320px;
   overflow-y: auto;
 }
+/* 最新成交列表：固定网格列，各列对齐（城市自适应缩省略，价格/数量右对齐，时间固定窄列） */
 .bct-trade-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px 84px 88px 42px;
+  gap: 8px;
   align-items: center;
   padding: 8px 12px;
   border-bottom: 1px solid var(--bct-border);
   font-size: 13px;
 }
 .bct-trade-item:last-child { border-bottom: none; }
-.bct-trade-item .side { font-weight: 600; }
+.bct-trade-item > span:first-child:not([class]) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bct-trade-item .side { grid-column: 2; text-align: center; font-weight: 600; }
 .bct-trade-item .side.buy { color: var(--bct-up); }
 .bct-trade-item .side.sell { color: var(--bct-down); }
-.bct-trade-item .price { font-family: monospace; }
-.bct-trade-item .time { color: var(--bct-text-muted); font-size: 11px; }
+.bct-trade-item .price { grid-column: 3; text-align: right; font-family: monospace; }
+.bct-trade-item .num { grid-column: 4; text-align: right; font-family: monospace; }
+.bct-trade-item .time { grid-column: 5; text-align: right; color: var(--bct-text-muted); font-size: 11px; }
+@media (max-width: 575px) {
+  .bct-trade-item { grid-template-columns: minmax(0, 1fr) 26px 76px 76px 38px; font-size: 12px; }
+  .bct-trade-item .num { font-size: 11px; }
+}
 
 .bct-market-table th { cursor: pointer; user-select: none; }
 .bct-market-table th:hover { color: var(--bct-text); }
