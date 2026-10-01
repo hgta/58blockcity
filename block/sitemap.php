@@ -25,6 +25,7 @@ function block_node(&$urls, $loc, $priority, $freq, $lastmod)
 // 首页与榜单
 block_node($urls, BLOCK_BASE . '/', '1.0', 'daily', $now);
 block_node($urls, BLOCK_BASE . '/top200city.php', '0.8', 'weekly', $now);
+block_node($urls, BLOCK_BASE . '/user-ranking.php', '0.8', 'weekly', $now);
 
 // 城市页
 try {

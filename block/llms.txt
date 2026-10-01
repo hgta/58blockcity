@@ -9,6 +9,7 @@
 - [区块求购](https://block.58.tl/purchase_list.php)
 - [区块认领](https://block.58.tl/claim_list.php)
 - [城市排行](https://block.58.tl/top200city.php)
+- [用户排行](https://block.58.tl/user-ranking.php): 用户区块数、投票数、城市数、区块总价值、合并组、挂牌、求购等维度排行
 
 ## 所属实体（主站）
 

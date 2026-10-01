@@ -180,8 +180,10 @@ if ($currentUserId) {
 
 <div class="rank-wrap">
     <div class="rank-header">
-        <h1 class="rank-title"><i class="fas fa-trophy"></i> 城市排行</h1>
-        <div class="rank-sub">TOP 200 城市 · 共 <?= number_format($total) ?> 个</div>
+        <div>
+            <h1 class="rank-title"><i class="fas fa-trophy"></i> 城市排行</h1>
+            <div class="rank-sub">TOP 200 城市 · 共 <?= number_format($total) ?> 个 · <a href="user-ranking.php" style="color:#ff6b00;font-weight:600;">用户排行 →</a></div>
+        </div>
     </div>
 
     <!-- 排序标签 -->
