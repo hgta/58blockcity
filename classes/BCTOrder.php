@@ -413,6 +413,24 @@ class BCTOrder {
         // 更新订单状态
         $this->updateOrderAfterTrade($buyOrder['id'], $amount);
         $this->updateOrderAfterTrade($sellOrder['id'], $amount, $sellOrder['user_id'], $sellOrder['city']);
+
+        // 成交价即最新市场价：更新城市现价（同时落一条价格历史，供涨跌统计）
+        $this->syncCityPriceAfterTrade($sellOrder['city'], $tradePrice);
+    }
+
+    /**
+     * 成交后以成交价同步城市现价
+     *
+     * 走 CityBCT::updatePrice() 唯一收口（内部含价格历史埋点）。
+     * 容错：现价同步失败不应影响成交主流程，仅记录日志。
+     */
+    private function syncCityPriceAfterTrade($city, $tradePrice) {
+        try {
+            require_once __DIR__ . '/CityBCT.php';
+            (new CityBCT($this->pdo))->updatePrice($city, (float)$tradePrice);
+        } catch (Exception $e) {
+            error_log('BCT sync city price after trade error: ' . $e->getMessage());
+        }
     }
     
     /**
@@ -929,6 +947,9 @@ class BCTOrder {
 			);
 
 			$this->pdo->commit();
+
+			// 成交价即最新市场价：更新城市现价（同时落一条价格历史，供涨跌统计）
+			$this->syncCityPriceAfterTrade($order['city'], (float)$order['price']);
 
 			// 双向通知
 			$this->notify((int)$userId, (int)$claim['buyer_side_user_id'],

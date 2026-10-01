@@ -276,11 +276,9 @@ class CityBCT {
     /**
      * 获取城市价格走势（折线/OHLC）
      *
-     * 数据源为 bct_price_history（价格历史）。
-     *
-     * 注意 volume 字段：成交量必须来自真实成交（bct_transactions），而该表
-     * 结构性为空（见 get24hChanges 注释）。这里显式返回 0 而非用「调价次数」
-     * 等数据冒充，待成交流水机制建立后再接入。
+     * 数据源为 bct_transactions 成交流水（tx_type='trade'）——每笔真实成交
+     * 都是一个价格点；成交量列 volume 同源（SUM(amount)），不再恒为 0。
+     * 价格调价历史（bct_price_history）仅用于涨跌幅/24h 高低价统计。
      */
     public function getPriceHistory($city, $interval = '24h') {
         $intervalMap = [
@@ -292,15 +290,16 @@ class CityBCT {
         $cfg = $intervalMap[$interval] ?? $intervalMap['24h'];
 
         $stmt = $this->pdo->prepare("
-            SELECT 
+            SELECT
                 DATE_FORMAT(created_at, ?) as time_key,
                 MIN(price) as low,
                 MAX(price) as high,
                 SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at ASC, id ASC), ',', 1) as open,
                 SUBSTRING_INDEX(GROUP_CONCAT(price ORDER BY created_at DESC, id DESC), ',', 1) as close,
+                SUM(amount) as volume,
                 MIN(created_at) as first_time
-            FROM bct_price_history
-            WHERE city = ? AND created_at >= DATE_SUB(NOW(), {$cfg['start']})
+            FROM bct_transactions
+            WHERE city = ? AND tx_type = 'trade' AND created_at >= DATE_SUB(NOW(), {$cfg['start']})
             GROUP BY time_key
             ORDER BY first_time ASC
         ");
@@ -315,8 +314,7 @@ class CityBCT {
                 'high' => (float)$row['high'],
                 'low' => (float)$row['low'],
                 'close' => (float)$row['close'],
-                // 成交量依赖成交流水（bct_transactions），当前该表无记录，故为 0
-                'volume' => 0.0
+                'volume' => (float)($row['volume'] ?? 0)
             ];
         }
         return $history;

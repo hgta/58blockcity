@@ -101,8 +101,13 @@ require_once 'includes/header.php';
                 <?php if (count($priceHistory) < 2): ?>
                 <div class="text-center" style="padding:60px 20px;color:var(--bct-text-secondary);">
                     <i class="fas fa-chart-line" style="font-size:48px;display:block;margin-bottom:16px;opacity:.3;"></i>
-                    <p>该城市成交数据不足，无法绘制走势图</p>
+                    <?php if (!empty($recentTrades)): ?>
+                    <p>走势图至少需要 2 笔成交才能绘制 · 本城市已有 <?= count($recentTrades) ?> 笔近期成交</p>
+                    <a href="trade.php?city=<?= urlencode($city) ?>" class="btn btn-primary">去交易</a>
+                    <?php else: ?>
+                    <p>该城市暂无成交记录</p>
                     <a href="trade.php?city=<?= urlencode($city) ?>" class="btn btn-primary">成为第一个交易者</a>
+                    <?php endif; ?>
                 </div>
                 <?php else: ?>
                 <div id="priceChart" style="width:100%;height:360px;"></div>
