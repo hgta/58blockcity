@@ -37,6 +37,7 @@ if (isset($_SESSION['holdings_msg'])) {
 $cityList = $holdings->getUserCities($userId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    validateCsrfToken();
     $oid = intval($_POST['order_id'] ?? 0);
 
     if ($_POST['action'] === 'save_holdings') {
@@ -145,6 +146,37 @@ require_once '../includes/header.php';
 .holdings-actions .holdings-note { font-size:12px; color:var(--bct-text-secondary); }
 .holdings-actions .holdings-btns { display:flex; gap:8px; }
 @media (max-width:576px) { .holdings-search input { width:120px; } }
+
+/* 我的挂单：tab 选中态（主题仅定义了 .nav-link.active，本页是 li.active > a 结构，需补齐） */
+.dash-wrap .nav-tabs > li > a {
+    color: var(--bct-text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 10px 16px;
+    font-weight: 500;
+}
+.dash-wrap .nav-tabs > li > a:hover { color: var(--bct-text); background: transparent; }
+.dash-wrap .nav-tabs > li.active > a,
+.dash-wrap .nav-tabs > li.active > a:hover,
+.dash-wrap .nav-tabs > li.active > a:focus {
+    color: var(--bct-accent);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--bct-accent);
+}
+/* 订单类型与说明条 */
+.dash-wrap .side.buy { color: var(--bct-up); font-weight: 600; }
+.dash-wrap .side.sell { color: var(--bct-down); font-weight: 600; }
+.hall-hint {
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--bct-text-secondary);
+    border-top: 1px solid var(--bct-border);
+}
+.hall-hint a { color: var(--bct-accent); }
+.hall-hint strong { color: var(--bct-text); }
 </style>
 
 <div class="dash-wrap" style="padding-top:20px;">
@@ -201,6 +233,7 @@ require_once '../includes/header.php';
                 <?php else: ?>
                 <form method="post" id="holdingsForm" autocomplete="off">
                     <input type="hidden" name="action" value="save_holdings">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <div class="holdings-table-wrap">
                         <table class="table holdings-table">
                             <thead>
@@ -278,7 +311,14 @@ require_once '../includes/header.php';
     </div>
 
     <div class="card" style="margin-top:24px;">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;font-size:16px;">
+                <i class="fas fa-clipboard-list"></i> 我的挂单
+                <span style="font-size:12px;font-weight:400;color:var(--bct-text-secondary);margin-left:8px;">仅显示本账号发布的订单</span>
+            </h3>
+            <a href="../orders.php" class="btn btn-sm btn-default"><i class="fas fa-list"></i> 挂单大厅（看别人的挂单）</a>
+        </div>
+        <div style="padding:0 16px;">
             <ul class="nav nav-tabs" style="border-bottom:none;">
                 <li class="<?= $tab=='buy'?'active':'' ?>"><a href="?tab=buy">买入订单</a></li>
                 <li class="<?= $tab=='sell'?'active':'' ?>"><a href="?tab=sell">卖出订单</a></li>
@@ -288,7 +328,7 @@ require_once '../includes/header.php';
         <?php if (empty($orders)): ?>
         <div class="text-center" style="padding:40px;color:var(--bct-text-secondary);">
             <i class="fas fa-inbox" style="font-size:48px;display:block;margin-bottom:16px;opacity:.3;"></i>
-            <p><?= $tab=='completed' ? '暂无成交记录' : '暂无订单' ?></p>
+            <p><?= $tab=='completed' ? '暂无成交记录' : ($tab=='sell' ? '暂无卖出订单（可去发布一笔出售）' : '暂无买入订单（可去发布一笔求购）') ?></p>
             <a href="../market.php" class="btn btn-primary">去交易</a>
         </div>
         <?php else: ?>
@@ -296,8 +336,8 @@ require_once '../includes/header.php';
             <table class="table">
                 <thead>
                     <tr>
-                        <th>订单号</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
-                        <th>状态</th><th>操作</th>
+                        <th>订单号</th><th>类型</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
+                        <th>交易方式</th><th>状态</th><th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -307,21 +347,27 @@ require_once '../includes/header.php';
                             'processing' => ['部分成交', 'badge-info'],
                             'completed'  => ['已完成', 'badge-success'],
                             'canceled'   => ['已取消', 'badge-default'],
+                            'expired'    => ['已过期', 'badge-default'],
                         ];
                         $s = $statusMap[$o['status']] ?? [$o['status'], ''];
+                        $tradeTypes = ['direct' => '直接交易', 'platform' => '平台交易', 'mediator' => '中介交易'];
+                        $isBuy = $o['type'] === 'buy';
                     ?>
                     <tr>
                         <td style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
+                        <td><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
                         <td><?= htmlspecialchars($o['city']) ?></td>
                         <td><?= number_format($o['amount']) ?> BCT</td>
                         <td>¥<?= number_format($o['price'], 2) ?></td>
                         <td>¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
+                        <td style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
                         <td><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span></td>
                         <td>
                             <?php if (in_array($o['status'], ['pending','processing'])): ?>
                             <form method="post" style="display:inline" onsubmit="return confirm('确定取消该订单?')">
                                 <input type="hidden" name="action" value="cancel">
                                 <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                                 <button class="btn btn-sm btn-danger">取消</button>
                             </form>
                             <?php elseif ($o['status'] === 'completed'): ?>
@@ -334,6 +380,14 @@ require_once '../includes/header.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
+
+        <div class="hall-hint">
+            <i class="fas fa-info-circle"></i>
+            以上挂单会同步展示在 <a href="../orders.php">挂单大厅</a>：
+            <strong>直接交易</strong>单的联系方式对所有登录用户可见，想买/想卖的人看到后会主动私信你，你也可以去大厅主动私信对方；
+            <strong>平台交易</strong>单（限 500 BCT 以下）由系统自动撮合，无需人工联系；
+            <strong>中介交易</strong>单由所选中介协调成交。
         </div>
 
         <?php if ($totalPages > 1): ?>
