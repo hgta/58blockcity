@@ -148,16 +148,18 @@ require_once '../includes/header.php';
             <?php endif; ?>
             <?php
             // 社媒主页平台：链接非空 → 品牌色跳转按钮；链接空 & 名字非空 → 降级纯文本；全空不渲染
+            // icon：白色小芯片内嵌平台图形（FA 品牌图标 / 汉字标 / 定制 SVG），模拟 App 图标观感
+            $icoBili = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M17.8 4.6l1.9-2.3c.2-.2.1-.6-.2-.7-.2-.2-.5-.1-.7.1L17 4.1c-1.5-.7-3.2-1-5-1s-3.5.3-5 1L5.2 1.7c-.2-.2-.5-.3-.7-.1-.3.1-.4.5-.2.7l1.9 2.3C3.4 6.2 1.5 9 1.5 12.3c0 5 4.7 9 10.5 9s10.5-4 10.5-9c0-3.3-1.9-6.1-4.7-7.7zM7.5 14.8c-.9 0-1.6-.7-1.6-1.6s.7-1.6 1.6-1.6 1.6.7 1.6 1.6-.7 1.6-1.6 1.6zm9 0c-.9 0-1.6-.7-1.6-1.6s.7-1.6 1.6-1.6 1.6.7 1.6 1.6-.7 1.6-1.6 1.6z"/></svg>';
             $socialPlatforms = [
-                ['label' => '微博',     'nameField' => 'weibo',         'linkField' => 'link_weibo',         'color' => '#e6162d'],
-                ['label' => '小红书',   'nameField' => 'xiaohongshu',   'linkField' => 'link_xiaohongshu',   'color' => '#ff2442'],
-                ['label' => '抖音',     'nameField' => 'douyin',        'linkField' => 'link_douyin',        'color' => '#fe2c55'],
-                ['label' => '快手',     'nameField' => 'kuaishou',      'linkField' => 'link_kuaishou',      'color' => '#ff4906'],
-                ['label' => 'B站',      'nameField' => 'bilibili',      'linkField' => 'link_bilibili',      'color' => '#fb7299'],
-                ['label' => '红果',     'nameField' => 'hongguo',       'linkField' => 'link_hongguo',       'color' => '#e6162d'],
-                ['label' => '腾讯视频', 'nameField' => 'tencent_video', 'linkField' => 'link_tencent_video', 'color' => '#ff6022'],
-                ['label' => '爱奇艺',   'nameField' => 'iqiyi',         'linkField' => 'link_iqiyi',         'color' => '#00be06'],
-                ['label' => '优酷',     'nameField' => 'youku',         'linkField' => 'link_youku',         'color' => '#0fb5ff'],
+                ['label' => '微博',     'nameField' => 'weibo',         'linkField' => 'link_weibo',         'color' => '#e6162d', 'icon' => '<i class="fab fa-weibo"></i>'],
+                ['label' => '小红书',   'nameField' => 'xiaohongshu',   'linkField' => 'link_xiaohongshu',   'color' => '#ff2442', 'icon' => '红'],
+                ['label' => '抖音',     'nameField' => 'douyin',        'linkField' => 'link_douyin',        'color' => '#161823', 'icon' => '<i class="fab fa-tiktok"></i>'],
+                ['label' => '快手',     'nameField' => 'kuaishou',      'linkField' => 'link_kuaishou',      'color' => '#ff4906', 'icon' => '快'],
+                ['label' => 'B站',      'nameField' => 'bilibili',      'linkField' => 'link_bilibili',      'color' => '#fb7299', 'icon' => $icoBili],
+                ['label' => '红果',     'nameField' => 'hongguo',       'linkField' => 'link_hongguo',       'color' => '#c81e1e', 'icon' => '<b style="font-size:8.5px;letter-spacing:-1px;">红果</b>'],
+                ['label' => '腾讯视频', 'nameField' => 'tencent_video', 'linkField' => 'link_tencent_video', 'color' => '#ff6022', 'icon' => '<i class="fas fa-play" style="font-size:9px;"></i>'],
+                ['label' => '爱奇艺',   'nameField' => 'iqiyi',         'linkField' => 'link_iqiyi',         'color' => '#00be06', 'icon' => '爱'],
+                ['label' => '优酷',     'nameField' => 'youku',         'linkField' => 'link_youku',         'color' => '#0fb5ff', 'icon' => '优'],
             ];
             $socialLinkEntries = [];
             $socialTextEntries  = [];
@@ -172,6 +174,7 @@ require_once '../includes/header.php';
                     $socialTextEntries[] = $sp;
                 }
             }
+            $icoChipStyle = 'width:17px;height:17px;border-radius:4.5px;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;line-height:1;flex-shrink:0;';
             ?>
             <!-- 社交信息：联系方式纯文本 + 降级文本 -->
             <?php if ($authorInfo['qq'] || $authorInfo['weixin'] || !empty($socialTextEntries)): ?>
@@ -179,7 +182,7 @@ require_once '../includes/header.php';
                 <?php if ($authorInfo['qq']): ?><span style="padding:4px 10px;background:#12b7f5;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-qq"></i> QQ: <?= htmlspecialchars($authorInfo['qq']) ?></span><?php endif; ?>
                 <?php if ($authorInfo['weixin']): ?><span style="padding:4px 10px;background:#07c160;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-weixin"></i> 微信: <?= htmlspecialchars($authorInfo['weixin']) ?></span><?php endif; ?>
                 <?php foreach ($socialTextEntries as $se): ?>
-                <span style="padding:4px 10px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:4px;font-size:13px;"><?= htmlspecialchars($se['label']) ?> · <?= htmlspecialchars($se['name']) ?></span>
+                <span style="padding:4px 10px 4px 5px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:4px;font-size:13px;display:inline-flex;align-items:center;gap:5px;"><span style="<?= $icoChipStyle ?>color:<?= htmlspecialchars($se['color']) ?>;"><?= $se['icon'] ?></span><?= htmlspecialchars($se['name']) ?></span>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
@@ -189,9 +192,9 @@ require_once '../includes/header.php';
                 <span style="color:#666;font-size:13px;">社媒主页：</span>
                 <?php foreach ($socialLinkEntries as $se): ?>
                 <a href="<?= htmlspecialchars($se['link']) ?>" target="_blank" rel="nofollow noopener"
-                   style="padding:4px 10px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:4px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                   style="padding:4px 10px 4px 5px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;"
                    title="前往<?= htmlspecialchars($se['label']) ?>主页">
-                    <?= htmlspecialchars($se['label']) ?> ↗
+                    <span style="<?= $icoChipStyle ?>color:<?= htmlspecialchars($se['color']) ?>;"><?= $se['icon'] ?></span><?= htmlspecialchars($se['label']) ?> ↗
                 </a>
                 <?php endforeach; ?>
             </div>
