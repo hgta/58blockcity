@@ -8,21 +8,43 @@ require_once '../classes/Block.php';
 require_once '../classes/User.php';
 require_once '../classes/SeoHelper.php';
 
-// 获取城市拼音从URL
-//$city_pinyin = basename($_SERVER['PHP_SELF'], '.php');
-$city_pinyin = $_GET['name'] ?? 'beijing';
+// 获取城市标识：兼容 ?name= 与伪静态 ?pinyin=（block/.htaccess: city/xxx.html）
+// 支持拼音（wuhan / Wuhan）与中文名（武汉 / 武汉市），与搜索框提示一致
+$city_key = trim((string)($_GET['name'] ?? $_GET['pinyin'] ?? ''));
+if ($city_key === '') {
+    $city_key = 'beijing';
+}
 
 // 初始化类
 $city = new City($pdo);
 $block = new Block($pdo);
 $user = new User($pdo);
 
-// 根据拼音获取城市信息
-$city_info = $city->getCityByPinyin($city_pinyin);
+// 纯字母数字按拼音查（大小写不敏感），其余按中文城市名查
+$city_info = preg_match('/^[a-zA-Z0-9_-]+$/', $city_key)
+    ? $city->getCityByPinyin(strtolower($city_key))
+    : null;
+
+if (!$city_info) {
+    $city_info = $city->getCityByName($city_key);
+}
 
 if (!$city_info) {
     header("HTTP/1.0 404 Not Found");
     include '../404.php';
+    exit();
+}
+
+// 统一到拼音：中文名 / 大小写差异等非规范入口 301 到规范 URL，避免同城多份 URL
+$city_pinyin = trim((string)($city_info['pinyin'] ?? ''));
+if ($city_pinyin === '') {
+    // 兜底：极端情况下城市无拼音，直接用入参，避免 301 死循环
+    $city_pinyin = $city_key;
+} elseif ($city_key !== $city_pinyin) {
+    $params = $_GET;
+    $params['name'] = $city_pinyin;
+    unset($params['pinyin']);
+    header('Location: city.php?' . http_build_query($params), true, 301);
     exit();
 }
 

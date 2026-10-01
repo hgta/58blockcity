@@ -294,6 +294,50 @@ class City {
 	}
 	
 	/**
+	 * 根据中文城市名获取城市数据
+	 * 匹配顺序：精确 → 去后缀（武汉市/武汉地区）→ 前缀模糊（按 rank 取最优）
+	 */
+	public function getCityByName($name) {
+		$name = trim((string)$name);
+		if ($name === '') {
+			return null;
+		}
+
+		try {
+			// 1) 精确匹配
+			$stmt = $this->pdo->prepare("SELECT * FROM cities WHERE name = ? LIMIT 1");
+			$stmt->execute([$name]);
+			$city = $stmt->fetch(PDO::FETCH_ASSOC);
+			if ($city) {
+				return $city;
+			}
+
+			// 2) 去掉行政区划后缀再精确匹配（如“武汉市” → “武汉”）
+			$stripped = preg_replace('/(市|地区|自治州|自治县|盟|省)$/u', '', $name);
+			if ($stripped !== $name && $stripped !== '' && $stripped !== null) {
+				$stmt = $this->pdo->prepare("SELECT * FROM cities WHERE name = ? LIMIT 1");
+				$stmt->execute([$stripped]);
+				$city = $stmt->fetch(PDO::FETCH_ASSOC);
+				if ($city) {
+					return $city;
+				}
+			} else {
+				$stripped = $name;
+			}
+
+			// 3) 前缀模糊匹配（输入不完整），用 | 作 LIKE 转义符避免通配符注入
+			$like = str_replace(['|', '%', '_'], ['||', '|%', '|_'], $stripped) . '%';
+			$stmt = $this->pdo->prepare("SELECT * FROM cities WHERE name LIKE ? ESCAPE '|' ORDER BY rank ASC LIMIT 1");
+			$stmt->execute([$like]);
+			return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+		} catch (PDOException $e) {
+			error_log("[getCityByName] 查询失败: " . $e->getMessage());
+			return null;
+		}
+	}
+
+	/**
 	 * 根据拼音获取城市ID
 	 */
 	public function getCityIdByPinyin($pinyin) {
