@@ -11,8 +11,6 @@ $userId = $_SESSION['user_id'];
 $order = new BCTOrder($pdo);
 $holdings = new UserHoldings($pdo);
 
-$stats = $order->getUserOrderStats($userId);
-
 // 惰性推进超时接单（买方 24h 未确认付款的释放回 pending）
 try {
     $order->releaseStaleClaims((int)$userId, 50);
@@ -23,17 +21,96 @@ try {
 $tab = $_GET['tab'] ?? 'buy';
 $tab = in_array($tab, ['buy','sell','completed']) ? $tab : 'buy';
 
-$page = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 15;
-
-if ($tab === 'completed') {
-    $orders = $order->getUserOrders($userId, 'all', 'completed', $page, $perPage);
-    $totalOrders = $stats['completed'];
-} else {
-    $orders = $order->getUserOrders($userId, $tab, 'active', $page, $perPage);
-    $totalOrders = $stats[$tab . '_active'] ?? 0;
+// 三个列表一次取齐，tab 切换由前端完成（不再整页刷新）；每类最多 100 条
+$ordersByTab = [];
+foreach (['buy', 'sell', 'completed'] as $t) {
+    try {
+        $ordersByTab[$t] = $t === 'completed'
+            ? $order->getUserOrders($userId, 'all', 'completed', 1, 100)
+            : $order->getUserOrders($userId, $t, 'active', 1, 100);
+    } catch (Exception $e) {
+        error_log('BCT dashboard orders[' . $t . '] error: ' . $e->getMessage());
+        $ordersByTab[$t] = [];
+    }
 }
-$totalPages = ceil($totalOrders / $perPage);
+
+/**
+ * 渲染「我的挂单」单个 tab 的表格（含空态），供三个 pane 复用
+ */
+function renderOrdersPane(array $orders, string $paneTab, BCTOrder $order): void {
+    if (empty($orders)): ?>
+        <div class="text-center" style="padding:40px;color:var(--bct-text-secondary);">
+            <i class="fas fa-inbox" style="font-size:48px;display:block;margin-bottom:16px;opacity:.3;"></i>
+            <p><?= $paneTab=='completed' ? '暂无成交记录' : ($paneTab=='sell' ? '暂无卖出订单（可去发布一笔出售）' : '暂无买入订单（可去发布一笔求购）') ?></p>
+            <a href="../market.php" class="btn btn-primary">去交易</a>
+        </div>
+        <?php return; endif; ?>
+        <div class="table-responsive">
+            <table class="table mob-cards">
+                <thead>
+                    <tr>
+                        <th>订单号</th><th>类型</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
+                        <th>交易方式</th><th>状态</th><th>剩余有效期</th><th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($orders as $o):
+                        $statusMap = [
+                            'pending'    => ['待成交', 'badge-warning'],
+                            'processing' => ['部分成交', 'badge-info'],
+                            'completed'  => ['已完成', 'badge-success'],
+                            'canceled'   => ['已取消', 'badge-default'],
+                            'expired'    => ['已过期', 'badge-default'],
+                        ];
+                        $s = $statusMap[$o['status']] ?? [$o['status'], ''];
+                        $tradeTypes = ['direct' => '直接交易', 'platform' => '平台交易', 'mediator' => '中介交易'];
+                        $isBuy = $o['type'] === 'buy';
+
+                        // 直接交易单：存在活跃接单时展示"交易中"
+                        $myClaim = null;
+                        if ($o['trade_type'] === 'direct' && in_array($o['status'], ['pending','processing'], true)) {
+                            try { $myClaim = $order->getActiveClaim((int)$o['id']); } catch (Exception $e) {}
+                        }
+                    ?>
+                    <tr>
+                        <td data-label="订单号" style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
+                        <td data-label="类型"><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
+                        <td data-label="城市"><?= htmlspecialchars($o['city']) ?></td>
+                        <td data-label="数量"><?= number_format($o['amount']) ?> BCT</td>
+                        <td data-label="价格">¥<?= number_format($o['price'], 2) ?></td>
+                        <td data-label="总金额">¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
+                        <td data-label="交易方式" style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
+                        <td data-label="状态">
+                            <?php if ($myClaim): ?><span class="badge badge-info">交易中</span>
+                            <?php else: ?><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span><?php endif; ?>
+                        </td>
+                        <?php if ($paneTab === 'completed'): ?>
+                        <td data-label="剩余有效期" class="exp-ok">已结束</td>
+                        <?php else: list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], (bool)$myClaim); ?>
+                        <td data-label="剩余有效期" class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
+                        <?php endif; ?>
+                        <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
+                            <?php if ($myClaim): ?>
+                            <a href="dashboard.php#claims" class="btn btn-sm btn-primary">对方已接单 · 去处理</a>
+                            <?php elseif (in_array($o['status'], ['pending','processing'])): ?>
+                            <form method="post" style="display:inline" onsubmit="return confirm('确定取消该订单?')">
+                                <input type="hidden" name="action" value="cancel">
+                                <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                                <button class="btn btn-sm btn-danger">取消</button>
+                            </form>
+                            <?php elseif ($o['status'] === 'completed'): ?>
+                            <a href="order_detail.php?id=<?= $o['id'] ?>" class="btn btn-sm btn-default">查看</a>
+                            <?php else: ?>
+                            <span style="color:var(--bct-text-muted);">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+<?php } ?>
 
 $msg = '';
 if (isset($_SESSION['holdings_msg'])) {
@@ -538,84 +615,17 @@ require_once '../includes/header.php';
             <a href="../orders.php" class="btn btn-sm btn-default"><i class="fas fa-list"></i> 挂单大厅（看别人的挂单）</a>
         </div>
         <div style="padding:0 16px;">
-            <div class="order-tabs">
-                <a href="?tab=buy" class="order-tab <?= $tab=='buy'?'active':'' ?>">买入订单</a>
-                <a href="?tab=sell" class="order-tab <?= $tab=='sell'?'active':'' ?>">卖出订单</a>
-                <a href="?tab=completed" class="order-tab <?= $tab=='completed'?'active':'' ?>">已完成</a>
+            <div class="order-tabs" id="orderTabs">
+                <a href="?tab=buy" data-tab="buy" class="order-tab <?= $tab=='buy'?'active':'' ?>">买入订单</a>
+                <a href="?tab=sell" data-tab="sell" class="order-tab <?= $tab=='sell'?'active':'' ?>">卖出订单</a>
+                <a href="?tab=completed" data-tab="completed" class="order-tab <?= $tab=='completed'?'active':'' ?>">已完成</a>
             </div>
         </div>
-        <?php if (empty($orders)): ?>
-        <div class="text-center" style="padding:40px;color:var(--bct-text-secondary);">
-            <i class="fas fa-inbox" style="font-size:48px;display:block;margin-bottom:16px;opacity:.3;"></i>
-            <p><?= $tab=='completed' ? '暂无成交记录' : ($tab=='sell' ? '暂无卖出订单（可去发布一笔出售）' : '暂无买入订单（可去发布一笔求购）') ?></p>
-            <a href="../market.php" class="btn btn-primary">去交易</a>
+        <?php foreach (['buy','sell','completed'] as $t): ?>
+        <div class="order-pane" data-pane="<?= $t ?>" style="display:<?= $tab===$t ? 'block' : 'none' ?>;">
+            <?php renderOrdersPane($ordersByTab[$t] ?? [], $t, $order); ?>
         </div>
-        <?php else: ?>
-        <div class="table-responsive">
-            <table class="table mob-cards">
-                <thead>
-                    <tr>
-                        <th>订单号</th><th>类型</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
-                        <th>交易方式</th><th>状态</th><th>剩余有效期</th><th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($orders as $o):
-                        $statusMap = [
-                            'pending'    => ['待成交', 'badge-warning'],
-                            'processing' => ['部分成交', 'badge-info'],
-                            'completed'  => ['已完成', 'badge-success'],
-                            'canceled'   => ['已取消', 'badge-default'],
-                            'expired'    => ['已过期', 'badge-default'],
-                        ];
-                        $s = $statusMap[$o['status']] ?? [$o['status'], ''];
-                        $tradeTypes = ['direct' => '直接交易', 'platform' => '平台交易', 'mediator' => '中介交易'];
-                        $isBuy = $o['type'] === 'buy';
-
-                        // 直接交易单：存在活跃接单时展示"交易中"
-                        $myClaim = null;
-                        if ($o['trade_type'] === 'direct' && in_array($o['status'], ['pending','processing'], true)) {
-                            try { $myClaim = $order->getActiveClaim((int)$o['id']); } catch (Exception $e) {}
-                        }
-                    ?>
-                    <tr>
-                        <td data-label="订单号" style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
-                        <td data-label="类型"><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
-                        <td data-label="城市"><?= htmlspecialchars($o['city']) ?></td>
-                        <td data-label="数量"><?= number_format($o['amount']) ?> BCT</td>
-                        <td data-label="价格">¥<?= number_format($o['price'], 2) ?></td>
-                        <td data-label="总金额">¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
-                        <td data-label="交易方式" style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
-                        <td data-label="状态">
-                            <?php if ($myClaim): ?><span class="badge badge-info">交易中</span>
-                            <?php else: ?><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span><?php endif; ?>
-                        </td>
-                        <?php if ($tab === 'completed'): ?>
-                        <td data-label="剩余有效期" class="exp-ok">已结束</td>
-                        <?php else: list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], (bool)$myClaim); ?>
-                        <td data-label="剩余有效期" class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
-                        <?php endif; ?>
-                        <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
-                            <?php if ($myClaim): ?>
-                            <a href="dashboard.php#claims" class="btn btn-sm btn-primary">对方已接单 · 去处理</a>
-                            <?php elseif (in_array($o['status'], ['pending','processing'])): ?>
-                            <form method="post" style="display:inline" onsubmit="return confirm('确定取消该订单?')">
-                                <input type="hidden" name="action" value="cancel">
-                                <input type="hidden" name="order_id" value="<?= $o['id'] ?>">
-                                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-                                <button class="btn btn-sm btn-danger">取消</button>
-                            </form>
-                            <?php elseif ($o['status'] === 'completed'): ?>
-                            <a href="order_detail.php?id=<?= $o['id'] ?>" class="btn btn-sm btn-default">查看</a>
-                            <?php else: ?>
-                            <span style="color:var(--bct-text-muted);">—</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <?php endforeach; ?>
 
         <div class="hall-hint">
             <i class="fas fa-info-circle"></i>
@@ -624,21 +634,6 @@ require_once '../includes/header.php';
             <strong>平台交易</strong>单（限 500 BCT 以下）由系统自动撮合，无需人工联系；
             <strong>中介交易</strong>单由所选中介协调成交。
         </div>
-
-        <?php if ($totalPages > 1): ?>
-        <div style="padding:16px;display:flex;justify-content:center;">
-            <ul class="pagination">
-                <?php for ($i=1;$i<=$totalPages;$i++):
-                    if ($i==1 || $i==$totalPages || abs($i-$page)<=2):
-                        $active = $i==$page ? 'class="active"' : '';
-                ?>
-                <li <?= $active ?>><a href="?tab=<?= $tab ?>&page=<?= $i ?>"><?= $i ?></a></li>
-                <?php elseif (abs($i-$page)==3): ?><li class="disabled"><span>...</span></li><?php endif; ?>
-                <?php endfor; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -651,6 +646,37 @@ $(function() {
     }, $holdingRows)) ?>;
     if (pieEl && typeof BCTCharts !== 'undefined') BCTCharts.initPortfolioPie(pieEl, pieData);
     <?php endif; ?>
+
+    // 我的挂单 tab 无刷新切换（三个列表已一次渲染）
+    (function() {
+        var tabs = document.querySelectorAll('#orderTabs .order-tab');
+        if (!tabs.length) return;
+        var panes = document.querySelectorAll('.order-pane[data-pane]');
+        var valid = ['buy','sell','completed'];
+
+        function activate(name, pushUrl) {
+            if (valid.indexOf(name) < 0) name = 'buy';
+            tabs.forEach(function(a) { a.classList.toggle('active', a.dataset.tab === name); });
+            panes.forEach(function(p) { p.style.display = p.dataset.pane === name ? 'block' : 'none'; });
+            if (pushUrl && window.history && history.replaceState) {
+                var url = new URL(window.location.href);
+                url.searchParams.set('tab', name);
+                url.hash = '';
+                history.replaceState(null, '', url.toString());
+            }
+        }
+
+        tabs.forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                activate(a.dataset.tab, true);
+            });
+        });
+
+        // 取消订单等 POST 后带 ?tab= 跳回，按参数落位（服务端渲染已保证，此处兜底同步）
+        var urlTab = new URL(window.location.href).searchParams.get('tab');
+        if (urlTab && valid.indexOf(urlTab) >= 0) activate(urlTab, false);
+    })();
 
     var form = document.getElementById('holdingsForm');
     if (!form) return;
