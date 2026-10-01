@@ -80,6 +80,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $actionMsg = '<div class="admin-alert admin-alert-success">作者已停用</div>';
             }
         } elseif ($_POST['action'] === 'save') {
+            // 社媒主页链接格式校验（同商品外链：仅接受 http(s)://）
+            $socialLinkLabels = [
+                'link_weibo' => '微博', 'link_xiaohongshu' => '小红书',
+                'link_douyin' => '抖音', 'link_kuaishou' => '快手',
+                'link_bilibili' => 'B站', 'link_hongguo' => '红果',
+                'link_tencent_video' => '腾讯视频', 'link_iqiyi' => '爱奇艺', 'link_youku' => '优酷',
+            ];
+            $linkError = '';
+            foreach (array_keys($socialLinkLabels) as $lf) {
+                $v = trim($_POST[$lf] ?? '');
+                if ($v !== '' && !preg_match('#^https?://#i', $v)) {
+                    $linkError = $socialLinkLabels[$lf] . '链接格式不正确，需以 http:// 或 https:// 开头';
+                    break;
+                }
+            }
+            if ($linkError) {
+                $actionMsg = '<div class="admin-alert admin-alert-error">' . htmlspecialchars($linkError) . '</div>';
+            }
             // 处理头像上传
             $avatarPath = uploadAuthorAvatar($_FILES['avatar_file'] ?? null);
             $data = [
@@ -94,6 +112,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'weixin'    => trim($_POST['weixin'] ?? ''),
                 'weibo'     => trim($_POST['weibo'] ?? ''),
                 'xiaohongshu' => trim($_POST['xiaohongshu'] ?? ''),
+                // 社媒主页：7 平台名字 + 9 平台主页链接
+                'douyin'        => trim($_POST['douyin'] ?? ''),
+                'kuaishou'      => trim($_POST['kuaishou'] ?? ''),
+                'bilibili'      => trim($_POST['bilibili'] ?? ''),
+                'hongguo'       => trim($_POST['hongguo'] ?? ''),
+                'tencent_video' => trim($_POST['tencent_video'] ?? ''),
+                'iqiyi'         => trim($_POST['iqiyi'] ?? ''),
+                'youku'         => trim($_POST['youku'] ?? ''),
+                'link_weibo'         => trim($_POST['link_weibo'] ?? ''),
+                'link_xiaohongshu'   => trim($_POST['link_xiaohongshu'] ?? ''),
+                'link_douyin'        => trim($_POST['link_douyin'] ?? ''),
+                'link_kuaishou'      => trim($_POST['link_kuaishou'] ?? ''),
+                'link_bilibili'      => trim($_POST['link_bilibili'] ?? ''),
+                'link_hongguo'       => trim($_POST['link_hongguo'] ?? ''),
+                'link_tencent_video' => trim($_POST['link_tencent_video'] ?? ''),
+                'link_iqiyi'         => trim($_POST['link_iqiyi'] ?? ''),
+                'link_youku'         => trim($_POST['link_youku'] ?? ''),
                 'follower_count' => normalizeFollowerCount($_POST['follower_count'] ?? ''),
             ];
 
@@ -129,7 +164,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $data['author_works'] = json_encode($works, JSON_UNESCAPED_SLASHES);
 
-            if ($authorId > 0) {
+            if ($linkError) {
+                // 校验失败：不执行任何写入（$actionMsg 已设置）
+            } elseif ($authorId > 0) {
                 $data['status'] = $_POST['status'] ?? 'active';
                 if ($author->update($authorId, $data)) {
                     $actionMsg = '<div class="admin-alert admin-alert-success">作者信息已更新</div>';
@@ -316,6 +353,49 @@ $zodiacs = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女�
                     <div><label style="<?= $labelStyle ?>">微信</label><input type="text" name="weixin" value="<?= htmlspecialchars($formData['weixin'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
                     <div><label style="<?= $labelStyle ?>">微博</label><input type="text" name="weibo" value="<?= htmlspecialchars($formData['weibo'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
                     <div><label style="<?= $labelStyle ?>">小红书</label><input type="text" name="xiaohongshu" value="<?= htmlspecialchars($formData['xiaohongshu'] ?? '') ?>" style="<?= $inputStyle ?>"></div>
+                </div>
+
+                <?php
+                // 社媒主页平台定义（微博/小红书名字复用上方字段，只挂链接）
+                $socialLinkPlatforms = [
+                    ['label' => '微博',     'nameField' => 'weibo',         'linkField' => 'link_weibo'],
+                    ['label' => '小红书',   'nameField' => 'xiaohongshu',   'linkField' => 'link_xiaohongshu'],
+                    ['label' => '抖音',     'nameField' => 'douyin',        'linkField' => 'link_douyin'],
+                    ['label' => '快手',     'nameField' => 'kuaishou',      'linkField' => 'link_kuaishou'],
+                    ['label' => 'B站',      'nameField' => 'bilibili',      'linkField' => 'link_bilibili'],
+                    ['label' => '红果',     'nameField' => 'hongguo',       'linkField' => 'link_hongguo'],
+                    ['label' => '腾讯视频', 'nameField' => 'tencent_video', 'linkField' => 'link_tencent_video'],
+                    ['label' => '爱奇艺',   'nameField' => 'iqiyi',         'linkField' => 'link_iqiyi'],
+                    ['label' => '优酷',     'nameField' => 'youku',         'linkField' => 'link_youku'],
+                ];
+                ?>
+                <div style="border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:16px;background:#0b1220;">
+                    <div style="font-size:13px;color:#38bdf8;font-weight:600;margin-bottom:4px;">
+                        <i class="fas fa-share-nodes"></i> 社媒主页
+                    </div>
+                    <small style="display:block;color:#64748b;margin-bottom:10px;">填写各平台名字与主页链接后，前台作者详情页将显示对应平台的跳转入口；留空则不显示。链接需以 http:// 或 https:// 开头。</small>
+                    <div style="display:flex;gap:10px;padding:4px 0 8px;color:#94a3b8;font-size:12px;">
+                        <span style="width:80px;flex-shrink:0;"></span>
+                        <span style="width:160px;flex-shrink:0;">平台名字</span>
+                        <span style="flex:1;">主页链接（https://…）</span>
+                    </div>
+                    <?php foreach ($socialLinkPlatforms as $sp): ?>
+                    <div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid #1e293b;flex-wrap:wrap;">
+                        <span style="width:80px;flex-shrink:0;color:#e2e8f0;font-size:13px;"><?= htmlspecialchars($sp['label']) ?></span>
+                        <?php if ($sp['nameField'] === 'weibo' || $sp['nameField'] === 'xiaohongshu'): ?>
+                            <span style="width:160px;flex-shrink:0;color:#64748b;font-size:12px;">名字见上方</span>
+                        <?php else: ?>
+                            <input type="text" name="<?= $sp['nameField'] ?>" maxlength="100"
+                                   value="<?= htmlspecialchars($formData[$sp['nameField']] ?? '') ?>"
+                                   placeholder="<?= $sp['nameField'] === 'hongguo' ? '演员名' : '平台昵称' ?>"
+                                   style="width:160px;flex-shrink:0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;">
+                        <?php endif; ?>
+                        <input type="text" name="<?= $sp['linkField'] ?>" maxlength="500"
+                               value="<?= htmlspecialchars($formData[$sp['linkField']] ?? '') ?>"
+                               placeholder="https://..."
+                               style="flex:1;min-width:220px;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px;">
+                    </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <?php if ($isEdit): ?>

@@ -71,7 +71,7 @@ class Author
             $values[] = intval($data['user_id']);
         }
 
-        $optional = ['gender', 'city', 'zodiac', 'style', 'bio', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'avatar', 'author_works', 'follower_count'];
+        $optional = ['gender', 'city', 'zodiac', 'style', 'bio', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'douyin', 'kuaishou', 'bilibili', 'hongguo', 'tencent_video', 'iqiyi', 'youku', 'link_weibo', 'link_xiaohongshu', 'link_douyin', 'link_kuaishou', 'link_bilibili', 'link_hongguo', 'link_tencent_video', 'link_iqiyi', 'link_youku', 'avatar', 'author_works', 'follower_count'];
         foreach ($optional as $f) {
             if (isset($data[$f]) && $data[$f] !== '') {
                 $fields[] = $f;
@@ -92,7 +92,7 @@ class Author
     {
         $sets = [];
         $values = [];
-        $allowed = ['nickname', 'gender', 'city', 'zodiac', 'style', 'bio', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'avatar', 'author_works', 'follower_count', 'status'];
+        $allowed = ['nickname', 'gender', 'city', 'zodiac', 'style', 'bio', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'douyin', 'kuaishou', 'bilibili', 'hongguo', 'tencent_video', 'iqiyi', 'youku', 'link_weibo', 'link_xiaohongshu', 'link_douyin', 'link_kuaishou', 'link_bilibili', 'link_hongguo', 'link_tencent_video', 'link_iqiyi', 'link_youku', 'avatar', 'author_works', 'follower_count', 'status'];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $data)) {
                 $sets[] = "$f = ?";

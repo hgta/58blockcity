@@ -205,12 +205,51 @@ require_once __DIR__ . '/includes/header.php';
                 <?php if (!empty($modelInfo['zodiac'])): ?><span><i class="fas fa-star"></i> <?= htmlspecialchars($modelInfo['zodiac']) ?></span><?php endif; ?>
             </div>
 
-            <?php if (!empty($modelInfo['qq']) || !empty($modelInfo['weixin']) || !empty($modelInfo['weibo']) || !empty($modelInfo['xiaohongshu'])): ?>
+            <?php
+            // 社媒主页平台：链接非空 → 品牌色跳转按钮；链接空 & 名字非空 → 降级纯文本；全空不渲染
+            $socialPlatforms = [
+                ['label' => '微博',     'nameField' => 'weibo',         'linkField' => 'link_weibo',         'color' => '#e6162d'],
+                ['label' => '小红书',   'nameField' => 'xiaohongshu',   'linkField' => 'link_xiaohongshu',   'color' => '#ff2442'],
+                ['label' => '抖音',     'nameField' => 'douyin',        'linkField' => 'link_douyin',        'color' => '#fe2c55'],
+                ['label' => '快手',     'nameField' => 'kuaishou',      'linkField' => 'link_kuaishou',      'color' => '#ff4906'],
+                ['label' => 'B站',      'nameField' => 'bilibili',      'linkField' => 'link_bilibili',      'color' => '#fb7299'],
+                ['label' => '红果',     'nameField' => 'hongguo',       'linkField' => 'link_hongguo',       'color' => '#e6162d'],
+                ['label' => '腾讯视频', 'nameField' => 'tencent_video', 'linkField' => 'link_tencent_video', 'color' => '#ff6022'],
+                ['label' => '爱奇艺',   'nameField' => 'iqiyi',         'linkField' => 'link_iqiyi',         'color' => '#00be06'],
+                ['label' => '优酷',     'nameField' => 'youku',         'linkField' => 'link_youku',         'color' => '#0fb5ff'],
+            ];
+            $socialLinkEntries = []; // 链接非空 → 按钮入口
+            $socialTextEntries  = []; // 链接空 & 名字非空 → 降级文本
+            foreach ($socialPlatforms as $sp) {
+                $link = trim((string)($modelInfo[$sp['linkField']] ?? ''));
+                $name = trim((string)($modelInfo[$sp['nameField']] ?? ''));
+                if ($link !== '') {
+                    $sp['link'] = $link;
+                    $socialLinkEntries[] = $sp;
+                } elseif ($name !== '') {
+                    $sp['name'] = $name;
+                    $socialTextEntries[] = $sp;
+                }
+            }
+            ?>
+            <?php if (!empty($modelInfo['qq']) || !empty($modelInfo['weixin']) || !empty($socialTextEntries)): ?>
             <div class="m-socials">
                 <?php if (!empty($modelInfo['qq'])): ?><span class="s-qq"><i class="fab fa-qq"></i> <?= htmlspecialchars($modelInfo['qq']) ?></span><?php endif; ?>
                 <?php if (!empty($modelInfo['weixin'])): ?><span class="s-wx"><i class="fab fa-weixin"></i> <?= htmlspecialchars($modelInfo['weixin']) ?></span><?php endif; ?>
-                <?php if (!empty($modelInfo['weibo'])): ?><span class="s-wb"><i class="fab fa-weibo"></i> <?= htmlspecialchars($modelInfo['weibo']) ?></span><?php endif; ?>
-                <?php if (!empty($modelInfo['xiaohongshu'])): ?><span class="s-xhs">📕 <?= htmlspecialchars($modelInfo['xiaohongshu']) ?></span><?php endif; ?>
+                <?php foreach ($socialTextEntries as $se): ?>
+                <span style="background:<?= htmlspecialchars($se['color']) ?>;"><?= htmlspecialchars($se['label']) ?> · <?= htmlspecialchars($se['name']) ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($socialLinkEntries)): ?>
+            <div class="m-social-links">
+                <?php foreach ($socialLinkEntries as $se): ?>
+                <a href="<?= htmlspecialchars($se['link']) ?>" target="_blank" rel="nofollow noopener"
+                   style="background:<?= htmlspecialchars($se['color']) ?>;" title="前往<?= htmlspecialchars($se['label']) ?>主页">
+                    <?= htmlspecialchars($se['label']) ?> ↗
+                </a>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
 

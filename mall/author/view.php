@@ -146,13 +146,56 @@ require_once '../includes/header.php';
             <?php if ($authorInfo['bio']): ?>
             <div style="margin-bottom:10px;"><strong>简介：</strong><?= nl2br(htmlspecialchars($authorInfo['bio'])) ?></div>
             <?php endif; ?>
-            <!-- 社交链接 -->
+            <?php
+            // 社媒主页平台：链接非空 → 品牌色跳转按钮；链接空 & 名字非空 → 降级纯文本；全空不渲染
+            $socialPlatforms = [
+                ['label' => '微博',     'nameField' => 'weibo',         'linkField' => 'link_weibo',         'color' => '#e6162d'],
+                ['label' => '小红书',   'nameField' => 'xiaohongshu',   'linkField' => 'link_xiaohongshu',   'color' => '#ff2442'],
+                ['label' => '抖音',     'nameField' => 'douyin',        'linkField' => 'link_douyin',        'color' => '#fe2c55'],
+                ['label' => '快手',     'nameField' => 'kuaishou',      'linkField' => 'link_kuaishou',      'color' => '#ff4906'],
+                ['label' => 'B站',      'nameField' => 'bilibili',      'linkField' => 'link_bilibili',      'color' => '#fb7299'],
+                ['label' => '红果',     'nameField' => 'hongguo',       'linkField' => 'link_hongguo',       'color' => '#e6162d'],
+                ['label' => '腾讯视频', 'nameField' => 'tencent_video', 'linkField' => 'link_tencent_video', 'color' => '#ff6022'],
+                ['label' => '爱奇艺',   'nameField' => 'iqiyi',         'linkField' => 'link_iqiyi',         'color' => '#00be06'],
+                ['label' => '优酷',     'nameField' => 'youku',         'linkField' => 'link_youku',         'color' => '#0fb5ff'],
+            ];
+            $socialLinkEntries = [];
+            $socialTextEntries  = [];
+            foreach ($socialPlatforms as $sp) {
+                $link = trim((string)($authorInfo[$sp['linkField']] ?? ''));
+                $name = trim((string)($authorInfo[$sp['nameField']] ?? ''));
+                if ($link !== '') {
+                    $sp['link'] = $link;
+                    $socialLinkEntries[] = $sp;
+                } elseif ($name !== '') {
+                    $sp['name'] = $name;
+                    $socialTextEntries[] = $sp;
+                }
+            }
+            ?>
+            <!-- 社交信息：联系方式纯文本 + 降级文本 -->
+            <?php if ($authorInfo['qq'] || $authorInfo['weixin'] || !empty($socialTextEntries)): ?>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
                 <?php if ($authorInfo['qq']): ?><span style="padding:4px 10px;background:#12b7f5;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-qq"></i> QQ: <?= htmlspecialchars($authorInfo['qq']) ?></span><?php endif; ?>
                 <?php if ($authorInfo['weixin']): ?><span style="padding:4px 10px;background:#07c160;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-weixin"></i> 微信: <?= htmlspecialchars($authorInfo['weixin']) ?></span><?php endif; ?>
-                <?php if ($authorInfo['weibo']): ?><span style="padding:4px 10px;background:#e6162d;color:#fff;border-radius:4px;font-size:13px;"><i class="fab fa-weibo"></i> <?= htmlspecialchars($authorInfo['weibo']) ?></span><?php endif; ?>
-                <?php if ($authorInfo['xiaohongshu']): ?><span style="padding:4px 10px;background:#ff2442;color:#fff;border-radius:4px;font-size:13px;">📕 <?= htmlspecialchars($authorInfo['xiaohongshu']) ?></span><?php endif; ?>
+                <?php foreach ($socialTextEntries as $se): ?>
+                <span style="padding:4px 10px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:4px;font-size:13px;"><?= htmlspecialchars($se['label']) ?> · <?= htmlspecialchars($se['name']) ?></span>
+                <?php endforeach; ?>
             </div>
+            <?php endif; ?>
+            <!-- 社媒主页：可点击直达 -->
+            <?php if (!empty($socialLinkEntries)): ?>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;align-items:center;">
+                <span style="color:#666;font-size:13px;">社媒主页：</span>
+                <?php foreach ($socialLinkEntries as $se): ?>
+                <a href="<?= htmlspecialchars($se['link']) ?>" target="_blank" rel="nofollow noopener"
+                   style="padding:4px 10px;background:<?= htmlspecialchars($se['color']) ?>;color:#fff;border-radius:4px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                   title="前往<?= htmlspecialchars($se['label']) ?>主页">
+                    <?= htmlspecialchars($se['label']) ?> ↗
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
             <!-- 统计数据 + 点赞 -->
             <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
                 <span style="color:#666;"><strong><?= $authorInfo['product_count'] ?></strong> 件图案商品</span>

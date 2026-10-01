@@ -71,7 +71,7 @@ class Model
             $values[] = intval($data['user_id']);
         }
 
-        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'daily_photos'];
+        $optional = ['gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'douyin', 'kuaishou', 'bilibili', 'hongguo', 'tencent_video', 'iqiyi', 'youku', 'link_weibo', 'link_xiaohongshu', 'link_douyin', 'link_kuaishou', 'link_bilibili', 'link_hongguo', 'link_tencent_video', 'link_iqiyi', 'link_youku', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'daily_photos'];
         foreach ($optional as $f) {
             if (isset($data[$f]) && $data[$f] !== '') {
                 $fields[] = $f;
@@ -92,7 +92,7 @@ class Model
     {
         $sets = [];
         $values = [];
-        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'status', 'daily_photos'];
+        $allowed = ['nickname', 'gender', 'age', 'qq', 'weixin', 'weibo', 'xiaohongshu', 'douyin', 'kuaishou', 'bilibili', 'hongguo', 'tencent_video', 'iqiyi', 'youku', 'link_weibo', 'link_xiaohongshu', 'link_douyin', 'link_kuaishou', 'link_bilibili', 'link_hongguo', 'link_tencent_video', 'link_iqiyi', 'link_youku', 'city', 'avatar', 'video_url', 'video_cover', 'height', 'weight', 'measurements', 'hobbies', 'intro', 'zodiac', 'follower_count', 'status', 'daily_photos'];
         foreach ($allowed as $f) {
             if (array_key_exists($f, $data)) {
                 $sets[] = "$f = ?";
