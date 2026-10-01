@@ -129,11 +129,37 @@
   border-bottom-color: var(--bct-accent);
 }
 
+/* 分页布局自持：不依赖 Bootstrap 的 li 浮动（会被其他样式表覆盖导致竖排叠层） */
+.bct-exchange .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bct-exchange .pagination > li {
+  float: none;
+  display: block;
+  margin: 0;
+}
 .bct-exchange .pagination > li > a,
 .bct-exchange .pagination > li > span {
+  display: inline-block;
+  min-width: 36px;
+  padding: 6px 12px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--bct-radius);
   background-color: var(--bct-bg-secondary);
   border: 1px solid var(--bct-border);
   color: var(--bct-text-secondary);
+}
+.bct-exchange .pagination > li.disabled > a,
+.bct-exchange .pagination > li.disabled > span {
+  opacity: 0.5;
+  pointer-events: none;
 }
 .bct-exchange .pagination > li > a:hover {
   background-color: var(--bct-bg-hover);
@@ -145,6 +171,7 @@
   background-color: var(--bct-accent);
   border-color: var(--bct-accent);
   color: #000;
+  font-weight: 600;
 }
 
 .bct-exchange .alert-info {

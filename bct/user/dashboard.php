@@ -147,23 +147,31 @@ require_once '../includes/header.php';
 .holdings-actions .holdings-btns { display:flex; gap:8px; }
 @media (max-width:576px) { .holdings-search input { width:120px; } }
 
-/* 我的挂单：tab 选中态（主题仅定义了 .nav-link.active，本页是 li.active > a 结构，需补齐） */
-.dash-wrap .nav-tabs > li > a {
+/* 我的挂单：自绘 tab（不依赖 Bootstrap 浮动，避免与其他样式冲突叠层） */
+.order-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    border-bottom: 1px solid var(--bct-border);
+}
+.order-tab {
+    display: inline-block;
+    padding: 10px 16px;
+    margin-bottom: -1px;
     color: var(--bct-text-secondary);
+    background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    background: transparent;
-    padding: 10px 16px;
+    font-size: 14px;
     font-weight: 500;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
 }
-.dash-wrap .nav-tabs > li > a:hover { color: var(--bct-text); background: transparent; }
-.dash-wrap .nav-tabs > li.active > a,
-.dash-wrap .nav-tabs > li.active > a:hover,
-.dash-wrap .nav-tabs > li.active > a:focus {
+.order-tab:hover { color: var(--bct-text); text-decoration: none; }
+.order-tab.active {
     color: var(--bct-accent);
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid var(--bct-accent);
+    border-bottom-color: var(--bct-accent);
 }
 /* 订单类型与说明条 */
 .dash-wrap .side.buy { color: var(--bct-up); font-weight: 600; }
@@ -319,11 +327,11 @@ require_once '../includes/header.php';
             <a href="../orders.php" class="btn btn-sm btn-default"><i class="fas fa-list"></i> 挂单大厅（看别人的挂单）</a>
         </div>
         <div style="padding:0 16px;">
-            <ul class="nav nav-tabs" style="border-bottom:none;">
-                <li class="<?= $tab=='buy'?'active':'' ?>"><a href="?tab=buy">买入订单</a></li>
-                <li class="<?= $tab=='sell'?'active':'' ?>"><a href="?tab=sell">卖出订单</a></li>
-                <li class="<?= $tab=='completed'?'active':'' ?>"><a href="?tab=completed">已完成</a></li>
-            </ul>
+            <div class="order-tabs">
+                <a href="?tab=buy" class="order-tab <?= $tab=='buy'?'active':'' ?>">买入订单</a>
+                <a href="?tab=sell" class="order-tab <?= $tab=='sell'?'active':'' ?>">卖出订单</a>
+                <a href="?tab=completed" class="order-tab <?= $tab=='completed'?'active':'' ?>">已完成</a>
+            </div>
         </div>
         <?php if (empty($orders)): ?>
         <div class="text-center" style="padding:40px;color:var(--bct-text-secondary);">
