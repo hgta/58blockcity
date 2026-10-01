@@ -227,6 +227,45 @@ require_once '../includes/header.php';
 .dash-wrap td.exp-expired  { color: #e05656; text-decoration: line-through; }
 .dash-wrap td.exp-trade    { color: var(--bct-text-secondary); font-style: italic; cursor: help; }
 .dash-wrap td.has-tip      { cursor: help; }
+
+/* 移动端：表格转卡片堆叠，操作按钮始终可见 */
+@media (max-width: 767px) {
+    .mob-cards { display: block; border: none; }
+    .mob-cards thead { display: none; }
+    .mob-cards tbody { display: block; }
+    .mob-cards tr {
+        display: block;
+        border: 1px solid var(--bct-border);
+        border-radius: 10px;
+        margin: 0 12px 12px;
+        padding: 10px 12px;
+        background: var(--bct-bg-tertiary);
+    }
+    .mob-cards td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        border-top: none;
+        padding: 5px 0;
+        text-align: right;
+        word-break: break-all;
+    }
+    .mob-cards td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        color: var(--bct-text-secondary);
+        font-size: 12px;
+    }
+    .mob-cards td.mob-actions {
+        display: block;
+        border-top: 1px dashed var(--bct-border);
+        margin-top: 6px;
+        padding: 10px 0 2px;
+        text-align: right;
+    }
+    .mob-cards td.mob-actions::before { content: none; }
+}
 </style>
 
 <div class="dash-wrap" style="padding-top:20px;">
@@ -374,7 +413,7 @@ require_once '../includes/header.php';
         </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table mob-cards">
                 <thead>
                     <tr>
                         <th>城市</th><th>我的角色</th><th>数量</th><th>单价</th><th>总价</th>
@@ -391,19 +430,19 @@ require_once '../includes/header.php';
                             : ($amBuyer ? '待你确认付款' : '待对方确认付款');
                     ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($c['city']) ?></strong></td>
-                        <td><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
-                        <td><?= number_format((int)$c['amount']) ?> BCT</td>
-                        <td>¥<?= number_format((float)$c['price'], 2) ?></td>
-                        <td>¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
-                        <td>
+                        <td data-label="城市"><strong><?= htmlspecialchars($c['city']) ?></strong></td>
+                        <td data-label="我的角色"><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
+                        <td data-label="数量"><?= number_format((int)$c['amount']) ?> BCT</td>
+                        <td data-label="单价">¥<?= number_format((float)$c['price'], 2) ?></td>
+                        <td data-label="总价">¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
+                        <td data-label="对方">
                             <a href="../messages/index.php?with=<?= $counterId ?>" title="站内信联系">
                                 <strong><?= htmlspecialchars($counterName) ?></strong>
                             </a>
                         </td>
-                        <td class="hall-contact-value"><?= htmlspecialchars($c['contact_info'] ?: '未填写 · 站内信联系') ?></td>
-                        <td style="font-size:12px;"><?= $stageText ?></td>
-                        <td style="white-space:nowrap;">
+                        <td data-label="联系方式" class="hall-contact-value"><?= htmlspecialchars($c['contact_info'] ?: '未填写 · 站内信联系') ?></td>
+                        <td data-label="当前阶段" style="font-size:12px;"><?= $stageText ?></td>
+                        <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
                             <?php if ($amBuyer && $c['status'] === 'matched'): ?>
                             <form method="post" style="display:inline" onsubmit="return confirm('确认你已线下付款给对方？')">
                                 <input type="hidden" name="action" value="claim_buyer_confirm">
@@ -457,7 +496,7 @@ require_once '../includes/header.php';
         </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table mob-cards">
                 <thead>
                     <tr>
                         <th>订单号</th><th>类型</th><th>城市</th><th>数量</th><th>价格</th><th>总金额</th>
@@ -484,23 +523,23 @@ require_once '../includes/header.php';
                         }
                     ?>
                     <tr>
-                        <td style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
-                        <td><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
-                        <td><?= htmlspecialchars($o['city']) ?></td>
-                        <td><?= number_format($o['amount']) ?> BCT</td>
-                        <td>¥<?= number_format($o['price'], 2) ?></td>
-                        <td>¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
-                        <td style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
-                        <td>
+                        <td data-label="订单号" style="font-size:12px;color:var(--bct-text-muted);"><?= substr($o['order_no'], 0, 8) ?></td>
+                        <td data-label="类型"><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
+                        <td data-label="城市"><?= htmlspecialchars($o['city']) ?></td>
+                        <td data-label="数量"><?= number_format($o['amount']) ?> BCT</td>
+                        <td data-label="价格">¥<?= number_format($o['price'], 2) ?></td>
+                        <td data-label="总金额">¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
+                        <td data-label="交易方式" style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
+                        <td data-label="状态">
                             <?php if ($myClaim): ?><span class="badge badge-info">交易中</span>
                             <?php else: ?><span class="badge <?= $s[1] ?>"><?= $s[0] ?></span><?php endif; ?>
                         </td>
                         <?php if ($tab === 'completed'): ?>
-                        <td class="exp-ok">已结束</td>
+                        <td data-label="剩余有效期" class="exp-ok">已结束</td>
                         <?php else: list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], (bool)$myClaim); ?>
-                        <td class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
+                        <td data-label="剩余有效期" class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
                         <?php endif; ?>
-                        <td>
+                        <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
                             <?php if ($myClaim): ?>
                             <a href="dashboard.php#claims" class="btn btn-sm btn-primary">对方已接单 · 去处理</a>
                             <?php elseif (in_array($o['status'], ['pending','processing'])): ?>

@@ -149,7 +149,7 @@ require_once 'includes/header.php';
 <div class="card">
     <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-stream"></i> 挂单明细 <span style="font-weight:400;font-size:13px;color:var(--bct-text-secondary);">共 <?= number_format($total) ?> 条</span></h3></div>
     <div class="table-responsive">
-        <table class="table bct-hall-table">
+        <table class="table bct-hall-table mob-cards">
             <thead>
                 <tr>
                     <th>方向</th>
@@ -178,20 +178,20 @@ require_once 'includes/header.php';
                     $canClaim = $loggedIn && !$isMine && !$inTrade && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
                 ?>
                 <tr>
-                    <td>
+                    <td data-label="方向">
                         <span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span>
                         <?php if ($inTrade): ?><span class="hall-badge trading"><i class="fas fa-handshake"></i> 交易中</span><?php endif; ?>
                     </td>
-                    <td><a href="city.php?city=<?= urlencode($o['city']) ?>" style="color:var(--bct-text);"><strong><?= htmlspecialchars($o['city']) ?></strong></a></td>
-                    <td class="price">¥<?= number_format($o['price'], 2) ?></td>
-                    <td><?= number_format($o['amount']) ?></td>
-                    <td>¥<?= number_format($o['amount'] * $o['price'], 2) ?></td>
-                    <td>
+                    <td data-label="城市"><a href="city.php?city=<?= urlencode($o['city']) ?>" style="color:var(--bct-text);"><strong><?= htmlspecialchars($o['city']) ?></strong></a></td>
+                    <td data-label="单价" class="price">¥<?= number_format($o['price'], 2) ?></td>
+                    <td data-label="数量"><?= number_format($o['amount']) ?></td>
+                    <td data-label="总价">¥<?= number_format($o['amount'] * $o['price'], 2) ?></td>
+                    <td data-label="挂单人">
                         <strong><?= htmlspecialchars($o['username'] ?: '匿名用户') ?></strong>
                         <?php if ($isMine): ?><span class="hall-badge mine">我</span><?php endif; ?>
                     </td>
-                    <td><?= $tradeTypeText[$o['trade_type']] ?? $o['trade_type'] ?></td>
-                    <td class="hall-contact">
+                    <td data-label="交易方式"><?= $tradeTypeText[$o['trade_type']] ?? $o['trade_type'] ?></td>
+                    <td data-label="联系方式" class="hall-contact">
                         <?php if ($o['trade_type'] !== 'direct'): ?>
                             <span class="text-muted"><?= $o['trade_type'] === 'mediator' ? '由中介协调' : '平台撮合' ?></span>
                         <?php elseif ($inTrade && $isParty): ?>
@@ -208,9 +208,9 @@ require_once 'includes/header.php';
                         <?php endif; ?>
                     </td>
                     <?php list($expText, $expCls, $expTitle) = formatRemainingValidity($o['expires_at'], $inTrade); ?>
-                    <td class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
-                    <td class="text-muted" style="white-space:nowrap;"><?= date('m-d H:i', strtotime($o['created_at'])) ?></td>
-                    <td style="white-space:nowrap;">
+                    <td data-label="剩余有效期" class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
+                    <td data-label="发布时间" class="text-muted" style="white-space:nowrap;"><?= date('m-d H:i', strtotime($o['created_at'])) ?></td>
+                    <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
                         <?php if ($isMine): ?>
                             <?php if ($inTrade): ?>
                             <a href="user/dashboard.php#claims" class="btn btn-xs btn-primary">交易中 · 去处理</a>
@@ -372,6 +372,46 @@ require_once 'includes/header.php';
 .claim-modal-tip { font-size: 12px; color: var(--bct-text-secondary); line-height: 1.7; margin: 12px 0 16px; }
 .claim-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
 .claim-modal-box .claim-error { color: #e07b7b; font-size: 12px; margin-top: 8px; min-height: 16px; }
+
+/* 移动端：表格转卡片堆叠，操作按钮始终可见 */
+@media (max-width: 767px) {
+    .bct-hall-table.mob-cards { display: block; border: none; }
+    .bct-hall-table.mob-cards thead { display: none; }
+    .bct-hall-table.mob-cards tbody { display: block; }
+    .bct-hall-table.mob-cards > tbody > tr {
+        display: block;
+        border: 1px solid var(--bct-border);
+        border-radius: 10px;
+        margin: 0 12px 12px;
+        padding: 10px 12px;
+        background: var(--bct-bg-tertiary);
+    }
+    .bct-hall-table.mob-cards > tbody > tr > td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        border-top: none;
+        padding: 5px 0;
+        text-align: right;
+        word-break: break-all;
+    }
+    .bct-hall-table.mob-cards > tbody > tr > td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        color: var(--bct-text-secondary);
+        font-size: 12px;
+    }
+    .bct-hall-table.mob-cards > tbody > tr > td.mob-actions {
+        display: block;
+        border-top: 1px dashed var(--bct-border);
+        margin-top: 6px;
+        padding: 10px 0 2px;
+        text-align: right;
+    }
+    .bct-hall-table.mob-cards > tbody > tr > td.mob-actions::before { content: none; }
+    .bct-hall-table.mob-cards > tbody > tr > td.hall-contact { max-width: none; }
+}
 </style>
 
 <?php if ($loggedIn): ?>
