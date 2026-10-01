@@ -110,7 +110,7 @@ function renderOrdersPane(array $orders, string $paneTab, BCTOrder $order): void
                 </tbody>
             </table>
         </div>
-<?php } ?>
+<?php }
 
 $msg = '';
 if (isset($_SESSION['holdings_msg'])) {
