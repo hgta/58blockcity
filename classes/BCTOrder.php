@@ -873,6 +873,8 @@ class BCTOrder {
 	/**
 	 * 卖方一侧确认已收款 → 交易完成
 	 *
+	 * 卖方线下已收款即可确认完成，无需等待买方先点「确认已付款」；
+	 * 若买方尚未确认（matched），视为双方已线下完成，补记 buyer_confirmed_at。
 	 * 完成动作：订单置 completed、claim 置 completed，并写入 bct_transactions 留证
 	 * （手续费 0，不划转平台余额——交易全程线下）。
 	 */
@@ -886,7 +888,15 @@ class BCTOrder {
 			$claim = $stmt->fetch();
 			if (!$claim) throw new Exception('该订单当前没有进行中的交易');
 			if ((int)$claim['seller_side_user_id'] !== (int)$userId) throw new Exception('只有卖方可以确认收款');
-			if ($claim['status'] !== 'buyer_confirmed') throw new Exception('需等待对方先确认付款');
+			// 允许卖方在买方确认付款前直接确认收款（线下已收款即可完成交易）；
+			// matched 状态下视为买方已同步付款，补记 buyer_confirmed_at
+			if (!in_array($claim['status'], ['matched', 'buyer_confirmed'], true)) {
+				throw new Exception('该交易当前不可确认收款');
+			}
+			if ($claim['status'] === 'matched' && empty($claim['buyer_confirmed_at'])) {
+				$stmt = $this->pdo->prepare("UPDATE bct_order_claims SET buyer_confirmed_at = ? WHERE id = ?");
+				$stmt->execute([date('Y-m-d H:i:s'), (int)$claim['id']]);
+			}
 
 			$stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? FOR UPDATE");
 			$stmt->execute([(int)$orderId]);

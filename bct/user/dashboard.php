@@ -488,7 +488,7 @@ require_once '../includes/header.php';
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <h3 style="margin:0;font-size:16px;">
                 <i class="fas fa-handshake"></i> 进行中的交易
-                <span style="font-size:12px;font-weight:400;color:var(--bct-text-secondary);margin-left:8px;">线下转账后请各自确认；接单 24 小时未确认付款将自动释放</span>
+                <span style="font-size:12px;font-weight:400;color:var(--bct-text-secondary);margin-left:8px;">线下转账后请各自确认；卖方线下已收款可直接确认完成 · 接单 24 小时未确认付款将自动释放</span>
             </h3>
         </div>
         <?php if (empty($activeClaims)): ?>
@@ -512,7 +512,7 @@ require_once '../includes/header.php';
                         $counterId = $amBuyer ? (int)$c['seller_side_user_id'] : (int)$c['buyer_side_user_id'];
                         $stageText = $c['status'] === 'buyer_confirmed'
                             ? ($amBuyer ? '已确认付款 · 待对方确认收款' : '对方已确认付款 · 待你确认收款')
-                            : ($amBuyer ? '待你确认付款' : '待对方确认付款');
+                            : ($amBuyer ? '待你确认付款' : '待对方确认付款 · 你也可直接确认收款');
                     ?>
                     <tr>
                         <td data-label="城市"><strong><?= htmlspecialchars($c['city']) ?></strong></td>
@@ -535,8 +535,8 @@ require_once '../includes/header.php';
                                 <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                                 <button class="btn btn-xs btn-primary">确认已付款</button>
                             </form>
-                            <?php elseif (!$amBuyer && $c['status'] === 'buyer_confirmed'): ?>
-                            <form method="post" style="display:inline" onsubmit="return confirm('确认你已收到对方款项？确认后交易完成。')">
+                            <?php elseif (!$amBuyer && in_array($c['status'], ['matched','buyer_confirmed'], true)): ?>
+                            <form method="post" style="display:inline" onsubmit="return confirm('确认你已线下收到对方款项？确认后交易立即完成（无需等对方确认付款）。')">
                                 <input type="hidden" name="action" value="claim_seller_confirm">
                                 <input type="hidden" name="order_id" value="<?= (int)$c['order_id'] ?>">
                                 <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
