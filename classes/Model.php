@@ -623,11 +623,34 @@ class Model
      * ============================================================ */
 
     /**
-     * 首页 Hero 主推模特：「有视频优先，其次粉丝数」
-     * 视频判定：video_url 非空
+     * 首页 Hero 主推模特：「有封面图（video_cover）的模特按周轮换」
+     * - 候选池：video_cover 非空的活跃模特，按粉丝数排序
+     * - 轮换：offset = 年周序号 % 池子大小，每周一自动换人，无需存储
+     * - 兜底：池子为空（无人配封面）时回退「有视频优先，其次粉丝数」
      */
     public function getHeroModel()
     {
+        $cols = "SELECT m.*, u.username, u.avatar as user_avatar
+                 FROM models m LEFT JOIN users u ON m.user_id = u.id
+                 WHERE m.status = 'active' AND m.video_cover IS NOT NULL AND m.video_cover <> ''";
+        $poolSize = intval($this->pdo->query(
+            "SELECT COUNT(*) FROM models m
+             WHERE m.status = 'active' AND m.video_cover IS NOT NULL AND m.video_cover <> ''"
+        )->fetchColumn());
+
+        if ($poolSize > 0) {
+            $week = intval(date('oW')); // ISO 年周，如 202640
+            $offset = $week % $poolSize;
+            $stmt = $this->pdo->query(
+                $cols . " ORDER BY m.follower_count DESC, m.id DESC LIMIT 1 OFFSET {$offset}"
+            );
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                return $row;
+            }
+        }
+
+        // 兜底：无人配置封面图时沿用旧规则
         $stmt = $this->pdo->query(
             "SELECT m.*, u.username, u.avatar as user_avatar
              FROM models m LEFT JOIN users u ON m.user_id = u.id
@@ -641,7 +664,7 @@ class Model
     }
 
     /**
-     * 首页「本期主推模特」：同样遵循「有视频优先，其次粉丝数」
+     * 首页「本期主推模特」滑轨：有封面图优先，其次粉丝数
      */
     public function getFeaturedModels($limit = 6)
     {
@@ -650,7 +673,7 @@ class Model
             "SELECT m.*, u.username, u.avatar as user_avatar
              FROM models m LEFT JOIN users u ON m.user_id = u.id
              WHERE m.status = 'active'
-             ORDER BY (m.video_url IS NOT NULL AND m.video_url <> '') DESC,
+             ORDER BY (m.video_cover IS NOT NULL AND m.video_cover <> '') DESC,
                       m.follower_count DESC, m.id DESC
              LIMIT {$limit}"
         );
