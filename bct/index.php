@@ -164,7 +164,7 @@ require_once 'includes/header.php';
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <h3 style="margin:0;font-size:16px;"><i class="fas fa-arrow-down" style="color:var(--bct-up);"></i> 买入挂单</h3>
-                <a href="market.php" class="btn btn-sm btn-default">更多</a>
+                <a href="orders.php?type=buy" class="btn btn-sm btn-default">更多</a>
             </div>
             <div class="bct-trade-list">
                 <?php if (empty($activeBuyOrders)): ?>
@@ -185,7 +185,7 @@ require_once 'includes/header.php';
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <h3 style="margin:0;font-size:16px;"><i class="fas fa-arrow-up" style="color:var(--bct-down);"></i> 卖出挂单</h3>
-                <a href="market.php" class="btn btn-sm btn-default">更多</a>
+                <a href="orders.php?type=sell" class="btn btn-sm btn-default">更多</a>
             </div>
             <div class="bct-trade-list">
                 <?php if (empty($activeSellOrders)): ?>
@@ -231,7 +231,10 @@ require_once 'includes/header.php';
 <div class="card" style="margin-top:24px;">
     <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
         <h3 style="margin:0;font-size:16px;"><i class="fas fa-layer-group"></i> 当前挂单情况</h3>
-        <a href="market.php" class="btn btn-sm btn-default">进入行情中心</a>
+        <div>
+            <a href="orders.php" class="btn btn-sm btn-primary" style="margin-right:8px;">挂单大厅</a>
+            <a href="market.php" class="btn btn-sm btn-default">进入行情中心</a>
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table table-dark bct-order-summary">

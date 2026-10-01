@@ -617,5 +617,78 @@ class BCTOrder {
 		
 		return $stmt->fetchAll();
 	}
+
+	/**
+	 * 挂单大厅：构造活跃挂单的公共筛选条件（列表与计数共用，保证口径一致）
+	 *
+	 * 支持的筛选：
+	 *  - type: 'buy' / 'sell'（空为不限）
+	 *  - city: 城市名模糊匹配
+	 *  - trade_type: 'direct' / 'platform' / 'mediator'
+	 */
+	private function buildHallConditions($filters, &$params) {
+		$sql = " FROM bct_orders o
+			LEFT JOIN users u ON o.user_id = u.id
+			WHERE o.status IN ('pending', 'processing')";
+		$params = [];
+
+		if (!empty($filters['type']) && in_array($filters['type'], ['buy', 'sell'], true)) {
+			$sql .= " AND o.type = ?";
+			$params[] = $filters['type'];
+		}
+		if (!empty($filters['city'])) {
+			$sql .= " AND o.city LIKE ?";
+			$params[] = '%' . $filters['city'] . '%';
+		}
+		if (!empty($filters['trade_type']) && in_array($filters['trade_type'], ['direct', 'platform', 'mediator'], true)) {
+			$sql .= " AND o.trade_type = ?";
+			$params[] = $filters['trade_type'];
+		}
+
+		return $sql;
+	}
+
+	/**
+	 * 挂单大厅：分页检索活跃挂单（含挂单人用户名）
+	 *
+	 * @param array $filters 见 buildHallConditions
+	 * @param int $page 页码（从 1 开始）
+	 * @param int $perPage 每页条数
+	 * @param string $sort 排序方式：time（默认，最新优先）/ price_asc / price_desc / amount_desc
+	 */
+	public function searchActiveOrders($filters = [], $page = 1, $perPage = 20, $sort = 'time') {
+		$params = [];
+		$sql = $this->buildHallConditions($filters, $params);
+
+		switch ($sort) {
+			case 'price_asc':  $orderBy = "o.price ASC"; break;
+			case 'price_desc': $orderBy = "o.price DESC"; break;
+			case 'amount_desc': $orderBy = "o.amount DESC"; break;
+			default:           $orderBy = "o.created_at DESC, o.id DESC"; break;
+		}
+
+		$page = max(1, (int)$page);
+		$perPage = max(1, (int)$perPage);
+		$sql .= " ORDER BY " . $orderBy
+			. " LIMIT " . $perPage . " OFFSET " . (($page - 1) * $perPage);
+
+		$sql = "SELECT o.*, u.username" . $sql;
+
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	/**
+	 * 挂单大厅：统计符合条件的活跃挂单总数（分页用）
+	 */
+	public function countActiveOrders($filters = []) {
+		$params = [];
+		$sql = "SELECT COUNT(*)" . $this->buildHallConditions($filters, $params);
+
+		$stmt = $this->pdo->prepare($sql);
+		$stmt->execute($params);
+		return (int)$stmt->fetchColumn();
+	}
 }
 ?>

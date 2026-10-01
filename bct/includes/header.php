@@ -15,6 +15,7 @@ $site_config['logo_tag']    = $site_config['logo_tag'] ?? 'BCT(BlockCity Token)�
 $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'../','icon'=>'home','text'=>'返回首页'],
     ['url'=>'../market.php','icon'=>'chart-line','text'=>'行情'],
+    ['url'=>'../orders.php','icon'=>'list','text'=>'挂单'],
     ['url'=>'../trade.php','icon'=>'exchange-alt','text'=>'交易'],
     ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
