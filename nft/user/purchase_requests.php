@@ -96,7 +96,7 @@ $statusOptions = [
                 </div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 mob-cards">
                         <thead class="table-light">
                             <tr>
                                 <th width="80px">NFT</th>
@@ -116,7 +116,7 @@ $statusOptions = [
                                 ?>
                                 <tr>
                                     <!-- NFT头像 -->
-                                    <td>
+                                    <td data-label="NFT">
                                         <?php if ($nftInfo): ?>
                                             <div class="avatar-circle-sm">
                                                 <img src="../avatar/<?= htmlspecialchars($nftInfo['base_image']) ?>" 
@@ -127,18 +127,18 @@ $statusOptions = [
                                     </td>
                                     
                                     <!-- 编号 -->
-                                    <td class="align-middle">
+                                    <td data-label="编号" class="align-middle">
                                         <?= $nftInfo ? htmlspecialchars($nftInfo['code']) : '已删除' ?>
                                     </td>
                                     
                                     <!-- 城市 -->
-                                    <td class="align-middle">
+                                    <td data-label="城市" class="align-middle">
                                         <i class="fas fa-map-marker-alt text-muted me-1"></i>
                                         <?= htmlspecialchars($cityName) ?>
                                     </td>
                                     
                                     <!-- 求购价格 -->
-                                    <td class="align-middle">
+                                    <td data-label="求购价格" class="align-middle">
                                         <span class="fw-bold text-primary">
                                             <?= number_format($request['price'], $request['currency'] == 'cny' ? 2 : 0) ?>
                                         </span>
@@ -148,7 +148,7 @@ $statusOptions = [
                                     </td>
                                     
                                     <!-- 状态 -->
-                                    <td class="align-middle">
+                                    <td data-label="状态" class="align-middle">
                                         <?php 
                                             $statusClass = [
                                                 'pending' => 'badge bg-warning',
@@ -162,12 +162,12 @@ $statusOptions = [
                                     </td>
                                     
                                     <!-- 创建时间 -->
-                                    <td class="align-middle">
+                                    <td data-label="创建时间" class="align-middle">
                                         <?= date('Y-m-d H:i', strtotime($request['created_at'])) ?>
                                     </td>
                                     
                                     <!-- 操作 -->
-                                    <td class="align-middle">
+                                    <td data-label="操作" class="align-middle mob-actions">
                                         <div class="d-flex gap-2">
                                             <a href="/nft/view.php?id=<?= $request['nft_id'] ?>" 
                                                class="btn btn-sm btn-outline-primary"

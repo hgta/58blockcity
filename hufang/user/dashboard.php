@@ -208,7 +208,7 @@ $recentNotifications = $notification->getUserNotifications($userId, 5);
                 </div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table visits-table">
+                    <table class="table visits-table mob-cards">
                         <thead>
                             <tr>
                                 <th>访问者</th>
@@ -220,16 +220,16 @@ $recentNotifications = $notification->getUserNotifications($userId, 5);
                         <tbody>
                             <?php foreach (array_slice($pendingVisits, 0, 5) as $visit): ?>
                                 <tr>
-                                    <td>
+                                    <td data-label="访问者">
                                         <div class="user-info">
                                             <img src="<?= htmlspecialchars(User::avatarUrl($visit['avatar'] ?? '')) ?>" 
                                                  class="avatar-sm" alt="<?= htmlspecialchars($visit['username']) ?>" onerror="this.onerror=null;this.src='https://www.58.tl/assets/images/default.jpg'">
                                             <span><?= htmlspecialchars($visit['username']) ?></span>
                                         </div>
                                     </td>
-                                    <td><?= htmlspecialchars($visit['circle_name']) ?></td>
-                                    <td><?= date('Y-m-d', strtotime($visit['created_at'])) ?></td>
-                                    <td>
+                                    <td data-label="互访圈"><?= htmlspecialchars($visit['circle_name']) ?></td>
+                                    <td data-label="申请时间"><?= date('Y-m-d', strtotime($visit['created_at'])) ?></td>
+                                    <td data-label="操作" class="mob-actions">
                                         <a href="confirm_visit.php?id=<?= $visit['id'] ?>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-check"></i> 确认
                                         </a>

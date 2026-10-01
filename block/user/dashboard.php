@@ -188,7 +188,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                         
                         <?php if (!empty($recentTransactions)): ?>
                             <div class="table-responsive">
-                                <table class="table table-striped transactions-table">
+                                <table class="table table-striped transactions-table mob-cards">
                                     <thead>
                                         <tr>
                                             <th>区块</th>
@@ -201,21 +201,21 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                     <tbody>
                                         <?php foreach ($recentTransactions as $t): ?>
                                             <tr>
-                                                <td>
+                                                <td data-label="区块">
                                                     <a href="../block/view.php?id=<?= $t['block_id'] ?>">
                                                         <?= $t['city_name'] ?> <?= $t['zone'] ?>-<?= $t['block_number'] ?>
                                                     </a>
                                                 </td>
-                                                <td>
+                                                <td data-label="类型">
                                                     <?php if ($t['buyer_id'] == $userId): ?>
                                                         <span class="label label-success">购买</span>
                                                     <?php else: ?>
                                                         <span class="label label-warning">出售</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td><?= number_format($t['price'], 2) ?> 元</td>
-                                                <td><?= date('m-d H:i', strtotime($t['created_at'])) ?></td>
-                                                <td>
+                                                <td data-label="价格"><?= number_format($t['price'], 2) ?> 元</td>
+                                                <td data-label="时间"><?= date('m-d H:i', strtotime($t['created_at'])) ?></td>
+                                                <td data-label="状态">
                                                     <?php if ($t['status'] == 'completed'): ?>
                                                         <span class="label label-primary">已完成</span>
                                                     <?php elseif ($t['status'] == 'pending'): ?>
@@ -247,7 +247,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                             <h4><i class="fa fa-handshake"></i> 区块交易（待处理）</h4>
                             <?php if (!empty($myPendingSales)): ?>
                                 <div class="table-responsive">
-                                    <table class="table table-striped requests-table">
+                                    <table class="table table-striped requests-table mob-cards">
                                         <thead>
                                             <tr><th>区块</th><th>价格</th><th>状态</th><th>操作</th></tr>
                                         </thead>
@@ -264,16 +264,16 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                                 $plCur = $pl['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ';
                                             ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($plTitle) ?></td>
-                                                <td><?= $plCur ?><?= number_format($pl['price'], 2) ?></td>
-                                                <td>
+                                                <td data-label="区块"><?= htmlspecialchars($plTitle) ?></td>
+                                                <td data-label="价格"><?= $plCur ?><?= number_format($pl['price'], 2) ?></td>
+                                                <td data-label="状态">
                                                     <?php if ($pl['status'] === 'pending'): ?>
                                                         <span class="label label-info">待确认收款</span>
                                                     <?php else: ?>
                                                         <span class="label label-primary">售卖中</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td>
+                                                <td data-label="操作" class="mob-actions">
                                                     <?php if ($pl['status'] === 'pending'): ?>
                                                         <a href="../block/confirm_sale.php?listing=<?= $pl['id'] ?>" class="btn btn-xs btn-success">去确认</a>
                                                     <?php else: ?>
@@ -288,7 +288,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                             <?php endif; ?>
                             <?php if (!empty($myPendingBuys)): ?>
                                 <div class="table-responsive">
-                                    <table class="table table-striped requests-table">
+                                    <table class="table table-striped requests-table mob-cards">
                                         <thead>
                                             <tr><th>区块</th><th>价格</th><th>状态</th><th>操作</th></tr>
                                         </thead>
@@ -299,10 +299,10 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                                 $pbCur = $pb['currency'] === 'popularity' ? 'Ⓟ ' : '¥ ';
                                             ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($pbTitle) ?></td>
-                                                <td><?= $pbCur ?><?= number_format($pb['price'], 2) ?></td>
-                                                <td><span class="label label-warning">待付款/确认</span></td>
-                                                <td><a href="../block/buy.php?listing=<?= $pb['id'] ?>" class="btn btn-xs btn-primary">去处理</a></td>
+                                                <td data-label="区块"><?= htmlspecialchars($pbTitle) ?></td>
+                                                <td data-label="价格"><?= $pbCur ?><?= number_format($pb['price'], 2) ?></td>
+                                                <td data-label="状态"><span class="label label-warning">待付款/确认</span></td>
+                                                <td data-label="操作" class="mob-actions"><a href="../block/buy.php?listing=<?= $pb['id'] ?>" class="btn btn-xs btn-primary">去处理</a></td>
                                             </tr>
                                         <?php endforeach; ?>
                                         </tbody>
@@ -318,7 +318,7 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                             <h4><i class="fa fa-hand-holding-usd"></i> 活跃的求购请求</h4>
                             
                             <div class="table-responsive">
-                                <table class="table table-striped requests-table">
+                                <table class="table table-striped requests-table mob-cards">
                                     <thead>
                                         <tr>
                                             <th>城市</th>
@@ -331,15 +331,15 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                                     <tbody>
                                         <?php foreach ($purchaseRequests as $pr): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($pr['city_name']) ?></td>
-                                                <td><?= $pr['zone'] ?>区</td>
-                                                <td>
+                                                <td data-label="城市"><?= htmlspecialchars($pr['city_name']) ?></td>
+                                                <td data-label="区域"><?= $pr['zone'] ?>区</td>
+                                                <td data-label="区块">
                                                     <?= $pr['block_number'] ? $pr['block_number'] : '任意' ?>
                                                 </td>
-                                                <td>
+                                                <td data-label="最高出价">
                                                     <?= $pr['max_price'] ? number_format($pr['max_price'], 2).' 元' : '面议' ?>
                                                 </td>
-                                                <td>
+                                                <td data-label="操作" class="mob-actions">
                                                     <a href="../block/cancel_request.php?id=<?= $pr['id'] ?>" 
                                                        class="btn btn-xs btn-danger">取消</a>
                                                 </td>

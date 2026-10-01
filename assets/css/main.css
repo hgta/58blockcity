@@ -2438,6 +2438,55 @@ header {
     }
 }
 
+/* 移动端表格卡片化：多列表格在手机上转为卡片堆叠，操作按钮固定可见
+   用法：table 加 class="mob-cards"，每个 td 加 data-label="列名"，
+        操作列 td 加 class="mob-actions"。桌面端不受影响。 */
+@media (max-width: 767px) {
+    .mob-cards { display: block; border: none; border-collapse: separate; }
+    .mob-cards thead { display: none; }
+    .mob-cards tbody { display: block; }
+    .mob-cards tr {
+        display: block;
+        border: 1px solid var(--bct-border, rgba(128,128,128,.35));
+        border-radius: 10px;
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        background: var(--bct-bg-tertiary, rgba(128,128,128,.06));
+    }
+    .mob-cards td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        border-top: none;
+        padding: 5px 0;
+        text-align: right;
+        word-break: break-all;
+    }
+    .mob-cards td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        color: var(--bct-text-secondary, #6c757d);
+        font-size: 12px;
+        text-align: left;
+    }
+    .mob-cards td.mob-actions {
+        display: block;
+        border-top: 1px dashed var(--bct-border, rgba(128,128,128,.35));
+        margin-top: 6px;
+        padding: 10px 0 2px;
+        text-align: right;
+    }
+    .mob-cards td.mob-actions::before { content: none; }
+    /* 空数据占位行保持居中提示 */
+    .mob-cards tr td[colspan]:only-child {
+        display: block;
+        text-align: center;
+        border: none;
+    }
+    .mob-cards tr td[colspan]:only-child::before { content: none; }
+}
+
 /* 仪表盘NFT卡片样式 */
 .nft-dashboard-card {
     text-align: center;

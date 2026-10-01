@@ -30,6 +30,12 @@ $transactions = array_slice($transactions, ($page-1)*$perPage, $perPage);
 .pagination a { padding:8px 14px; border:1px solid #ddd; border-radius:4px; color:#333; text-decoration:none; }
 .pagination a.active { background:#ff6b00; color:white; border-color:#ff6b00; }
 .empty-state { text-align:center; padding:60px; color:#999; background:white; border-radius:8px; }
+/* 移动端卡片化（mob-cards 通用规则来自 main.css，这里重置本页表格自身的内边距/边框） */
+@media (max-width: 767px) {
+    .tx-table.mob-cards td { padding:5px 0; border-bottom:none; text-align:right; }
+    .tx-table.mob-cards tr { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .tx-table.mob-cards tr td[colspan]:only-child { padding:12px 15px; }
+}
 </style>
 
 <div class="container">
@@ -41,7 +47,7 @@ $transactions = array_slice($transactions, ($page-1)*$perPage, $perPage);
             <p>暂无交易记录</p>
         </div>
     <?php else: ?>
-        <table class="tx-table">
+        <table class="tx-table mob-cards">
             <thead>
                 <tr>
                     <th>区块</th>
@@ -54,19 +60,19 @@ $transactions = array_slice($transactions, ($page-1)*$perPage, $perPage);
             <tbody>
                 <?php foreach ($transactions as $t): ?>
                 <tr>
-                    <td>
+                    <td data-label="区块">
                         <a href="../block/view.php?id=<?= $t['block_id'] ?>" style="color:#333;">
                             <?= htmlspecialchars($t['city_name'] ?? '') ?> <?= $t['zone'] ?? '' ?>-<?= $t['block_number'] ?? '' ?>
                         </a>
                     </td>
-                    <td>
+                    <td data-label="类型">
                         <span class="badge <?= ($t['buyer_id']==$userId) ? 'badge-buy' : 'badge-sell' ?>">
                             <?= ($t['buyer_id']==$userId) ? '购买' : '出售' ?>
                         </span>
                     </td>
-                    <td>¥<?= number_format($t['price'], 2) ?></td>
-                    <td><?= date('m-d H:i', strtotime($t['created_at'])) ?></td>
-                    <td>
+                    <td data-label="价格">¥<?= number_format($t['price'], 2) ?></td>
+                    <td data-label="时间"><?= date('m-d H:i', strtotime($t['created_at'])) ?></td>
+                    <td data-label="状态">
                         <span class="badge badge-done"><?= $t['status'] == 'completed' ? '已完成' : ($t['status'] == 'pending' ? '处理中' : '已取消') ?></span>
                     </td>
                 </tr>

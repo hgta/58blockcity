@@ -237,7 +237,7 @@ require_once 'includes/header.php';
         </div>
     </div>
     <div class="table-responsive">
-        <table class="table table-dark bct-order-summary">
+        <table class="table table-dark bct-order-summary mob-cards">
             <thead>
                 <tr>
                     <th>城市</th>
@@ -259,15 +259,15 @@ require_once 'includes/header.php';
                     $spread = ($lowestSell > 0 && $highestBuy > 0) ? $lowestSell - $highestBuy : 0;
                 ?>
                 <tr>
-                    <td><strong><?= htmlspecialchars($row['city']) ?></strong></td>
-                    <td class="text-right down"><?= $row['sell_amount'] > 0 ? number_format($row['sell_amount']) : '-' ?></td>
-                    <td class="text-right up"><?= $row['buy_amount'] > 0 ? number_format($row['buy_amount']) : '-' ?></td>
-                    <td class="text-right"><?= $lowestSell > 0 ? '¥'.number_format($lowestSell, 2) : '-' ?></td>
-                    <td class="text-right"><?= $highestBuy > 0 ? '¥'.number_format($highestBuy, 2) : '-' ?></td>
-                    <td class="text-right <?= $spread > 0 ? 'text-muted' : ($spread < 0 ? 'up' : 'text-muted') ?>">
+                    <td data-label="城市"><strong><?= htmlspecialchars($row['city']) ?></strong></td>
+                    <td data-label="出售数量" class="text-right down"><?= $row['sell_amount'] > 0 ? number_format($row['sell_amount']) : '-' ?></td>
+                    <td data-label="求购数量" class="text-right up"><?= $row['buy_amount'] > 0 ? number_format($row['buy_amount']) : '-' ?></td>
+                    <td data-label="最低售价" class="text-right"><?= $lowestSell > 0 ? '¥'.number_format($lowestSell, 2) : '-' ?></td>
+                    <td data-label="最高求购价" class="text-right"><?= $highestBuy > 0 ? '¥'.number_format($highestBuy, 2) : '-' ?></td>
+                    <td data-label="价差" class="text-right <?= $spread > 0 ? 'text-muted' : ($spread < 0 ? 'up' : 'text-muted') ?>">
                         <?= $spread != 0 ? '¥'.number_format(abs($spread), 2) : '-' ?>
                     </td>
-                    <td class="text-center">
+                    <td data-label="操作" class="text-center mob-actions">
                         <a href="city.php?city=<?= urlencode($row['city']) ?>" class="btn btn-xs btn-primary">交易</a>
                     </td>
                 </tr>

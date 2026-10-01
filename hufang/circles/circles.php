@@ -174,7 +174,7 @@ $isOwnProfile = ($userId == $currentUserId);
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0 mob-cards">
                                 <thead class="thead-light">
                                     <tr>
                                         <th>圈子名称</th>
@@ -190,7 +190,7 @@ $isOwnProfile = ($userId == $currentUserId);
                                 <tbody>
                                     <?php foreach ($userCircles as $circle): ?>
                                     <tr>
-                                        <td>
+                                        <td data-label="圈子名称">
                                             <div class="d-flex align-items-center">
                                                 <div class="circle-avatar mr-2">
                                                     <i class="fas fa-users"></i>
@@ -207,30 +207,30 @@ $isOwnProfile = ($userId == $currentUserId);
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="城市">
                                             <span class="badge badge-light">
                                                 <i class="fas fa-map-marker-alt"></i>
                                                 <?= htmlspecialchars($circle['city']) ?>
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="区块数">
                                             <span class="badge badge-success"><?= $circle['block_count'] ?></span>
                                         </td>
-                                        <td>
+                                        <td data-label="被访问次数">
                                             <span class="badge badge-info"><?= $circle['total_visits'] ?></span>
                                         </td>
-                                        <td>
+                                        <td data-label="完成互访">
                                             <span class="badge badge-warning"><?= $circle['completed_visits'] ?></span>
                                         </td>
                                         <!--<td>
                                             <span class="badge badge-danger"><?= $circle['unique_visitors'] ?></span>
                                         </td>-->
-                                        <td>
+                                        <td data-label="创建时间">
                                             <small class="text-muted">
                                                 <?= date('m-d', strtotime($circle['created_at'])) ?>
                                             </small>
                                         </td>
-                                        <td>
+                                        <td data-label="操作" class="mob-actions">
                                             <div class="btn-group btn-group-sm">
                                                 <a href="view.php?id=<?= $circle['id'] ?>" class="btn btn-outline-primary" title="查看">
                                                     <i class="fas fa-eye"></i>

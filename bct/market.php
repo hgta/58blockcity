@@ -140,7 +140,7 @@ require_once 'includes/header.php';
 <div class="card">
     <div class="card-header"><h3 style="margin:0;font-size:16px;"><i class="fas fa-list-ol"></i> 全部城市人气值</h3></div>
     <div class="table-responsive">
-        <table class="table bct-market-table">
+        <table class="table bct-market-table mob-cards">
             <thead>
                 <tr>
                     <th>#</th>
@@ -164,14 +164,14 @@ require_once 'includes/header.php';
                     $sign = $city['change_pct'] >= 0 ? '+' : '';
                 ?>
                 <tr class="<?= $isTop5 ? 'top5' : '' ?>">
-                    <td><span class="rank"><?= $rank ?></span></td>
-                    <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
-                    <td class="price">¥<?= number_format($city['current_price'], 2) ?></td>
-                    <td class="change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</td>
-                    <td class="volume">¥<?= number_format($city['volume_24h'], 2) ?></td>
-                    <td class="market-cap">¥<?= number_format($city['market_cap'] / 10000, 2) ?> 万</td>
-                    <td><?= number_format($city['circulating_supply']) ?> / <?= number_format($city['total_supply']) ?></td>
-                    <td>
+                    <td data-label="排名"><span class="rank"><?= $rank ?></span></td>
+                    <td data-label="城市"><strong><?= htmlspecialchars($city['city']) ?></strong></td>
+                    <td data-label="价格" class="price">¥<?= number_format($city['current_price'], 2) ?></td>
+                    <td data-label="24h 涨跌" class="change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</td>
+                    <td data-label="24h 成交量" class="volume">¥<?= number_format($city['volume_24h'], 2) ?></td>
+                    <td data-label="流通市值" class="market-cap">¥<?= number_format($city['market_cap'] / 10000, 2) ?> 万</td>
+                    <td data-label="流通量/总量"><?= number_format($city['circulating_supply']) ?> / <?= number_format($city['total_supply']) ?></td>
+                    <td data-label="操作" class="mob-actions">
                         <a href="city.php?city=<?= urlencode($city['city']) ?>" class="btn btn-sm btn-primary">交易</a>
                     </td>
                 </tr>

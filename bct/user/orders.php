@@ -78,7 +78,7 @@ if (isset($_SESSION['error'])) {
     
     <!-- 订单列表 -->
     <div class="table-responsive">
-        <table class="table table-striped table-hover">
+        <table class="table table-striped table-hover mob-cards">
             <thead>
                 <tr>
                     <th>订单编号</th>
@@ -101,18 +101,18 @@ if (isset($_SESSION['error'])) {
                 <?php else: ?>
                 <?php foreach ($orders as $order): ?>
                 <tr>
-                    <td><?= htmlspecialchars(substr($order['order_no'], 0, 8).'...') ?></td>
-                    <td><?= date('Y-m-d H:i', strtotime($order['created_at'])) ?></td>
-                    <td>
+                    <td data-label="订单编号"><?= htmlspecialchars(substr($order['order_no'], 0, 8).'...') ?></td>
+                    <td data-label="创建时间"><?= date('Y-m-d H:i', strtotime($order['created_at'])) ?></td>
+                    <td data-label="类型">
                         <span class="label label-<?= $order['type'] === 'buy' ? 'primary' : 'success' ?>">
                             <?= $order['type'] === 'buy' ? '购买' : '出售' ?>
                         </span>
                     </td>
-                    <td><?= htmlspecialchars($order['city']) ?></td>
-                    <td><?= number_format($order['amount']) ?></td>
-                    <td><?= number_format($order['price'], 2) ?></td>
-                    <td><?= number_format($order['total_amount'], 2) ?></td>
-                    <td>
+                    <td data-label="城市"><?= htmlspecialchars($order['city']) ?></td>
+                    <td data-label="数量"><?= number_format($order['amount']) ?></td>
+                    <td data-label="单价">¥<?= number_format($order['price'], 2) ?></td>
+                    <td data-label="总金额">¥<?= number_format($order['total_amount'], 2) ?></td>
+                    <td data-label="交易方式">
                         <?php 
                         $tradeTypes = [
                             'platform' => '平台交易',
@@ -138,7 +138,7 @@ if (isset($_SESSION['error'])) {
                             <?= htmlspecialchars($badge['label']) ?>
                         </span>
                     </td>
-                    <td>
+                    <td data-label="状态" class="mob-actions">
                         <div class="btn-group btn-group-xs">
                             <a href="order_detail.php?id=<?= $order['id'] ?>" class="btn btn-default" title="查看详情">
                                 <i class="glyphicon glyphicon-eye-open"></i>

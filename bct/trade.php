@@ -245,7 +245,7 @@ if (isset($_SESSION['error'])) {
             <div class="form-section" id="batchPreviewSection" style="display:none;">
                 <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
                 <div class="table-responsive">
-                    <table class="table batch-table">
+                    <table class="table batch-table mob-cards">
                         <thead>
                             <tr>
                                 <th>城市</th><th class="text-right">数量</th><th class="text-right">单价</th>
@@ -687,6 +687,11 @@ if (isset($_SESSION['error'])) {
     cursor: pointer;
 }
 .btn-remove-row:hover { border-color: var(--bct-down); color: var(--bct-down); }
+
+/* 移动端卡片化（通用规则见 main.css，此处覆盖本页表格自带样式） */
+@media (max-width: 767px) {
+    .batch-table.mob-cards > tbody > tr > td { border-top: none; white-space: normal; }
+}
 
 .batch-problem {
     margin-top: 14px;
@@ -1393,17 +1398,17 @@ function renderBatchPreview(res) {
         if (!o.ok) $tr.addClass('row-bad');
         if (o.merged) $tr.addClass('row-merged');
 
-        $tr.append($('<td></td>').text(o.city).append(
+        $tr.append($('<td></td>').attr('data-label', '城市').text(o.city).append(
             o.merged ? $('<span class="batch-merged">（累加）</span>') : ''
         ));
-        $tr.append($('<td class="text-right num"></td>').text(fmt(o.amount)));
-        $tr.append($('<td class="text-right num"></td>').text(Number(o.price).toFixed(2)));
-        $tr.append($('<td class="text-right num"></td>').text(Number(o.total).toFixed(2)));
+        $tr.append($('<td class="text-right num"></td>').attr('data-label', '数量').text(fmt(o.amount)));
+        $tr.append($('<td class="text-right num"></td>').attr('data-label', '单价').text(Number(o.price).toFixed(2)));
+        $tr.append($('<td class="text-right num"></td>').attr('data-label', '总价').text(Number(o.total).toFixed(2)));
 
         if (o.ok) {
-            $tr.append('<td><span class="badge badge-success">可发布</span></td>');
+            $tr.append('<td data-label="状态"><span class="badge badge-success">可发布</span></td>');
         } else {
-            $tr.append($('<td></td>').append(
+            $tr.append($('<td></td>').attr('data-label', '状态').append(
                 $('<span class="batch-issue"></span>').text((o.issues || []).join('；'))
             ));
         }
@@ -1414,7 +1419,7 @@ function renderBatchPreview(res) {
             batchRows[i]._removed = true;
             updateSubmitState();
         });
-        $tr.append($('<td></td>').append($del));
+        $tr.append($('<td class="mob-actions"></td>').attr('data-label', '操作').append($del));
 
         $body.append($tr);
     });

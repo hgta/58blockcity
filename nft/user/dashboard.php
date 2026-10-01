@@ -81,7 +81,7 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover mob-cards">
                                 <thead>
                                     <tr>
                                         <th>NFT编号</th>
@@ -94,8 +94,8 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                 <tbody>
                                     <?php foreach ($pendingTransactions as $tx): ?>
                                     <tr>
-                                        <td><?= htmlspecialchars($tx['nft_code']) ?></td>
-                                        <td>
+                                        <td data-label="NFT编号"><?= htmlspecialchars($tx['nft_code']) ?></td>
+                                        <td data-label="交易类型">
                                             <?php 
                                             $typeMap = [
                                                 'platform' => '平台交易',
@@ -105,14 +105,14 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                             echo $typeMap[$tx['transaction_type']] ?? $tx['transaction_type'];
                                             ?>
                                         </td>
-                                        <td>
+                                        <td data-label="价格">
                                             <?= number_format($tx['price'], 2) ?>
                                             <?= $tx['currency'] === 'popularity' ? '人气值' : '¥' ?>
                                         </td>
-                                        <td>
+                                        <td data-label="对方用户">
                                             <?= $tx['buyer_id'] == $userId ? '卖家: '.htmlspecialchars($tx['seller_name']) : '买家: '.htmlspecialchars($tx['buyer_name']) ?>
                                         </td>
-                                        <td>
+                                        <td data-label="操作" class="mob-actions">
                                             <a href="process_transaction.php?id=<?= $tx['id'] ?>&action=accept" class="btn btn-sm btn-success">接受</a>
                                             <a href="process_transaction.php?id=<?= $tx['id'] ?>&action=reject" class="btn btn-sm btn-danger">拒绝</a>
                                         </td>
@@ -245,7 +245,7 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                     </div>
                                 <?php else: ?>
                                     <div class="table-responsive">
-                                        <table class="table table-hover">
+                                        <table class="table table-hover mob-cards">
                                             <thead>
                                                 <tr>
                                                     <th>NFT</th>
@@ -259,17 +259,17 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                             <tbody>
                                                 <?php foreach ($soldItems as $tx): ?>
                                                 <tr>
-                                                    <td>
+                                                    <td data-label="NFT">
                                                         <a href="../nft/view.php?id=<?= $tx['nft_id'] ?>">
                                                             <?= htmlspecialchars($tx['nft_code']) ?>
                                                         </a>
                                                     </td>
-                                                    <td><?= htmlspecialchars($tx['buyer_name']) ?></td>
-                                                    <td>
+                                                    <td data-label="买家"><?= htmlspecialchars($tx['buyer_name']) ?></td>
+                                                    <td data-label="价格">
                                                         <?= number_format($tx['price'], 2) ?>
                                                         <?= $tx['currency'] === 'popularity' ? '人气值' : '¥' ?>
                                                     </td>
-                                                    <td>
+                                                    <td data-label="交易方式">
                                                         <?php 
                                                         $typeMap = [
                                                             'platform' => '平台',
@@ -279,8 +279,8 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                                         echo $typeMap[$tx['transaction_type']] ?? $tx['transaction_type'];
                                                         ?>
                                                     </td>
-                                                    <td><?= date('Y-m-d H:i', strtotime($tx['completed_at'])) ?></td>
-                                                    <td>
+                                                    <td data-label="时间"><?= date('Y-m-d H:i', strtotime($tx['completed_at'])) ?></td>
+                                                    <td data-label="状态">
                                                         <span class="badge badge-success">已完成</span>
                                                     </td>
                                                 </tr>
@@ -299,7 +299,7 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                     </div>
                                 <?php else: ?>
                                     <div class="table-responsive">
-                                        <table class="table table-hover">
+                                        <table class="table table-hover mob-cards">
                                             <thead>
                                                 <tr>
                                                     <th>NFT</th>
@@ -313,17 +313,17 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                             <tbody>
                                                 <?php foreach ($purchasedItems as $tx): ?>
                                                 <tr>
-                                                    <td>
+                                                    <td data-label="NFT">
                                                         <a href="../nft/view.php?id=<?= $tx['nft_id'] ?>">
                                                             <?= htmlspecialchars($tx['nft_code']) ?>
                                                         </a>
                                                     </td>
-                                                    <td><?= htmlspecialchars($tx['seller_name']) ?></td>
-                                                    <td>
+                                                    <td data-label="卖家"><?= htmlspecialchars($tx['seller_name']) ?></td>
+                                                    <td data-label="价格">
                                                         <?= number_format($tx['price'], 2) ?>
                                                         <?= $tx['currency'] === 'popularity' ? '人气值' : '¥' ?>
                                                     </td>
-                                                    <td>
+                                                    <td data-label="交易方式">
                                                         <?php 
                                                         $typeMap = [
                                                             'platform' => '平台',
@@ -333,8 +333,8 @@ $userCollection = $nft->getUserCollection($userId, 24); // Get 24 NFTs for displ
                                                         echo $typeMap[$tx['transaction_type']] ?? $tx['transaction_type'];
                                                         ?>
                                                     </td>
-                                                    <td><?= date('Y-m-d H:i', strtotime($tx['completed_at'])) ?></td>
-                                                    <td>
+                                                    <td data-label="时间"><?= date('Y-m-d H:i', strtotime($tx['completed_at'])) ?></td>
+                                                    <td data-label="状态">
                                                         <span class="badge badge-success">已完成</span>
                                                     </td>
                                                 </tr>

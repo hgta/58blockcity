@@ -52,7 +52,7 @@ $site_config['keywords']    = '58,互访圈,城市互访,区块城市,BlockCity,
 $__hfMap = SeoHelper::primaryDomainMap('hufang');
 $site_config['canonical_url'] = 'https://' . (!empty($__hfMap['primary']) ? $__hfMap['primary'] : 'v.58.tl') . '/';
 $site_config['og_image']    = 'https://www.58.tl/assets/images/og-hufang.jpg';
-$site_config['extra_head']  = '<link rel="stylesheet" href="assets/css/main.css?v=20260929"><style>.circle-visit-badge{position:absolute;top:8px;right:8px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;z-index:2}.circle-visit-badge.completed{background:#22c55e}.circle-visit-badge.visited{background:#3b82f6}.circle-visit-badge.pending{background:#f59e0b}.view-switch{display:flex;gap:6px}.view-switch .btn{padding:6px 14px;font-size:13px}@media(max-width:768px){.user-header{flex-direction:column;gap:8px}.user-header>*{width:100%}.city-tags a{font-size:14px;padding:6px 12px}.table th,.table td{font-size:13px;padding:8px 6px}.view-switch .btn{font-size:13px;padding:8px 12px}}@media(max-width:480px){.table{font-size:12px}.city-tags a{font-size:13px;padding:5px 10px}}</style>';
+$site_config['extra_head']  = '<link rel="stylesheet" href="assets/css/main.css?v=20261001"><style>.circle-visit-badge{position:absolute;top:8px;right:8px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;z-index:2}.circle-visit-badge.completed{background:#22c55e}.circle-visit-badge.visited{background:#3b82f6}.circle-visit-badge.pending{background:#f59e0b}.view-switch{display:flex;gap:6px}.view-switch .btn{padding:6px 14px;font-size:13px}@media(max-width:768px){.user-header{flex-direction:column;gap:8px}.user-header>*{width:100%}.city-tags a{font-size:14px;padding:6px 12px}.table th,.table td{font-size:13px;padding:8px 6px}.view-switch .btn{font-size:13px;padding:8px 12px}}@media(max-width:480px){.table{font-size:12px}.city-tags a{font-size:13px;padding:5px 10px}}</style>';
 
 require_once 'includes/header.php';
 ?>
@@ -127,7 +127,7 @@ require_once 'includes/header.php';
                     : '<a href="auth/login.php" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> 登录后创建互访圈</a>')) ?>
         <?php elseif ($viewMode === 'list'): ?>
             <!-- 列表模式 -->
-            <table class="table table-hover bg-white rounded shadow-sm">
+            <table class="table table-hover bg-white rounded shadow-sm mob-cards">
                 <thead class="thead-light">
                     <tr>
                         <th>互访圈</th>
@@ -144,18 +144,18 @@ require_once 'includes/header.php';
                         $statusInfo = getVisitStatusLabel($visitStatus ?: '');
                     ?>
                     <tr>
-                        <td><strong><?= e($c['name']) ?></strong></td>
-                        <td><?= e($c['city']) ?></td>
-                        <td><?= $c['block_count'] ?></td>
-                        <td><?= e($c['username']) ?></td>
-                        <td>
+                        <td data-label="互访圈"><strong><?= e($c['name']) ?></strong></td>
+                        <td data-label="城市"><?= e($c['city']) ?></td>
+                        <td data-label="区块数"><?= $c['block_count'] ?></td>
+                        <td data-label="圈主"><?= e($c['username']) ?></td>
+                        <td data-label="状态">
                             <?php if ($visitStatus): ?>
                                 <span class="status-badge badge-<?= $statusInfo['class'] ?>"><?= $statusInfo['label'] ?></span>
                             <?php else: ?>
                                 <span style="color:#ccc;">-</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="操作" class="mob-actions">
                             <a href="circles/view.php?id=<?= (int)$c['id'] ?>" class="btn btn-primary btn-sm">详情</a>
                         </td>
                     </tr>

@@ -40,7 +40,7 @@ $orgJsonLd = organization_json_ld();
     <?= $orgJsonLd ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20260929">
+    <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20261001">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.58.tl/assets/js/main.js"></script>
