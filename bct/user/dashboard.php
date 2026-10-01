@@ -112,6 +112,14 @@ try {
     error_log('BCT dashboard claims error: ' . $e->getMessage());
 }
 
+// 我参与过的已完成直接交易（双方确认收款后留档，买卖双方均可见）
+$completedClaims = [];
+try {
+    $completedClaims = $order->getUserCompletedClaims((int)$userId);
+} catch (Exception $e) {
+    error_log('BCT dashboard completed claims error: ' . $e->getMessage());
+}
+
 // 人气值持仓模型（数量 × 城市单价）
 $popularityMap = $holdings->getUserPopularityMap($userId);
 $holdingRows = [];
@@ -464,6 +472,54 @@ require_once '../includes/header.php';
                                 <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                                 <button class="btn btn-xs btn-danger">放弃</button>
                             </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="card" style="margin-top:24px;" id="claim-history">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;font-size:16px;">
+                <i class="fas fa-check-circle"></i> 已完成的交易
+                <span style="font-size:12px;font-weight:400;color:var(--bct-text-secondary);margin-left:8px;">你作为买方或卖方参与的直接交易，双方确认收款后在此留档（最近 20 笔）</span>
+            </h3>
+        </div>
+        <?php if (empty($completedClaims)): ?>
+        <div class="text-center" style="padding:24px;color:var(--bct-text-secondary);">
+            <p style="margin:0;font-size:13px;">暂无已完成交易 · 完成确认收款的交易会自动出现在这里</p>
+        </div>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table class="table mob-cards">
+                <thead>
+                    <tr>
+                        <th>城市</th><th>我的角色</th><th>数量</th><th>单价</th><th>总价</th>
+                        <th>对方</th><th>完成时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($completedClaims as $c):
+                        $amBuyer = (int)$c['buyer_side_user_id'] === (int)$userId;
+                        $counterName = $amBuyer ? ($c['seller_side_name'] ?: '用户#'.$c['seller_side_user_id']) : ($c['buyer_side_name'] ?: '用户#'.$c['buyer_side_user_id']);
+                        $counterId = $amBuyer ? (int)$c['seller_side_user_id'] : (int)$c['buyer_side_user_id'];
+                    ?>
+                    <tr>
+                        <td data-label="城市"><strong><?= htmlspecialchars($c['city']) ?></strong></td>
+                        <td data-label="我的角色"><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
+                        <td data-label="数量"><?= number_format((int)$c['amount']) ?> BCT</td>
+                        <td data-label="单价">¥<?= number_format((float)$c['price'], 2) ?></td>
+                        <td data-label="总价">¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
+                        <td data-label="对方">
+                            <a href="../messages/index.php?with=<?= $counterId ?>" title="站内信联系">
+                                <strong><?= htmlspecialchars($counterName) ?></strong>
+                            </a>
+                        </td>
+                        <td data-label="完成时间" style="font-size:12px;color:var(--bct-text-secondary);">
+                            <?= $c['finished_at'] ? date('Y-m-d H:i', strtotime($c['finished_at'])) : '—' ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

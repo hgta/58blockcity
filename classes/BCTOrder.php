@@ -738,6 +738,25 @@ class BCTOrder {
 	}
 
 	/**
+	 * 获取用户已完成（双方确认收款）的接单列表——个人中心"已完成的交易"
+	 */
+	public function getUserCompletedClaims($userId, $limit = 20) {
+		$stmt = $this->pdo->prepare("SELECT c.*,
+				o.order_no, o.city, o.type, o.amount, o.price, o.total_amount,
+				ub.username AS buyer_side_name, us.username AS seller_side_name
+			FROM bct_order_claims c
+			JOIN bct_orders o ON o.id = c.order_id
+			LEFT JOIN users ub ON ub.id = c.buyer_side_user_id
+			LEFT JOIN users us ON us.id = c.seller_side_user_id
+			WHERE c.status = 'completed'
+				AND (c.buyer_side_user_id = ? OR c.seller_side_user_id = ?)
+			ORDER BY c.finished_at DESC
+			LIMIT " . (int)$limit);
+		$stmt->execute([(int)$userId, (int)$userId]);
+		return $stmt->fetchAll();
+	}
+
+	/**
 	 * 用户接单统计（为后续信用体系预留）
 	 */
 	public function countUserClaimStats($userId) {
