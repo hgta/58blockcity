@@ -5,6 +5,7 @@ require_once '../../classes/User.php';
 require_once '../../classes/Block.php';
 require_once '../../classes/Transaction.php';
 require_once '../../classes/BlockListing.php';
+require_once '../../classes/UserHoldings.php';
 require_once '../../config/block_prices.php';
 
 // Check if user is logged in
@@ -45,6 +46,14 @@ $purchaseRequests = $block->getUserPurchaseRequests($userId);
 
 // Get active votes
 $activeVotes = null;//$block->getUserActiveVotes($userId);
+
+// 总人气值：与 bct 子站同源（user_city_popularity 各城市合计）
+try {
+    $totalPopularity = array_sum(array_values((new UserHoldings($pdo))->getUserPopularityMap($userId)));
+} catch (Exception $e) {
+    error_log('block dashboard popularity error: ' . $e->getMessage());
+    $totalPopularity = 0;
+}
 ?>
 
 <?php require_once '../includes/header.php'; ?>
@@ -64,18 +73,38 @@ $activeVotes = null;//$block->getUserActiveVotes($userId);
                     <h3><?= htmlspecialchars($userInfo['username']) ?></h3>
                     <p class="text-muted"><?= htmlspecialchars($userInfo['city'] ?? '未设置城市') ?></p>
                     
-                    <div class="user-stats">
-                        <div class="stat-item">
-                            <div class="stat-value"><?= $blockCount ?></div>
-                            <div class="stat-label">拥有区块（投票数 <?= number_format($voteCount) ?>）</div>
+                    <style>
+                    /* 个人卡片统计：纵向行式布局，窄屏不再挤压换行 */
+                    .stats-list { margin: 18px 0 6px; border-top: 1px solid #eee; }
+                    .stats-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        gap: 10px;
+                        padding: 9px 2px;
+                        border-bottom: 1px dashed #eee;
+                    }
+                    .stats-row:last-child { border-bottom: none; }
+                    .stats-key { font-size: 12px; color: #888; white-space: nowrap; }
+                    .stats-val {
+                        font-size: 17px; font-weight: 700; color: #ff6b00;
+                        font-variant-numeric: tabular-nums;
+                        text-align: right; word-break: break-all;
+                    }
+                    .stats-val small { font-size: 11px; font-weight: 400; color: #999; }
+                    </style>
+                    <div class="stats-list">
+                        <div class="stats-row">
+                            <span class="stats-key">拥有区块</span>
+                            <span class="stats-val"><?= $blockCount ?> <small>（投票数 <?= number_format($voteCount) ?>）</small></span>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-value"><?= number_format($totalValue, 2) ?></div>
-                            <div class="stat-label">区块价值</div>
+                        <div class="stats-row">
+                            <span class="stats-key">区块价值</span>
+                            <span class="stats-val">¥<?= number_format($totalValue, 2) ?></span>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-value"><?= $userInfo['popularity'] ?></div>
-                            <div class="stat-label">人气值</div>
+                        <div class="stats-row">
+                            <span class="stats-key">人气值</span>
+                            <span class="stats-val">Ⓟ <?= number_format($totalPopularity) ?></span>
                         </div>
                     </div>
                 </div>
