@@ -150,7 +150,7 @@ if (isset($_SESSION['error'])) {
     <!-- 页面标题 -->
     <div class="page-header">
         <h1>
-            <i class="glyphicon glyphicon-user"></i>
+            <i class="fas fa-user"></i>
             个人资料设置
         </h1>
         <p class="text-muted">管理您的账户信息和隐私设置</p>
@@ -161,7 +161,7 @@ if (isset($_SESSION['error'])) {
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-edit"></i> 基本资料</h3>
+                    <h3><i class="fas fa-edit"></i> 基本资料</h3>
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
@@ -213,7 +213,7 @@ if (isset($_SESSION['error'])) {
                         
                         <hr>
                         
-                        <h4><i class="glyphicon glyphicon-lock"></i> 密码修改</h4>
+                        <h4><i class="fas fa-lock"></i> 密码修改</h4>
                         <p class="text-muted">如不需要修改密码，请留空以下字段</p>
                         
                         <div class="form-group">
@@ -228,7 +228,7 @@ if (isset($_SESSION['error'])) {
                         
                         <div class="form-group text-right">
                             <button type="submit" class="btn btn-primary">
-                                <i class="glyphicon glyphicon-floppy-disk"></i> 保存更改
+                                <i class="fas fa-save"></i> 保存更改
                             </button>
                         </div>
                     </form>
@@ -241,7 +241,7 @@ if (isset($_SESSION['error'])) {
             <!-- 账户概览 -->
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-info-sign"></i> 账户概览</h3>
+                    <h3><i class="fas fa-info-circle"></i> 账户概览</h3>
                 </div>
                 <div class="card-body">
                     <div class="account-summary">
@@ -252,15 +252,15 @@ if (isset($_SESSION['error'])) {
                         <div class="account-details">
                             <h4><?= htmlspecialchars($userData['username']) ?></h4>
                             <p>
-                                <i class="glyphicon glyphicon-envelope"></i>
+                                <i class="fas fa-envelope"></i>
                                 <?= htmlspecialchars($userData['email']) ?>
                             </p>
                             <p>
-                                <i class="glyphicon glyphicon-map-marker"></i>
+                                <i class="fas fa-map-marker-alt"></i>
                                 <?= htmlspecialchars($userData['city']) ?>
                             </p>
                             <p>
-                                <i class="glyphicon glyphicon-time"></i>
+                                <i class="fas fa-clock"></i>
                                 注册于: <?= date('Y-m-d', strtotime($userData['created_at'])) ?>
                             </p>
                         </div>
@@ -271,12 +271,12 @@ if (isset($_SESSION['error'])) {
             <!-- BCT资产概览 -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-credit-card"></i> BCT资产</h3>
+                    <h3><i class="fas fa-credit-card"></i> BCT资产</h3>
                 </div>
                 <div class="card-body">
                     <?php if (empty($userAccounts)): ?>
                         <div class="empty-state-sm">
-                            <i class="glyphicon glyphicon-warning-sign"></i>
+                            <i class="fas fa-exclamation-triangle"></i>
                             <p>暂无BCT资产</p>
                             <a href="../market.php" class="btn btn-sm btn-primary">去交易</a>
                         </div>
@@ -316,20 +316,20 @@ if (isset($_SESSION['error'])) {
             <!-- 账户安全 -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-lock"></i> 账户安全</h3>
+                    <h3><i class="fas fa-lock"></i> 账户安全</h3>
                 </div>
                 <div class="card-body">
                     <div class="security-status">
                         <div class="security-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>密码强度: 强</span>
                         </div>
                         <div class="security-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>邮箱已验证</span>
                         </div>
                         <div class="security-item">
-                            <i class="glyphicon glyphicon-remove text-danger"></i>
+                            <i class="fas fa-times text-danger"></i>
                             <span>手机未绑定</span>
                         </div>
                     </div>

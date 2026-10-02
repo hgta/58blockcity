@@ -126,7 +126,7 @@ $tradeTypeText = [
     <!-- 页面标题 -->
     <div class="page-header">
         <h1>
-            <i class="glyphicon glyphicon-file"></i>
+            <i class="fas fa-file"></i>
             订单详情
         </h1>
         <p class="text-muted">订单号: <?= htmlspecialchars($order['order_no']) ?></p>
@@ -137,7 +137,7 @@ $tradeTypeText = [
             <!-- 订单基本信息 -->
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-info-sign"></i> 订单信息</h3>
+                    <h3><i class="fas fa-info-circle"></i> 订单信息</h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -200,10 +200,10 @@ $tradeTypeText = [
             <div class="card mt-4">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h3><i class="glyphicon glyphicon-yen"></i> 交易详情</h3>
+                        <h3><i class="fas fa-yen-sign"></i> 交易详情</h3>
                         <?php if ($isOwner && $order['status'] == 'pending'): ?>
                         <button class="btn btn-sm btn-outline-primary" onclick="showEditModal()">
-                            <i class="glyphicon glyphicon-edit"></i> 编辑
+                            <i class="fas fa-edit"></i> 编辑
                         </button>
                         <?php endif; ?>
                     </div>
@@ -232,7 +232,7 @@ $tradeTypeText = [
                     
                     <?php if ($order['type'] == 'sell' && $order['contact_info']): ?>
                     <div class="contact-info mt-3">
-                        <h5><i class="glyphicon glyphicon-user"></i> 联系方式</h5>
+                        <h5><i class="fas fa-user"></i> 联系方式</h5>
                         <p class="contact-detail"><?= htmlspecialchars($order['contact_info']) ?></p>
                     </div>
                     <?php endif; ?>
@@ -243,7 +243,7 @@ $tradeTypeText = [
             <?php if (!empty($transactions)): ?>
             <div class="card mt-4">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-list"></i> 交易记录</h3>
+                    <h3><i class="fas fa-list"></i> 交易记录</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -290,7 +290,7 @@ $tradeTypeText = [
             <?php if (!empty($relatedOrders)): ?>
             <div class="card mt-4">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-link"></i> 相关订单</h3>
+                    <h3><i class="fas fa-link"></i> 相关订单</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -343,7 +343,7 @@ $tradeTypeText = [
             <!-- 用户信息 -->
             <div class="card">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-user"></i> 
+                    <h4><i class="fas fa-user"></i> 
                         <?= $isOwner ? '我的订单' : '对方信息' ?>
                     </h4>
                 </div>
@@ -376,33 +376,33 @@ $tradeTypeText = [
             <!-- 操作按钮 -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-cog"></i> 操作</h4>
+                    <h4><i class="fas fa-cog"></i> 操作</h4>
                 </div>
                 <div class="card-body">
                     <div class="action-buttons">
                         <?php if ($isOwner && $order['status'] == 'pending'): ?>
                         <button class="btn btn-warning btn-block" onclick="cancelOrder(<?= $order['id'] ?>)">
-                            <i class="glyphicon glyphicon-remove"></i> 取消订单
+                            <i class="fas fa-times"></i> 取消订单
                         </button>
                         <button class="btn btn-info btn-block" onclick="showEditModal()">
-                            <i class="glyphicon glyphicon-edit"></i> 编辑订单
+                            <i class="fas fa-edit"></i> 编辑订单
                         </button>
                         <?php endif; ?>
                         
                         <?php if (!$isOwner && $order['status'] == 'pending'): ?>
                         <?php if ($order['type'] == 'sell'): ?>
                         <button class="btn btn-primary btn-block" onclick="buyFromOrder(<?= $order['id'] ?>)">
-                            <i class="glyphicon glyphicon-shopping-cart"></i> 立即购买
+                            <i class="fas fa-shopping-cart"></i> 立即购买
                         </button>
                         <?php else: ?>
                         <button class="btn btn-success btn-block" onclick="sellToOrder(<?= $order['id'] ?>)">
-                            <i class="glyphicon glyphicon-yen"></i> 立即出售
+                            <i class="fas fa-yen-sign"></i> 立即出售
                         </button>
                         <?php endif; ?>
                         <?php endif; ?>
                         
                         <a href="../index.php" class="btn btn-default btn-block">
-                            <i class="glyphicon glyphicon-arrow-left"></i> 返回市场
+                            <i class="fas fa-arrow-left"></i> 返回市场
                         </a>
                         
                         <?php if ($order['trade_type'] == 'direct' && !$isOwner && $order['contact_info']): ?>
@@ -419,7 +419,7 @@ $tradeTypeText = [
             <!-- 城市信息 -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-map-marker"></i> 城市行情</h4>
+                    <h4><i class="fas fa-map-marker-alt"></i> 城市行情</h4>
                 </div>
                 <div class="card-body">
                     <div class="city-market-info">
@@ -456,24 +456,24 @@ $tradeTypeText = [
             <!-- 交易说明 -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-info-sign"></i> 交易说明</h4>
+                    <h4><i class="fas fa-info-circle"></i> 交易说明</h4>
                 </div>
                 <div class="card-body">
                     <div class="trade-tips">
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>订单创建后无法修改价格和数量</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>平台交易自动撮合，手续费10%</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>中介交易请联系客服，手续费2%</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>直接交易请自行联系对方</span>
                         </div>
                     </div>

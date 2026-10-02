@@ -87,10 +87,10 @@ if (isset($_SESSION['error'])) {
 <div class="mode-tabs">
     <a href="trade.php?<?= $selectedCity ? 'city='.urlencode($selectedCity).'&' : '' ?>mode=single"
        class="mode-tab <?= $mode === 'single' ? 'active' : '' ?>">
-        <i class="glyphicon glyphicon-edit"></i> 单条模式
+        <i class="fas fa-edit"></i> 单条模式
     </a>
     <a href="trade.php?mode=batch" class="mode-tab <?= $mode === 'batch' ? 'active' : '' ?>">
-        <i class="glyphicon glyphicon-list-alt"></i> 批量模式
+        <i class="fas fa-list-alt"></i> 批量模式
     </a>
 </div>
 
@@ -100,7 +100,7 @@ if (isset($_SESSION['error'])) {
 <div class="card batch-result-card">
     <div class="card-header">
         <h4>
-            <i class="glyphicon glyphicon-ok-circle"></i> 批量发布结果
+            <i class="fas fa-check-circle"></i> 批量发布结果
             <span class="result-summary">
                 成功 <strong class="up"><?= (int)$batchResult['success'] ?></strong> 条
                 · 失败 <strong class="down"><?= (int)$batchResult['failed'] ?></strong> 条
@@ -158,7 +158,7 @@ if (isset($_SESSION['error'])) {
 <div class="batch-layout">
     <div class="card">
         <div class="card-header">
-            <h3><i class="glyphicon glyphicon-list-alt"></i> 批量发布交易</h3>
+            <h3><i class="fas fa-list-alt"></i> 批量发布交易</h3>
         </div>
         <div class="card-body">
             <!-- 方向 -->
@@ -166,10 +166,10 @@ if (isset($_SESSION['error'])) {
                 <label class="field-label">交易方向</label>
                 <div class="segmented segmented-type" id="batchTypeSegmented">
                     <button type="button" class="segment active" data-batch-type="buy">
-                        <i class="glyphicon glyphicon-shopping-cart"></i> 全部买入
+                        <i class="fas fa-shopping-cart"></i> 全部买入
                     </button>
                     <button type="button" class="segment" data-batch-type="sell">
-                        <i class="glyphicon glyphicon-yen"></i> 全部卖出
+                        <i class="fas fa-yen-sign"></i> 全部卖出
                     </button>
                 </div>
                 <div class="field-hint">同一批次方向统一，不支持买入与卖出混合</div>
@@ -180,11 +180,11 @@ if (isset($_SESSION['error'])) {
                 <label class="field-label">交易方式</label>
                 <div class="tabs-method" id="batchMethodTabs">
                     <button type="button" class="method-tab active" data-batch-method="direct">
-                        <i class="glyphicon glyphicon-transfer"></i> 直接交易
+                        <i class="fas fa-exchange-alt"></i> 直接交易
                         <small>无手续费</small>
                     </button>
                     <button type="button" class="method-tab" data-batch-method="mediator">
-                        <i class="glyphicon glyphicon-user"></i> 中介交易
+                        <i class="fas fa-user"></i> 中介交易
                         <small>手续费2%</small>
                     </button>
                 </div>
@@ -232,10 +232,10 @@ if (isset($_SESSION['error'])) {
                 </div>
                 <div class="batch-actions">
                     <button type="button" class="btn btn-primary" id="btnParse">
-                        <i class="glyphicon glyphicon-search"></i> 识别
+                        <i class="fas fa-search"></i> 识别
                     </button>
                     <button type="button" class="btn btn-success" id="btnSubmitBatch" disabled>
-                        <i class="glyphicon glyphicon-ok"></i> 确认发布
+                        <i class="fas fa-check"></i> 确认发布
                     </button>
                     <span class="batch-status" id="batchStatus"></span>
                 </div>
@@ -243,7 +243,7 @@ if (isset($_SESSION['error'])) {
 
             <!-- 预览 -->
             <div class="form-section" id="batchPreviewSection" style="display:none;">
-                <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
+                <h4><i class="fas fa-eye"></i> 交易预览</h4>
                 <div class="table-responsive">
                     <table class="table batch-table mob-cards">
                         <thead>
@@ -278,12 +278,12 @@ if (isset($_SESSION['error'])) {
             <!-- 交易表单卡片 -->
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="glyphicon glyphicon-edit"></i> 交易信息</h3>
+                    <h3><i class="fas fa-edit"></i> 交易信息</h3>
                 </div>
                 <div class="card-body">
                     <!-- 城市选择 -->
                     <div class="form-section">
-                        <h4><i class="glyphicon glyphicon-map-marker"></i> 选择城市</h4>
+                        <h4><i class="fas fa-map-marker-alt"></i> 选择城市</h4>
                         
                         <!-- 热门城市 -->
                         <?php if (!empty($hotCities)): ?>
@@ -331,10 +331,10 @@ if (isset($_SESSION['error'])) {
                             <label class="field-label">交易方向</label>
                             <div class="segmented segmented-type" id="typeSegmented">
                                 <button type="button" class="segment active" data-type="buy">
-                                    <i class="glyphicon glyphicon-shopping-cart"></i> 购买
+                                    <i class="fas fa-shopping-cart"></i> 购买
                                 </button>
                                 <button type="button" class="segment" data-type="sell">
-                                    <i class="glyphicon glyphicon-yen"></i> 出售
+                                    <i class="fas fa-yen-sign"></i> 出售
                                 </button>
                             </div>
                         </div>
@@ -362,21 +362,21 @@ if (isset($_SESSION['error'])) {
                             <label class="field-label">交易方式</label>
                             <div class="tabs-method">
                                 <button type="button" class="method-tab active" data-method="direct">
-                                    <i class="glyphicon glyphicon-transfer"></i> 直接交易
+                                    <i class="fas fa-exchange-alt"></i> 直接交易
                                     <small>无手续费</small>
                                 </button>
                                 <button type="button" class="method-tab" data-method="platform">
-                                    <i class="glyphicon glyphicon-shopping-cart"></i> 平台交易
+                                    <i class="fas fa-shopping-cart"></i> 平台交易
                                     <small>手续费10%</small>
                                 </button>
                                 <button type="button" class="method-tab" data-method="mediator">
-                                    <i class="glyphicon glyphicon-user"></i> 中介交易
+                                    <i class="fas fa-user"></i> 中介交易
                                     <small>手续费2%</small>
                                 </button>
                             </div>
                             <input type="hidden" name="trade_type" id="tradeTypeMethod" value="direct">
                             <div class="method-note" id="methodNote">
-                                <i class="glyphicon glyphicon-info-sign"></i> 双方直接联系，无手续费，快捷但需自行注意风险
+                                <i class="fas fa-info-circle"></i> 双方直接联系，无手续费，快捷但需自行注意风险
                             </div>
                         </div>
 
@@ -399,17 +399,17 @@ if (isset($_SESSION['error'])) {
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg btn-block btn-publish">
-                            <i class="glyphicon glyphicon-ok"></i> 确认发布交易
+                            <i class="fas fa-check"></i> 确认发布交易
                         </button>
                     </form>
                     <?php elseif ($selectedCity): ?>
                     <div class="alert alert-warning">
-                        <i class="glyphicon glyphicon-warning-sign"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                         未找到该城市的信息
                     </div>
                     <?php else: ?>
                     <div class="alert alert-info">
-                        <i class="glyphicon glyphicon-info-sign"></i>
+                        <i class="fas fa-info-circle"></i>
                         请先选择城市
                     </div>
                     <?php endif; ?>
@@ -441,7 +441,7 @@ if (isset($_SESSION['error'])) {
             <!-- 交易预览 -->
             <div class="card <?= $selectedCityBCT ? 'mt-3' : '' ?>">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-eye-open"></i> 交易预览</h4>
+                    <h4><i class="fas fa-eye"></i> 交易预览</h4>
                 </div>
                 <div class="card-body">
                     <div class="trade-preview">
@@ -483,7 +483,7 @@ if (isset($_SESSION['error'])) {
             <?php if ($selectedCity && $cityInfo): ?>
             <div class="card mt-3">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-stats"></i> 城市信息</h4>
+                    <h4><i class="fas fa-chart-bar"></i> 城市信息</h4>
                 </div>
                 <div class="card-body">
                     <div class="city-info">
@@ -516,7 +516,7 @@ if (isset($_SESSION['error'])) {
             <?php if ($userAccount): ?>
             <div class="card mt-3">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-user"></i> 我的账户（仅供参考）</h4>
+                    <h4><i class="fas fa-user"></i> 我的账户（仅供参考）</h4>
                 </div>
                 <div class="card-body">
                     <div class="account-info">
@@ -536,7 +536,7 @@ if (isset($_SESSION['error'])) {
                         </div>
                     </div>
                     <div class="alert alert-info mt-3" style="font-size: 12px; padding: 8px;">
-                        <i class="glyphicon glyphicon-info-sign"></i>
+                        <i class="fas fa-info-circle"></i>
                         温馨提示：当前系统已简化流程，发布出售订单无需验证余额
                     </div>
                 </div>
@@ -546,28 +546,28 @@ if (isset($_SESSION['error'])) {
             <!-- 交易提示 -->
             <div class="card mt-3">
                 <div class="card-header">
-                    <h4><i class="glyphicon glyphicon-question-sign"></i> 交易提示</h4>
+                    <h4><i class="fas fa-question-circle"></i> 交易提示</h4>
                 </div>
                 <div class="card-body">
                     <div class="tips-list">
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>请确保交易信息准确无误</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>交易发布后不可修改</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>单价可自定义，最低0.01元</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>出售订单无需验证余额</span>
                         </div>
                         <div class="tip-item">
-                            <i class="glyphicon glyphicon-ok text-success"></i>
+                            <i class="fas fa-check text-success"></i>
                             <span>直接交易需自行承担风险</span>
                         </div>
                     </div>
@@ -1235,7 +1235,7 @@ $(document).ready(function() {
         $('.method-tab[data-method]').removeClass('active');
         $(this).addClass('active');
         $('#tradeTypeMethod').val(method);
-        $('#methodNote').html('<i class="glyphicon glyphicon-info-sign"></i> ' + methodNotes[method]);
+        $('#methodNote').html('<i class="fas fa-info-circle"></i> ' + methodNotes[method]);
         
         // 直接交易需填写联系方式；平台/中介由平台联系
         if (method === 'direct') {

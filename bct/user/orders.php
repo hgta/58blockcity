@@ -139,16 +139,10 @@ if (isset($_SESSION['error'])) {
                         </span>
                     </td>
                     <td data-label="状态" class="mob-actions">
-                        <div class="btn-group btn-group-xs">
-                            <a href="order_detail.php?id=<?= $order['id'] ?>" class="btn btn-default" title="查看详情">
-                                <i class="glyphicon glyphicon-eye-open"></i>
-                            </a>
-                            <?php if (in_array($order['status'], ['pending', 'processing'], true)): ?>
-                            <button onclick="cancelBctOrder(<?= $order['id'] ?>)" class="btn btn-danger" title="取消订单">
-                                <i class="glyphicon glyphicon-remove"></i>
-                            </button>
-                            <?php endif; ?>
-                        </div>
+                        <a href="order_detail.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-default">详情</a>
+                        <?php if (in_array($order['status'], ['pending', 'processing'], true)): ?>
+                        <button onclick="cancelBctOrder(<?= $order['id'] ?>)" class="btn btn-sm btn-danger">取消</button>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -185,18 +179,30 @@ if (isset($_SESSION['error'])) {
     color: var(--bct-text);
 }
 
-/* 类型选项卡 */
+/* 类型选项卡（布局自持：站点为 Bootstrap 4，li>a 写法无 B3 浮动样式会竖排叠层） */
 .orders-page .nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    list-style: none;
+    padding: 0 0 0 8px;
     border-bottom: 1px solid var(--bct-border);
     margin-bottom: 20px;
 }
+.orders-page .nav-tabs > li {
+    display: block;
+    margin: 0 0 -1px;
+}
 .orders-page .nav-tabs > li > a {
+    display: block;
     color: var(--bct-text-secondary);
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
     padding: 10px 18px;
     font-weight: 500;
+    text-decoration: none;
+    line-height: 1.4;
 }
 .orders-page .nav-tabs > li > a:hover {
     color: var(--bct-text);
