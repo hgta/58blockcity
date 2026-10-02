@@ -134,7 +134,7 @@ $orgJsonLd = organization_json_ld();
     <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20261001">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.58.tl/assets/js/main.js"></script>
+    <script src="https://www.58.tl/assets/js/main.js?v=20261002"></script>
     <script src="https://www.58.tl/assets/js/message-modal.js"></script>
     <!-- 头像全局常量（JS 端与 User::avatarUrl() 保持一致） -->
     <script>

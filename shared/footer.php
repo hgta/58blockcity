@@ -127,7 +127,7 @@ if (!empty($site_config['footer_extra'])) {
 }
 ?>
 
-<script src="https://www.58.tl/city/city.js"></script>
+<script src="https://www.58.tl/city/city.js?v=20261002"></script>
 <script>if (typeof getCityInfo === 'function' && document.getElementById('userCity')) getCityInfo();</script>
 
 <?php

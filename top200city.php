@@ -88,7 +88,7 @@ try {
       s.parentNode.insertBefore(hm, s);
     })();
     </script>
-	<script src="/city/city.js"></script>
+	<script src="/city/city.js?v=20261002"></script>
     <style>
         /* 全局样式 */
         * {

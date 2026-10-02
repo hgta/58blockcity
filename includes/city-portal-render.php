@@ -570,7 +570,7 @@ if (!function_exists('city_portal_render')) {
             <div class="cp-footer-copy">© 2025 58区块城市 | BlockCity 版权所有 | 基于元宇宙技术的下一代同城服务平台</div>
         </div>
     </footer>
-    <script src="/city/city.js"></script>
+    <script src="/city/city.js?v=20261002"></script>
     <script>
         window.onload=getCityInfo;
     </script>

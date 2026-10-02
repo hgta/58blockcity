@@ -11,7 +11,7 @@
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <script src="/city/city.js"></script>
+    <script src="/city/city.js?v=20261002"></script>
 <?php
 // 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
 require_once 'includes/session.php';
