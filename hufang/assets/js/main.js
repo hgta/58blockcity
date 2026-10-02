@@ -74,7 +74,7 @@ function updateCityDisplay(cityName) {
         // 更新城市链接
         const cityLink = document.getElementById('cityLink');
         if (cityLink) {
-            cityLink.href = `https://www.blockcity.pub/?city=${encodeURIComponent(cityName)}`;
+            cityLink.href = `https://www.blockcity.biz/?city=${encodeURIComponent(cityName)}`;
         }
     }
 }
@@ -374,7 +374,7 @@ function getCityInfo() {
 	.then(response => response.json())
 	.then(geoData => {
 	  const citycode = geoData.geocodes[0].citycode;
-	  document.getElementById('cityLink').href = 'https://www.blockcity.pub/'+citycode+'?iclc';  
+	  document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+citycode+'?iclc';  
 	})
 	.catch(error => {
 		if(navigator.geolocation) {
@@ -385,7 +385,7 @@ function getCityInfo() {
 						if(data.regeocode && data.regeocode.addressComponent.city) {
 							const city = data.regeocode.addressComponent.city.replace('市', '');
 							document.getElementById('userCity').textContent = city;
-							document.getElementById('cityLink').href = 'https://www.blockcity.pub/'+data.regeocode.addressComponent.citycode+'?iclc';
+							document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+data.regeocode.addressComponent.citycode+'?iclc';
 						}
 					});
 			});

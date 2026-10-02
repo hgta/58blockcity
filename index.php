@@ -192,7 +192,7 @@ $letters = range('A', 'Z');
 	
 	<!-- 城市定位提示条 -->
     <div class="city-location-bar" id="cityLocationBar">
-        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.biz/?iclc" id="cityLink">点击进入您所在城市的区块</a>
     </div>
 	
     <!--
@@ -324,7 +324,7 @@ $letters = range('A', 'Z');
                     <div class="eco-desc">悬赏众包 帮做小任务</div>
                     <span class="eco-go">进入 →</span>
                 </a>
-                <a href="https://www.blockcity.pub/?iclc" class="eco-card">
+                <a href="https://www.blockcity.biz/?iclc" class="eco-card">
                     <div class="eco-icon">🏛️</div>
                     <div class="eco-name">DAO治理</div>
                     <div class="eco-desc">社区共建共治共享</div>
@@ -379,7 +379,7 @@ $letters = range('A', 'Z');
                 <h2 class="dao-title">加入 BlockCity DAO 社区</h2>
                 <p class="dao-text">持有平台通证，参与社区治理、投票决策、分享收益，共建去中心化城市服务平台。</p>
             </div>
-            <a href="https://www.blockcity.pub/?iclc" class="dao-button">立即加入DAO</a>
+            <a href="https://www.blockcity.biz/?iclc" class="dao-button">立即加入DAO</a>
         </section>
     </main>
     
@@ -412,7 +412,7 @@ $letters = range('A', 'Z');
                         <li><a href="https://help.58.tl/" style="color:#64748b;">帮助中心</a></li>
                         <li><a href="https://help.58.tl/faq" style="color:#64748b;">常见问题</a></li>
                         <li><a href="https://help.58.tl/ask" style="color:#64748b;">AI 助手答疑</a></li>
-                        <li><a href="https://www.blockcity.pub/?iclc=1" style="color:#64748b;">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/?iclc=1" style="color:#64748b;">加入DAO</a></li>
                         <li><a href="https://www.blockcity.biz/naquba/" style="color:#64748b;">元宇宙店铺</a></li>
                         <li><a href="news.php" style="color:#64748b;">区块新闻</a></li>
                     </ul>

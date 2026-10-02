@@ -81,8 +81,8 @@ $footerName = $site_config['footer_name'] ?? '58 BlockCity';
                     <li><a href="https://help.58.tl/"><i class="fas fa-book"></i> 帮助中心</a></li>
                     <li><a href="https://help.58.tl/faq"><i class="fas fa-circle-question"></i> 常见问题</a></li>
                     <li><a href="https://help.58.tl/ask"><i class="fas fa-robot"></i> AI 助手答疑</a></li>
-                    <li><a href="https://www.blockcity.pub/?iclc"><i class="fas fa-map-marked-alt"></i> 进入城市区块</a></li>
-                    <li><a href="https://www.blockcity.pub/?iclc=1"><i class="fas fa-users"></i> 加入 DAO</a></li>
+                    <li><a href="https://www.blockcity.biz/?iclc"><i class="fas fa-map-marked-alt"></i> 进入城市区块</a></li>
+                    <li><a href="https://www.blockcity.biz/?iclc=1"><i class="fas fa-users"></i> 加入 DAO</a></li>
                 </ul>
             </div>
             <div class="footer-col footer-qr">

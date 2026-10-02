@@ -641,7 +641,7 @@ try {
     
 	<!-- 城市定位提示条 -->
     <div class="city-location-bar" id="cityLocationBar">
-        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.biz/?iclc" id="cityLink">点击进入您所在城市的区块</a>
     </div>
 	
     <!-- 主内容 -->
@@ -677,7 +677,7 @@ try {
                 ?>
                 <tr class="page-<?= $pageNo ?>"<?= $pageNo > 1 ? ' style="display:none"' : '' ?>>
                     <td class="rank"><?= $rankCell ?></td>
-                    <td class="city-name"><a href="https://www.blockcity.pub/<?= $areaAttr ?>?iclc" title="<?= $nameAttr ?>区块城市详情"><?= $nameAttr ?></a></td>
+                    <td class="city-name"><a href="https://www.blockcity.biz/<?= $areaAttr ?>?iclc" title="<?= $nameAttr ?>区块城市详情"><?= $nameAttr ?></a></td>
                     <td class="stats"><?= number_format((int)$c['resident_count']) ?></td>
                     <td class="stats"><?= number_format((int)$c['activated_blocks']) ?></td>
                 </tr>
@@ -733,7 +733,7 @@ try {
                     <h4 style="color:#fff;margin-bottom:12px;font-size:15px;">帮助支持</h4>
                     <ul style="list-style:none;padding:0;font-size:13px;line-height:2.2;">
                         <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1" style="color:#64748b;">使用指南</a></li>
-                        <li><a href="https://www.blockcity.pub/?iclc=1" style="color:#64748b;">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/?iclc=1" style="color:#64748b;">加入DAO</a></li>
                         <li><a href="https://www.blockcity.biz/naquba/" style="color:#64748b;">元宇宙店铺</a></li>
                         <li><a href="news.php" style="color:#64748b;">区块新闻</a></li>
                     </ul>

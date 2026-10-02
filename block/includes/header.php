@@ -105,4 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
         </nav>
     </div>
 </header>
+<div class="city-location-bar" id="cityLocationBar">
+    欢迎您，来自于<a href="https://www.58.tl/top200city.php" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.58.tl/top200city.php" id="cityLink2">点击进入您的区块城市</a>
+</div>
 <div class="block-container">

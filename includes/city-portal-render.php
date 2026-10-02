@@ -155,7 +155,7 @@ if (!function_exists('city_portal_render')) {
         $fund      = number_format((float)($city['current_balance'] ?? ($city['total_fund'] ?? 0)), 1);
         $popularity = (int)($city['popularity'] ?? 0);
         $areaCode  = (string)($city['area_code'] ?? '');
-        $enterUrl  = $areaCode !== '' ? "https://www.blockcity.pub/{$areaCode}?iclc" : 'https://www.blockcity.pub/?iclc';
+        $enterUrl  = $areaCode !== '' ? "https://www.blockcity.biz/{$areaCode}?iclc" : 'https://www.blockcity.biz/?iclc';
         $pageUrl   = 'https://www.58.tl/city/' . $pinyin . '.html';
 
         $cityEnc = rawurlencode($cityName);
@@ -252,7 +252,7 @@ if (!function_exists('city_portal_render')) {
         </div>
     </header>
     <div class="city-location-bar" id="cityLocationBar">
-        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.pub/?iclc" id="cityLink">点击进入您所在城市的区块</a>
+        欢迎您,来自于<span id="userCity">未知城市</span>的朋友，<a href="https://www.blockcity.biz/?iclc" id="cityLink">点击进入您所在城市的区块</a>
     </div>
 
     <div class="cp-wrap container">
@@ -548,7 +548,7 @@ if (!function_exists('city_portal_render')) {
                     <h4>帮助支持</h4>
                     <ul>
                         <li><a href="https://www.blockcity.vip/pages/index/help/?iclc=1">使用指南</a></li>
-                        <li><a href="https://www.blockcity.pub/?iclc=1">加入DAO</a></li>
+                        <li><a href="https://www.blockcity.biz/?iclc=1">加入DAO</a></li>
                         <li><a href="https://www.blockcity.biz/naquba/">元宇宙店铺</a></li>
                         <li><a href="/news.php">区块新闻</a></li>
                     </ul>

@@ -751,7 +751,7 @@
                 if (!block.sold) {
                     const buyButton = blockElement.querySelector('.btn-buy');
                     buyButton.addEventListener('click', () => {
-                        window.location.href = 'https://www.blockcity.pub/0010?iclc';
+                        window.location.href = 'https://www.blockcity.biz/0010?iclc';
                     });
                 }
             });
@@ -816,7 +816,7 @@
                 if (!block.sold) {
                     const buyButton = blockElement.querySelector('.btn-buy');
                     buyButton.addEventListener('click', () => {
-                        window.location.href = 'https://www.blockcity.pub/0010?iclc';
+                        window.location.href = 'https://www.blockcity.biz/0010?iclc';
                     });
                 }
             });
