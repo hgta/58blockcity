@@ -16,6 +16,8 @@ function getCityInfo() {
 	.then(geoData => {
 	  const citycode = geoData.geocodes[0].citycode;
 	  document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+citycode+'?iclc';  
+	  const cityLink2 = document.getElementById('cityLink2');
+	  if (cityLink2) cityLink2.href = document.getElementById('cityLink').href;
 	})
 	.catch(error => {
 		if(navigator.geolocation) {
@@ -27,6 +29,8 @@ function getCityInfo() {
 							const city = data.regeocode.addressComponent.city.replace('市', '');
 							document.getElementById('userCity').textContent = city;
 							document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+data.regeocode.addressComponent.citycode+'?iclc';
+							const cityLink2 = document.getElementById('cityLink2');
+							if (cityLink2) cityLink2.href = document.getElementById('cityLink').href;
 						}
 					});
 			});
