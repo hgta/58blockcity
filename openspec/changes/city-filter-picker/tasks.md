@@ -32,3 +32,17 @@
 - [x] 5.1 全部改动文件 `php -l` 通过（6/6）；组件在微信内置浏览器（X5/WKWebView）聚焦展开、键盘选择正常——待线上复核
 - [ ] 5.2 按 spec 验收场景逐条走查：四页候选完整性、拼音/别名直接提交、清除回全部、旧 URL `?city=北京&page=2` 兼容、注册页零回归（待线上）
 - [ ] 5.3 提交推送；服务器拉取后线上走查四个入口（block.58.tl 三个列表页 + bct 后台交易管理），确认无慢查询告警
+
+## 6. 代码审查记录（standard review gate）
+
+审查结论 Ready-with-fixes（无 Critical）。已修复（commit fcdedd9）：
+- Important：city_picker render() innerHTML 未转义（bct 候选含业务表脏数据城市，防存储型 XSS）；block 三页分页链接 zone/currency 未 urlencode（反射 XSS）
+- Minor：script 内 getElementById 的 id 输出补 htmlspecialchars(ENT_QUOTES)
+
+接受不改的 Minor 项（记录原因）：
+- `bct/admin/orders.php` LIMIT/OFFSET 内插：值均 int 化安全，且为该文件既有风格，不顺手扩散改动
+- `data-total` 输出 JS 未使用：无害，保留向后兼容
+- include 路径三种风格并存（dirname / dirname(,2) / $sharedIncludes）：本批内自洽，批 3 推广前再统一 helper
+- purchase/claim 页 `$filterCity` 未预 trim：`buildCityFilterWhere()` 内部统一 trim，行为一致
+- bct 城市筛选由精确 `=` 放宽为归一化 LIKE：设计 D4 既定的超集语义（拼音/别名可命中），前导通配不走索引可接受（千级表）
+
