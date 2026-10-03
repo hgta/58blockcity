@@ -46,7 +46,7 @@ $whereSql = implode(' AND ', $where);
 
 $sql = "SELECT l.*, c.name as city_name, u.username as seller_name,
                b.zone, b.block_number, b.display_type, b.display_image, b.display_text, b.display_color,
-               mb.merge_size, mb.merged_blocks as merged_nums
+               mb.merge_size as merged_size, mb.merged_blocks as merged_nums
         FROM block_listings l
         LEFT JOIN cities c ON l.city_id = c.id
         LEFT JOIN blocks b ON l.block_id = b.id
@@ -91,8 +91,21 @@ function renderThumb($l, $skinColors) {
 }
 function listingTitle($l) {
     if (!empty($l['merged_block_id'])) {
-        $m = $l['merged_size'] ?? '1x1';
-        $min = $l['merged_nums'] ? min(array_map('trim', explode(',', $l['merged_nums']))) : '';
+        $nums = !empty($l['merged_nums']) ? array_map('trim', explode(',', $l['merged_nums'])) : [];
+        // 尺寸优先取 merged_blocks.merge_size（SQL 别名 merged_size）；历史/脏数据为空时按组内编号现算，
+        // 避免再出现"2x2 的合并块在列表里显示 1x1"（原代码读 $l['merged_size'] 但 SQL 只取了 merge_size）
+        $m = trim((string)($l['merged_size'] ?? $l['merge_size'] ?? ''));
+        if ($m === '' || strpos($m, 'x') === false) {
+            $cols = [];
+            $rows = [];
+            foreach ($nums as $n) {
+                if ($n === '') continue;
+                $cols[] = intval(substr($n, 0, 2));
+                $rows[] = intval(substr($n, 2, 2));
+            }
+            $m = $cols ? (max($cols) - min($cols) + 1) . 'x' . (max($rows) - min($rows) + 1) : '1x1';
+        }
+        $min = $nums ? min($nums) : '';
         return $l['zone'] . '区 · ' . $m . ' 合并区块' . ($min ? '（' . $min . '）' : '');
     }
     return $l['zone'] . '区 #' . $l['block_number'];
