@@ -6,6 +6,8 @@
  */
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../classes/City.php';
 
 checkAdmin();
 
@@ -91,12 +93,21 @@ $filterUser   = trim($_GET['user'] ?? '');
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $perPage      = 20;
 
+// 城市全集（搜索 + 归一化共用一次查询）
+$cityObj = new City($pdo);
+$allCities = $cityObj->getAllCities();
+
+// 城市筛选归一化：拼音/别名（如 hangzhou、「武汉市」）→ 标准名；
+// bct_orders 无拼音列，用归一化结果做单列 LIKE（原来是精确 =，包含匹配为其超集）
+$cityFilter = buildCityFilterWhere($filterCity, $allCities, 'o.city', null);
+$filterCity = $cityFilter['city'];
+
 $where = [];
 $params = [];
 
-if ($filterCity !== '') {
-    $where[] = 'o.city = ?';
-    $params[] = $filterCity;
+if ($cityFilter['where'] !== '') {
+    $where[] = $cityFilter['where'];
+    $params[] = $cityFilter['params'][0];
 }
 if (in_array($filterType, ['buy', 'sell'], true)) {
     $where[] = 'o.type = ?';
@@ -157,8 +168,13 @@ $stats = $pdo->query("
     FROM bct_orders
 ")->fetch(PDO::FETCH_ASSOC);
 
-// 城市下拉（仅取有订单的城市）
-$cityOptions = $pdo->query("SELECT DISTINCT city FROM bct_orders ORDER BY city ASC")->fetchAll(PDO::FETCH_COLUMN);
+// 城市候选：有订单的城市（DISTINCT 口径不变），LEFT JOIN cities 取拼音/热门/排序；
+// 排序规则显式对齐 utf8mb4_unicode_ci，避免与 cities.name 比较时报 #1267
+$candStmt = $pdo->query("SELECT o.city AS name, c.pinyin, COALESCE(c.is_hot, 0) AS is_hot
+    FROM (SELECT DISTINCT city FROM bct_orders) o
+    LEFT JOIN cities c ON o.city COLLATE utf8mb4_unicode_ci = c.name COLLATE utf8mb4_unicode_ci
+    ORDER BY COALESCE(c.rank, 999999), o.city");
+$cityPickerCandidates = $candStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 保留当前筛选，供操作后跳回
 $returnQuery = http_build_query(array_filter([
@@ -235,14 +251,18 @@ require_once '../../shared/admin/admin-header.php';
 <div class="admin-card" style="margin-bottom:20px;">
     <div class="admin-card-body">
         <form method="get" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
-            <div style="min-width:150px;">
+            <div style="min-width:200px;">
                 <label class="admin-form-label">城市</label>
-                <select name="city" class="admin-form-select">
-                    <option value="">全部城市</option>
-                    <?php foreach ($cityOptions as $c): ?>
-                    <option value="<?= htmlspecialchars($c) ?>" <?= $filterCity === $c ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <?php
+                $cityOptions = $allCities;
+                $cityPickerName  = 'city';
+                $cityPickerValue = $filterCity;
+                $cityPickerId    = 'cityPicker';
+                $cityPickerVariant = 'admin';
+                $cityPickerAllowClear = true;
+                $cityPickerPlaceholder = '全部城市（可输入搜索）';
+                include dirname(__DIR__, 2) . '/includes/city_picker.php';
+                ?>
             </div>
             <div style="min-width:110px;">
                 <label class="admin-form-label">方向</label>

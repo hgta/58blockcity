@@ -137,7 +137,61 @@ function normalizeCityName($input, array $cityOptions = []) {
         }
     }
 
+    // 去掉行政区划后缀再匹配（如「武汉市」→「武汉」，与 City::getCityByName 顺序一致）
+    $stripped = preg_replace('/(市|地区|自治州|自治县|盟|省)$/u', '', $input);
+    if ($stripped !== null && $stripped !== '' && $stripped !== $input) {
+        foreach ($cityOptions as $city) {
+            $name = is_array($city) ? (string)($city['name'] ?? '') : (string)$city;
+            if ($name === $stripped) {
+                return $name;
+            }
+        }
+    }
+
     return $input;
+}
+}
+
+/**
+ * 城市筛选 WHERE 构造（归一化优先 + 双列 LIKE 兜底）
+ *
+ * 用于列表页城市筛选：先把拼音 / 别名（如 hangzhou、「武汉市」）归一化为
+ * cities 标准名，再生成包含匹配条件，消除「输入拼音未点选 → 静默 0 结果」。
+ * 未收录输入按原样包含匹配（保留「输入子串也能搜」的宽松语义）。
+ *
+ * @param string      $input      用户输入（GET city）
+ * @param array       $allCities cities 表数据（每项含 name / pinyin）
+ * @param string      $nameCol   SQL 中城市名列（如 c.name / o.city）
+ * @param string|null $pinyinCol SQL 中拼音列（c.pinyin；null = 单列匹配，如 bct_orders 无拼音列）
+ * @return array{where:string, params:string[], city:string}
+ *   where  => SQL 片段（不含 AND 前缀；输入为空时为空串）
+ *   params => 绑定参数
+ *   city   => 归一化后的标准名（供输入框回显；未收录时为原输入）
+ */
+if (!function_exists('buildCityFilterWhere')) {
+function buildCityFilterWhere($input, array $allCities, $nameCol = 'c.name', $pinyinCol = 'c.pinyin') {
+    $input = trim((string)$input);
+    if ($input === '') {
+        return ['where' => '', 'params' => [], 'city' => ''];
+    }
+
+    $norm = normalizeCityName($input, $allCities);
+
+    // LIKE 转义（| 作转义符，与 City::getCityByName 一致，避免 % _ 通配符干扰）
+    $like = '%' . str_replace(['|', '%', '_'], ['||', '|%', '|_'], $norm) . '%';
+
+    if ($pinyinCol) {
+        return [
+            'where'  => "({$nameCol} LIKE ? ESCAPE '|' OR {$pinyinCol} LIKE ? ESCAPE '|')",
+            'params' => [$like, $like],
+            'city'   => $norm,
+        ];
+    }
+    return [
+        'where'  => "{$nameCol} LIKE ? ESCAPE '|'",
+        'params' => [$like],
+        'city'   => $norm,
+    ];
 }
 }
 

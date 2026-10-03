@@ -4,6 +4,7 @@ require_once 'includes/auth.php';
 require_once '../classes/Block.php';
 require_once '../classes/City.php';
 require_once '../classes/BlockListing.php';
+require_once '../includes/functions.php';
 
 $block = new Block($pdo);
 $city = new City($pdo);
@@ -20,11 +21,18 @@ $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
 
+// 城市全集（搜索 + 归一化共用一次查询）
+$allCities = $city->getAllCities();
+
+// 城市筛选归一化：拼音/别名（如 hangzhou、「武汉市」）→ 标准名，双列 LIKE 兜底
+$cityFilter = buildCityFilterWhere($filterCity, $allCities);
+$filterCity = $cityFilter['city'];
+
 $where = ["l.status = 'listed'"];
 $params = [];
-if ($filterCity) {
-    $where[] = "c.name LIKE ?";
-    $params[] = "%$filterCity%";
+if ($cityFilter['where'] !== '') {
+    $where[] = $cityFilter['where'];
+    $params = array_merge($params, $cityFilter['params']);
 }
 if ($filterZone && preg_match('/^[A-HZ]$/', $filterZone)) {
     $where[] = "b.zone = ?";
@@ -73,7 +81,12 @@ $countStmt->execute($params);
 $total = $countStmt->fetchColumn();
 $totalPages = ceil($total / $perPage);
 
-$hotCities = $city->getHotCitiesList(20);
+// 城市候选：有在售挂牌的城市（按 rank），输入框仍可搜全集
+$candStmt = $pdo->prepare("SELECT c.name, c.pinyin, c.is_hot FROM cities c
+    WHERE c.id IN (SELECT DISTINCT l.city_id FROM block_listings l WHERE l.status = 'listed')
+    ORDER BY c.rank");
+$candStmt->execute();
+$cityPickerCandidates = $candStmt->fetchAll();
 
 $skinColors = ['red' => '#ff6060', 'green' => '#35cc2d', 'blue' => '#337be6'];
 
@@ -119,12 +132,16 @@ function listingTitle($l) {
     <form class="filter-bar" method="get">
         <div class="filter-group">
             <label>城市</label>
-            <select name="city">
-                <option value="">全部城市</option>
-                <?php foreach ($hotCities as $hc): ?>
-                <option value="<?= htmlspecialchars($hc['name']) ?>" <?= $filterCity===$hc['name']?'selected':'' ?>><?= htmlspecialchars($hc['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <?php
+            $cityOptions = $allCities;
+            $cityPickerName  = 'city';
+            $cityPickerValue = $filterCity;
+            $cityPickerId    = 'cityPicker';
+            $cityPickerVariant = 'filter';
+            $cityPickerAllowClear = true;
+            $cityPickerPlaceholder = '全部城市（可输入搜索）';
+            include dirname(__DIR__) . '/includes/city_picker.php';
+            ?>
         </div>
         <div class="filter-group">
             <label>区域</label>
@@ -162,7 +179,11 @@ function listingTitle($l) {
     <?php if (empty($listings)): ?>
         <div class="empty-state">
             <i class="fas fa-box-open"></i>
+            <?php if ($filterCity !== ''): ?>
+            <p><?= htmlspecialchars($filterCity) ?> 暂无在售挂牌</p>
+            <?php else: ?>
             <p>暂无在售区块</p>
+            <?php endif; ?>
             <a href="city.php?name=beijing" class="btn-primary">浏览区块城市</a>
         </div>
     <?php else: ?>
@@ -187,13 +208,13 @@ function listingTitle($l) {
         <?php if ($totalPages > 1): ?>
         <div class="pagination-clean">
             <?php if ($page > 1): ?>
-                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&currency=<?= $filterCurrency ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">上一页</a>
+                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>&currency=<?= urlencode($filterCurrency) ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">上一页</a>
             <?php endif; ?>
             <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
-                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&currency=<?= $filterCurrency ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
+                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>&currency=<?= urlencode($filterCurrency) ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
             <?php endfor; ?>
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>&currency=<?= $filterCurrency ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">下一页</a>
+                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>&currency=<?= urlencode($filterCurrency) ?>&min_price=<?= $filterMinPrice ?? '' ?>&max_price=<?= $filterMaxPrice ?? '' ?>" class="page-link">下一页</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>
