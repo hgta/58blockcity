@@ -1,0 +1,14 @@
+{
+  "change": "city-filter-picker",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "a0890402e27f1a01e71427a4c23da51bb44585b2f3bbae92886ac42b2203ecb4",
+  "files": [
+    { "path": "openspec/changes/city-filter-picker/proposal.md", "sha256": "8f34da83adc1fef9a4f05c3c6c2787c06909d65e11fb3a2bf56cb577536ce9aa" },
+    { "path": "openspec/changes/city-filter-picker/design.md", "sha256": "ea1221960a8eb6b78ae1ce3d5e5196160a766d876db717ec27dc5ab3c93c8765" },
+    { "path": "openspec/changes/city-filter-picker/tasks.md", "sha256": "b83a7b50359498357f817f45a442c18b1b9ba69ec1d5b4448507ade48712598f" },
+    { "path": "openspec/changes/city-filter-picker/specs/city-filter/spec.md", "sha256": "3cc88423afeecbf0f7e6bac5b543355648f3c3f4aa53b62ef576596726c99613" }
+  ]
+}
