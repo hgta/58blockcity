@@ -131,13 +131,13 @@ $cityPickerCandidates = $candStmt->fetchAll();
         <?php if ($totalPages > 1): ?>
         <div class="pagination-clean">
             <?php if ($page > 1): ?>
-                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">上一页</a>
+                <a href="?page=<?= $page-1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>" class="page-link">上一页</a>
             <?php endif; ?>
             <?php for ($i = max(1, $page-2); $i <= min($totalPages, $page+2); $i++): ?>
-                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
+                <a href="?page=<?= $i ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>" class="page-link <?= $i==$page?'active':'' ?>"><?= $i ?></a>
             <?php endfor; ?>
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= $filterZone ?>" class="page-link">下一页</a>
+                <a href="?page=<?= $page+1 ?>&city=<?= urlencode($filterCity) ?>&zone=<?= urlencode($filterZone) ?>" class="page-link">下一页</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

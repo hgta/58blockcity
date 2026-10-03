@@ -136,10 +136,10 @@ $__clearClass   = $cityPickerAllowClear ? ' cp-clearable' : '';
 
 <script>
 (function () {
-    var root = document.getElementById('<?= $cityPickerId ?>');
+    var root = document.getElementById('<?= htmlspecialchars($cityPickerId, ENT_QUOTES) ?>');
     if (!root) return;
 
-    var dataEl  = document.getElementById('<?= $cityPickerId ?>Data');
+    var dataEl  = document.getElementById('<?= htmlspecialchars($cityPickerId, ENT_QUOTES) ?>Data');
     var input   = root.querySelector('.cp-input');
     var panel   = root.querySelector('.cp-panel');
     var listEl  = root.querySelector('.cp-list');
@@ -148,7 +148,7 @@ $__clearClass   = $cityPickerAllowClear ? ' cp-clearable' : '';
     try { cities = JSON.parse(dataEl.value) || []; } catch (e) { cities = []; }
 
     // 候选子集（默认展示「有数据的城市」；无则展开即全量）
-    var candEl  = document.getElementById('<?= $cityPickerId ?>CandData');
+    var candEl  = document.getElementById('<?= htmlspecialchars($cityPickerId, ENT_QUOTES) ?>CandData');
     var candData = null;
     if (candEl) { try { candData = JSON.parse(candEl.value) || null; } catch (e) { candData = null; } }
 
@@ -166,6 +166,13 @@ $__clearClass   = $cityPickerAllowClear ? ' cp-clearable' : '';
         return false;
     }
 
+    // HTML 转义：候选可能来自业务表脏数据（如 bct_orders.city），渲染前统一转义
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
+    }
+
     function render(keyword) {
         var q = (keyword || '').trim().toLowerCase().replace(/\s+/g, '');
         var source = (q === '' && candData && candData.length) ? candData : cities;
@@ -177,9 +184,9 @@ $__clearClass   = $cityPickerAllowClear ? ' cp-clearable' : '';
         var html = '';
         var shown = matched.slice(0, MAX_RENDER);
         for (var j = 0; j < shown.length; j++) {
-            html += '<div class="cp-item" data-city="' + shown[j].n.replace(/"/g, '') + '">'
-                  + '<span>' + shown[j].n + '</span>'
-                  + (shown[j].p ? '<span class="cp-py">' + shown[j].p + '</span>' : '')
+            html += '<div class="cp-item" data-city="' + esc(shown[j].n) + '">'
+                  + '<span>' + esc(shown[j].n) + '</span>'
+                  + (shown[j].p ? '<span class="cp-py">' + esc(shown[j].p) + '</span>' : '')
                   + '</div>';
         }
         if (!shown.length) {
