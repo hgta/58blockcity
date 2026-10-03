@@ -40,8 +40,11 @@ require_once 'shared/organization.php';
 $isLoggedIn = isLoggedIn();
 $city = new City($pdo);
 $hotCities = $city->getHotCitiesList(18);
-$citiesByLetter = $city->getCitiesByLetter();
-$letters = range('A', 'Z');
+// 城市列表 = 全国排名 TOP200（rank 升序取头部），按首字母分组；
+// 而非旧逻辑的拼音字典序前 200（会把 S/W/X/Y/Z 等字母整组截掉）。
+$citiesByLetter = $city->getTopCitiesByLetter(200);
+// 导航字母与 cities 表分组口径一致（无 I/O/U/V；中文城市拼音不存在这些首字母）
+$navLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'];
 ?>
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -204,31 +207,12 @@ $letters = range('A', 'Z');
         </div>
     </div>
     -->	
-    <!-- 字母导航 -->
+    <!-- 字母导航：本页渲染的字母用页内锚点，未进 TOP200 的字母指向全量列表页对应锚点，保证永不死链 -->
     <nav class="letter-nav">
         <div class="letter-nav-container">
-            <a href="#A" class="letter-link">A</a>
-            <a href="#B" class="letter-link">B</a>
-            <a href="#C" class="letter-link">C</a>
-            <a href="#D" class="letter-link">D</a>
-            <a href="#E" class="letter-link">E</a>
-            <a href="#F" class="letter-link">F</a>
-            <a href="#G" class="letter-link">G</a>
-            <a href="#H" class="letter-link">H</a>
-            <a href="#J" class="letter-link">J</a>
-            <a href="#K" class="letter-link">K</a>
-            <a href="#L" class="letter-link">L</a>
-            <a href="#M" class="letter-link">M</a>
-            <a href="#N" class="letter-link">N</a>
-            <a href="#P" class="letter-link">P</a>
-            <a href="#Q" class="letter-link">Q</a>
-            <a href="#R" class="letter-link">R</a>
-            <a href="#S" class="letter-link">S</a>
-            <a href="#T" class="letter-link">T</a>
-            <a href="#W" class="letter-link">W</a>
-            <a href="#X" class="letter-link">X</a>
-            <a href="#Y" class="letter-link">Y</a>
-            <a href="#Z" class="letter-link">Z</a>
+            <?php foreach ($navLetters as $navLetter): ?>
+                <a href="<?= isset($citiesByLetter[$navLetter]) ? '#' . $navLetter : 'all-cities.php#' . $navLetter ?>" class="letter-link"><?= $navLetter ?></a>
+            <?php endforeach; ?>
         </div>
     </nav>
     
@@ -333,22 +317,15 @@ $letters = range('A', 'Z');
             </div>
         </section>
 
-        <!-- 城市列表（仅展示前200个） -->
+        <!-- 城市列表：全国排名 TOP200，按首字母分组（组内按热度排名），完整列表见 all-cities.php -->
         <div class="city-list-container">
-            <?php
-            $displayedCount = 0;
-            $maxCities = 200;
-            foreach ($letters as $letter):
+            <?php foreach ($navLetters as $letter):
                 if (empty($citiesByLetter[$letter])) continue;
             ?>
             <section id="<?= $letter ?>" class="city-section">
                 <div class="city-letter"><?= $letter ?></div>
                 <div class="city-grid">
-                    <?php foreach ($citiesByLetter[$letter] as $c):
-                        if ($displayedCount >= $maxCities) break;
-                        if (strtoupper(substr($c['pinyin'], 0, 1)) !== $letter) continue;
-                        $displayedCount++;
-                    ?>
+                    <?php foreach ($citiesByLetter[$letter] as $c): ?>
                         <a href="/city/<?= urlencode($c['pinyin']) ?>.html"
                            class="city-item <?= $c['is_hot'] ? 'hot-city' : '' ?>">
                             <?= htmlspecialchars($c['name']) ?>
@@ -356,19 +333,14 @@ $letters = range('A', 'Z');
                     <?php endforeach; ?>
                 </div>
             </section>
-            <?php
-                if ($displayedCount >= $maxCities) break;
-            endforeach;
-            ?>
+            <?php endforeach; ?>
         </div>
 
-        <?php if ($displayedCount >= $maxCities): ?>
         <div class="more-cities-bar" style="text-align:center;padding:24px 0 40px;">
             <a href="all-cities.php" style="display:inline-block;background:var(--primary);color:#fff;padding:12px 32px;border-radius:999px;font-size:15px;font-weight:600;box-shadow:var(--shadow-md);">
                 查看全部 <?= $city->getTotalCitiesCount() ?> 个城市 →
             </a>
         </div>
-        <?php endif; ?>
         
         
         

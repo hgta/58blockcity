@@ -270,6 +270,35 @@ class City {
 	}	
 	
 	/**
+	 * 获取全国排名前 N 的城市，按首字母分组（组内按排名升序，越热门越靠前）
+	 * 首页城市列表使用：按 rank 取头部，保证上海/深圳/西安/郑州等热门城市
+	 * 不会被拼音字典序截断遗漏（完整列表见 all-cities.php）
+	 */
+	public function getTopCitiesByLetter($limit = 200) {
+		try {
+			$limit = max(1, (int)$limit);
+			$stmt = $this->pdo->prepare("SELECT * FROM cities WHERE rank > 0 ORDER BY rank ASC, pinyin ASC LIMIT ?");
+			$stmt->bindParam(1, $limit, PDO::PARAM_INT);
+			$stmt->execute();
+			$top_cities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			$letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'];
+			$cities_by_letter = [];
+			foreach ($top_cities as $city) {
+				$first_letter = strtoupper(substr($city['pinyin'], 0, 1));
+				if (in_array($first_letter, $letters)) {
+					$cities_by_letter[$first_letter][] = $city;
+				}
+			}
+			return $cities_by_letter;
+
+		} catch (PDOException $e) {
+			error_log("获取TOP城市(按字母分组)失败: " . $e->getMessage());
+			return [];
+		}
+	}
+	
+	/**
 	 * 根据拼音获取城市数据
 	 */
 	public function getCityByPinyin($pinyin) {
