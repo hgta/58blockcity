@@ -84,7 +84,8 @@ function ai_help_base() {
     if ($refHost && strpos(strtolower($refHost), 'help.') === 0) return 'https://' . $refHost . '/';
     $cfg = ai_s('help_site_url', '');
     if ($cfg !== '') return rtrim($cfg, '/') . '/';
-    return 'https://' . ($_SERVER['HTTP_HOST'] ?? 'www.58.tl') . '/help/';
+    // 帮助中心是独立子站，不能拼当前域名（bct/www 子站下 /help/ 并不存在）
+    return 'https://help.58.tl/';
 }
 
 // ---------- 输入 ----------
