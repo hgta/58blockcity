@@ -143,7 +143,7 @@ try {
 if ($__aiWidgetOn):
 ?>
 <script src="https://www.58.tl/js/ai-client.js" defer></script>
-<script src="https://www.58.tl/js/ai-widget.js" defer></script>
+<script src="https://www.58.tl/js/ai-widget.js?v=20261004" defer></script>
 <?php endif; ?>
 <script src="https://www.58.tl/js/help-guide.js" defer></script>
 

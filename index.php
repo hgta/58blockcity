@@ -454,7 +454,7 @@ $navLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 
     if ($__aiWidgetOn):
     ?>
     <script src="/js/ai-client.js" defer></script>
-    <script src="/js/ai-widget.js" defer></script>
+    <script src="/js/ai-widget.js?v=20261004" defer></script>
     <?php endif; ?>
     <script src="/js/help-guide.js" defer></script>
 </body>

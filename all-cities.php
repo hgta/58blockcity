@@ -133,7 +133,7 @@ foreach ($allCities as $c) {
     <a href="/" style="color:#8d9199;margin:0 6px">返回首页</a>
 </footer>
 <script src="https://www.58.tl/js/ai-client.js" defer></script>
-<script src="https://www.58.tl/js/ai-widget.js" defer></script>
+<script src="https://www.58.tl/js/ai-widget.js?v=20261004" defer></script>
 <script src="https://www.58.tl/js/help-guide.js" defer></script>
 
 </body>
