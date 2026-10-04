@@ -104,11 +104,12 @@ ngram 不是负债是资产：精确术语/型号/"BCT"类查询它比 embedding
 
   | 端点 | 模型 | 结果 |
   |---|---|---|
-  | `https://ark.cn-beijing.volces.com/api/plan/v3` | `doubao-embedding-vision` | ✅ **成功返回 2048 级向量** |
+  | `https://ark.cn-beijing.volces.com/api/plan/v3` | `doubao-embedding-vision` | ✅ **成功返回向量，维度 2048**（首次回填实测确认） |
   | `https://ark.cn-beijing.volces.com/api/v3` | 同 | ❌ AuthenticationError（该 Key 为套餐专属 Key，非按量 Key） |
   | `https://ark.cn-beijing.volces.com/api/coding/v3` | 同 | ❌ AuthenticationError（非 Coding Plan 订阅） |
 
 - 结论：**沿用现有 Agent Plan Key，端点 `/api/plan/v3`、模型 `doubao-embedding-vision`，零额外费用**（套餐内含 Embedding）。此前"Agent Plan 的 Embedding 只是 harness 工具、裸 API 不可调用"的担忧被推翻——计划端点对 OpenAI 兼容 `/embeddings` 是开放的。
+- 实测补充：单请求 `input` 上限 **10 条**（超过报 `InvalidParameter: max 10, got 11`），`EmbeddingProvider::BATCH_SIZE` 已据此设为 10；**向量维度 2048**；首次回填 20 个知识源共 22 块，耗时约 37s。
 - 代码层保持**不绑定端点**（endpoint/model 来自渠道配置行），后台已内置对应预置模板「火山方舟 嵌入（语义检索）」。
 
 ### Spike 1.2 结论（2026-10-04，文档级）

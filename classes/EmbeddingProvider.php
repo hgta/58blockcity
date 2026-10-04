@@ -18,7 +18,8 @@ class EmbeddingProvider
 
     const TIMEOUT_CONNECT = 5;
     const TIMEOUT_TOTAL   = 30;
-    const BATCH_SIZE      = 16;
+    // 方舟 /embeddings 单请求上限 10 条（实测：超过报 InvalidParameter "max 10, got 11"）
+    const BATCH_SIZE      = 10;
 
     public function __construct(array $row)
     {
