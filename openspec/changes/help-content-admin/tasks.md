@@ -2,15 +2,15 @@
 
 ## 1. 数据层
 
-- [ ] 1.1 `init/migration-help-content-admin.sql`：新建 `help_eval_samples`（log_id 唯一、question、expected 编码、annotated_by、created_at）；加锁用设置键 `help_rebuild_locked_at`
-- [ ] 1.2 菜单项接入 `shared/admin/admin-menu-config.php`（语义检索控制台、检索标注台，挂在帮助文章/FAQ 之后）
+- [x] 1.1 `init/migration-help-content-admin.sql`：新建 `help_eval_samples`（log_id 唯一、question、expected 编码、annotated_by、created_at）；加锁用设置键 `help_rebuild_locked_at`
+- [x] 1.2 菜单项接入 `shared/admin/admin-menu-config.php`（语义检索控制台、检索标注台，挂在帮助文章/FAQ 之后）
 
 ## 2. 语义检索控制台（admin/help-semantic.php）
 
-- [ ] 2.1 知识块状态卡：各来源块数/已嵌入/维度/更新时间 + 「已发布但未入库」源清单（未入库源可单独补建）
-- [ ] 2.2 一键全量重建：后台触发 CLI（加锁防并发 + 超时控制），回显结果与耗时
-- [ ] 2.3 开关与阈值就地编辑：ai_semantic_rag_enabled / ai_semantic_min_score / ai_search_fallback_enabled / ai_search_model，保存即写 system_settings
-- [ ] 2.4 检索试验台：输入问题 → 展示混合检索命中块（标题/正文/cosine/RRF）、命中判定、旧 ngram 对照、未命中时的兜底提示
+- [x] 2.1 知识块状态卡：各来源块数/已嵌入/维度/更新时间 + 「已发布但未入库」源清单（未入库源可单独补建）
+- [x] 2.2 一键全量重建：请求内调用 HelpChunkSync::rebuildAll（锁 `help_rebuild_locked_at` 10 分钟 + set_time_limit），回显结果与耗时；失败自动解锁
+- [x] 2.3 开关与阈值就地编辑：ai_semantic_rag_enabled / ai_semantic_min_score / ai_search_fallback_enabled / ai_search_model，保存即写 system_settings
+- [x] 2.4 检索试验台：输入问题 → 展示混合检索命中块（标题/正文/cosine/RRF）、命中判定、旧 ngram 对照、未命中时的兜底提示
 - [ ] 2.5 页面上线自检：本地 php -l + 部署后逐项点验（状态/开关/试验台/重建）
 
 ## 3. 检索标注台（admin/help-eval.php）

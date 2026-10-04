@@ -45,17 +45,10 @@ $force     = in_array('--force', $argv, true);
 // 嵌入 API 调用期间连接会长时间空闲，拉长会话超时（避免 "MySQL server has gone away"）
 try { $pdo->exec("SET SESSION wait_timeout=28800, interactive_timeout=28800"); } catch (Exception $ex) {}
 
-// 断连重连闭包：config/database.php 用 define() 定义常量，可直接复用重建连接
+// 断连重连闭包（与后台控制台共用实现）
 $reconnect = function () use (&$pdo) {
-    if (defined('DB_HOST') && defined('DB_USER') && defined('DB_PASS') && defined('DB_NAME')) {
-        $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        try { $pdo->exec("SET SESSION wait_timeout=28800, interactive_timeout=28800"); } catch (Exception $ex) {}
-        return $pdo;
-    }
-    throw new RuntimeException('无法重建连接：缺少 DB_* 常量');
+    $pdo = call_user_func(HelpChunkSync::makeReconnect());
+    return $pdo;
 };
 
 // ---- 统计模式：不调 API，只看现状 ----

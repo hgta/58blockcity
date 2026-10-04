@@ -193,30 +193,8 @@ function parseExpected($raw)
     return null;
 }
 
-// ---------- 旧 ngram 检索（chat.php legacy 路径等价实现） ----------
+// ---------- 旧 ngram 检索（复用 HelpRetrieval::legacySearch） ----------
 function legacySearch(PDO $pdo, $question, $topN)
 {
-    try {
-        $stmt = $pdo->prepare(
-            "SELECT id, title, slug, MATCH(title, summary, content_richtext) AGAINST(? IN NATURAL LANGUAGE MODE) AS score
-             FROM help_articles
-             WHERE status='published' AND MATCH(title, summary, content_richtext) AGAINST(? IN NATURAL LANGUAGE MODE)
-             ORDER BY score DESC LIMIT " . (int)$topN
-        );
-        $stmt->execute([$question, $question]);
-        $arts = $stmt->fetchAll();
-        if (!$arts) {
-            $like = '%' . $question . '%';
-            $stmt = $pdo->prepare(
-                "SELECT id, title, slug, 0 AS score FROM help_articles
-                 WHERE status='published' AND (title LIKE ? OR summary LIKE ? OR content_richtext LIKE ?)
-                 ORDER BY view_count DESC LIMIT " . (int)$topN
-            );
-            $stmt->execute([$like, $like, $like]);
-            $arts = $stmt->fetchAll();
-        }
-        return $arts;
-    } catch (Exception $ex) {
-        return [];
-    }
+    return HelpRetrieval::legacySearch($pdo, $question, $topN);
 }

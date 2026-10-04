@@ -65,7 +65,30 @@ class HelpChunkSync
     }
 
     /**
-     * 全量重建（CLI）：published 文章/FAQ + 全部术语，末尾清理孤儿块
+     * 断连重连闭包（CLI 与后台控制台共用）
+     * config/database.php 以 define() 定义 DB_* 常量，可直接据此重建连接
+     */
+    public static function makeReconnect()
+    {
+        return function () {
+            if (defined('DB_HOST') && defined('DB_USER') && defined('DB_PASS') && defined('DB_NAME')) {
+                $p = new PDO(
+                    "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                    DB_USER, DB_PASS, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
+                    ]
+                );
+                try { $p->exec("SET SESSION wait_timeout=28800, interactive_timeout=28800"); } catch (Exception $ex) {}
+                return $p;
+            }
+            throw new RuntimeException('无法重建连接：缺少 DB_* 常量');
+        };
+    }
+
+    /**
+     * 全量重建（CLI / 后台控制台）：published 文章/FAQ + 全部术语，末尾清理孤儿块
      * @param callable|null $reconnect 连接断开（2006 MySQL server has gone away）时重建 PDO 的回调
      *                                 —— 嵌入 API 调用期间连接空闲，可能被服务端 wait_timeout 踢掉
      * @return array 汇总统计

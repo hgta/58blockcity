@@ -155,6 +155,38 @@ class HelpRetrieval
         return self::cosine($qvec, $cache[$chunkId]['blob']);
     }
 
+    /**
+     * 旧 ngram 检索（chat.php legacy 路径等价实现，供评测/试验台对照）
+     * @return array 文章行（含 id/title/slug）
+     */
+    public static function legacySearch(PDO $db, $query, $topN = 3)
+    {
+        $topN = max(1, min(10, (int)$topN));
+        try {
+            $stmt = $db->prepare(
+                "SELECT id, title, slug, MATCH(title, summary, content_richtext) AGAINST(? IN NATURAL LANGUAGE MODE) AS score
+                 FROM help_articles
+                 WHERE status='published' AND MATCH(title, summary, content_richtext) AGAINST(? IN NATURAL LANGUAGE MODE)
+                 ORDER BY score DESC LIMIT " . $topN
+            );
+            $stmt->execute([$query, $query]);
+            $arts = $stmt->fetchAll();
+            if (!$arts) {
+                $like = '%' . $query . '%';
+                $stmt = $db->prepare(
+                    "SELECT id, title, slug, 0 AS score FROM help_articles
+                     WHERE status='published' AND (title LIKE ? OR summary LIKE ? OR content_richtext LIKE ?)
+                     ORDER BY view_count DESC LIMIT " . $topN
+                );
+                $stmt->execute([$like, $like, $like]);
+                $arts = $stmt->fetchAll();
+            }
+            return $arts;
+        } catch (Exception $ex) {
+            return [];
+        }
+    }
+
     /** 重置请求内向量缓存（长跑脚本/测试在数据变更后调用） */
     public static function resetCache()
     {
