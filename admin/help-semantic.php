@@ -139,6 +139,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 function h($s) { return htmlspecialchars((string)$s); }
 
+// 标注台跳转过来时（?q=...）直接跑一次检索，省得再手工输入
+if ($testResult === null && isset($_GET['q']) && trim((string)$_GET['q']) !== '') {
+    $q = trim((string)$_GET['q']);
+    $topN = max(1, min(5, (int)($settings['ai_rag_topn'] ?? 3)));
+    $threshold = (float)($settings['ai_semantic_min_score'] ?? 0.45);
+    $embTest = EmbeddingProvider::pick($pdo);
+    $ret = new HelpRetrieval($pdo, $embTest);
+    $testResult = [
+        'q' => $q,
+        'r' => $ret->search($q, $topN, $threshold),
+        'legacy' => HelpRetrieval::legacySearch($pdo, $q, $topN),
+        'threshold' => $threshold,
+        'emb_ok' => (bool)$embTest,
+    ];
+}
+
 // ---------- 块状态 ----------
 $chunkStats = [];
 try {
