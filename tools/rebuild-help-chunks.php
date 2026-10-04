@@ -50,17 +50,18 @@ if ($statsMode) {
          FROM help_chunks GROUP BY source_type"
     )->fetchAll();
     if (!$rows) {
-        echo "help_chunks 为空——先在后台配置嵌入渠道，然后运行本脚本（不带 --stats）做首次回填。\n";
+        echo "help_chunks 为空——尚未回填。\n";
     } else {
         printf("%-10s %8s %10s %8s  %s\n", 'source', 'chunks', 'embedded', 'dim', 'last_updated');
         foreach ($rows as $r) {
             printf("%-10s %8d %10d %8d  %s\n", $r['source_type'], $r['chunks'], (int)$r['embedded'], (int)$r['dim'], $r['last_at']);
         }
-        $emb = EmbeddingProvider::pick($pdo);
-        echo $emb
-            ? "嵌入渠道: [{$emb->name()}] {$emb->model()} @ " . $emb->endpointUrl() . "\n"
-            : "嵌入渠道: 未配置（后台 AI 渠道配置 → 新增，用途选「嵌入」）\n";
     }
+    // 渠道状态恒输出：首次运行时最需要看这一行
+    $emb = EmbeddingProvider::pick($pdo);
+    echo $emb
+        ? "嵌入渠道: [{$emb->name()}] {$emb->model()} @ " . $emb->endpointUrl() . "\n"
+        : "嵌入渠道: 未配置（purpose='embedding' 且启用的渠道不存在）——请到后台「AI 渠道配置」新增，用途选「嵌入」\n";
     exit(0);
 }
 
