@@ -66,15 +66,35 @@ class HelpChunkSync
 
     /**
      * 全量重建（CLI）：published 文章/FAQ + 全部术语，末尾清理孤儿块
+     * @param callable|null $reconnect 连接断开（2006 MySQL server has gone away）时重建 PDO 的回调
+     *                                 —— 嵌入 API 调用期间连接空闲，可能被服务端 wait_timeout 踢掉
      * @return array 汇总统计
      */
-    public static function rebuildAll(PDO $db, EmbeddingProvider $emb, callable $log = null)
+    public static function rebuildAll(PDO $db, EmbeddingProvider $emb, callable $log = null, callable $reconnect = null)
     {
         $say = function ($m) use ($log) { if ($log) call_user_func($log, $m); };
         $stats = ['sources' => 0, 'chunks' => 0, 'embedded' => 0, 'kept' => 0, 'dropped' => 0, 'failed' => 0];
 
+        $ping = function () use (&$db, $reconnect, $say) {
+            try {
+                $db->query('SELECT 1');
+            } catch (Exception $ex) {
+                if (!$reconnect) return false;
+                try {
+                    $db = $reconnect();
+                    $say('（数据库连接已重连）');
+                    return true;
+                } catch (Exception $ex2) {
+                    $say('重连失败: ' . $ex2->getMessage());
+                    return false;
+                }
+            }
+            return true;
+        };
+
         foreach ($db->query("SELECT id FROM help_articles WHERE status = 'published' ORDER BY id") as $r) {
             try {
+                $ping();
                 $s = self::syncArticle($db, $emb, $r['id']);
                 $stats['sources']++; $stats['chunks'] += $s['total'];
                 $stats['embedded'] += $s['embedded']; $stats['kept'] += $s['kept']; $stats['dropped'] += $s['dropped'];
@@ -86,6 +106,7 @@ class HelpChunkSync
         }
         foreach ($db->query("SELECT id FROM help_faq WHERE status = 'published' ORDER BY id") as $r) {
             try {
+                $ping();
                 $s = self::syncFaq($db, $emb, $r['id']);
                 $stats['sources']++; $stats['chunks'] += $s['total'];
                 $stats['embedded'] += $s['embedded']; $stats['kept'] += $s['kept']; $stats['dropped'] += $s['dropped'];
@@ -96,6 +117,7 @@ class HelpChunkSync
         }
         foreach ($db->query("SELECT id FROM help_glossary ORDER BY id") as $r) {
             try {
+                $ping();
                 $s = self::syncGlossary($db, $emb, $r['id']);
                 $stats['sources']++; $stats['chunks'] += $s['total'];
                 $stats['embedded'] += $s['embedded']; $stats['kept'] += $s['kept']; $stats['dropped'] += $s['dropped'];
@@ -107,6 +129,7 @@ class HelpChunkSync
 
         // 孤儿块清理：源已不存在/不再是 published
         try {
+            $ping();
             $db->exec("DELETE c FROM help_chunks c
                        LEFT JOIN help_articles a ON a.id = c.source_id AND c.source_type = 'article'
                        LEFT JOIN help_faq f ON f.id = c.source_id AND c.source_type = 'faq'

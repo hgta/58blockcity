@@ -60,7 +60,7 @@ if (isset($args['sample'])) {
     file_put_contents($file, $out);
     echo "已导出 " . count($rows) . " 条到 {$file}\n";
     echo "（日志表可用样本仅 " . count($rows) . " 条；样本偏少时建议再手工补几条改写问法，或直接看 --eval 的逐题对照做人工判断）\n";
-    echo "下一步：人工填写 expected_article_id 列（0=无对应文章），然后运行 --eval={$file}\n";
+    echo "下一步：人工填写 expected_article_id 列（10=文章#10，g4=术语#4，f7=FAQ#7，0=知识库无对应内容），然后运行 --eval={$file}\n";
     exit(0);
 }
 
@@ -88,9 +88,10 @@ if (isset($args['eval'])) {
 
     while (($row = fgetcsv($fh)) !== false) {
         if (count($row) < 4) continue;
-        list($logId, $question, $matched, $expected) = [$row[0], $row[1], $row[2], $row[3]];
+        list($logId, $question, $matched, $expectedRaw) = [$row[0], $row[1], $row[2], $row[3]];
         $question = trim((string)$question);
-        $expected = (int)$expected;
+        // 期望答案编码：10=文章#10 / g4=术语#4 / f7=FAQ#7 / 0或空=知识库无对应内容
+        $expected = parseExpected((string)$expectedRaw);
         if ($question === '') continue;
         $stats['total']++;
 
@@ -98,13 +99,16 @@ if (isset($args['eval'])) {
         $legacy = legacySearch($pdo, $question, $topN);
         $legacyIds = array_map(function ($a) { return (int)$a['id']; }, $legacy);
 
-        // 新混合
+        // 新混合：文章/术语/FAQ 三类块都参与命中判定（编码 a#/g#/f#）
         $r = $ret->search($question, $topN, 0.45);
         $hybridIds = [];
         foreach ($r['chunks'] as $c) {
-            if ($c['source_type'] === 'article') $hybridIds[] = (int)$c['source_id'];
+            $p = $c['source_type'] === 'article' ? 'a' : ($c['source_type'] === 'faq' ? 'f' : 'g');
+            $hybridIds[] = $p . (int)$c['source_id'];
         }
         $hybridIds = array_values(array_unique($hybridIds));
+        // 旧 ngram 只检索文章
+        $legacyIds = array_map(function ($id) { return 'a' . $id; }, $legacyIds);
         $hybridTopCos = 0.0;
         foreach ($r['chunks'] as $c) { if ($c['cosine'] !== null) { $hybridTopCos = max($hybridTopCos, $c['cosine']); } }
 
@@ -117,7 +121,7 @@ if (isset($args['eval'])) {
         printf("[%s] %s\n      旧(ngram): %s\n      新(混合) : %s\n",
             $logId, mb_substr($question, 0, 60), $lt, $ht);
 
-        if ($expected > 0) {
+        if ($expected !== null) {
             $stats['annotated']++;
             $lh = in_array($expected, $legacyIds, true);
             $hh = in_array($expected, $hybridIds, true);
@@ -175,6 +179,19 @@ if (isset($args['eval'])) {
 
 fwrite(STDERR, "用法：php tools/eval-retrieval.php --sample=50 | --eval=<csv> [--topn=3]\n");
 exit(1);
+
+// ---------- 期望答案编码 ----------
+// "10"/"a10" → 文章 #10；"g4" → 术语 #4；"f7" → FAQ #7；"0"/"" → 知识库无对应内容（返回 null）
+function parseExpected($raw)
+{
+    $raw = strtolower(trim((string)$raw));
+    if ($raw === '' || $raw === '0') return null;
+    if (preg_match('/^([agf])?(\d+)$/', $raw, $m)) {
+        $p = $m[1] !== '' ? $m[1] : 'a';
+        return $p . (int)$m[2];
+    }
+    return null;
+}
 
 // ---------- 旧 ngram 检索（chat.php legacy 路径等价实现） ----------
 function legacySearch(PDO $pdo, $question, $topN)

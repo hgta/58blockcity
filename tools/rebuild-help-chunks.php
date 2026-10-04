@@ -42,6 +42,22 @@ if (!isset($pdo)) {
 $statsMode = in_array('--stats', $argv, true);
 $force     = in_array('--force', $argv, true);
 
+// 嵌入 API 调用期间连接会长时间空闲，拉长会话超时（避免 "MySQL server has gone away"）
+try { $pdo->exec("SET SESSION wait_timeout=28800, interactive_timeout=28800"); } catch (Exception $ex) {}
+
+// 断连重连闭包：config/database.php 用 define() 定义常量，可直接复用重建连接
+$reconnect = function () use (&$pdo) {
+    if (defined('DB_HOST') && defined('DB_USER') && defined('DB_PASS') && defined('DB_NAME')) {
+        $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        try { $pdo->exec("SET SESSION wait_timeout=28800, interactive_timeout=28800"); } catch (Exception $ex) {}
+        return $pdo;
+    }
+    throw new RuntimeException('无法重建连接：缺少 DB_* 常量');
+};
+
 // ---- 统计模式：不调 API，只看现状 ----
 if ($statsMode) {
     $rows = $pdo->query(
@@ -81,7 +97,7 @@ if ($force) {
 
 // ---- 全量重建 ----
 $t0 = microtime(true);
-$stats = HelpChunkSync::rebuildAll($pdo, $emb, function ($m) { echo "  {$m}\n"; });
+$stats = HelpChunkSync::rebuildAll($pdo, $emb, function ($m) { echo "  {$m}\n"; }, $reconnect);
 $sec = round(microtime(true) - $t0, 1);
 
 echo "\n===== 完成（{$sec}s）=====\n";
