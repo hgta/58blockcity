@@ -58,7 +58,8 @@ if (isset($args['sample'])) {
     @mkdir(__DIR__ . '/../data', 0755, true);
     $file = __DIR__ . '/../data/eval-retrieval-sample.csv';
     file_put_contents($file, $out);
-    echo "已导出 {$rows} 条到 {$file}\n";
+    echo "已导出 " . count($rows) . " 条到 {$file}\n";
+    echo "（日志表可用样本仅 " . count($rows) . " 条；样本偏少时建议再手工补几条改写问法，或直接看 --eval 的逐题对照做人工判断）\n";
     echo "下一步：人工填写 expected_article_id 列（0=无对应文章），然后运行 --eval={$file}\n";
     exit(0);
 }
@@ -106,6 +107,15 @@ if (isset($args['eval'])) {
         $hybridIds = array_values(array_unique($hybridIds));
         $hybridTopCos = 0.0;
         foreach ($r['chunks'] as $c) { if ($c['cosine'] !== null) { $hybridTopCos = max($hybridTopCos, $c['cosine']); } }
+
+        // 逐题对照：即便未标注，也能肉眼判断哪一路更贴合
+        $lt = $legacy ? '#' . $legacy[0]['id'] . ' ' . mb_substr($legacy[0]['title'], 0, 24) : '(无)';
+        $ht = $r['chunks']
+            ? '#' . $r['chunks'][0]['source_id'] . ' ' . mb_substr($r['chunks'][0]['title'], 0, 24)
+              . ' (cos=' . ($r['chunks'][0]['cosine'] ?? '-') . ')'
+            : '(无)';
+        printf("[%s] %s\n      旧(ngram): %s\n      新(混合) : %s\n",
+            $logId, mb_substr($question, 0, 60), $lt, $ht);
 
         if ($expected > 0) {
             $stats['annotated']++;
