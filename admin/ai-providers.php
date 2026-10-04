@@ -8,6 +8,7 @@ require_once '../config/database.php';
 require_once '../includes/auth.php';
 require_once '../classes/SecureCrypto.php';
 require_once '../classes/AiProvider.php';
+require_once '../classes/EmbeddingProvider.php';
 
 checkAdmin();
 
@@ -19,6 +20,8 @@ $presets = [
     'zhipu'    => ['name' => '智谱 GLM',       'endpoint' => 'https://open.bigmodel.cn/api/paas/v4', 'model' => 'glm-4-flash',   'hint' => 'bigmodel.cn 获取'],
     'openai'   => ['name' => 'OpenAI',        'endpoint' => 'https://api.openai.com/v1',     'model' => 'gpt-4o-mini',          'hint' => '需海外网络环境'],
     'hermes'   => ['name' => 'Hermes Agent（本机）', 'endpoint' => 'http://127.0.0.1:8642/v1', 'model' => 'hermes-agent',     'hint' => '服务器已部署的 Hermes 智能体，端口以 api-server 实际配置为准'],
+    'ark-plan' => ['name' => '火山方舟 Agent Plan（直连）', 'endpoint' => 'https://ark.cn-beijing.volces.com/api/plan/v3', 'model' => 'ark-code-latest', 'hint' => 'Agent Plan 专属 Key，模型名以套餐控制台为准'],
+    'ark-emb'  => ['name' => '火山方舟 嵌入（语义检索）', 'endpoint' => 'https://ark.cn-beijing.volces.com/api/plan/v3', 'model' => 'doubao-embedding-vision', 'hint' => '用途需选「嵌入」；若 plan 端点不支持 embeddings，试 /api/coding/v3（Coding Plan）或 /api/v3+控制台接入点'],
     'custom'   => ['name' => '自定义（OpenAI 兼容）', 'endpoint' => '', 'model' => '', 'hint' => '任何 OpenAI 兼容端点'],
 ];
 
@@ -34,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $model = trim($_POST['model'] ?? '');
             $preset = trim($_POST['preset'] ?? 'custom');
             if (!preg_match('/^[a-z0-9-]{1,30}$/', $preset)) $preset = 'custom';
+            $purpose = ($_POST['purpose'] ?? 'chat') === 'embedding' ? 'embedding' : 'chat';
             $sort = (int)($_POST['sort_order'] ?? 0);
             $limit = (int)($_POST['daily_limit'] ?? 0);
             $enabled = isset($_POST['is_enabled']) ? 1 : 0;
@@ -44,19 +48,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 if ($id > 0) {
                     if ($apiKeyPlain !== '') {
-                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, preset=?, sort_order=?, daily_limit=?, is_enabled=?, api_key_cipher=? WHERE id=?")
-                            ->execute([$name, $endpoint, $model, $preset, $sort, $limit, $enabled, SecureCrypto::encrypt($apiKeyPlain), $id]);
+                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, purpose=?, preset=?, sort_order=?, daily_limit=?, is_enabled=?, api_key_cipher=? WHERE id=?")
+                            ->execute([$name, $endpoint, $model, $purpose, $preset, $sort, $limit, $enabled, SecureCrypto::encrypt($apiKeyPlain), $id]);
                     } else {
-                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, preset=?, sort_order=?, daily_limit=?, is_enabled=? WHERE id=?")
-                            ->execute([$name, $endpoint, $model, $preset, $sort, $limit, $enabled, $id]);
+                        $pdo->prepare("UPDATE ai_providers SET name=?, endpoint=?, model=?, purpose=?, preset=?, sort_order=?, daily_limit=?, is_enabled=? WHERE id=?")
+                            ->execute([$name, $endpoint, $model, $purpose, $preset, $sort, $limit, $enabled, $id]);
                     }
                     $actionMsg = '<div class="admin-alert admin-alert-success">渠道已更新</div>';
                 } else {
                     if ($apiKeyPlain === '') {
                         $actionMsg = '<div class="admin-alert admin-alert-error">新增渠道必须填写 API Key</div>';
                     } else {
-                        $pdo->prepare("INSERT INTO ai_providers (name, endpoint, api_key_cipher, model, preset, sort_order, daily_limit, is_enabled) VALUES (?,?,?,?,?,?,?,?)")
-                            ->execute([$name, $endpoint, SecureCrypto::encrypt($apiKeyPlain), $model, $preset, $sort, $limit, $enabled]);
+                        $pdo->prepare("INSERT INTO ai_providers (name, endpoint, api_key_cipher, model, purpose, preset, sort_order, daily_limit, is_enabled) VALUES (?,?,?,?,?,?,?,?,?)")
+                            ->execute([$name, $endpoint, SecureCrypto::encrypt($apiKeyPlain), $model, $purpose, $preset, $sort, $limit, $enabled]);
                         $actionMsg = '<div class="admin-alert admin-alert-success">渠道已创建（Key 已加密存储）</div>';
                     }
                 }
@@ -65,8 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $pdo->prepare("DELETE FROM ai_providers WHERE id = ?")->execute([$id]);
             $actionMsg = '<div class="admin-alert admin-alert-success">渠道已删除</div>';
         } elseif ($_POST['action'] === 'set_default' && $id > 0) {
-            $pdo->exec("UPDATE ai_providers SET is_default = 0");
-            $pdo->prepare("UPDATE ai_providers SET is_default = 1 WHERE id = ?")->execute([$id]);
+            // 「默认」只对聊天渠道有意义（嵌入渠道由 EmbeddingProvider::pick 单选，不参与切换）
+            $pdo->exec("UPDATE ai_providers SET is_default = 0 WHERE purpose = 'chat'");
+            $pdo->prepare("UPDATE ai_providers SET is_default = 1 WHERE id = ? AND purpose = 'chat'")->execute([$id]);
             $actionMsg = '<div class="admin-alert admin-alert-success">默认渠道已切换</div>';
         } elseif ($_POST['action'] === 'toggle' && $id > 0) {
             $pdo->prepare("UPDATE ai_providers SET is_enabled = 1 - is_enabled WHERE id = ?")->execute([$id]);
@@ -75,15 +80,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt->execute([$id]);
             $row = $stmt->fetch();
             if ($row) {
-                $res = AiProvider::testConnection($row);
-                $p = new AiProvider($row);
-                $testResult = [
-                    'name' => $row['name'],
-                    'url' => $p->endpointUrl(),
-                    'ok' => $res['ok'],
-                    'msg' => $res['ok'] ? '连接成功，模型响应正常：' . mb_substr($res['answer'], 0, 60)
-                                       : '失败：' . $res['error'],
-                ];
+                if (($row['purpose'] ?? 'chat') === 'embedding') {
+                    // 嵌入渠道：调真实 /embeddings，返回维度（help-semantic-rag 任务 1.1 的真 Key 实测也走这里）
+                    require_once '../classes/EmbeddingProvider.php';
+                    $res = EmbeddingProvider::testConnection($row);
+                    $p = new EmbeddingProvider($row);
+                    $testResult = [
+                        'name' => $row['name'],
+                        'url'  => $p->endpointUrl(),
+                        'ok'   => $res['ok'],
+                        'msg'  => $res['ok'] ? '连接成功：' . $res['answer'] : '失败：' . $res['error'],
+                    ];
+                } else {
+                    $res = AiProvider::testConnection($row);
+                    $p = new AiProvider($row);
+                    $testResult = [
+                        'name' => $row['name'],
+                        'url' => $p->endpointUrl(),
+                        'ok' => $res['ok'],
+                        'msg' => $res['ok'] ? '连接成功，模型响应正常：' . mb_substr($res['answer'], 0, 60)
+                                           : '失败：' . $res['error'],
+                    ];
+                }
             }
         }
     } catch (Exception $ex) {
@@ -135,12 +153,13 @@ require_once '../shared/admin/admin-header.php';
     </div>
     <div class="admin-card-body" style="padding:0;">
         <table class="admin-data-table">
-            <thead><tr><th>顺序</th><th>名称</th><th>端点</th><th>模型</th><th>今日调用</th><th>限额</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>顺序</th><th>名称</th><th>用途</th><th>端点</th><th>模型</th><th>今日调用</th><th>限额</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
                 <?php foreach ($rows as $r): $u = $usage[$r['id']] ?? null; ?>
                 <tr>
                     <td><?= $r['sort_order'] ?><?= $r['is_default'] ? ' <i class="fas fa-star" style="color:#f59e0b" title="默认"></i>' : '' ?></td>
                     <td><b><?= htmlspecialchars($r['name']) ?></b></td>
+                    <td><span style="font-size:11px;padding:2px 8px;border-radius:999px;<?= ($r['purpose'] ?? 'chat') === 'embedding' ? 'background:#312e81;color:#a5b4fc;' : 'background:#134e4a;color:#5eead4;' ?>"><?= ($r['purpose'] ?? 'chat') === 'embedding' ? '嵌入' : '聊天' ?></span></td>
                     <td style="font-family:monospace;font-size:11px;color:#94a3b8;"><?= htmlspecialchars(mb_substr($r['endpoint'], 0, 34)) ?></td>
                     <td style="font-size:12px;"><?= htmlspecialchars($r['model']) ?></td>
                     <td>
@@ -159,7 +178,7 @@ require_once '../shared/admin/admin-header.php';
                             <input type="hidden" name="action" value="test"><input type="hidden" name="id" value="<?= $r['id'] ?>">
                             <button class="admin-btn admin-btn-primary admin-btn-sm">测试</button>
                         </form>
-                        <?php if (!$r['is_default']): ?>
+                        <?php if (!$r['is_default'] && ($r['purpose'] ?? 'chat') === 'chat'): ?>
                         <form method="POST" style="display:inline">
                             <input type="hidden" name="action" value="set_default"><input type="hidden" name="id" value="<?= $r['id'] ?>">
                             <button class="admin-btn admin-btn-secondary admin-btn-sm">设默认</button>
@@ -173,7 +192,7 @@ require_once '../shared/admin/admin-header.php';
                 </tr>
                 <?php endforeach; ?>
                 <?php if (!$rows): ?>
-                <tr><td colspan="8" style="text-align:center;color:#64748b;padding:24px;">还没有配置渠道——先在下方新增一个（推荐将本机 Hermes Agent 设为默认，直连大模型作为备用）</td></tr>
+                <tr><td colspan="9" style="text-align:center;color:#64748b;padding:24px;">还没有配置渠道——先在下方新增一个（推荐将本机 Hermes Agent 设为默认聊天渠道，直连大模型作为备用；语义检索需另配一个「嵌入」用途渠道）</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -200,6 +219,11 @@ require_once '../shared/admin/admin-header.php';
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">名称 *</label>
                     <input name="name" id="fName" required value="<?= htmlspecialchars($editing['name'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">用途 *</label>
+                    <select name="purpose" id="fPurpose" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                        <option value="chat" <?= ($editing['purpose'] ?? 'chat') === 'chat' ? 'selected' : '' ?>>聊天（参与小帮对话路由与故障切换）</option>
+                        <option value="embedding" <?= ($editing['purpose'] ?? '') === 'embedding' ? 'selected' : '' ?>>嵌入（语义检索专用，调 /embeddings）</option>
+                    </select></div>
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">API 端点 *（OpenAI 兼容）</label>
                     <input name="endpoint" id="fEndpoint" required placeholder="https://api.deepseek.com/v1" value="<?= htmlspecialchars($editing['endpoint'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;font-size:12px;"></div>
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">默认模型</label>
@@ -233,6 +257,9 @@ require_once '../shared/admin/admin-header.php';
     if (!document.getElementById('fEndpoint').value) document.getElementById('fEndpoint').value = p.endpoint;
     if (!document.getElementById('fModel').value) document.getElementById('fModel').value = p.model;
     document.getElementById('presetHint').textContent = p.hint;
+    // 用途联动：嵌入模板自动切到 embedding，其余回到 chat
+    var purposeSel = document.getElementById('fPurpose');
+    if (purposeSel) purposeSel.value = (sel.value === 'ark-emb') ? 'embedding' : 'chat';
   });
 })();
 </script>

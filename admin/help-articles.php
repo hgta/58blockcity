@@ -8,8 +8,25 @@ require_once '../config/database.php';
 require_once '../includes/auth.php';
 require_once '../classes/SecureCrypto.php';
 require_once '../classes/AiProvider.php';
+require_once '../classes/EmbeddingProvider.php';
+require_once '../classes/HelpChunker.php';
+require_once '../classes/HelpChunkSync.php';
 
 checkAdmin();
+
+// 语义检索块同步（help-semantic-rag 任务 3.2）：
+// 嵌入渠道未配置或调用失败只记日志，绝不阻断后台保存/发布
+function hsr_sync_article($articleId)
+{
+    global $pdo;
+    try {
+        if ($emb = EmbeddingProvider::pick($pdo)) {
+            HelpChunkSync::syncArticle($pdo, $emb, $articleId);
+        }
+    } catch (Exception $ex) {
+        error_log('[help-semantic-rag] 文章块同步失败 #' . $articleId . ': ' . $ex->getMessage());
+    }
+}
 
 $actionMsg = '';
 
@@ -71,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $id = (int)$pdo->lastInsertId();
                     $actionMsg = '<div class="admin-alert admin-alert-success">文章已创建</div>';
                 }
+                hsr_sync_article($id); // 保存/发布后同步知识块（published 才生成块）
                 break;
 
             case 'toggle_pin':
@@ -81,12 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             case 'set_status':
                 $st = in_array($_POST['status'] ?? '', ['draft', 'published', 'archived']) ? $_POST['status'] : 'draft';
                 $pdo->prepare("UPDATE help_articles SET status = ? WHERE id = ?")->execute([$st, $id]);
+                hsr_sync_article($id); // 发布/下架都会改变块的存留
                 $actionMsg = '<div class="admin-alert admin-alert-success">状态已更新</div>';
                 break;
 
             case 'delete':
                 $pdo->prepare("DELETE FROM help_articles WHERE id = ?")->execute([$id]);
                 $pdo->prepare("DELETE FROM help_article_feedback WHERE article_id = ?")->execute([$id]);
+                try { HelpChunkSync::dropSource($pdo, 'article', $id); } catch (Exception $ex) {}
                 $actionMsg = '<div class="admin-alert admin-alert-success">文章已删除</div>';
                 break;
 

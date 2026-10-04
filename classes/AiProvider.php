@@ -202,11 +202,11 @@ class AiProvider
     // 静态路由
     // ------------------------------------------------------------
 
-    /** 可用渠道列表：默认渠道优先，其余按 sort_order */
+    /** 可用渠道列表：默认渠道优先，其余按 sort_order（仅聊天渠道，嵌入渠道见 EmbeddingProvider） */
     public static function routeList(PDO $db)
     {
         $rows = $db->query(
-            "SELECT * FROM ai_providers WHERE is_enabled = 1 ORDER BY is_default DESC, sort_order, id"
+            "SELECT * FROM ai_providers WHERE is_enabled = 1 AND (purpose = 'chat' OR purpose IS NULL) ORDER BY is_default DESC, sort_order, id"
         )->fetchAll();
         $list = [];
         foreach ($rows as $r) {

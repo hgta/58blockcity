@@ -14,6 +14,9 @@
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../classes/SecureCrypto.php';
 require_once __DIR__ . '/../../classes/AiProvider.php';
+require_once __DIR__ . '/../../classes/EmbeddingProvider.php';
+require_once __DIR__ . '/../../classes/HelpRetrieval.php';
+require_once __DIR__ . '/../../classes/ArkWebSearch.php';
 
 // 会话统一初始化（设置跨子站 cookie domain），勿直接 session_start()
 require_once __DIR__ . '/../../includes/session.php';
@@ -149,12 +152,55 @@ try {
 }
 
 // ---------- RAG 检索 ----------
+// help-semantic-rag：ai_semantic_rag_enabled=1 走混合检索（ngram+向量+RRF）；
+// 向量路故障自动降级纯 ngram（HelpRetrieval 内处理）；开关关闭 = 原 legacy 路径，可随时回滚。
 $sources = [];
 $knowledge = '';
 $matched = false;
 $topN = max(1, min(5, (int)ai_s('ai_rag_topn', '3')));
 $base = ai_help_base();
+$retrievalMode = 'legacy';
 
+if (ai_s('ai_semantic_rag_enabled', '0') === '1') {
+    try {
+        $ret = new HelpRetrieval($pdo);
+        $rres = $ret->search($question, $topN, (float)ai_s('ai_semantic_min_score', '0.45'));
+        if ($rres['mode'] === 'hybrid') {
+            $retrievalMode = 'hybrid';
+            // 文章块 → 查 slug 生成引用链接（faq/glossary 无独立页，指向帮助中心首页）
+            $artIds = [];
+            foreach ($rres['chunks'] as $c) {
+                if ($c['source_type'] === 'article') $artIds[(int)$c['source_id']] = true;
+            }
+            $slugMap = [];
+            if ($artIds) {
+                $in = implode(',', array_map('intval', array_keys($artIds)));
+                foreach ($pdo->query("SELECT id, slug FROM help_articles WHERE id IN ({$in})") as $a) {
+                    $slugMap[(int)$a['id']] = $a['slug'];
+                }
+            }
+            $seenUrl = [];
+            foreach ($rres['chunks'] as $c) {
+                $knowledge .= $c['text'] . "\n\n"; // 块文本自带【标题】上下文头
+                if ($c['source_type'] === 'article' && isset($slugMap[$c['source_id']])) {
+                    $url = $base . 'article/' . $slugMap[$c['source_id']];
+                } else {
+                    $url = $base;
+                }
+                if (!isset($seenUrl[$url])) {
+                    $seenUrl[$url] = true;
+                    $sources[] = ['title' => $c['title'], 'url' => $url];
+                }
+            }
+            $matched = $rres['matched'];
+        }
+        // mode=ngram = 向量路降级 → 落回下方 legacy 路径（与关开关时行为一致）
+    } catch (Exception $ex) {
+        error_log('[help-semantic-rag] 混合检索异常，降级 legacy: ' . $ex->getMessage());
+    }
+}
+
+if ($retrievalMode === 'legacy') {
 try {
     $stmt = $pdo->prepare(
         "SELECT id, title, slug, summary, content_richtext,
@@ -196,6 +242,26 @@ try {
         $matched = true;
     }
 } catch (Exception $ex) { /* 检索失败则纯模型回答 */ }
+} // end legacy 检索路径
+
+// ---------- 检索未命中的联网搜索兜底（help-semantic-rag 任务 5.2） ----------
+// 明确标注非官方；失败静默降级为现状文案（spec：搜索失败不报错）
+$webRef = '';
+if (!$matched && ai_s('ai_search_fallback_enabled', '1') === '1') {
+    try {
+        $emb = EmbeddingProvider::pick($pdo);
+        if ($emb) {
+            $sr = ArkWebSearch::search($emb, (string)ai_s('ai_search_model', ''), $question, '「58区块城市」平台的新手用户提问');
+            if ($sr['ok'] && $sr['answer'] !== '') {
+                $webRef = mb_substr($sr['answer'], 0, 1200);
+            } else {
+                error_log('[help-semantic-rag] 联网搜索兜底失败（降级现状文案）: ' . $sr['error']);
+            }
+        }
+    } catch (Exception $ex) {
+        error_log('[help-semantic-rag] 联网搜索兜底异常: ' . $ex->getMessage());
+    }
+}
 
 // ---------- 组装消息 ----------
 // 人设主文案可配置（后台训练台编辑），空值回退内置默认；结构性拼接（RAG/页面/用户）保留在代码层
@@ -214,6 +280,13 @@ if ($hermesActive) {
 }
 if ($knowledge !== '') {
     $system .= "\n=== 官方帮助资料 ===\n" . $knowledge;
+}
+if ($webRef !== '') {
+    // 联网参考信息注入：强制分节标注非官方，不稀释"官方、不编造"的人设
+    $system .= "\n=== 联网参考信息（非官方，未经平台核实） ===\n" . $webRef
+        . "\n（回答要求：官方资料未覆盖本问题时，1.开头说明官方帮助中心暂无相关资料；"
+        . "2.联网参考信息单独成段，标注\"以下为联网参考信息（非官方，仅供参考）\"；"
+        . "3.提醒用户平台规则以官方为准，需要官方解答可到帮助中心留言。）";
 }
 if ($page !== '') {
     $system .= "\n=== 用户当前所在页面 ===\n" . $page . "\n（回答可结合该页面所属功能模块给出针对性指引）";
