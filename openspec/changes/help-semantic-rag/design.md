@@ -59,9 +59,10 @@ ngram 不是负债是资产：精确术语/型号/"BCT"类查询它比 embedding
 `ai_providers` 加列 `purpose ENUM('chat','embedding') DEFAULT 'chat'`（migration），复用现成的 AES-256-GCM Key 加密、测试连接、启停与排序。默认模型走方舟 doubao-embedding 系列；端点优先验证普通 `api/v3`（按量、必支持 /embeddings），Plan 端点 `/api/plan/v3` 是否开放 embedding 由 spike 验证，通了则可白嫖套餐额度。
 注意：`AiProvider::baseUrl()` 的 `/v1` 自动补全逻辑对 `/api/v3`、`/api/plan/v3` 均兼容（结尾 /vN 不改写），无需改动。
 
-### D6：增量更新 = 后台保存钩子 + CLI 全量重建
-- `admin/help-articles.php` 保存/发布时同步重嵌该文章的 chunks（content_hash 逐块比对，未变不重算，省 API 费）
+### D6：增量更新 = 三处后台保存钩子 + CLI 全量重建
+- `admin/help-articles.php`（save/set_status/delete）、`admin/help-faq.php`（save/delete）、`admin/help-glossary.php`（save/delete）保存后同步对应源的知识块（content_hash 逐块比对，未变不重算，省 API 费）；非发布态/删除则清块
 - `tools/rebuild-help-chunks.php`：全量重建（换 embedding 模型 / 首次部署 / 修补用），幂等
+- 三处钩子统一为"失败只记日志不阻断后台"，避免嵌入服务故障影响内容编辑
 
 ### D7：韧性设计——嵌入失败降级，阈值触发搜索兜底
 - embedding API 调用失败/超时 → **本次请求降级为纯 ngram**（等于现状），记录 error log，不阻断回答。外部服务永远不能成为小帮的单点。

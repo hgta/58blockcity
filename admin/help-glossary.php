@@ -6,8 +6,24 @@
 
 require_once '../config/database.php';
 require_once '../includes/auth.php';
+require_once '../classes/EmbeddingProvider.php';
+require_once '../classes/HelpChunker.php';
+require_once '../classes/HelpChunkSync.php';
 
 checkAdmin();
+
+// 语义检索块同步（help-semantic-rag）：术语保存/删除后同步知识块，失败只记日志不阻断后台
+function hsr_sync_glossary($glossaryId)
+{
+    global $pdo;
+    try {
+        if ($emb = EmbeddingProvider::pick($pdo)) {
+            HelpChunkSync::syncGlossary($pdo, $emb, $glossaryId);
+        }
+    } catch (Exception $ex) {
+        error_log('[help-semantic-rag] 术语块同步失败 #' . $glossaryId . ': ' . $ex->getMessage());
+    }
+}
 
 $actionMsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -24,14 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } elseif ($id > 0) {
                 $pdo->prepare("UPDATE help_glossary SET term=?, pinyin=?, definition=?, related_article_id=?, sort_order=? WHERE id=?")
                     ->execute([$term, $pinyin, $def, $artId, $sort, $id]);
+                hsr_sync_glossary($id); // 术语表无状态字段，恒同步
                 $actionMsg = '<div class="admin-alert admin-alert-success">术语已更新</div>';
             } else {
                 $pdo->prepare("INSERT INTO help_glossary (term, pinyin, definition, related_article_id, sort_order) VALUES (?,?,?,?,?)")
                     ->execute([$term, $pinyin, $def, $artId, $sort]);
+                $id = (int)$pdo->lastInsertId();
+                hsr_sync_glossary($id);
                 $actionMsg = '<div class="admin-alert admin-alert-success">术语已创建</div>';
             }
         } elseif ($_POST['action'] === 'delete' && $id > 0) {
             $pdo->prepare("DELETE FROM help_glossary WHERE id = ?")->execute([$id]);
+            try { HelpChunkSync::dropSource($pdo, 'glossary', $id); } catch (Exception $ex) {}
             $actionMsg = '<div class="admin-alert admin-alert-success">术语已删除</div>';
         }
     } catch (Exception $ex) {

@@ -6,8 +6,24 @@
 
 require_once '../config/database.php';
 require_once '../includes/auth.php';
+require_once '../classes/EmbeddingProvider.php';
+require_once '../classes/HelpChunker.php';
+require_once '../classes/HelpChunkSync.php';
 
 checkAdmin();
+
+// 语义检索块同步（help-semantic-rag）：FAQ 保存/删除后同步知识块，失败只记日志不阻断后台
+function hsr_sync_faq($faqId)
+{
+    global $pdo;
+    try {
+        if ($emb = EmbeddingProvider::pick($pdo)) {
+            HelpChunkSync::syncFaq($pdo, $emb, $faqId);
+        }
+    } catch (Exception $ex) {
+        error_log('[help-semantic-rag] FAQ 块同步失败 #' . $faqId . ': ' . $ex->getMessage());
+    }
+}
 
 $actionMsg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -26,14 +42,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } elseif ($id > 0) {
                 $pdo->prepare("UPDATE help_faq SET question=?, answer=?, category_id=?, related_article_id=?, sort_order=?, status=?, source=? WHERE id=?")
                     ->execute([$q, $a, $catId, $artId, $sort, $status, $source, $id]);
+                hsr_sync_faq($id); // 发布态才生成块，转草稿自动清块
                 $actionMsg = '<div class="admin-alert admin-alert-success">FAQ 已更新</div>';
             } else {
                 $pdo->prepare("INSERT INTO help_faq (question, answer, category_id, related_article_id, sort_order, status, source) VALUES (?,?,?,?,?,?,?)")
                     ->execute([$q, $a, $catId, $artId, $sort, $status, $source]);
+                $id = (int)$pdo->lastInsertId();
+                hsr_sync_faq($id);
                 $actionMsg = '<div class="admin-alert admin-alert-success">FAQ 已创建</div>';
             }
         } elseif ($_POST['action'] === 'delete' && $id > 0) {
             $pdo->prepare("DELETE FROM help_faq WHERE id = ?")->execute([$id]);
+            try { HelpChunkSync::dropSource($pdo, 'faq', $id); } catch (Exception $ex) {}
             $actionMsg = '<div class="admin-alert admin-alert-success">FAQ 已删除</div>';
         }
     } catch (Exception $ex) {

@@ -36,6 +36,11 @@
 - **WHEN** 管理员在后台保存/发布一篇文章
 - **THEN** 系统比对该文章各块的 content_hash，仅对变更块重新嵌入
 
+#### Scenario: FAQ 与术语保存/删除触发同步
+- **WHEN** 管理员在后台（admin/help-faq.php、admin/help-glossary.php）新建、修改或删除一条 FAQ / 术语
+- **THEN** 该条目对应块即时重建（未变更块不重嵌）或清除，无需手动运行 CLI
+- **AND** 同步失败时后台操作仍成功完成，错误仅记入日志
+
 #### Scenario: CLI 全量重建
 - **WHEN** 运行 tools/rebuild-help-chunks.php
 - **THEN** 全部已发布知识源重新切块并嵌入，操作幂等，可用于更换嵌入模型后的重建

@@ -17,7 +17,8 @@
 ## 3. 嵌入管道
 
 - [x] 3.1 实现 `tools/rebuild-help-chunks.php` CLI 全量重建：发布态 articles/faq/glossary → 切块 → content_hash 比对增量嵌入 → 写 help_chunks，幂等（含 --stats/--force；同步逻辑收敛在 classes/HelpChunkSync.php，后台钩子共用）
-- [x] 3.2 `admin/help-articles.php` 保存钩子：文章保存/发布时同步重嵌该文章 chunks（仅变更块）（save/set_status/delete 三处挂接，失败只记日志不阻断后台）
+- [x] 3.2 三处后台保存钩子：文章（save/set_status/delete）+ **FAQ（admin/help-faq.php）** + **术语表（admin/help-glossary.php）** 保存/删除后同步对应块，仅变更块重嵌，失败只记日志不阻断后台
+      （2026-10-04 补记：此前误判"FAQ/术语表无后台页"，实为搜索通配符未匹配导致的假阴性——两个管理页一直存在，故钩子补齐到三处）
 - [ ] 3.3 首次全量回填线上数据，抽查切块质量与向量维度（**待部署**：跑 migration → 配嵌入渠道 → php tools/rebuild-help-chunks.php）
 
 ## 4. 检索层
@@ -34,6 +35,8 @@
 ## 6. 评测与上线
 
 - [x] 6.1 实现 `tools/eval-retrieval.php`：从 ai_chat_logs 抽样（unmatched+ok）→ 人工标注 CSV → 同批问题跑新旧检索 → 输出命中率对比（含 ai_semantic_min_score 阈值 F1 扫描建议）
-- [ ] 6.2 跑对比报告，据此定 ai_semantic_min_score 默认值（回写 design.md）（**待部署后线上跑**）
-- [ ] 6.3 打开 ai_semantic_rag_enabled，线上验证：同义改写问题命中、sources 正常、延迟可接受（<500ms 增量）（**待部署**）
-- [ ] 6.4 观测一周 ai_chat_logs unmatched 占比变化，输出效果结论（**待上线后一周**）
+- [ ] 6.2 跑对比报告，据此定 ai_semantic_min_score 默认值（回写 design.md）
+      ⏸ **推迟**：帮助内容（文章/FAQ/术语表）仍在搭建中，此时评测的命中率不代表最终效果，等 `help-content-admin` 完成、内容稳定后再跑
+      注：内容增长**不会**让已交付代码失效——知识块是 hash 增量重嵌（后台保存即同步）、CLI 幂等可随时全量重建；需要重做的只有评测数字本身
+- [ ] 6.3 打开 ai_semantic_rag_enabled，线上验证：同义改写问题命中、sources 正常、延迟可接受（<500ms 增量）（⏸ 依赖 6.2）
+- [ ] 6.4 观测一周 ai_chat_logs unmatched 占比变化，输出效果结论（⏸ 依赖 6.3）
