@@ -3,7 +3,7 @@
 ## 1. Spike 验证（先行，结论写回 design.md Open Questions）
 
 - [x] 1.1 验证方舟 embedding API：普通 `api/v3` 与 Plan 端点 `/api/plan/v3` 哪个支持 `/embeddings`，确认模型名（doubao-embedding 系列）、维度、计费；结论回写 design.md
-  （文档级结论已回写；真 Key 实测因网关先鉴权后路由无法离线进行，搭 2.4 测试按钮在部署后完成，优先级见 design.md）
+  （**已实测确认**：Agent Plan Key @ `/api/plan/v3` + `doubao-embedding-vision` 成功返回向量；`/api/v3` 与 `/api/coding/v3` 鉴权失败。结论见 design.md）
 - [x] 1.2 验证联网搜索 API 形态：方舟 AI 搜索 / 豆包搜索是否可被服务端直接调用、费用与返回结构；不可用则记录"兜底项降级为现状文案"
   （结论：Responses API 内置 web_search 工具可服务端直调，兜底不降级；请求体格式实现 5.1 时确认）
 

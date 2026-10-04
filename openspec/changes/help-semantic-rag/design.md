@@ -97,11 +97,19 @@ ngram 不是负债是资产：精确术语/型号/"BCT"类查询它比 embedding
 
 ## Open Questions
 
-### Spike 1.1 结论（2026-10-04，文档级 + 探测记录）
+### Spike 1.1 结论（2026-10-04，**已实测确认**）
 
-- 假 Key 探测法失败：方舟网关**先鉴权后路由**（`/v1`、`/api/v3`、`/api/plan/v3` 打不存在的路径同样返回 401），无法在无 Key 情况下区分端点存在性。
-- 文档结论：**Coding Plan** 明确提供 OpenAI 兼容 embedding（模型 `doubao-embedding-vision` @ `https://ark.cn-beijing.volces.com/api/coding/v3`）；**Agent Plan** 的 Embedding 在官方宣传里属 Harness 工具，`/api/plan/v3/embeddings` 是否直接开放**无文档佐证**；普通 `api/v3` 的 `/embeddings` 存在，但 embedding 模型多数需在控制台创建推理接入点（`ep-xxx`）后按量调用。
-- 实施策略：**代码不绑定端点**（endpoint/model 全部来自渠道配置行），真 Key 实测搭 2.4 的测试连接按钮（部署后）完成。实测优先级：① 复用现有 Agent Plan Key 打 `/api/plan/v3/embeddings`（零额外费用）→ ② `/api/coding/v3`（若同时有 Coding Plan）→ ③ 普通 `api/v3` + 控制台开 embedding 接入点（按量）。
+- 离线阶段假 Key 探测法失败：方舟网关**先鉴权后路由**（`/v1`、`/api/v3`、`/api/plan/v3` 打不存在的路径同样返回 401），无法在无 Key 情况下区分端点存在性。
+- **真 Key 实测结论（服务器 curl，2026-10-04）**：
+
+  | 端点 | 模型 | 结果 |
+  |---|---|---|
+  | `https://ark.cn-beijing.volces.com/api/plan/v3` | `doubao-embedding-vision` | ✅ **成功返回 2048 级向量** |
+  | `https://ark.cn-beijing.volces.com/api/v3` | 同 | ❌ AuthenticationError（该 Key 为套餐专属 Key，非按量 Key） |
+  | `https://ark.cn-beijing.volces.com/api/coding/v3` | 同 | ❌ AuthenticationError（非 Coding Plan 订阅） |
+
+- 结论：**沿用现有 Agent Plan Key，端点 `/api/plan/v3`、模型 `doubao-embedding-vision`，零额外费用**（套餐内含 Embedding）。此前"Agent Plan 的 Embedding 只是 harness 工具、裸 API 不可调用"的担忧被推翻——计划端点对 OpenAI 兼容 `/embeddings` 是开放的。
+- 代码层保持**不绑定端点**（endpoint/model 来自渠道配置行），后台已内置对应预置模板「火山方舟 嵌入（语义检索）」。
 
 ### Spike 1.2 结论（2026-10-04，文档级）
 
