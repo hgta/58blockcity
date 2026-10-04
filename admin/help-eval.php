@@ -9,6 +9,7 @@
 
 require_once '../config/database.php';
 require_once '../includes/auth.php';
+require_once '../classes/SecureCrypto.php';
 require_once '../classes/EmbeddingProvider.php';
 require_once '../classes/HelpChunker.php';
 require_once '../classes/HelpChunkSync.php';

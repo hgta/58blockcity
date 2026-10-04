@@ -1,4 +1,10 @@
 <?php
+// 本类构造时要用 SecureCrypto 解密渠道 Key——在此自检并引入，
+// 避免每个调用方（admin 页 / CLI / api 端点）都要记得 require
+if (!class_exists('SecureCrypto')) {
+    require_once __DIR__ . '/SecureCrypto.php';
+}
+
 /**
  * Embedding 渠道（OpenAI 兼容 /embeddings 协议）
  * change: help-semantic-rag (task 2.3)
