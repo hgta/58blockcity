@@ -20,9 +20,11 @@ checkAdmin();
 
 header('Content-Type: application/json; charset=utf-8');
 
-function slug_out($ok, $slug = '', $msg = '')
+function slug_out($ok, $slug = '', $msg = '', $meta = null)
 {
-    echo json_encode(['ok' => $ok, 'slug' => $slug, 'msg' => $msg], JSON_UNESCAPED_UNICODE);
+    $out = ['ok' => $ok, 'slug' => $slug, 'msg' => $msg];
+    if ($meta) $out['meta'] = $meta; // 渠道名/耗时/尝试明细
+    echo json_encode($out, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -58,6 +60,9 @@ function unique_slug(PDO $pdo, $slug, $excludeId)
     return $slug . '-' . substr(md5($slug . microtime(true)), 0, 6);
 }
 
+@set_time_limit(30);
+$t0 = microtime(true);
+
 try {
     $messages = [
         [
@@ -68,9 +73,15 @@ try {
         ['role' => 'user', 'content' => '标题：' . $title],
     ];
 
-    $res = AiProvider::chatWithFailover($pdo, $messages, function ($delta) { /* 后台调用，忽略流式片段 */ });
+    // 非流式 + 每渠道 12s 超时：卡住的渠道会立刻被跳过，切到下一个
+    $res = AiProvider::chatOnceWithFailover($pdo, $messages, 12.0);
+    $meta = [
+        'ms' => (int)round((microtime(true) - $t0) * 1000),
+        'provider' => $res['provider'] ? $res['provider']->name() : '',
+        'attempts' => $res['attempts'],
+    ];
     if (!$res['ok']) {
-        slug_out(false, '', 'AI 调用失败：' . $res['error']);
+        slug_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
     }
 
     $raw = trim((string)$res['answer']);
@@ -83,7 +94,7 @@ try {
     if ($slug === '') slug_out(false, '', 'AI 返回无法解析：' . mb_substr($raw, 0, 60));
 
     $slug = unique_slug($pdo, $slug, $id);
-    slug_out(true, $slug, '');
+    slug_out(true, $slug, '', $meta);
 } catch (Exception $ex) {
     slug_out(false, '', '异常：' . $ex->getMessage());
 }

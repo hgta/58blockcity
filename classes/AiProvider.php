@@ -245,6 +245,38 @@ class AiProvider
         return ['ok' => false, 'provider' => null, 'answer' => '', 'error' => $lastErr];
     }
 
+    /**
+     * 非流式 + 故障切换（后台短任务用：摘要/slug 生成等）
+     *
+     * 与 chatWithFailover（流式、单渠道 60s）的区别：
+     * - 这里每个渠道单独计时、单独超时（默认 12s），某个渠道"卡住不返回"时
+     *   12 秒就判定失败并切下一个，不会把整个请求拖到 PHP max_execution_time
+     * - 返回每个渠道的尝试明细，便于后台提示"用了哪个渠道/为什么切换"
+     *
+     * @return array{ok:bool, answer:string, provider:?AiProvider, error:string, attempts:array}
+     */
+    public static function chatOnceWithFailover(PDO $db, array $messages, float $timeout = 12.0)
+    {
+        $attempts = [];
+        $lastErr = '没有可用的 AI 渠道';
+        foreach (self::routeList($db) as $p) {
+            $t0 = microtime(true);
+            $res = $p->chatOnce($messages, $timeout);
+            $ms = (int)round((microtime(true) - $t0) * 1000);
+            $attempts[] = [
+                'name' => $p->name(),
+                'ok' => $res['ok'],
+                'ms' => $ms,
+                'error' => $res['error'],
+            ];
+            if ($res['ok']) {
+                return ['ok' => true, 'answer' => $res['answer'], 'provider' => $p, 'error' => '', 'attempts' => $attempts];
+            }
+            $lastErr = '[' . $p->name() . '] ' . $res['error'];
+        }
+        return ['ok' => false, 'answer' => '', 'provider' => null, 'error' => $lastErr, 'attempts' => $attempts];
+    }
+
     /** 连通性测试（后台用） */
     public static function testConnection(array $row)
     {

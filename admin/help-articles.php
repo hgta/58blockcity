@@ -512,28 +512,10 @@ require_once '../shared/admin/admin-header.php';
   var slugAiBtn = document.getElementById('slugAiBtn');
   slugAiBtn.onclick = function () {
     if (!titleInput.value.trim()) { alert('先填标题'); return; }
-    var old = this.textContent;
-    this.textContent = '生成中…';
-    this.disabled = true;
-    fetch('help-slug-ai.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: titleInput.value, id: <?= (int)($editing['id'] ?? 0) ?> })
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j.ok && j.slug) {
-          slugInput.value = j.slug;
-          slugManual = true;                       // AI 结果视为人工确认值，不被拼音覆盖
-        } else {
-          alert('AI 生成失败：' + (j.msg || '未知错误') + '\n已保留当前 slug，可手动修改。');
-        }
-      })
-      .catch(function () { alert('网络异常，AI 生成未成功，已保留当前 slug'); })
-      .then(function () {
-        slugAiBtn.textContent = old;
-        slugAiBtn.disabled = false;
-      });
+    aiAdminCall(this, 'help-slug-ai.php',
+      { title: titleInput.value, id: <?= (int)($editing['id'] ?? 0) ?> },
+      function (j) { slugInput.value = j.slug; slugManual = true; }, // AI 结果视为人工确认值
+      'AI 英文 slug 失败（已保留当前 slug）');
   };
 
   // ---- 摘要自动生成：正文 → 本地提取（即时）+ AI 按钮（更优） ----
@@ -569,23 +551,55 @@ require_once '../shared/admin/admin-header.php';
 
   summaryInput.addEventListener('input', function () { sumManual = true; }); // 手动改过 → 停止自动
 
-  document.getElementById('sumAiBtn').onclick = function () {
-    var btn = this, old = btn.textContent;
-    var content = (editor && !srcMode) ? (function () { try { return editor.getHtml(); } catch (e) { return rtArea.value; } })() : rtArea.value;
-    if (!plainText().trim()) { alert('先写正文，再生成摘要'); return; }
+  // 后台 AI 小任务公共调用：30s 前端超时 + 显示"用了哪个渠道/耗时/为何切换"
+  function aiAdminCall(btn, url, body, onOk, failTip) {
+    var old = btn.textContent;
     btn.textContent = '生成中…'; btn.disabled = true;
-    fetch('help-summary-ai.php', {
+    var ac = (window.AbortController) ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ac) ac.abort(); }, 30000); // 前端兜底，避免一直转圈
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: titleInput.value, content: content })
+      body: JSON.stringify(body),
+      signal: ac ? ac.signal : undefined
     })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (j.ok && j.summary) { summaryInput.value = j.summary; sumManual = true; }
-        else alert('AI 摘要失败：' + (j.msg || '未知错误') + '\n已保留当前摘要。');
+        clearTimeout(timer);
+        if (j.ok) {
+          onOk(j);
+          var m = j.meta || {};
+          var sec = m.ms ? (m.ms / 1000).toFixed(1) + 's' : '';
+          btn.textContent = '✓ ' + sec;
+          btn.title = '渠道：' + (m.provider || '未知') + (m.attempts && m.attempts.length > 1 ? '（已跳过 ' + (m.attempts.length - 1) + ' 个失败渠道）' : '');
+          setTimeout(function () { btn.textContent = old; btn.disabled = false; }, 1500);
+        } else {
+          var detail = '';
+          if (j.meta && j.meta.attempts) {
+            detail = '\n\n尝试明细：\n' + j.meta.attempts.map(function (a) {
+              return '· ' + a.name + '：' + (a.ok ? '成功' : '失败(' + (a.ms / 1000).toFixed(1) + 's) ' + (a.error || '').slice(0, 80));
+            }).join('\n');
+          }
+          alert(failTip + '：' + (j.msg || '未知错误') + detail);
+          btn.textContent = old; btn.disabled = false;
+        }
       })
-      .catch(function () { alert('网络异常，已保留当前摘要'); })
-      .then(function () { btn.textContent = old; btn.disabled = false; });
+      .catch(function (err) {
+        clearTimeout(timer);
+        var aborted = err && err.name === 'AbortError';
+        alert(failTip + '：' + (aborted ? '超过 30 秒无响应（已放弃）' : '网络异常') + '\n请检查后台 AI 渠道是否可用（AI渠道配置页可点「测试」）');
+        btn.textContent = old; btn.disabled = false;
+      });
+  }
+
+  document.getElementById('sumAiBtn').onclick = function () {
+    var btn = this;
+    var content = (editor && !srcMode) ? (function () { try { return editor.getHtml(); } catch (e) { return rtArea.value; } })() : rtArea.value;
+    if (!plainText().trim()) { alert('先写正文，再生成摘要'); return; }
+    aiAdminCall(btn, 'help-summary-ai.php', { title: titleInput.value, content: content }, function (j) {
+      summaryInput.value = j.summary;
+      sumManual = true;
+    }, 'AI 摘要失败（已保留当前摘要）');
   };
 
   // ---- 富文本：wangEditor 可视化编辑 + HTML 源码切换 ----

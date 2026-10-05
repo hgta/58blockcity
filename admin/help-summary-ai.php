@@ -19,9 +19,11 @@ checkAdmin();
 
 header('Content-Type: application/json; charset=utf-8');
 
-function sum_out($ok, $summary = '', $msg = '')
+function sum_out($ok, $summary = '', $msg = '', $meta = null)
 {
-    echo json_encode(['ok' => $ok, 'summary' => $summary, 'msg' => $msg], JSON_UNESCAPED_UNICODE);
+    $out = ['ok' => $ok, 'summary' => $summary, 'msg' => $msg];
+    if ($meta) $out['meta'] = $meta; // 渠道名/耗时/各渠道尝试明细，供后台提示
+    echo json_encode($out, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -42,6 +44,10 @@ $plain = trim(preg_replace('/\s+/u', ' ', $plain));
 if ($plain === '') sum_out(false, '', '正文为空，先写点内容再生成摘要');
 if (mb_strlen($plain) > 3000) $plain = mb_substr($plain, 0, 3000); // 控制 token
 
+// 后台短任务：给足总时长（2 个渠道 × 12s），但仍远低于 PHP 默认上限被砍的风险
+@set_time_limit(30);
+$t0 = microtime(true);
+
 try {
     $messages = [
         [
@@ -53,8 +59,16 @@ try {
         ['role' => 'user', 'content' => '标题：' . $title . "\n正文：" . $plain],
     ];
 
-    $res = AiProvider::chatWithFailover($pdo, $messages, function ($delta) { /* 后台调用，忽略流式片段 */ });
-    if (!$res['ok']) sum_out(false, '', 'AI 调用失败：' . $res['error']);
+    // 非流式 + 每渠道 12s 超时：某渠道卡住会立刻切下一个，不再干等 60s
+    $res = AiProvider::chatOnceWithFailover($pdo, $messages, 12.0);
+    $meta = [
+        'ms' => (int)round((microtime(true) - $t0) * 1000),
+        'provider' => $res['provider'] ? $res['provider']->name() : '',
+        'attempts' => $res['attempts'],
+    ];
+    if (!$res['ok']) {
+        sum_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
+    }
 
     $s = trim((string)$res['answer']);
     $s = preg_replace('/[`"\']/u', '', $s);
@@ -63,7 +77,7 @@ try {
     if ($s === '') sum_out(false, '', 'AI 返回为空');
     if (mb_strlen($s) > 500) $s = mb_substr($s, 0, 497) . '…';
 
-    sum_out(true, $s, '');
+    sum_out(true, $s, '', $meta);
 } catch (Exception $ex) {
     sum_out(false, '', '异常：' . $ex->getMessage());
 }
