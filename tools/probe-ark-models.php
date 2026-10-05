@@ -41,18 +41,23 @@ echo "端点: {$endpoint}\n\n";
 
 // ---- 参数 ----
 $opts = getopt('', ['model::', 'timeout::']);
-$timeout = max(5, (int)($opts['timeout'] ?? 15));
+$timeout = max(5, (int)($opts['timeout'] ?? 12)); // 单个模型最多等 12s，超时即视为"慢，不选"
 
-// 候选模型（方舟套餐常见命名，可自行增删；不在此列表的模型也能通过 --model= 指定）
+// 候选模型：按控制台「模型列表」里的模型名（API Model Name，通常与控制台展示名一致或为其连字符形式）
+// 注意：方舟控制台每个模型卡片上的「Model Name」才是准的，可点复制后用 --model= 指定
 $candidates = [
-    'doubao-seed-2-1-pro-260628',
-    'doubao-seed-1-6-250615',
-    'doubao-seed-1-6-flash-250715',
-    'doubao-1-5-pro-32k-250115',
-    'doubao-1-5-lite-32k-250115',
-    'deepseek-v3-250324',
-    'kimi-k2-250711',
-    'glm-4-5-20250722',
+    'ark-code-latest',        // 当前在用的路由别名（实测 ~92s）
+    'auto',                   // 智能调度（效果+速度）
+    'doubao-seed-2-1-lite',   // 描述：1M 超长上下文，通常较快
+    'doubao-seed-2-0-mini',   // 描述：面向低时延、高并发 ← 最可能是快的
+    'doubao-seed-2-1-turbo',  // 描述：效果与成本均衡
+    'doubao-seed-2-1-pro',
+    'deepseek-v4-flash',
+    'deepseek-v4-pro',
+    'doubao-seed-evolving',
+    'glm-5-3',
+    'kimi-k2-7-code',
+    'minimax-m3',
 ];
 if (!empty($opts['model'])) {
     $candidates = array_filter(array_map('trim', explode(',', $opts['model'])));
