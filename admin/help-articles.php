@@ -332,7 +332,11 @@ require_once '../shared/admin/admin-header.php';
                     <input name="title" id="titleInput" required value="<?= htmlspecialchars($editing['title'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">Slug *（URL标识）
                     <span style="font-weight:400;color:#64748b;">标题填好后自动生成，可手动改</span></label>
-                    <input name="slug" id="slugInput" required pattern="[a-z0-9-]+" value="<?= htmlspecialchars($editing['slug'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;"></div>
+                    <div style="display:flex;gap:6px;">
+                        <input name="slug" id="slugInput" required pattern="[a-z0-9-]+" value="<?= htmlspecialchars($editing['slug'] ?? '') ?>" style="flex:1;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;">
+                        <button type="button" id="slugAiBtn" title="用 AI 把标题翻译成英文 slug（如 mall-shopping-guide）" class="admin-btn admin-btn-secondary admin-btn-sm" style="white-space:nowrap;">AI 英文</button>
+                    </div>
+                </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px;">
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">分类 *</label>
@@ -499,6 +503,34 @@ require_once '../shared/admin/admin-header.php';
   titleInput.addEventListener('blur', autoSlug);
   slugInput.addEventListener('input', function () { slugManual = true; }); // 手动改过 → 停止自动
   if (!slugInput.value) autoSlug(); // 编辑老文章但 slug 为空时补一次
+
+  // AI 生成英文 slug（复用后台已配置的聊天渠道）
+  var slugAiBtn = document.getElementById('slugAiBtn');
+  slugAiBtn.onclick = function () {
+    if (!titleInput.value.trim()) { alert('先填标题'); return; }
+    var old = this.textContent;
+    this.textContent = '生成中…';
+    this.disabled = true;
+    fetch('help-slug-ai.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: titleInput.value, id: <?= (int)($editing['id'] ?? 0) ?> })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.ok && j.slug) {
+          slugInput.value = j.slug;
+          slugManual = true;                       // AI 结果视为人工确认值，不被拼音覆盖
+        } else {
+          alert('AI 生成失败：' + (j.msg || '未知错误') + '\n已保留当前 slug，可手动修改。');
+        }
+      })
+      .catch(function () { alert('网络异常，AI 生成未成功，已保留当前 slug'); })
+      .then(function () {
+        slugAiBtn.textContent = old;
+        slugAiBtn.disabled = false;
+      });
+  };
 
   // ---- 富文本：wangEditor 可视化编辑 + HTML 源码切换 ----
   var rtArea = document.getElementById('rtArea');
