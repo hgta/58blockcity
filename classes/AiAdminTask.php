@@ -8,7 +8,10 @@
  * - 默认优先直连模型渠道，本机 Hermes（完整 agent 循环）排最后——短任务用它很慢
  * - 超时与渠道偏好可在 system_settings 调整（无需改代码）：
  *     ai_admin_task_timeout   单渠道超时秒数，默认 30
- *     ai_admin_prefer_direct  1=直连模型渠道优先、本机 Hermes 殿后；0=按后台配置顺序（默认）
+ *     ai_admin_prefer_direct  1=直连模型渠道优先、本机 Hermes 殿后（默认）；0=按后台配置顺序
+ *                             实测（2026-10-05，857 字文章摘要）：Hermes >30s 超时，
+ *                             直连 minimax-m3 17~25s 成功；短提示词 9.6s vs 4.5s，
+ *                             故本机 Hermes 在这类长输入任务上更慢，默认让它殿后
  *     ai_admin_task_model     后台小任务专用模型（覆盖渠道默认模型）；留空=用渠道默认
  *                             实测提示：ark-code-latest 是带深度思考的编码路由模型，
  *                             写 100 字摘要要 ~92s；本机 Hermes 同题 ~10s。慢模型请在此换成快模型
@@ -22,7 +25,7 @@ class AiAdminTask
     /** 读取配置（缺省回落默认值，不依赖 migration 是否执行） */
     public static function config(PDO $db)
     {
-        $cfg = ['timeout' => self::DEFAULT_TIMEOUT, 'prefer_direct' => false, 'model' => ''];
+        $cfg = ['timeout' => self::DEFAULT_TIMEOUT, 'prefer_direct' => true, 'model' => ''];
         try {
             $rows = $db->query(
                 "SELECT setting_key, setting_value FROM system_settings

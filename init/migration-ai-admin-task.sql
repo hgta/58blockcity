@@ -11,8 +11,8 @@
 INSERT INTO `system_settings` (`setting_key`,`setting_value`) VALUES
 -- 单渠道超时（秒）：慢模型调大，但超过 60 也没意义（前端兜底 80s）
 ('ai_admin_task_timeout',  '30'),
--- 0=按后台渠道配置顺序（默认：默认渠道通常就是最优）；1=直连优先、本机 Hermes 殿后
-('ai_admin_prefer_direct', '0'),
+-- 1=直连模型渠道优先、本机 Hermes 殿后（默认，实测长输入下 Hermes 更慢）；0=按后台渠道配置顺序
+('ai_admin_prefer_direct', '1'),
 -- 后台小任务专用模型，覆盖渠道默认模型；留空=用渠道默认。
 -- 若默认渠道模型偏慢（如带思考的 ark-code-latest），可在此填一个快模型名
 ('ai_admin_task_model',    ''),
