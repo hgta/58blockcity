@@ -166,7 +166,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 break;
         }
     } catch (Exception $ex) {
-        $actionMsg = '<div class="admin-alert admin-alert-error">操作失败：' . htmlspecialchars($ex->getMessage()) . '</div>';
+        // slug 唯一键冲突：给出可操作的提示（原文是裸 MySQL 报错，看不懂）
+        $isDup = false;
+        if ($ex instanceof PDOException) {
+            $info = $ex->errorInfo ?? null;
+            $isDup = (isset($info[1]) && (int)$info[1] === 1062) || stripos($ex->getMessage(), 'Duplicate entry') !== false;
+        }
+        if ($isDup) {
+            $actionMsg = '<div class="admin-alert admin-alert-error">Slug 已被其他文章占用，请在 Slug 后加个后缀（如 -2）再保存</div>';
+        } else {
+            $actionMsg = '<div class="admin-alert admin-alert-error">操作失败：' . htmlspecialchars($ex->getMessage()) . '</div>';
+        }
     }
 }
 
@@ -319,9 +329,10 @@ require_once '../shared/admin/admin-header.php';
             <input type="hidden" name="id" value="<?= $editing['id'] ?? 0 ?>">
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">标题 *</label>
-                    <input name="title" required value="<?= htmlspecialchars($editing['title'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
-                <div><label style="display:block;font-size:13px;margin-bottom:4px;">Slug *（URL标识）</label>
-                    <input name="slug" required pattern="[a-z0-9-]+" value="<?= htmlspecialchars($editing['slug'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;"></div>
+                    <input name="title" id="titleInput" required value="<?= htmlspecialchars($editing['title'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">Slug *（URL标识）
+                    <span style="font-weight:400;color:#64748b;">标题填好后自动生成，可手动改</span></label>
+                    <input name="slug" id="slugInput" required pattern="[a-z0-9-]+" value="<?= htmlspecialchars($editing['slug'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;"></div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px;">
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">分类 *</label>
@@ -382,6 +393,8 @@ require_once '../shared/admin/admin-header.php';
 
 <!-- wangEditor（自托管）必须先于下方内联脚本加载 -->
 <script src="assets/wangeditor/index.js"></script>
+<!-- pinyin-pro（自托管）：标题 → 拼音 slug -->
+<script src="assets/pinyin-pro/index.js"></script>
 <script>
 (function () {
   var ctype = document.getElementById('ctypeSel');
@@ -455,6 +468,37 @@ require_once '../shared/admin/admin-header.php';
   // 初始数据
   var initSteps = <?= json_encode($editing['steps_arr'] ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   if (Array.isArray(initSteps) && initSteps.length) initSteps.forEach(addStep);
+
+  // ---- Slug 自动生成：标题 → 拼音（SEO 友好），手动改过就不再覆盖 ----
+  var titleInput = document.getElementById('titleInput');
+  var slugInput = document.getElementById('slugInput');
+  var slugManual = <?= !empty($editing['slug']) ? 'true' : 'false' ?>; // 已有 slug 视为人工值
+
+  function slugify(text) {
+    var s = text || '';
+    if (window.pinyinPro && window.pinyinPro.pinyin) {
+      // 中文 → 无声调拼音；英文/数字/其他字符原样保留
+      s = window.pinyinPro.pinyin(s, { toneType: 'none', type: 'string', nonZh: 'consecutive', separator: ' ' });
+    }
+    s = s.toLowerCase()
+         .replace(/[^a-z0-9]+/g, '-')   // 非字母数字统一为连字符
+         .replace(/-{2,}/g, '-')
+         .replace(/^-+|-+$/g, '')
+         .slice(0, 60)                   // 控制 URL 长度，保留关键词
+         .replace(/-+$/g, '');
+    return s;
+  }
+
+  function autoSlug() {
+    if (slugManual) return;
+    var v = slugify(titleInput.value);
+    if (v) slugInput.value = v;
+  }
+
+  titleInput.addEventListener('input', autoSlug);
+  titleInput.addEventListener('blur', autoSlug);
+  slugInput.addEventListener('input', function () { slugManual = true; }); // 手动改过 → 停止自动
+  if (!slugInput.value) autoSlug(); // 编辑老文章但 slug 为空时补一次
 
   // ---- 富文本：wangEditor 可视化编辑 + HTML 源码切换 ----
   var rtArea = document.getElementById('rtArea');
