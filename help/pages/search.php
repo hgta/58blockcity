@@ -68,7 +68,8 @@ help_header([
 
 <div class="hc-breadcrumb"><a href="<?= e(help_url()) ?>">帮助中心</a> / 搜索</div>
 
-<div class="hc-hero" style="padding:28px 24px">
+<div class="hc-hero is-search">
+  <h1><i class="fa-solid fa-magnifying-glass"></i> <?= $kw !== '' ? '搜索：' . e($kw) : '搜索帮助内容' ?></h1>
   <form class="hc-hero-search" action="<?= e(help_url('search')) ?>" method="get">
     <input type="text" name="q" placeholder="输入关键词，如：认领、BCT、提现…" value="<?= e($kw) ?>">
     <button type="submit">搜索</button>
@@ -102,24 +103,17 @@ help_header([
   <?php if (!empty($faqs)): ?>
   <div class="hc-section-title"><i class="fa-solid fa-comments"></i> 相关常见问题（<?= count($faqs) ?>）</div>
   <?php foreach ($faqs as $f): ?>
-  <div class="hc-faq-item">
-    <div class="hc-faq-q"><i class="fa-solid fa-circle-question"></i><?= e($f['question']) ?><i class="fa-solid fa-chevron-down"></i></div>
-    <div class="hc-faq-a">
-      <?= nl2br(e(mb_substr($f['answer'], 0, 200))) ?>
-      <?php if ($f['related_article_id']): ?>
-        <br><a href="#art-<?= (int)$f['related_article_id'] ?>">查看详细教程 ↓</a>
-      <?php endif; ?>
-    </div>
-  </div>
+    <?php help_faq_item(
+        $f['question'],
+        mb_substr($f['answer'], 0, 200),
+        $f['related_article_id'] ? '#art-' . (int)$f['related_article_id'] : '',
+        '查看详细教程 ↓'
+    ); ?>
   <?php endforeach; ?>
   <?php endif; ?>
 
-  <div class="hc-list" style="margin-top:20px">
-    <a class="hc-list-item" href="<?= e(help_url('ask') . '?q=' . urlencode($kw)) ?>">
-      <i class="fa-solid fa-robot" style="color:var(--brand)"></i>
-      <div class="t">以上内容没解决？把"<?= e($kw) ?>"丢给 AI 助手试试</div>
-      <span class="m" style="color:var(--brand);font-weight:600">去提问 →</span>
-    </a>
+  <div style="margin-top:20px">
+    <?= help_ai_cta('cta', '以上内容没解决？把"' . $kw . '"丢给 AI 助手试试') ?>
   </div>
 <?php endif; ?>
 

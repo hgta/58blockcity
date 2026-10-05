@@ -31,7 +31,7 @@ help_header([
 
 <div class="hc-breadcrumb"><a href="<?= e(help_url()) ?>">帮助中心</a> / 术语表</div>
 
-<div class="hc-section-title" style="margin-top:0"><i class="fa-solid fa-book"></i> 术语表</div>
+<?php help_pagehead('术语表', $terms ? '按拼音首字母排列，共 ' . count($terms) . ' 条' : ''); ?>
 
 <?php if (!$terms): ?>
 <div class="hc-empty">
@@ -64,12 +64,8 @@ help_header([
 <?php endforeach; ?>
 <?php endif; ?>
 
-<div class="hc-list" style="margin-top:22px">
-  <a class="hc-list-item" href="<?= e(help_url('ask')) ?>">
-    <i class="fa-solid fa-robot" style="color:var(--brand)"></i>
-    <div class="t">没找到想查的术语？问 AI 助手，或留言给我们</div>
-    <span class="m" style="color:var(--brand);font-weight:600">去提问 →</span>
-  </a>
+<div style="margin-top:22px">
+  <?= help_ai_cta('cta', '没找到想查的术语？问 AI 助手，或留言给我们') ?>
 </div>
 
 <?php help_footer(); ?>

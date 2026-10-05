@@ -1,0 +1,31 @@
+# Tasks: help-site-layout
+
+## 1. 布局基座（help/_layout.php）
+
+- [x] 1.1 `.hc-hero` 就地改造为紧凑标题条（浅底 + 左侧品牌边、桌面隐藏搜索、≤860px 显示搜索），新增 `.hc-hero.is-search` 修饰类
+- [x] 1.2 移动端头部改两行：≤860px 不再隐藏 `.hc-search`（全站每页可搜索），菜单按钮与 nav 展开定位同步调整
+- [x] 1.3 新增 `.hc-pagehead`（标题/副标题/右侧操作）与其后首个 `.hc-section-title` 的间距规则
+- [x] 1.4 新增 `.hc-home` 两栏 grid-template-areas 规则（桌面两栏、≤860px 单列）+ 「最近更新」紧凑行样式 `.hc-list-item.alt`
+- [x] 1.5 新增公共函数 `help_faq_item()` / `help_ai_cta()` / `help_pagehead()`
+- [x] 1.6 清理内联覆盖：nav 的 `.hc-ask-btn` 重复样式归入 CSS
+
+## 2. 首页（help/pages/home.php）
+
+- [x] 2.1 标题区改为紧凑 hero（标题 + 一句话 + 热门词），去掉泛化副标题与桌面重复搜索
+- [x] 2.2 结构重排为 `.hc-home` 两栏：主列（浏览分类 / 热门教程 / 最近更新紧凑行）、侧列（AI 助手卡 / 大家都在问）
+- [x] 2.3 「最近更新」由大卡片改为紧凑列表行；AI 助手改为侧列卡片（不再重复推广条）
+
+## 3. 其余页面统一骨架
+
+- [x] 3.1 搜索页：复用紧凑标题条（去掉内联 padding），标题区改用 `.hc-hero.is-search`
+- [x] 3.2 分类页 / FAQ 页 / 术语表页：标题区改用 `.hc-pagehead`，去掉内联 `margin-top:0`
+      （AI 问答页保留自身 `.ask-head`，见 design D4b：结构与 pagehead 同构、780px 列宽为聊天页刻意选择）
+- [x] 3.3 文章页：卡内 `h1` 调为与 `.hc-pagehead h1` 同字号（20px）
+- [x] 3.4 FAQ 折叠项与 AI 推广条改为调用 `help_faq_item()` / `help_ai_cta()`（home/search/faq/article/glossary）
+
+## 4. 视觉回归与收尾
+
+- [ ] 4.1 逐页核对（桌面 1440px + 手机 375px）：首页 / 分类 / 文章 / 搜索 / FAQ / 术语表 / 问答 共 7 页无错位、无横向滚动
+- [ ] 4.2 移动端专项：确认 7 个页面都能看到搜索框并可提交出结果
+- [ ] 4.3 首屏高度核对：桌面首页标题条 + 浏览分类在首屏内可见
+- [ ] 4.4 部署后线上复验（含缓存刷新），并记录首屏高度对比

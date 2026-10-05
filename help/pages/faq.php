@@ -39,7 +39,7 @@ help_header([
 
 <div class="hc-breadcrumb"><a href="<?= e(help_url()) ?>">帮助中心</a> / 常见问题</div>
 
-<div class="hc-section-title" style="margin-top:0"><i class="fa-solid fa-comments"></i> 常见问题</div>
+<?php help_pagehead('常见问题', $cats ? '按分类浏览，点开查看答案' : ''); ?>
 
 <?php if (!$cats): ?>
 <div class="hc-empty">
@@ -60,25 +60,18 @@ help_header([
 <div class="hc-empty"><i class="fa-solid fa-inbox"></i><div>该分类暂无 FAQ</div></div>
 <?php else: ?>
 <?php foreach ($items as $f): ?>
-<div class="hc-faq-item">
-  <div class="hc-faq-q"><i class="fa-solid fa-circle-question"></i><?= e($f['question']) ?><i class="fa-solid fa-chevron-down"></i></div>
-  <div class="hc-faq-a">
-    <?= nl2br(e($f['answer'])) ?>
-    <?php if ($f['art_slug']): ?>
-      <br><a href="<?= e(article_url($f['art_slug'])) ?>"><i class="fa-solid fa-book-open"></i> 查看详细教程：<?= e($f['art_title']) ?></a>
-    <?php endif; ?>
-  </div>
-</div>
+  <?php help_faq_item(
+      $f['question'],
+      $f['answer'],
+      $f['art_slug'] ? article_url($f['art_slug']) : '',
+      '查看详细教程：' . $f['art_title']
+  ); ?>
 <?php endforeach; ?>
 <?php endif; ?>
 <?php endif; ?>
 
-<div class="hc-list" style="margin-top:22px">
-  <a class="hc-list-item" href="<?= e(help_url('ask')) ?>">
-    <i class="fa-solid fa-robot" style="color:var(--brand)"></i>
-    <div class="t">没找到你的问题？问 AI 助手，或留言给我们</div>
-    <span class="m" style="color:var(--brand);font-weight:600">去提问 →</span>
-  </a>
+<div style="margin-top:22px">
+  <?= help_ai_cta('cta', '没找到你的问题？问 AI 助手，或留言给我们') ?>
 </div>
 
 <?php help_footer(); ?>

@@ -60,14 +60,41 @@ img { max-width: 100%; }
 .hc-breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
 .hc-breadcrumb a { color: var(--muted); }
 
-.hc-hero { background: var(--brand-grad); border-radius: 18px; padding: 40px 24px; text-align: center; color: #fff; margin-bottom: 28px; }
-.hc-hero h1 { font-size: 26px; margin-bottom: 8px; }
-.hc-hero p { opacity: .92; font-size: 14px; margin-bottom: 20px; }
-.hc-hero-search { display: flex; max-width: 560px; margin: 0 auto; }
-.hc-hero-search input { flex: 1; border: none; border-radius: 24px 0 0 24px; padding: 12px 20px; font-size: 15px; outline: none; }
-.hc-hero-search button { border: none; background: #1f2937; color: #fff; padding: 0 24px; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 15px; }
-.hc-hero-tags { margin-top: 14px; font-size: 13px; opacity: .95; }
-.hc-hero-tags a { color: #fff; margin: 0 6px; border-bottom: 1px dashed rgba(255,255,255,.5); }
+/* 紧凑标题条（取代原大色块 hero：首屏高度 ~250px → ~90px）
+   桌面端不重复头部搜索；≤860px 显示搜索，作为手机端唯一搜索入口（见移动端媒体查询） */
+.hc-hero { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 18px; }
+.hc-hero h1 { font-size: 19px; margin: 0 0 2px; }
+.hc-hero h1 i { color: var(--brand); margin-right: 6px; }
+.hc-hero p { font-size: 13px; color: var(--muted); margin: 0; }
+.hc-hero-search { display: none; }
+.hc-hero.is-search .hc-hero-search { display: flex; max-width: 560px; margin-top: 12px; }
+.hc-hero-search input { flex: 1; border: 1px solid var(--line); border-right: none; border-radius: 22px 0 0 22px; padding: 9px 16px; font-size: 14px; outline: none; }
+.hc-hero-search button { border: none; background: var(--brand-grad); color: #fff; padding: 0 20px; border-radius: 0 22px 22px 0; cursor: pointer; font-size: 14px; }
+.hc-hero-tags { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.hc-hero-tags a { color: var(--brand); margin-right: 10px; }
+.hc-hero-tags a:hover { text-decoration: underline; }
+
+/* 统一页面标题区（替换原有的 3 种标题写法与内联 margin 覆盖） */
+.hc-pagehead { display: flex; align-items: center; gap: 12px; margin: 2px 0 18px; }
+.hc-pagehead h1 { font-size: 20px; margin: 0; }
+.hc-pagehead h1 i { color: var(--brand); margin-right: 6px; }
+.hc-pagehead .sub { font-size: 13px; color: var(--muted); }
+.hc-pagehead .acts { margin-left: auto; font-size: 13px; }
+.hc-pagehead + .hc-section-title { margin-top: 14px; }
+
+/* 首页两栏：DOM 顺序为 分类 → AI → 热门 → 最近更新 → 大家问（移动端单列顺序即此，符合预期）
+   桌面端用 grid-areas 把 AI 卡与"大家都在问"排到右列 */
+.hc-home { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; grid-template-areas: "cats ai" "hot asks" "latest asks"; }
+.hc-home > .a-cats { grid-area: cats; }
+.hc-home > .a-ai { grid-area: ai; }
+.hc-home > .a-hot { grid-area: hot; }
+.hc-home > .a-latest { grid-area: latest; }
+.hc-home > .a-asks { grid-area: asks; }
+.hc-home .hc-section-title { margin-top: 0; }
+.hc-home .a-ai .hc-side-card { padding: 14px 16px; }
+.hc-home .a-ai .hc-side-card p { font-size: 13px; color: var(--muted); margin: 6px 0 10px; }
+.hc-list-item.alt .idx { background: none; color: var(--muted); }
+.hc-list-item.alt .m.date { color: #9ca3af; }
 
 .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
 .hc-cat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s, transform .15s; }
@@ -105,9 +132,11 @@ img { max-width: 100%; }
 .hc-side-card a { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; color: var(--ink); font-size: 14px; }
 .hc-side-card a:hover { background: #fff3e8; color: var(--brand); text-decoration: none; }
 .hc-side-card a.on { background: #fff3e8; color: var(--brand); font-weight: 600; }
+.hc-ai-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-grad); color: #fff !important; font-weight: 600; font-size: 13px; padding: 8px 16px; border-radius: 20px; }
+.hc-ai-btn:hover { opacity: .92; text-decoration: none; }
 
 .hc-article { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 32px; }
-.hc-article h1 { font-size: 24px; margin-bottom: 6px; }
+.hc-article h1 { font-size: 20px; margin-bottom: 6px; } /* 与 .hc-pagehead h1 同字号，保持各页标题观感一致 */
 .hc-article .meta { font-size: 13px; color: var(--muted); margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .hc-article .body { font-size: 15px; }
 .hc-article .body img { border-radius: 8px; border: 1px solid var(--line); margin: 8px 0; }
@@ -166,11 +195,19 @@ img { max-width: 100%; }
 @media (max-width: 860px) {
   .hc-layout { grid-template-columns: 1fr; }
   .hc-side { position: static; }
-  .hc-nav { display: none; position: absolute; top: 60px; left: 0; right: 0; background: #fff; flex-direction: column; align-items: stretch; padding: 10px 16px; border-bottom: 1px solid var(--line); gap: 2px; }
+  /* 头部改两行：第一行 logo + 菜单按钮，第二行搜索框
+     —— 关键修复：原先此处 .hc-search{display:none} 导致分类/文章/FAQ/术语表/问答页在手机上无法搜索 */
+  .hc-header-inner { flex-wrap: wrap; height: auto; padding: 8px 16px; row-gap: 8px; }
+  .hc-search { display: flex; order: 3; flex: 1 0 100%; max-width: none; }
+  .hc-menu-btn { order: 2; }
+  .hc-nav { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; flex-direction: column; align-items: stretch; padding: 10px 16px; border-bottom: 1px solid var(--line); gap: 2px; }
   .hc-nav.open { display: flex; }
   .hc-menu-btn { display: block; }
-  .hc-search { display: none; }
-  .hc-hero h1 { font-size: 20px; }
+  .hc-hero-search { display: flex; margin-top: 10px; }   /* 手机端唯一搜索入口 */
+  .hc-hero { padding: 12px 14px; }
+  .hc-hero h1 { font-size: 18px; }
+  .hc-home { grid-template-columns: 1fr; grid-template-areas: none; gap: 0; }
+  .hc-home > div { margin-bottom: 8px; }
   .hc-article { padding: 20px 16px; }
 }
 </style>
@@ -188,7 +225,7 @@ img { max-width: 100%; }
       <a href="<?= e(help_url('faq')) ?>" class="<?= $active === 'faq' ? 'on' : '' ?>">常见问题</a>
       <a href="<?= e(help_url('glossary')) ?>" class="<?= $active === 'glossary' ? 'on' : '' ?>">术语表</a>
       <?php if ($aiEnabled): ?>
-      <a class="hc-ask-btn" href="<?= e(help_url('ask')) ?>" style="background:linear-gradient(135deg,#ff8a3d,#ff6b00);color:#fff"><i class="fa-solid fa-robot"></i> 问AI助手</a>
+      <a class="hc-ask-btn" href="<?= e(help_url('ask')) ?>"><i class="fa-solid fa-robot"></i> 问AI助手</a>
       <?php endif; ?>
       <a href="<?= e($mainSite) ?>">返回主站</a>
     </nav>
@@ -196,6 +233,63 @@ img { max-width: 100%; }
   </div>
 </header>
 <div class="hc-container">
+<?php
+}
+
+/**
+ * FAQ 折叠项（公共组件：原先在 home/article/search/faq 四处重复同一段 markup）
+ * @param string $q 问题
+ * @param string $a 答案
+ * @param string $moreUrl 可选：附加链接地址
+ * @param string $moreLabel 可选：附加链接文案（默认"查看详情 →"）
+ */
+function help_faq_item($q, $a, $moreUrl = '', $moreLabel = '查看详情 →') {
+?>
+<div class="hc-faq-item">
+  <div class="hc-faq-q"><i class="fa-solid fa-circle-question"></i><?= e($q) ?><i class="fa-solid fa-chevron-down"></i></div>
+  <div class="hc-faq-a"><?= nl2br(e($a)) ?><?php if ($moreUrl !== ''): ?><br><a href="<?= e($moreUrl) ?>"><?= e($moreLabel) ?></a><?php endif; ?></div>
+</div>
+<?php
+}
+
+/**
+ * AI 助手入口
+ * @param string $mode 'cta'=推广条（列表项样式，用于搜索/FAQ 等页）；'card'=侧列卡片（首页用）
+ * @param string $text 可选：自定义文案（cta 模式）
+ */
+function help_ai_cta($mode = 'cta', $text = '') {
+    if (help_setting('ai_assistant_enabled', '1') !== '1') return;
+    if ($text === '') $text = '没找到答案？直接问 AI 助手 —— 7×24 小时在线，基于官方教程回答并附引用来源';
+    $url = e(help_url('ask'));
+    if ($mode === 'card'):
+?>
+  <div class="hc-side-card">
+    <h4><i class="fa-solid fa-robot"></i> AI 助手</h4>
+    <p>没找到答案？直接问 —— 7×24 小时在线，基于官方教程回答并附引用来源。</p>
+    <a class="hc-ai-btn" href="<?= $url ?>"><i class="fa-solid fa-comment-dots"></i> 去提问 →</a>
+  </div>
+<?php else: ?>
+<div class="hc-list">
+  <a class="hc-list-item" href="<?= $url ?>">
+    <i class="fa-solid fa-robot" style="color:var(--brand)"></i>
+    <div class="t"><?= e($text) ?></div>
+    <span class="m" style="color:var(--brand);font-weight:600">去提问 →</span>
+  </a>
+</div>
+<?php
+    endif;
+}
+
+/**
+ * 页面标题区（统一骨架：标题 + 可选副标题 + 可选右侧操作）
+ */
+function help_pagehead($title, $sub = '', $acts = '') {
+?>
+<div class="hc-pagehead">
+  <h1><?= e($title) ?></h1>
+  <?php if ($sub !== ''): ?><span class="sub"><?= e($sub) ?></span><?php endif; ?>
+  <?php if ($acts !== ''): ?><span class="acts"><?= $acts ?></span><?php endif; ?>
+</div>
 <?php
 }
 

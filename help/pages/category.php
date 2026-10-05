@@ -66,9 +66,7 @@ help_header([
   </aside>
 
   <main>
-    <div class="hc-section-title"><i class="fa-solid fa-<?= e($cat['icon']) ?>"></i> <?= e($cat['name']) ?>
-      <span style="font-size:13px;font-weight:400;color:var(--muted)"><?= $total ?> 篇内容</span>
-    </div>
+    <?php help_pagehead($cat['name'], $total . ' 篇内容'); ?>
 
     <?php if (!$arts): ?>
     <div class="hc-empty">

@@ -141,12 +141,9 @@ help_header([
 
       <?php if ($faqs): ?>
       <div style="margin-top:24px">
-        <div class="hc-section-title" style="margin-top:0"><i class="fa-solid fa-comments"></i> 相关常见问题</div>
+        <div class="hc-section-title"><i class="fa-solid fa-comments"></i> 相关常见问题</div>
         <?php foreach ($faqs as $f): ?>
-        <div class="hc-faq-item">
-          <div class="hc-faq-q"><i class="fa-solid fa-circle-question"></i><?= e($f['question']) ?><i class="fa-solid fa-chevron-down"></i></div>
-          <div class="hc-faq-a"><?= nl2br(e($f['answer'])) ?></div>
-        </div>
+          <?php help_faq_item($f['question'], $f['answer']); ?>
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
