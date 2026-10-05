@@ -4,8 +4,10 @@
  * change: help-content-admin (task 9.x 诊断工具)
  *
  * 用法：
- *   php tools/probe-ai-admin-task.php            # 用默认提示词跑一次
- *   php tools/probe-ai-admin-task.php "你的问题"  # 自定义提示词
+ *   php tools/probe-ai-admin-task.php                # 用默认短提示词跑一次
+ *   php tools/probe-ai-admin-task.php "你的问题"      # 自定义提示词
+ *   php tools/probe-ai-admin-task.php --article=7    # 用真实文章 #7 复现「AI 摘要」的实际负载（推荐）
+ *   php tools/probe-ai-admin-task.php --len=3000     # 用 N 字填充文本模拟长输入
  *
  * 输出：读到的配置、各渠道尝试明细、耗时、最终结果（原始 JSON）
  * 用途：后台按钮报"网络异常"时，用它能立刻分清是 PHP 端点问题还是 AI 链路问题
@@ -38,14 +40,52 @@ foreach (AiProvider::routeList($pdo) as $p) {
     );
 }
 
-$q = $argv[1] ?? '用30字说明什么是区块';
-echo "\n=== 3. 执行（提示词：{$q}）===\n";
-$t0 = microtime(true);
-try {
-    $res = AiAdminTask::run($pdo, [
+// ---- 构造与「AI 摘要」一致或相近的负载 ----
+$opts = getopt('', ['article::', 'len::']);
+$messages = null;
+$desc = '';
+
+if (!empty($opts['article'])) {
+    $aid = (int)$opts['article'];
+    $a = $pdo->query("SELECT * FROM help_articles WHERE id = {$aid}")->fetch();
+    if (!$a) { fwrite(STDERR, "文章 #{$aid} 不存在\n"); exit(1); }
+    $raw = $a['content_type'] === 'steps' ? (string)$a['content_steps'] : (string)$a['content_richtext'];
+    $plain = preg_replace('#<(script|style)[^>]*>.*?</\1>#is', '', $raw);
+    $plain = preg_replace('#<br\s*/?>#i', ' ', $plain);
+    $plain = preg_replace('#</(p|div|li|h[1-6]|tr)>#i', ' ', $plain);
+    $plain = html_entity_decode(strip_tags($plain), ENT_QUOTES, 'UTF-8');
+    $plain = trim(preg_replace('/\s+/u', ' ', $plain));
+    $total = mb_strlen($plain);
+    if ($total > 3000) $plain = mb_substr($plain, 0, 3000);
+    $desc = "真实文章 #{$aid}《{$a['title']}》（正文 {$total} 字，截取 " . mb_strlen($plain) . ' 字）';
+    $messages = [
+        ['role' => 'system', 'content' => '你是帮助中心编辑。为下面的文章写一段中文摘要，用于搜索结果与列表展示。'
+            . '要求：80 到 120 字；说清这篇文章能帮用户解决什么问题、包含哪些要点；'
+            . '不要出现"本文介绍了""这篇文章"之类的套话；不要分点；只输出摘要正文，不要标题和引号。'],
+        ['role' => 'user', 'content' => '标题：' . $a['title'] . "\n正文：" . $plain],
+    ];
+} elseif (!empty($opts['len'])) {
+    $len = max(50, (int)$opts['len']);
+    $pad = str_repeat('区块链城市的区块可以认领、交易与合并，居民数与人气值影响城市排名。', (int)ceil($len / 33));
+    $pad = mb_substr($pad, 0, $len);
+    $desc = "长输入模拟（{$len} 字）";
+    $messages = [
+        ['role' => 'system', 'content' => '你是帮助中心编辑，把用户给的材料压缩成 100 字以内的中文摘要，只输出摘要正文。'],
+        ['role' => 'user', 'content' => $pad],
+    ];
+} else {
+    $q = $argv[1] ?? '用30字说明什么是区块';
+    $desc = "短提示词（{$q}）";
+    $messages = [
         ['role' => 'system', 'content' => '你是帮助中心编辑，只输出正文，不要解释。'],
         ['role' => 'user', 'content' => $q],
-    ]);
+    ];
+}
+
+echo "\n=== 3. 执行（{$desc}）===\n";
+$t0 = microtime(true);
+try {
+    $res = AiAdminTask::run($pdo, $messages);
     printf("总耗时 %.1fs  ok=%s\n", microtime(true) - $t0, var_export($res['ok'], true));
     echo "最终渠道: " . ($res['meta']['provider'] !== '' ? $res['meta']['provider'] : '(无)') . "\n";
     echo "尝试明细:\n";

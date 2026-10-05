@@ -18,5 +18,8 @@ INSERT INTO `system_settings` (`setting_key`,`setting_value`) VALUES
 ('ai_admin_task_model',    ''),
 -- 前台小帮流式调用的"首字节超时"（秒）：渠道在该时间内一个字都没吐出即判定失败并切换，
 -- 避免用户面对长时间思考的模型干等。0=关闭该保护
-('ai_chat_first_byte_timeout', '8')
+('ai_chat_first_byte_timeout', '8'),
+-- 摘要任务送入模型的正文字数上限：思考型模型耗时随输入增长，
+-- 长文整篇送入常导致 30s 超时。默认 1500（范围 300~3000）
+('ai_admin_task_max_input', '1500')
 ON DUPLICATE KEY UPDATE `setting_key` = VALUES(`setting_key`);

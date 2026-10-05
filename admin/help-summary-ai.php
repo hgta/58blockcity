@@ -56,7 +56,15 @@ $plain = html_entity_decode($plain, ENT_QUOTES, 'UTF-8');
 $plain = trim(preg_replace('/\s+/u', ' ', $plain));
 
 if ($plain === '') sum_out(false, '', '正文为空，先写点内容再生成摘要');
-if (mb_strlen($plain) > 3000) $plain = mb_substr($plain, 0, 3000); // 控制 token
+// 控制送入模型的正文字数：思考型模型的耗时随输入增长，整篇长文常导致超 30s。
+// 摘要只需开头主要内容，默认取前 1500 字（system_settings.ai_admin_task_max_input 可调，上限 3000）
+$maxInput = 1500;
+try {
+    $v = (int)$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='ai_admin_task_max_input'")->fetchColumn();
+    if ($v > 0) $maxInput = max(300, min(3000, $v));
+} catch (Exception $ex) {}
+$inputLen = mb_strlen($plain);
+if ($inputLen > $maxInput) $plain = mb_substr($plain, 0, $maxInput);
 
 try {
     $messages = [
@@ -71,6 +79,7 @@ try {
 
     $res = AiAdminTask::run($pdo, $messages);
     $meta = $res['meta'];
+    $meta['input_len'] = $inputLen . '→' . mb_strlen($plain); // 便于判断是否因输入过长而超时
     if (!$res['ok']) {
         sum_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
     }
