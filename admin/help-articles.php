@@ -358,8 +358,12 @@ require_once '../shared/admin/admin-header.php';
                     </select></div>
                 <div style="display:flex;align-items:flex-end;"><label style="font-size:13px;"><input type="checkbox" name="is_pinned" <?= !empty($editing['is_pinned']) ? 'checked' : '' ?>> 置顶显示</label></div>
             </div>
-            <div style="margin-top:14px;"><label style="display:block;font-size:13px;margin-bottom:4px;">摘要（搜索与列表展示）</label>
-                <input name="summary" value="<?= htmlspecialchars($editing['summary'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
+            <div style="margin-top:14px;"><label style="display:block;font-size:13px;margin-bottom:4px;">摘要（搜索与列表展示）
+                <span style="font-weight:400;color:#64748b;">写完正文会自动取开头生成，也可点 AI 重写</span></label>
+                <div style="display:flex;gap:6px;">
+                    <input name="summary" id="summaryInput" value="<?= htmlspecialchars($editing['summary'] ?? '') ?>" style="flex:1;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                    <button type="button" id="sumAiBtn" title="用 AI 根据正文重写一段 80~120 字的摘要" class="admin-btn admin-btn-secondary admin-btn-sm" style="white-space:nowrap;">AI 摘要</button>
+                </div></div>
 
             <!-- 富文本模式：所见即所得编辑器（wangEditor 自托管）+ 可切回 HTML 源码 -->
             <div id="rtBox" style="margin-top:14px;">
@@ -532,6 +536,58 @@ require_once '../shared/admin/admin-header.php';
       });
   };
 
+  // ---- 摘要自动生成：正文 → 本地提取（即时）+ AI 按钮（更优） ----
+  var summaryInput = document.getElementById('summaryInput');
+  var sumManual = <?= !empty($editing['summary']) ? 'true' : 'false' ?>; // 已有摘要视为人工值
+
+  function plainText() {
+    if (editor && !srcMode) {
+      try { return editor.getText() || ''; } catch (e) { /* 忽略 */ }
+    }
+    var t = rtArea.value || '';
+    var d = document.createElement('div');
+    d.innerHTML = t;
+    return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function buildSummary() {
+    var t = plainText().replace(/^[\s，,。.、]+/, '');
+    if (!t) return '';
+    var max = 120;
+    if (t.length <= max) return t;
+    // 优先在句子边界收尾，避免截在半句话上
+    var cut = t.slice(0, max);
+    var p = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('！'), cut.lastIndexOf('？'), cut.lastIndexOf('；'), cut.lastIndexOf(';'));
+    return (p >= Math.floor(max * 0.5) ? cut.slice(0, p + 1) : cut + '…');
+  }
+
+  function autoSummary() {
+    if (sumManual) return;
+    var s = buildSummary();
+    if (s) summaryInput.value = s;
+  }
+
+  summaryInput.addEventListener('input', function () { sumManual = true; }); // 手动改过 → 停止自动
+
+  document.getElementById('sumAiBtn').onclick = function () {
+    var btn = this, old = btn.textContent;
+    var content = (editor && !srcMode) ? (function () { try { return editor.getHtml(); } catch (e) { return rtArea.value; } })() : rtArea.value;
+    if (!plainText().trim()) { alert('先写正文，再生成摘要'); return; }
+    btn.textContent = '生成中…'; btn.disabled = true;
+    fetch('help-summary-ai.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: titleInput.value, content: content })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.ok && j.summary) { summaryInput.value = j.summary; sumManual = true; }
+        else alert('AI 摘要失败：' + (j.msg || '未知错误') + '\n已保留当前摘要。');
+      })
+      .catch(function () { alert('网络异常，已保留当前摘要'); })
+      .then(function () { btn.textContent = old; btn.disabled = false; });
+  };
+
   // ---- 富文本：wangEditor 可视化编辑 + HTML 源码切换 ----
   var rtArea = document.getElementById('rtArea');
   var rtEditorBox = document.getElementById('rtEditorWrap');
@@ -557,7 +613,7 @@ require_once '../shared/admin/admin-header.php';
             }
           }
         },
-        onChange: function (ed) { rtArea.value = ed.getHtml(); }
+        onChange: function (ed) { rtArea.value = ed.getHtml(); autoSummary(); }
       }
     });
     E.createToolbar({
@@ -584,6 +640,9 @@ require_once '../shared/admin/admin-header.php';
       this.textContent = 'HTML 源码';
     }
   };
+
+  // 源码模式下手打正文也更新摘要
+  rtArea.addEventListener('input', function () { if (srcMode) autoSummary(); });
 
   // 提交前确保拿到最新内容（可视化模式下 textarea 是隐藏的）
   var form = rtArea.closest('form');
