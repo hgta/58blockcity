@@ -210,7 +210,12 @@ $arts = $listStmt->fetchAll();
 
 $statusMap = ['draft' => '草稿', 'published' => '已发布', 'archived' => '已下架'];
 
-$admin_site_config = ['site' => 'main', 'page_title' => '帮助文章管理'];
+// wangEditor 自托管在 admin/assets/wangeditor/（不依赖 CDN，国内访问稳定）
+$admin_site_config = [
+    'site' => 'main',
+    'page_title' => '帮助文章管理',
+    'extra_head' => '<link rel="stylesheet" href="assets/wangeditor/style.css">',
+];
 require_once '../shared/admin/admin-header.php';
 ?>
 
@@ -341,13 +346,20 @@ require_once '../shared/admin/admin-header.php';
             <div style="margin-top:14px;"><label style="display:block;font-size:13px;margin-bottom:4px;">摘要（搜索与列表展示）</label>
                 <input name="summary" value="<?= htmlspecialchars($editing['summary'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
 
-            <!-- 富文本模式 -->
+            <!-- 富文本模式：所见即所得编辑器（wangEditor 自托管）+ 可切回 HTML 源码 -->
             <div id="rtBox" style="margin-top:14px;">
-                <label style="display:block;font-size:13px;margin-bottom:4px;">正文 HTML
-                    <button type="button" id="rtInsertImg" class="admin-btn admin-btn-secondary admin-btn-sm">插入图片</button>
-                    <input type="file" id="rtImgFile" accept="image/*" hidden>
-                </label>
-                <textarea name="content_richtext" id="rtArea" rows="14" placeholder="支持 HTML：h2/p/ul/img/table 等标签" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;font-size:13px;"><?= htmlspecialchars($editing['content_richtext'] ?? '') ?></textarea>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                    <label style="font-size:13px;">正文</label>
+                    <button type="button" id="rtToggleSrc" class="admin-btn admin-btn-secondary admin-btn-sm">HTML 源码</button>
+                    <span style="font-size:12px;color:#64748b;">图片可直接粘贴/拖入上传（≤3MB，走 help-upload.php）；需要手改标签时点「HTML 源码」</span>
+                </div>
+                <!-- 可视化编辑区（内容提交前同步进下方 textarea） -->
+                <div id="rtEditorWrap">
+                    <div id="rtToolbar" style="background:#fff;border-radius:6px 6px 0 0;border-bottom:1px solid #e5e7eb;"></div>
+                    <div id="rtEditor" style="background:#fff;border-radius:0 0 6px 6px;min-height:320px;"></div>
+                </div>
+                <!-- 源码视图 & 实际提交字段 -->
+                <textarea name="content_richtext" id="rtArea" rows="14" placeholder="支持 HTML：h2/p/ul/img/table 等标签" style="display:none;width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;font-size:13px;"><?= htmlspecialchars($editing['content_richtext'] ?? '') ?></textarea>
             </div>
 
             <!-- 步骤模式 -->
@@ -368,6 +380,8 @@ require_once '../shared/admin/admin-header.php';
     </div>
 </div>
 
+<!-- wangEditor（自托管）必须先于下方内联脚本加载 -->
+<script src="assets/wangeditor/index.js"></script>
 <script>
 (function () {
   var ctype = document.getElementById('ctypeSel');
@@ -442,18 +456,71 @@ require_once '../shared/admin/admin-header.php';
   var initSteps = <?= json_encode($editing['steps_arr'] ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   if (Array.isArray(initSteps) && initSteps.length) initSteps.forEach(addStep);
 
-  // 富文本插图
-  var rtImgFile = document.getElementById('rtImgFile');
-  document.getElementById('rtInsertImg').onclick = function () { rtImgFile.click(); };
-  rtImgFile.onchange = function () {
-    if (!rtImgFile.files[0]) return;
-    uploadImage(rtImgFile.files[0], function (ok, url, msg) {
-      if (ok) {
-        var area = document.getElementById('rtArea');
-        area.value += '\n<img src="' + url + '" alt="配图">\n';
-      } else alert('上传失败：' + msg);
+  // ---- 富文本：wangEditor 可视化编辑 + HTML 源码切换 ----
+  var rtArea = document.getElementById('rtArea');
+  var rtEditorBox = document.getElementById('rtEditorWrap');
+  var editor = null;
+  var srcMode = false;
+
+  function createEditor() {
+    var E = window.wangEditor;
+    if (!E) return null;
+    var ed = E.createEditor({
+      selector: '#rtEditor',
+      html: rtArea.value || '',
+      config: {
+        placeholder: '在这里撰写正文…支持标题、列表、加粗、链接、图片、表格',
+        MENU_CONF: {
+          uploadImage: {
+            // 复用后台已有的 help-upload.php（管理员鉴权、≤3MB、落盘 uploads/help/）
+            customUpload: function (file, insertFn) {
+              uploadImage(file, function (ok, url, msg) {
+                if (ok) insertFn(url, '配图', url);
+                else alert('上传失败：' + msg);
+              });
+            }
+          }
+        },
+        onChange: function (ed) { rtArea.value = ed.getHtml(); }
+      }
     });
+    E.createToolbar({
+      editor: ed,
+      selector: '#rtToolbar',
+      config: {}
+    });
+    return ed;
+  }
+
+  function syncFromEditor() { if (editor) rtArea.value = editor.getHtml(); }
+
+  document.getElementById('rtToggleSrc').onclick = function () {
+    srcMode = !srcMode;
+    if (srcMode) {
+      syncFromEditor();                       // 可视化 → 源码
+      rtEditorBox.style.display = 'none';
+      rtArea.style.display = '';
+      this.textContent = '可视化编辑';
+    } else {
+      if (editor) editor.setHtml(rtArea.value || '');   // 源码 → 可视化
+      rtArea.style.display = 'none';
+      rtEditorBox.style.display = '';
+      this.textContent = 'HTML 源码';
+    }
   };
+
+  // 提交前确保拿到最新内容（可视化模式下 textarea 是隐藏的）
+  var form = rtArea.closest('form');
+  if (form) form.addEventListener('submit', syncFromEditor);
+
+  if (window.wangEditor) {
+    editor = createEditor();
+  } else {
+    // 资源没加载出来时退回纯 textarea，保证文章仍可编辑
+    rtEditorBox.style.display = 'none';
+    rtArea.style.display = '';
+    document.getElementById('rtToggleSrc').style.display = 'none';
+  }
 
   syncType();
 })();
