@@ -38,7 +38,27 @@
       （原先用前台的 `chatWithFailover`：流式且单渠道 60s，超过 PHP max_execution_time，导致脚本被砍、切换根本没机会执行，前端只看到「网络异常」）
 - [x] 9.2 摘要/slug 两个端点改用该方法，设 `set_time_limit(30)`，响应带出渠道名/耗时/尝试明细
 - [x] 9.3 前端：30s AbortController 兜底；成功显示耗时与所用渠道（按钮 hover 可见是否发生过切换），失败时弹窗列出各渠道尝试明细
-- [ ] 9.4 部署后点验：故意停掉 Hermes 再点 AI 摘要，应在 ~12s 内切到直连渠道并成功
+- [x] 9.4 部署后点验：停用 Hermes 后跑 `tools/probe-ai-admin-task.php` → 4.6s 成功走直连渠道（此前为 30s 超时）
+      实测结论：失败根因是**渠道模型选错**（ark-code-latest 为带深度思考的 Agent 路由模型，非流式需约 92s），
+      换 `minimax-m3` 后单次 4.6s。排查工具有 `tools/probe-ai-admin-task.php` 与 `tools/probe-ark-models.php`
+
+## 9.5 Agent Plan 模型选型实测（2026-10-05，供后续配置参考）
+
+`php tools/probe-ark-models.php [--stream]` 实测（端点 `/api/plan/v3`，同套餐）：
+
+| 模型 | 非流式总耗时 | 流式首字延迟 | 判定 |
+|---|---|---|---|
+| **minimax-m3** | **4.4s** | **4.5s** | ✅ 采用为直连渠道模型 |
+| doubao-seed-2-0-mini | 7.4s | 5.1s | ✅ 备选 |
+| glm-5-3 | 9.1s | 7.9s | ⚠️ 逼近 8s 保护线 |
+| doubao-seed-evolving | 9.5s | - | ✅ |
+| deepseek-v4-pro | 9.7s | - | ✅（控制台标注较繁忙） |
+| ark-code-latest / seed-2-1-lite / turbo / pro / deepseek-v4-flash | >12s | - | ❌ 慢，不作聊天渠道 |
+| auto / kimi-k2-7-code | 404 UnsupportedModel | - | ❌ 名不对或不在套餐 |
+
+- 套餐内**所有可用模型均带深度思考**（`reasoning_content`），故前台「正文首字节超时」（默认 8s）是必要保护
+- 注意：思考流若**不被流式下发**（实测 minimax-m3 的 first≈total，正文一次性到达），首字延迟即等于总耗时，
+  选型时务必看 `--stream` 的 first 列而非仅看总耗时
 
 ## 10. 流式首字节超时保护（前台小帮 + 后台共用）
 
