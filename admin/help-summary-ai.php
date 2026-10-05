@@ -88,8 +88,9 @@ try {
         }
         $hint = '';
         if ($allTimeout && $inputLen > 800) {
-            $hint = '（两条渠道都在 ' . $res['meta']['timeout'] . 's 内没响应，通常是输入过长导致模型思考超时：'
-                . '可到「语义检索控制台」把 ai_admin_task_max_input 调小（如 800），或把 ai_admin_task_timeout 调大）';
+            $hint = '（两条渠道都在 ' . $res['meta']['timeout'] . 's 内没响应，通常是输入过长导致模型思考超时。'
+                . '可到 后台 →「语义检索控制台」→「开关与阈值」区，把「后台任务：正文字数上限」调小（如 800）、'
+                . '或把「后台任务：单渠道超时」调大后重试）';
         }
         sum_out(false, '', 'AI 调用失败：' . $res['error'] . $hint, $meta);
     }

@@ -25,6 +25,10 @@ $settingsKeys = [
     'ai_search_fallback_enabled' => ['label' => '联网搜索兜底', 'hint' => '未命中时调用方舟 Responses API + web_search，回答标注「非官方」'],
     'ai_search_model'            => ['label' => '联网搜索模型', 'hint' => '方舟 Responses API 的归纳模型，如 doubao-seed-2-1-pro-260628'],
     'ai_chat_first_byte_timeout' => ['label' => '前台正文首字节超时（秒）', 'hint' => '渠道在该时间内没输出正文即判卡住并切下一个渠道。实测本套餐模型"思考"需 13~19s，建议 20~30（设太小会误杀正常渠道）；0=关闭该保护'],
+    'ai_admin_task_timeout'      => ['label' => '后台任务单渠道超时（秒）', 'hint' => '摘要/生成 slug 时每个渠道最多等多久，超时即切下一个。实测约需 17~25s，建议 30；范围 5~60'],
+    'ai_admin_task_max_input'    => ['label' => '后台任务正文字数上限', 'hint' => '摘要只把正文前 N 字送给模型；模型耗时随输入增长，长文可调小（如 800）换取更快返回。范围 300~3000'],
+    'ai_admin_task_model'        => ['label' => '后台任务专用模型', 'hint' => '留空=用渠道默认模型。若某模型对长文本过慢可在此单独指定，如 minimax-m3'],
+    'ai_admin_prefer_direct'     => ['label' => '后台任务优先直连渠道', 'hint' => '勾选=直连模型渠道优先、本机 Hermes 殿后（实测长输入下 Hermes 更慢，推荐勾选）'],
 ];
 
 function readSettings(PDO $pdo)
@@ -59,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                  ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
             );
             foreach ($settingsKeys as $k => $meta) {
-                if ($k === 'ai_semantic_rag_enabled' || $k === 'ai_search_fallback_enabled') {
+                if ($k === 'ai_semantic_rag_enabled' || $k === 'ai_search_fallback_enabled' || $k === 'ai_admin_prefer_direct') {
                     $v = isset($_POST[$k]) ? '1' : '0';
                 } else {
                     $v = trim((string)($_POST[$k] ?? ''));
@@ -67,6 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         $v = (string)max(0, min(1, (float)$v));
                     } elseif ($k === 'ai_chat_first_byte_timeout') {
                         $v = (string)max(0, min(60, (int)$v));
+                    } elseif ($k === 'ai_admin_task_timeout') {
+                        $v = (string)max(5, min(60, (int)$v));
+                    } elseif ($k === 'ai_admin_task_max_input') {
+                        $v = (string)max(300, min(3000, (int)$v));
                     }
                 }
                 if ($v === '' && $k === 'ai_search_model') continue; // 留空不改
@@ -272,7 +280,7 @@ require_once '../shared/admin/admin-header.php';
 </div>
 
 <div class="admin-card">
-    <div class="admin-card-header"><span class="admin-card-title"><i class="fas fa-sliders"></i> 开关与阈值</span></div>
+    <div class="admin-card-header"><span class="admin-card-title"><i class="fas fa-sliders"></i> 开关与阈值（前台检索 / 前台对话 / 后台任务）</span></div>
     <div class="admin-card-body">
         <form method="POST">
             <input type="hidden" name="action" value="save_settings">
@@ -294,6 +302,25 @@ require_once '../shared/admin/admin-header.php';
                     <label style="display:block;font-size:13px;margin-bottom:4px;"><b>前台首字节超时（秒）</b></label>
                     <input name="ai_chat_first_byte_timeout" value="<?= h($settings['ai_chat_first_byte_timeout'] ?? '8') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
                     <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_chat_first_byte_timeout']['hint']) ?></div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px;"><b>后台任务：单渠道超时（秒）</b></label>
+                    <input name="ai_admin_task_timeout" value="<?= h($settings['ai_admin_task_timeout'] ?? '30') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_admin_task_timeout']['hint']) ?></div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px;"><b>后台任务：正文字数上限</b></label>
+                    <input name="ai_admin_task_max_input" value="<?= h($settings['ai_admin_task_max_input'] ?? '1500') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_admin_task_max_input']['hint']) ?></div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px;"><b>后台任务：专用模型</b></label>
+                    <input name="ai_admin_task_model" value="<?= h($settings['ai_admin_task_model'] ?? '') ?>" placeholder="留空=用渠道默认" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;font-size:12px;">
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_admin_task_model']['hint']) ?></div>
+                </div>
+                <div>
+                    <label style="font-size:13px;"><input type="checkbox" name="ai_admin_prefer_direct" <?= ($settings['ai_admin_prefer_direct'] ?? '1') === '1' ? 'checked' : '' ?>> <b>后台任务优先直连渠道</b></label>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_admin_prefer_direct']['hint']) ?></div>
                 </div>
                 <div>
                     <label style="display:block;font-size:13px;margin-bottom:4px;"><b>联网搜索模型</b></label>
