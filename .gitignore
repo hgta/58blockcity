@@ -64,6 +64,7 @@ assets/images/uploads/
 assets/uploads/
 block/uploads/
 mall/assets/uploads/
+help/uploads/
 
 # playwright-cli 会话快照
 .playwright-cli/

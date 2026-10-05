@@ -417,12 +417,37 @@ require_once '../shared/admin/admin-header.php';
   ctype.addEventListener('change', syncType);
 
   function uploadImage(file, cb) {
+    // 前端先卡 3MB：省一次无效往返，也避免 nginx 413 只回一个 HTML 页
+    if (file && file.size > 3 * 1024 * 1024) {
+      cb(false, '', '图片 ' + (file.size / 1048576).toFixed(1) + 'MB，超过 3MB 限制，请先压缩');
+      return;
+    }
     var fd = new FormData();
     fd.append('image', file);
     fetch('help-upload.php', { method: 'POST', body: fd })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { cb(j.ok, j.url || '', j.msg || ''); })
-      .catch(function () { cb(false, '', '网络异常'); });
+      .then(function (r) {
+        // 不直接 r.json()：413/404/登录跳转都会返回 HTML，解析异常会被误报成"网络异常"
+        return r.text().then(function (t) {
+          var j = null;
+          try { j = JSON.parse(t); } catch (e) { j = null; }
+          return { http: r.status, json: j, raw: (t || '').replace(/\s+/g, ' ').slice(0, 160) };
+        });
+      })
+      .then(function (res) {
+        if (res.json && typeof res.json.ok !== 'undefined') {
+          cb(res.json.ok, res.json.url || '', res.json.msg || '');
+          return;
+        }
+        var tip;
+        if (res.http === 413) tip = '图片超过服务器上传上限（nginx client_max_body_size，建议设为 8m 并调大 php post_max_size）';
+        else if (res.http === 404) tip = '上传接口不存在（admin/help-upload.php 是否已部署？）';
+        else if (res.http === 401 || res.http === 403) tip = '登录状态已失效，请重新登录后再试';
+        else tip = 'HTTP ' + res.http + ' 返回非 JSON：' + (res.raw || '(空响应)');
+        cb(false, '', tip);
+      })
+      .catch(function (err) {
+        cb(false, '', '请求未送达：' + (err && err.message ? err.message : '网络异常'));
+      });
   }
 
   // 步骤行
