@@ -81,7 +81,17 @@ try {
     $meta = $res['meta'];
     $meta['input_len'] = $inputLen . '→' . mb_strlen($plain); // 便于判断是否因输入过长而超时
     if (!$res['ok']) {
-        sum_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
+        // 全是超时且输入偏长 → 直接给出可操作的调参建议
+        $allTimeout = true;
+        foreach ($res['meta']['attempts'] as $a) {
+            if (strpos($a['error'], 'timed out') === false && strpos($a['error'], '首字节超时') === false) $allTimeout = false;
+        }
+        $hint = '';
+        if ($allTimeout && $inputLen > 800) {
+            $hint = '（两条渠道都在 ' . $res['meta']['timeout'] . 's 内没响应，通常是输入过长导致模型思考超时：'
+                . '可到「语义检索控制台」把 ai_admin_task_max_input 调小（如 800），或把 ai_admin_task_timeout 调大）';
+        }
+        sum_out(false, '', 'AI 调用失败：' . $res['error'] . $hint, $meta);
     }
 
     $s = trim((string)$res['answer']);
