@@ -18,7 +18,20 @@ require_once '../classes/AiAdminTask.php';
 
 checkAdmin();
 
+// 关键：任何 PHP 警告/notice 若输出到正文，都会污染 JSON 让前端只能看到"网络异常"。
+// 这里一律不显示，只写日志；未捕获的致命错误由 shutdown 兜底成 JSON。
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', '0');
 header('Content-Type: application/json; charset=utf-8');
+
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'summary' => '', 'msg' => 'PHP 致命错误：' . $e['message']
+            . ' @ ' . basename($e['file']) . ':' . $e['line']], JSON_UNESCAPED_UNICODE);
+    }
+});
 
 function sum_out($ok, $summary = '', $msg = '', $meta = null)
 {
@@ -70,6 +83,7 @@ try {
     if (mb_strlen($s) > 500) $s = mb_substr($s, 0, 497) . '…';
 
     sum_out(true, $s, '', $meta);
-} catch (Exception $ex) {
+} catch (Throwable $ex) {
+    // 捕获 Exception 与 Error（PHP7+），保证任何异常都以 JSON 返回
     sum_out(false, '', '异常：' . $ex->getMessage());
 }

@@ -19,7 +19,19 @@ require_once '../classes/AiAdminTask.php';
 
 checkAdmin();
 
+// 警告/notice 不得污染 JSON；致命错误由 shutdown 兜底成 JSON
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', '0');
 header('Content-Type: application/json; charset=utf-8');
+
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'slug' => '', 'msg' => 'PHP 致命错误：' . $e['message']
+            . ' @ ' . basename($e['file']) . ':' . $e['line']], JSON_UNESCAPED_UNICODE);
+    }
+});
 
 function slug_out($ok, $slug = '', $msg = '', $meta = null)
 {
@@ -88,6 +100,6 @@ try {
 
     $slug = unique_slug($pdo, $slug, $id);
     slug_out(true, $slug, '', $meta);
-} catch (Exception $ex) {
+} catch (Throwable $ex) {
     slug_out(false, '', '异常：' . $ex->getMessage());
 }

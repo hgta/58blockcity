@@ -569,9 +569,24 @@ require_once '../shared/admin/admin-header.php';
       body: JSON.stringify(body),
       signal: ac ? ac.signal : undefined
     })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
+      .then(function (r) {
+        // 不直接 r.json()：服务端若返回 PHP 报错页，json 解析会抛异常并被 catch 成"网络异常"，
+        // 真相就被吞了。这里保留 HTTP 状态与原始内容，便于定位。
+        return r.text().then(function (t) {
+          var j = null;
+          try { j = JSON.parse(t); } catch (e) { j = null; }
+          return { http: r.status, json: j, raw: (t || '').slice(0, 400) };
+        });
+      })
+      .then(function (resp) {
         clearTimeout(timer); stopTick();
+        var j = resp.json;
+        if (!j) {
+          alert(failTip + '：服务端返回的不是 JSON（HTTP ' + resp.http + '）\n\n' + resp.raw
+            + '\n\n（多半是 PHP 报错，把上面这段发给开发者即可定位）');
+          btn.textContent = old; btn.disabled = false;
+          return;
+        }
         if (j.ok) {
           onOk(j);
           var m = j.meta || {};
