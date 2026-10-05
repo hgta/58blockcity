@@ -75,11 +75,11 @@ img { max-width: 100%; }
 .hc-hero-tags a:hover { text-decoration: underline; }
 
 /* 统一页面标题区（替换原有的 3 种标题写法与内联 margin 覆盖） */
-.hc-pagehead { display: flex; align-items: center; gap: 12px; margin: 2px 0 18px; }
-.hc-pagehead h1 { font-size: 20px; margin: 0; }
+.hc-pagehead { display: flex; align-items: center; gap: 12px; margin: 2px 0 18px; flex-wrap: wrap; }
+.hc-pagehead h1 { font-size: 20px; margin: 0; flex: none; }
 .hc-pagehead h1 i { color: var(--brand); margin-right: 6px; }
-.hc-pagehead .sub { font-size: 13px; color: var(--muted); }
-.hc-pagehead .acts { margin-left: auto; font-size: 13px; }
+.hc-pagehead .sub { font-size: 13px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hc-pagehead .acts { margin-left: auto; font-size: 13px; flex: none; }
 .hc-pagehead + .hc-section-title { margin-top: 14px; }
 
 /* 首页两栏：DOM 顺序为 分类 → AI → 热门 → 最近更新 → 大家问（移动端单列顺序即此，符合预期）
@@ -97,12 +97,14 @@ img { max-width: 100%; }
 .hc-list-item.alt .m.date { color: #9ca3af; }
 
 .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
-.hc-cat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s, transform .15s; }
+.hc-cat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s, transform .15s; }
 .hc-cat-card:hover { box-shadow: 0 6px 18px rgba(255,107,0,.12); transform: translateY(-2px); text-decoration: none; }
 .hc-cat-card i { width: 42px; height: 42px; border-radius: 10px; background: #fff3e8; color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 18px; flex: none; }
-.hc-cat-card .t { font-weight: 600; font-size: 15px; color: var(--ink); }
-.hc-cat-card .d { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hc-cat-card .n { margin-left: auto; font-size: 12px; color: #c0c4cc; white-space: nowrap; }
+/* 关键：flex 子项必须 min-width:0，否则内部文本既不换行也不省略，会撑破卡片并把右侧计数挤出边界 */
+.hc-cat-card > div { flex: 1 1 auto; min-width: 0; }
+.hc-cat-card .t { font-weight: 600; font-size: 15px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-cat-card .d { font-size: 12px; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hc-cat-card .n { margin-left: auto; flex: none; font-size: 12px; color: #c0c4cc; white-space: nowrap; }
 
 .hc-section-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; margin: 26px 0 14px; }
 .hc-section-title i { color: var(--brand); }
@@ -113,8 +115,8 @@ img { max-width: 100%; }
 .hc-list-item:last-child { border-bottom: none; }
 .hc-list-item:hover { background: #fffaf5; text-decoration: none; }
 .hc-list-item .idx { width: 22px; height: 22px; border-radius: 6px; background: #fff3e8; color: var(--brand); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
-.hc-list-item .t { font-weight: 500; font-size: 15px; flex: 1; }
-.hc-list-item .m { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hc-list-item .t { font-weight: 500; font-size: 15px; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-list-item .m { font-size: 12px; color: var(--muted); white-space: nowrap; flex: none; }
 .hc-list-item .hot { color: #ef4444; }
 .hc-list-item .new { background: #fee2e2; color: #ef4444; border-radius: 4px; padding: 0 6px; font-size: 11px; }
 
