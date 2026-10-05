@@ -41,9 +41,18 @@ foreach (AiProvider::routeList($pdo) as $p) {
 }
 
 // ---- 构造与「AI 摘要」一致或相近的负载 ----
-$opts = getopt('', ['article::', 'len::']);
+$opts = getopt('', ['article::', 'len::', 'maxinput::']);
 $messages = null;
 $desc = '';
+
+// 与线上一致：读取 ai_admin_task_max_input（默认 1500），--maxinput 可临时覆盖用于对比实验
+$maxInput = 1500;
+try {
+    $v = (int)$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='ai_admin_task_max_input'")->fetchColumn();
+    if ($v > 0) $maxInput = max(300, min(3000, $v));
+} catch (Exception $ex) {}
+if (!empty($opts['maxinput'])) $maxInput = max(100, min(6000, (int)$opts['maxinput']));
+echo "送入模型的正文字数上限: {$maxInput}（system_settings.ai_admin_task_max_input，可用 --maxinput 覆盖）\n";
 
 if (!empty($opts['article'])) {
     $aid = (int)$opts['article'];
@@ -56,7 +65,7 @@ if (!empty($opts['article'])) {
     $plain = html_entity_decode(strip_tags($plain), ENT_QUOTES, 'UTF-8');
     $plain = trim(preg_replace('/\s+/u', ' ', $plain));
     $total = mb_strlen($plain);
-    if ($total > 3000) $plain = mb_substr($plain, 0, 3000);
+    if ($total > $maxInput) $plain = mb_substr($plain, 0, $maxInput);
     $desc = "真实文章 #{$aid}《{$a['title']}》（正文 {$total} 字，截取 " . mb_strlen($plain) . ' 字）';
     $messages = [
         ['role' => 'system', 'content' => '你是帮助中心编辑。为下面的文章写一段中文摘要，用于搜索结果与列表展示。'
