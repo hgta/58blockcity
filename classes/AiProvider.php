@@ -131,8 +131,12 @@ class AiProvider
         $answer = '';
         $errBuf = '';
         $self = $this;
+        $startAt = microtime(true);
+        // 首字节（正文首字）保护：思考型模型可能先流式吐 reasoning_content，
+        // 用户屏幕仍是空白——所以这里以"解析出正文 content"为界，而不是"收到任何字节"
+        $contentLimit = ($stream && self::$firstByteTimeout > 0) ? self::$firstByteTimeout : 0;
 
-        $write = function ($ch, $data) use ($stream, $onChunk, &$answer, &$errBuf, $self) {
+        $write = function ($ch, $data) use ($stream, $onChunk, &$answer, &$errBuf, $self, $startAt, $contentLimit) {
             $len = strlen($data);
             if (!$stream) { $answer .= $data; return $len; }
 
@@ -148,6 +152,7 @@ class AiProvider
                     $errBuf .= is_string($obj['error']) ? $obj['error'] : json_encode($obj['error'], JSON_UNESCAPED_UNICODE);
                     continue;
                 }
+                // 只取正文；reasoning_content 是思考过程，不计入回答、也不解除保护
                 $delta = $obj['choices'][0]['delta']['content']
                       ?? $obj['choices'][0]['message']['content']
                       ?? '';
@@ -155,6 +160,11 @@ class AiProvider
                     $answer .= $delta;
                     if ($onChunk) call_user_func($onChunk, $delta);
                 }
+            }
+
+            // 仍在等正文且超过限制 → 中断传输（返回非长度值即让 curl 以 WRITE_ERROR 结束）
+            if ($contentLimit > 0 && $answer === '' && (microtime(true) - $startAt) > $contentLimit) {
+                return 0;
             }
             return $len;
         };
@@ -172,10 +182,12 @@ class AiProvider
         $this->touch($errno === 0 && $httpCode >= 200 && $httpCode < 300 && $answer !== '');
 
         if ($errno !== 0) {
-            // 流式且一个字都没收到 → 八成是首字节超时（模型在"思考"），说明白便于排查
-            if ($stream && $answer === '' && $errno === CURLE_OPERATION_TIMEOUTED) {
-                return ['ok' => false, 'answer' => '', 'error' => '首字节超时（' . self::$firstByteTimeout
-                    . 's 内未收到任何内容，可能在长时间思考）[' . $url . ']'];
+            // 流式且正文一个字都没出现 → 首字节（正文）超时：模型在长时间思考或只吐思考过程
+            $isFirstByteTimeout = $stream && $answer === '' && self::$firstByteTimeout > 0
+                && ($errno === CURLE_OPERATION_TIMEOUTED || $errno === CURLE_WRITE_ERROR);
+            if ($isFirstByteTimeout) {
+                return ['ok' => false, 'answer' => '', 'error' => '正文首字节超时（' . self::$firstByteTimeout
+                    . 's 内未输出正文，模型可能在长时间思考）[' . $url . ']'];
             }
             return ['ok' => false, 'answer' => $answer, 'error' => '网络错误(' . $errno . '): ' . $errmsg . ' [' . $url . ']'];
         }
@@ -203,6 +215,8 @@ class AiProvider
     /** 更新渠道调用计数与失败时间 */
     private function touch($success)
     {
+        // 无 DB 上下文（CLI 探针/测试）直接跳过，避免 PDO 为 null 产生致命错误
+        if (!($this->db() instanceof PDO)) return;
         try {
             $this->rolloverCounter();
             $newCount = $this->row['call_count_today'] + 1;
