@@ -24,7 +24,7 @@ $settingsKeys = [
     'ai_semantic_min_score'      => ['label' => '命中阈值（cosine）', 'hint' => '融合 top1 的余弦相似度低于此值 → 判定未命中 → 走联网搜索兜底'],
     'ai_search_fallback_enabled' => ['label' => '联网搜索兜底', 'hint' => '未命中时调用方舟 Responses API + web_search，回答标注「非官方」'],
     'ai_search_model'            => ['label' => '联网搜索模型', 'hint' => '方舟 Responses API 的归纳模型，如 doubao-seed-2-1-pro-260628'],
-    'ai_chat_first_byte_timeout' => ['label' => '前台首字节超时（秒）', 'hint' => '流式调用时渠道在该时间内一个字都没吐出即判失败并切换下一个；0=关闭该保护。实测 ark-code-latest 思考约 92s，设 8 可避免用户干等'],
+    'ai_chat_first_byte_timeout' => ['label' => '前台正文首字节超时（秒）', 'hint' => '渠道在该时间内没输出正文即判卡住并切下一个渠道。实测本套餐模型"思考"需 13~19s，建议 20~30（设太小会误杀正常渠道）；0=关闭该保护'],
 ];
 
 function readSettings(PDO $pdo)
