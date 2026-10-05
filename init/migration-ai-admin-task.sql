@@ -15,5 +15,8 @@ INSERT INTO `system_settings` (`setting_key`,`setting_value`) VALUES
 ('ai_admin_prefer_direct', '0'),
 -- 后台小任务专用模型，覆盖渠道默认模型；留空=用渠道默认。
 -- 若默认渠道模型偏慢（如带思考的 ark-code-latest），可在此填一个快模型名
-('ai_admin_task_model',    '')
+('ai_admin_task_model',    ''),
+-- 前台小帮流式调用的"首字节超时"（秒）：渠道在该时间内一个字都没吐出即判定失败并切换，
+-- 避免用户面对长时间思考的模型干等。0=关闭该保护
+('ai_chat_first_byte_timeout', '8')
 ON DUPLICATE KEY UPDATE `setting_key` = VALUES(`setting_key`);

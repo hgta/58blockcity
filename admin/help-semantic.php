@@ -24,6 +24,7 @@ $settingsKeys = [
     'ai_semantic_min_score'      => ['label' => '命中阈值（cosine）', 'hint' => '融合 top1 的余弦相似度低于此值 → 判定未命中 → 走联网搜索兜底'],
     'ai_search_fallback_enabled' => ['label' => '联网搜索兜底', 'hint' => '未命中时调用方舟 Responses API + web_search，回答标注「非官方」'],
     'ai_search_model'            => ['label' => '联网搜索模型', 'hint' => '方舟 Responses API 的归纳模型，如 doubao-seed-2-1-pro-260628'],
+    'ai_chat_first_byte_timeout' => ['label' => '前台首字节超时（秒）', 'hint' => '流式调用时渠道在该时间内一个字都没吐出即判失败并切换下一个；0=关闭该保护。实测 ark-code-latest 思考约 92s，设 8 可避免用户干等'],
 ];
 
 function readSettings(PDO $pdo)
@@ -64,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $v = trim((string)($_POST[$k] ?? ''));
                     if ($k === 'ai_semantic_min_score') {
                         $v = (string)max(0, min(1, (float)$v));
+                    } elseif ($k === 'ai_chat_first_byte_timeout') {
+                        $v = (string)max(0, min(60, (int)$v));
                     }
                 }
                 if ($v === '' && $k === 'ai_search_model') continue; // 留空不改
@@ -286,6 +289,11 @@ require_once '../shared/admin/admin-header.php';
                 <div>
                     <label style="font-size:13px;"><input type="checkbox" name="ai_search_fallback_enabled" <?= ($settings['ai_search_fallback_enabled'] ?? '1') === '1' ? 'checked' : '' ?>> <b>联网搜索兜底</b></label>
                     <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_search_fallback_enabled']['hint']) ?></div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;margin-bottom:4px;"><b>前台首字节超时（秒）</b></label>
+                    <input name="ai_chat_first_byte_timeout" value="<?= h($settings['ai_chat_first_byte_timeout'] ?? '8') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><?= h($settingsKeys['ai_chat_first_byte_timeout']['hint']) ?></div>
                 </div>
                 <div>
                     <label style="display:block;font-size:13px;margin-bottom:4px;"><b>联网搜索模型</b></label>

@@ -19,6 +19,15 @@ class AiProvider
     const TIMEOUT_CONNECT = 5;
     const TIMEOUT_TOTAL   = 60;
 
+    /**
+     * 流式调用的"首字节超时"：建立连接后多久还没吐出第一个字就判定该渠道失败并切换。
+     * 实测背景（2026-10-05）：某些渠道/模型（如带深度思考的 ark-code-latest）会先"思考"
+     * 数十秒才输出第一个字，前台用户会干等一分半。与其让用户等，不如快速切到下一个渠道。
+     * 注意：只作用于"首字节之前"，已开始输出后不再打断（避免截断正常回答）。
+     * 设为 0 表示关闭此保护。
+     */
+    public static $firstByteTimeout = 8.0;
+
     public function __construct(array $row)
     {
         $this->row = $row;
@@ -112,6 +121,12 @@ class AiProvider
             CURLOPT_TIMEOUT        => (int)$timeout,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
+        // 流式：首字节保护——长时间一个字都不吐（如深度思考模型先想 90s）就中止，
+        // 让上层能快速切到下一个渠道，而不是让用户干等
+        if ($stream && self::$firstByteTimeout > 0) {
+            curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
+            curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, (int)ceil(self::$firstByteTimeout));
+        }
 
         $answer = '';
         $errBuf = '';
@@ -157,6 +172,11 @@ class AiProvider
         $this->touch($errno === 0 && $httpCode >= 200 && $httpCode < 300 && $answer !== '');
 
         if ($errno !== 0) {
+            // 流式且一个字都没收到 → 八成是首字节超时（模型在"思考"），说明白便于排查
+            if ($stream && $answer === '' && $errno === CURLE_OPERATION_TIMEOUTED) {
+                return ['ok' => false, 'answer' => '', 'error' => '首字节超时（' . self::$firstByteTimeout
+                    . 's 内未收到任何内容，可能在长时间思考）[' . $url . ']'];
+            }
             return ['ok' => false, 'answer' => $answer, 'error' => '网络错误(' . $errno . '): ' . $errmsg . ' [' . $url . ']'];
         }
         if ($httpCode >= 400) {
@@ -228,8 +248,18 @@ class AiProvider
      * @param callable $onChunk
      * @return array{ok:bool, provider:?AiProvider, answer:string, error:string}
      */
-    public static function chatWithFailover(PDO $db, array $messages, callable $onChunk)
+    public static function chatWithFailover(PDO $db, array $messages, callable $onChunk, $firstByteTimeout = null)
     {
+        // 首字节超时可通过 system_settings: ai_chat_first_byte_timeout 调整（0=关闭保护）
+        if ($firstByteTimeout === null) {
+            try {
+                $v = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'ai_chat_first_byte_timeout'")->fetchColumn();
+                if ($v !== false && $v !== null && $v !== '') $firstByteTimeout = (float)$v;
+            } catch (Exception $ex) { /* 读不到用默认 */ }
+        }
+        $oldFirstByte = self::$firstByteTimeout;
+        if ($firstByteTimeout !== null) self::$firstByteTimeout = max(0, $firstByteTimeout);
+
         $lastErr = '没有可用的 AI 渠道';
         $emitted = false;
         $wrapped = function ($delta) use ($onChunk, &$emitted) {
@@ -239,14 +269,17 @@ class AiProvider
         foreach (self::routeList($db) as $p) {
             $res = $p->chatStream($messages, $wrapped);
             if ($res['ok']) {
+                self::$firstByteTimeout = $oldFirstByte;
                 return ['ok' => true, 'provider' => $p, 'answer' => $res['answer'], 'error' => ''];
             }
             $lastErr = '[' . $p->name() . '] ' . $res['error'];
             if ($emitted) {
+                self::$firstByteTimeout = $oldFirstByte;
                 return ['ok' => false, 'provider' => $p, 'answer' => $res['answer'],
                         'error' => $lastErr . '（内容已部分输出，未切换渠道）'];
             }
         }
+        self::$firstByteTimeout = $oldFirstByte;
         return ['ok' => false, 'provider' => null, 'answer' => '', 'error' => $lastErr];
     }
 
