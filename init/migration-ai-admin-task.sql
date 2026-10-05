@@ -1,12 +1,19 @@
 -- ============================================================
--- 后台 AI 小任务（摘要/slug 生成）的超时与渠道偏好设置
+-- 后台 AI 小任务（摘要/slug 生成）的超时、渠道偏好与专用模型
 -- change: help-content-admin (task 9.2)
 -- 说明：不执行本迁移也能用（代码内置同样的默认值），执行后可在 DB 侧调整
+--
+-- 实测基线（2026-10-05，同一问题"用30字说明什么是区块"，非流式）：
+--   本机 Hermes(hermes-agent)      ≈ 9.6s
+--   直连方舟(ark-code-latest)      ≈ 91.9s（带 reasoning_content，深度思考模型）
 -- ============================================================
 
 INSERT INTO `system_settings` (`setting_key`,`setting_value`) VALUES
--- 单渠道超时（秒）：模型较慢时调大，建议 20~45
+-- 单渠道超时（秒）：慢模型调大，但超过 60 也没意义（前端兜底 80s）
 ('ai_admin_task_timeout',  '30'),
--- 1=后台任务优先直连模型渠道、本机 Hermes 殿后（默认，短任务更快）；0=按后台配置顺序
-('ai_admin_prefer_direct', '1')
+-- 0=按后台渠道配置顺序（默认：默认渠道通常就是最优）；1=直连优先、本机 Hermes 殿后
+('ai_admin_prefer_direct', '0'),
+-- 后台小任务专用模型，覆盖渠道默认模型；留空=用渠道默认。
+-- 若默认渠道模型偏慢（如带思考的 ark-code-latest），可在此填一个快模型名
+('ai_admin_task_model',    '')
 ON DUPLICATE KEY UPDATE `setting_key` = VALUES(`setting_key`);

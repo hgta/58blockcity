@@ -67,9 +67,13 @@ class AiProvider
      * 非流式对话（一次拿全）
      * @return array{ok:bool, answer:string, error:string}
      */
-    public function chatOnce(array $messages, float $timeout = 30.0)
+    /**
+     * 非流式对话（一次拿全）
+     * @param string|null $modelOverride 临时覆盖渠道默认模型（后台小任务可指定快模型）
+     */
+    public function chatOnce(array $messages, float $timeout = 30.0, $modelOverride = null)
     {
-        return $this->request($messages, false, null, $timeout);
+        return $this->request($messages, false, null, $timeout, $modelOverride);
     }
 
     /**
@@ -82,11 +86,11 @@ class AiProvider
         return $this->request($messages, true, $onChunk, self::TIMEOUT_TOTAL);
     }
 
-    private function request(array $messages, $stream, $onChunk, $timeout)
+    private function request(array $messages, $stream, $onChunk, $timeout, $modelOverride = null)
     {
         $url = $this->baseUrl() . '/chat/completions';
         $payload = json_encode([
-            'model'    => $this->row['model'],
+            'model'    => $modelOverride ?: $this->row['model'],
             'messages' => $messages,
             'stream'   => $stream,
         ], JSON_UNESCAPED_UNICODE);
@@ -258,7 +262,7 @@ class AiProvider
      *
      * @return array{ok:bool, answer:string, provider:?AiProvider, error:string, attempts:array}
      */
-    public static function chatOnceWithFailover(PDO $db, array $messages, float $timeout = 30.0, $preferDirect = true)
+    public static function chatOnceWithFailover(PDO $db, array $messages, float $timeout = 30.0, $preferDirect = false, $modelOverride = null)
     {
         $list = self::routeList($db);
         if ($preferDirect) {
@@ -276,7 +280,7 @@ class AiProvider
         $lastErr = '没有可用的 AI 渠道';
         foreach ($list as $p) {
             $t0 = microtime(true);
-            $res = $p->chatOnce($messages, $timeout);
+            $res = $p->chatOnce($messages, $timeout, $modelOverride);
             $ms = (int)round((microtime(true) - $t0) * 1000);
             $attempts[] = [
                 'name' => $p->name(),
