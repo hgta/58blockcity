@@ -14,6 +14,7 @@ require_once '../config/database.php';
 require_once '../includes/auth.php';
 require_once '../classes/SecureCrypto.php';
 require_once '../classes/AiProvider.php';
+require_once '../classes/AiAdminTask.php';
 
 checkAdmin();
 
@@ -44,10 +45,6 @@ $plain = trim(preg_replace('/\s+/u', ' ', $plain));
 if ($plain === '') sum_out(false, '', '正文为空，先写点内容再生成摘要');
 if (mb_strlen($plain) > 3000) $plain = mb_substr($plain, 0, 3000); // 控制 token
 
-// 后台短任务：给足总时长（2 个渠道 × 12s），但仍远低于 PHP 默认上限被砍的风险
-@set_time_limit(30);
-$t0 = microtime(true);
-
 try {
     $messages = [
         [
@@ -59,13 +56,8 @@ try {
         ['role' => 'user', 'content' => '标题：' . $title . "\n正文：" . $plain],
     ];
 
-    // 非流式 + 每渠道 12s 超时：某渠道卡住会立刻切下一个，不再干等 60s
-    $res = AiProvider::chatOnceWithFailover($pdo, $messages, 12.0);
-    $meta = [
-        'ms' => (int)round((microtime(true) - $t0) * 1000),
-        'provider' => $res['provider'] ? $res['provider']->name() : '',
-        'attempts' => $res['attempts'],
-    ];
+    $res = AiAdminTask::run($pdo, $messages);
+    $meta = $res['meta'];
     if (!$res['ok']) {
         sum_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
     }

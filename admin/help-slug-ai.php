@@ -15,6 +15,7 @@ require_once '../config/database.php';
 require_once '../includes/auth.php';
 require_once '../classes/SecureCrypto.php';
 require_once '../classes/AiProvider.php';
+require_once '../classes/AiAdminTask.php';
 
 checkAdmin();
 
@@ -60,9 +61,6 @@ function unique_slug(PDO $pdo, $slug, $excludeId)
     return $slug . '-' . substr(md5($slug . microtime(true)), 0, 6);
 }
 
-@set_time_limit(30);
-$t0 = microtime(true);
-
 try {
     $messages = [
         [
@@ -73,13 +71,8 @@ try {
         ['role' => 'user', 'content' => '标题：' . $title],
     ];
 
-    // 非流式 + 每渠道 12s 超时：卡住的渠道会立刻被跳过，切到下一个
-    $res = AiProvider::chatOnceWithFailover($pdo, $messages, 12.0);
-    $meta = [
-        'ms' => (int)round((microtime(true) - $t0) * 1000),
-        'provider' => $res['provider'] ? $res['provider']->name() : '',
-        'attempts' => $res['attempts'],
-    ];
+    $res = AiAdminTask::run($pdo, $messages);
+    $meta = $res['meta'];
     if (!$res['ok']) {
         slug_out(false, '', 'AI 调用失败：' . $res['error'], $meta);
     }

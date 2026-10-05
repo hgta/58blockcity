@@ -551,12 +551,18 @@ require_once '../shared/admin/admin-header.php';
 
   summaryInput.addEventListener('input', function () { sumManual = true; }); // 手动改过 → 停止自动
 
-  // 后台 AI 小任务公共调用：30s 前端超时 + 显示"用了哪个渠道/耗时/为何切换"
+  // 后台 AI 小任务公共调用：实时秒数提示 + 80s 兜底 + 显示"用了哪个渠道/耗时/为何切换"
+  // （后台短任务非流式，单渠道最多 30s、两个渠道合计可能 60s+，故兜底设 80s）
   function aiAdminCall(btn, url, body, onOk, failTip) {
     var old = btn.textContent;
-    btn.textContent = '生成中…'; btn.disabled = true;
+    var started = Date.now();
+    btn.textContent = '生成中… 0s'; btn.disabled = true;
+    var tick = setInterval(function () {
+      btn.textContent = '生成中… ' + Math.round((Date.now() - started) / 1000) + 's';
+    }, 1000);
+    var stopTick = function () { clearInterval(tick); };
     var ac = (window.AbortController) ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ac) ac.abort(); }, 30000); // 前端兜底，避免一直转圈
+    var timer = setTimeout(function () { if (ac) ac.abort(); }, 80000); // 前端兜底，避免一直转圈
     fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -565,7 +571,7 @@ require_once '../shared/admin/admin-header.php';
     })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        clearTimeout(timer);
+        clearTimeout(timer); stopTick();
         if (j.ok) {
           onOk(j);
           var m = j.meta || {};
@@ -585,9 +591,9 @@ require_once '../shared/admin/admin-header.php';
         }
       })
       .catch(function (err) {
-        clearTimeout(timer);
+        clearTimeout(timer); stopTick();
         var aborted = err && err.name === 'AbortError';
-        alert(failTip + '：' + (aborted ? '超过 30 秒无响应（已放弃）' : '网络异常') + '\n请检查后台 AI 渠道是否可用（AI渠道配置页可点「测试」）');
+        alert(failTip + '：' + (aborted ? '超过 80 秒无响应（已放弃）' : '网络异常') + '\n请检查后台 AI 渠道是否可用（AI渠道配置页可点「测试」）');
         btn.textContent = old; btn.disabled = false;
       });
   }

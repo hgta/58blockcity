@@ -28,6 +28,7 @@ class AiProvider
     public function id()      { return (int)$this->row['id']; }
     public function name()    { return $this->row['name']; }
     public function model()   { return $this->row['model']; }
+    public function preset()  { return (string)($this->row['preset'] ?? ''); }
 
     /** 当日额度是否已用尽（daily_limit=0 表示不限） */
     public function quotaExceeded()
@@ -249,17 +250,31 @@ class AiProvider
      * 非流式 + 故障切换（后台短任务用：摘要/slug 生成等）
      *
      * 与 chatWithFailover（流式、单渠道 60s）的区别：
-     * - 这里每个渠道单独计时、单独超时（默认 12s），某个渠道"卡住不返回"时
-     *   12 秒就判定失败并切下一个，不会把整个请求拖到 PHP max_execution_time
+     * - 每个渠道单独计时、单独超时，某个渠道"卡住不返回"时立即判定失败并切下一个，
+     *   不会把整个请求拖到 PHP max_execution_time（避免"网络异常"的黑盒失败）
+     * - $preferDirect=true 时把本机 Hermes（完整 agent 循环，这类短任务很慢）排到最后，
+     *   优先用直连模型渠道，显著降低等待时间
      * - 返回每个渠道的尝试明细，便于后台提示"用了哪个渠道/为什么切换"
      *
      * @return array{ok:bool, answer:string, provider:?AiProvider, error:string, attempts:array}
      */
-    public static function chatOnceWithFailover(PDO $db, array $messages, float $timeout = 12.0)
+    public static function chatOnceWithFailover(PDO $db, array $messages, float $timeout = 30.0, $preferDirect = true)
     {
+        $list = self::routeList($db);
+        if ($preferDirect) {
+            // 稳定排序：非 hermes 渠道在前，hermes 殿后（保持各自原有相对顺序）
+            $direct = [];
+            $local  = [];
+            foreach ($list as $p) {
+                if ($p->preset() === 'hermes') $local[] = $p;
+                else $direct[] = $p;
+            }
+            $list = array_merge($direct, $local);
+        }
+
         $attempts = [];
         $lastErr = '没有可用的 AI 渠道';
-        foreach (self::routeList($db) as $p) {
+        foreach ($list as $p) {
             $t0 = microtime(true);
             $res = $p->chatOnce($messages, $timeout);
             $ms = (int)round((microtime(true) - $t0) * 1000);
