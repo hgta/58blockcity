@@ -11,6 +11,8 @@ require_once '../classes/AiProvider.php';
 require_once '../classes/EmbeddingProvider.php';
 require_once '../classes/HelpChunker.php';
 require_once '../classes/HelpChunkSync.php';
+// help 子站 URL 构造与百度推送封装（change: help-baidu-indexing D1/D4）
+require_once __DIR__ . '/../help/_init.php';
 
 checkAdmin();
 
@@ -26,6 +28,22 @@ function hsr_sync_article($articleId)
     } catch (Exception $ex) {
         error_log('[help-semantic-rag] 文章块同步失败 #' . $articleId . ': ' . $ex->getMessage());
     }
+}
+
+/**
+ * help_articles 是否已执行内容层 SEO 字段迁移（change: help-content-seo）
+ * 未执行时后台与前台都忽略 seo_title / meta_description，不阻断保存与渲染
+ */
+function hseo_cols_ready($pdo)
+{
+    static $ready = null;
+    if ($ready !== null) return $ready;
+    try {
+        $ready = (bool)$pdo->query("SHOW COLUMNS FROM help_articles LIKE 'seo_title'")->fetchColumn();
+    } catch (Exception $ex) {
+        $ready = false;
+    }
+    return $ready;
 }
 
 $actionMsg = '';
@@ -44,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $status = in_array($_POST['status'] ?? '', ['draft', 'published', 'archived']) ? $_POST['status'] : 'draft';
                 $pinned = isset($_POST['is_pinned']) ? 1 : 0;
                 $cover  = trim($_POST['cover_image'] ?? '');
+                // SEO 字段（change: help-content-seo）：迁移未执行时忽略，不阻断保存
+                $seoReady = hseo_cols_ready($pdo);
+                $seoTitle = mb_substr(trim((string)($_POST['seo_title'] ?? '')), 0, 120);
+                $seoDesc  = mb_substr(trim((string)($_POST['meta_description'] ?? '')), 0, 200);
 
                 $steps = [];
                 if ($ctype === 'steps' && is_array($_POST['steps'] ?? null)) {
@@ -65,6 +87,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     break;
                 }
 
+                // 保存前的状态与 slug：用于识别「跃迁到 published / 下架 / 改 slug」（change: help-baidu-indexing D2/D5）
+                $oldStatus = null;
+                $oldSlug   = null;
+                if ($id > 0) {
+                    $oldStmt = $pdo->prepare("SELECT status, slug FROM help_articles WHERE id = ?");
+                    $oldStmt->execute([$id]);
+                    if ($oldRow = $oldStmt->fetch()) {
+                        $oldStatus = $oldRow['status'];
+                        $oldSlug   = $oldRow['slug'];
+                    }
+                }
+
                 $fields = [
                     ':title' => $title, ':slug' => $slug, ':cat' => $catId, ':summary' => $summary,
                     ':ctype' => $ctype,
@@ -72,23 +106,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     ':steps' => $ctype === 'steps' ? json_encode($steps, JSON_UNESCAPED_UNICODE) : null,
                     ':cover' => $cover, ':status' => $status, ':pinned' => $pinned,
                 ];
+                if ($seoReady) {
+                    $fields[':seo_title'] = $seoTitle;
+                    $fields[':seo_desc']  = $seoDesc;
+                }
                 if ($id > 0) {
                     $pdo->prepare("UPDATE help_articles SET title=:title, slug=:slug, category_id=:cat, summary=:summary,
                                    content_type=:ctype, content_richtext=:rt, content_steps=:steps, cover_image=:cover,
-                                   status=:status, is_pinned=:pinned WHERE id=:id")
+                                   status=:status, is_pinned=:pinned"
+                                   . ($seoReady ? ", seo_title=:seo_title, meta_description=:seo_desc" : "")
+                                   . " WHERE id=:id")
                         ->execute($fields + [':id' => $id]);
                     // 人工编辑后清除 AI 草稿待审核标记
                     $pdo->prepare("UPDATE help_articles SET is_ai_generated = 0 WHERE id = ? AND status = 'published'")->execute([$id]);
                     $actionMsg = '<div class="admin-alert admin-alert-success">文章已保存</div>';
                 } else {
-                    $pdo->prepare("INSERT INTO help_articles (title, slug, category_id, summary, content_type, content_richtext,
-                                   content_steps, cover_image, status, is_pinned, created_by)
-                                   VALUES (:title, :slug, :cat, :summary, :ctype, :rt, :steps, :cover, :status, :pinned, :uid)")
+                    $cols = "title, slug, category_id, summary, content_type, content_richtext,
+                                   content_steps, cover_image, status, is_pinned, created_by";
+                    $vals = ":title, :slug, :cat, :summary, :ctype, :rt, :steps, :cover, :status, :pinned, :uid";
+                    if ($seoReady) {
+                        $cols .= ", seo_title, meta_description";
+                        $vals .= ", :seo_title, :seo_desc";
+                    }
+                    $pdo->prepare("INSERT INTO help_articles ({$cols}) VALUES ({$vals})")
                         ->execute($fields + [':uid' => $_SESSION['user_id'] ?? null]);
                     $id = (int)$pdo->lastInsertId();
                     $actionMsg = '<div class="admin-alert admin-alert-success">文章已创建</div>';
                 }
                 hsr_sync_article($id); // 保存/发布后同步知识块（published 才生成块）
+
+                // 百度主动推送：只在「跃迁到 published」时推；下架与改 slug 的旧址记死链
+                // URL 一律由 help 侧构造函数生成，不推 www.58.tl/help/（change: help-baidu-indexing D1/D2/D5）
+                $newUrl = help_canonical_url('article/' . $slug);
+                if ($status === 'published' && $oldStatus !== 'published') {
+                    help_push_url($newUrl);                       // 新建即发布 / 草稿转发布
+                } elseif ($status === 'published' && $oldSlug && $oldSlug !== $slug) {
+                    help_push_url($newUrl);                       // 已发布但改了 slug：新址需推送
+                }
+                if ($oldStatus === 'published' && $status !== 'published') {
+                    help_push_url(help_canonical_url('article/' . $oldSlug), 'dead'); // 下架
+                } elseif ($oldSlug && $oldSlug !== $slug) {
+                    help_push_url(help_canonical_url('article/' . $oldSlug), 'dead'); // 改 slug：旧址成死链
+                }
                 break;
 
             case 'toggle_pin':
@@ -358,12 +417,23 @@ require_once '../shared/admin/admin-header.php';
                     </select></div>
                 <div style="display:flex;align-items:flex-end;"><label style="font-size:13px;"><input type="checkbox" name="is_pinned" <?= !empty($editing['is_pinned']) ? 'checked' : '' ?>> 置顶显示</label></div>
             </div>
-            <div style="margin-top:14px;"><label style="display:block;font-size:13px;margin-bottom:4px;">摘要（搜索与列表展示）
-                <span style="font-weight:400;color:#64748b;">写完正文会自动取开头生成，也可点 AI 重写</span></label>
+            <div style="margin-top:14px;"><label style="display:block;font-size:13px;margin-bottom:4px;">摘要（搜索与列表展示，会作为正文首段的直答内容）
+                <span style="font-weight:400;color:#64748b;">写完正文会自动取开头生成，也可点 AI 重写；建议 40–80 字、能独立回答标题问题</span></label>
                 <div style="display:flex;gap:6px;">
                     <input name="summary" id="summaryInput" value="<?= htmlspecialchars($editing['summary'] ?? '') ?>" style="flex:1;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
                     <button type="button" id="sumAiBtn" title="用 AI 根据正文重写一段 80~120 字的摘要" class="admin-btn admin-btn-secondary admin-btn-sm" style="white-space:nowrap;">AI 摘要</button>
                 </div></div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px;">
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">SEO 标题（可留空）
+                    <span style="font-weight:400;color:#64748b;">留空则用文章标题</span></label>
+                    <input name="seo_title" maxlength="120" value="<?= htmlspecialchars($editing['seo_title'] ?? '') ?>" placeholder="留空则用文章标题" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                </div>
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">SEO 描述（可留空）
+                    <span style="font-weight:400;color:#64748b;">留空则用摘要</span></label>
+                    <input name="meta_description" maxlength="200" value="<?= htmlspecialchars($editing['meta_description'] ?? '') ?>" placeholder="留空则用摘要" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
+                </div>
+            </div>
 
             <!-- 富文本模式：所见即所得编辑器（wangEditor 自托管）+ 可切回 HTML 源码 -->
             <div id="rtBox" style="margin-top:14px;">

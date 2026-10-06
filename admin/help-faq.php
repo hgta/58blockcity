@@ -10,6 +10,8 @@ require_once '../classes/SecureCrypto.php';
 require_once '../classes/EmbeddingProvider.php';
 require_once '../classes/HelpChunker.php';
 require_once '../classes/HelpChunkSync.php';
+// help 子站 URL 构造与百度推送封装（change: help-baidu-indexing D4/D5）
+require_once __DIR__ . '/../help/_init.php';
 
 checkAdmin();
 
@@ -51,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $id = (int)$pdo->lastInsertId();
                 hsr_sync_faq($id);
                 $actionMsg = '<div class="admin-alert admin-alert-success">FAQ 已创建</div>';
+            }
+            // FAQ 无独立 URL，新增/发布后重推聚合页（受节流约束，change: help-baidu-indexing D2）
+            if ($status === 'published') {
+                help_push_url(help_canonical_url('faq'));
             }
         } elseif ($_POST['action'] === 'delete' && $id > 0) {
             $pdo->prepare("DELETE FROM help_faq WHERE id = ?")->execute([$id]);

@@ -11,4 +11,4 @@
 
 - [58区块城市主站](https://www.58.tl/): 组织实体总入口
 - [主站 llms.txt](https://www.58.tl/llms.txt)
-- [术语表（含人气值 / BCT 定义）](https://www.58.tl/help/glossary.html)
+- [术语表（含人气值 / BCT 定义）](https://help.58.tl/glossary)

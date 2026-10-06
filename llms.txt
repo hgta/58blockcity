@@ -46,11 +46,11 @@
 
 ## 帮助与知识
 
-- [帮助中心](https://www.58.tl/help/help.html): 新手指南与常见问题
-- [区块购买指南](https://www.58.tl/help/buy-blocks-guide.html): 分步操作教程
-- [如何创建城市](https://www.58.tl/help/create-city.html): 创建与运营一个城市
-- [为什么要创建城市](https://www.58.tl/help/why-create-city.html): 创建城市对组织与个人的价值
-- [术语表](https://www.58.tl/help/glossary.html): 人气值、BCT、区块、互访圈、区块城市等核心概念定义
+- [帮助中心](https://help.58.tl/): 新手指南与常见问题
+- [区块购买指南](https://help.58.tl/article/buy-blocks-guide): 分步操作教程
+- [如何创建城市](https://help.58.tl/article/create-city-guide): 创建与运营一个城市
+- [为什么要创建城市](https://help.58.tl/article/why-create-city): 创建城市对组织与个人的价值
+- [术语表](https://help.58.tl/glossary): 人气值、BCT、区块、互访圈、区块城市等核心概念定义
 - [区块城市新闻](https://www.58.tl/news.php): 平台动态与元宇宙资讯
 - [排行榜数据](https://www.58.tl/rankings/rankings.html): 城市与区块的数据排行
 

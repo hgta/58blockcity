@@ -37,7 +37,17 @@ $aiEnabled = help_setting('ai_assistant_enabled', '1') === '1';
 $popularQs = ['怎么认领地块', 'BCT 是什么', '怎么开店卖货', '如何提现', 'NFT 头像怎么获得'];
 
 require __DIR__ . '/../_layout.php';
-help_header(['active' => 'home']);
+help_header([
+    'active' => 'home',
+    'canonical' => help_canonical_url(),
+    // WebSite + SearchAction（change: help-structured-data 6.2）
+    'jsonld' => SeoHelper::webSiteSchema([
+        'name' => '58区块城市帮助中心',
+        'url' => help_canonical_url(),
+        'description' => '58区块城市图文帮助中心：区块认领、BCT人气值、NFT头像、人气商城、互访圈、拍卖等玩法教程与常见问题解答。',
+        'search' => help_canonical_url('search') . '?q={search_term_string}',
+    ]),
+]);
 ?>
 
 <div class="hc-hero">

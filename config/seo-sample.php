@@ -25,6 +25,9 @@ return [
         'club.58.tl'  => ['token' => '', 'enabled' => false],
         'model.58.tl' => ['token' => '', 'enabled' => false],
         'task.58.tl'  => ['token' => '', 'enabled' => false],
+        // 帮助中心子站（权威域，见 change: help-seo-foundation D1）
+        // 验证文件：help/baidu_verify_codeva-vnMECzz0RR.html（已入库，部署后即可在平台验证）
+        'help.58.tl'  => ['token' => '', 'enabled' => false],
 
         // 一级域名（主收录目标；见下方 primary_domains）
         // 完成百度验证后填入各自 token 并置 enabled=true

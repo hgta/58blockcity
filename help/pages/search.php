@@ -63,6 +63,14 @@ require __DIR__ . '/../_layout.php';
 help_header([
     'title' => $kw !== '' ? ('搜索：' . $kw) : '搜索',
     'active' => '',
+    'canonical' => help_canonical_url('search'),
+    // 搜索结果页：q 可无限组合，属薄内容 —— 不索引但允许抓链（change: help-content-seo D4）
+    'robots' => 'noindex,follow',
+    // 搜索结果本身不做 schema，仅补面包屑（change: help-structured-data 7.1）
+    'breadcrumb' => [
+        ['name' => '帮助中心', 'url' => help_canonical_url()],
+        ['name' => '搜索', 'url' => ''],
+    ],
 ]);
 ?>
 

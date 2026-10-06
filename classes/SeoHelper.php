@@ -661,6 +661,33 @@ class SeoHelper
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
     }
 
+    /**
+     * CollectionPage 结构化数据（分类 / 列表页）
+     *
+     * @param array $p ['name'=>, 'description'=>, 'url'=>, 'id'=>]
+     * @return string JSON-LD 脚本标签
+     */
+    public static function collectionPageSchema(array $p)
+    {
+        if (empty($p['name']) || empty($p['url'])) {
+            return '';
+        }
+        $data = [
+            '@context'    => 'https://schema.org',
+            '@type'       => 'CollectionPage',
+            '@id'         => $p['id'] ?? (rtrim($p['url'], '/') . '#webpage'),
+            'name'        => (string)$p['name'],
+            'url'         => (string)$p['url'],
+            'inLanguage'  => 'zh-CN',
+            'isPartOf'    => ['@type' => 'WebSite', '@id' => ($p['website_id'] ?? 'https://www.58.tl/#website')],
+            'publisher'   => ['@id' => self::ORG_ID],
+        ];
+        if (!empty($p['description'])) {
+            $data['description'] = (string)$p['description'];
+        }
+        return self::jsonLd($data);
+    }
+
     /* ========== 生成式引擎结构化数据（GEO） ========== */
 
     /**
@@ -761,7 +788,8 @@ class SeoHelper
                 'query-input' => 'required name=search_term_string',
             ];
         }
-        $data['publisher'] = $site['publisher_id']
+        // 未显式传 publisher_id 时回退到组织 @id（原写法在未传键时会产生 undefined 警告）
+        $data['publisher'] = !empty($site['publisher_id'])
             ? ['@id' => $site['publisher_id']]
             : ['@id' => self::ORG_ID];
         return self::jsonLd($data);

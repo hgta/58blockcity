@@ -15,23 +15,14 @@ $stmt->execute([':slug' => $slug]);
 $a = $stmt->fetch();
 
 if (!$a) {
-    http_response_code(404);
-    require __DIR__ . '/../_layout.php';
-    help_header(['title' => '内容不存在']);
-    echo '<div class="hc-empty"><i class="fa-solid fa-file-circle-xmark"></i><div>文章不存在</div><a class="btn" href="' . e(help_url()) . '">返回帮助中心首页</a></div>';
-    help_footer();
-    exit;
+    require_once __DIR__ . '/../_layout.php';
+    help_404('文章不存在');
 }
 
 // 下架/草稿：明确提示并引导
 if ($a['status'] !== 'published') {
-    http_response_code(410);
-    require __DIR__ . '/../_layout.php';
-    help_header(['title' => '内容已下架']);
-    echo '<div class="hc-empty"><i class="fa-solid fa-eye-slash"></i><div>该内容已下架</div>'
-       . '<a class="btn" href="' . e(category_url($a['cat_slug'])) . '">返回分类：' . e($a['cat_name']) . '</a></div>';
-    help_footer();
-    exit;
+    require_once __DIR__ . '/../_layout.php';
+    help_404('该内容已下架', category_url($a['cat_slug']), '返回分类：' . $a['cat_name'], 410);
 }
 
 // 浏览计数（简单防刷：会话内不重复）
@@ -71,9 +62,69 @@ if ($a['content_type'] === 'steps') {
 }
 
 require __DIR__ . '/../_layout.php';
+
+// ---------- 结构化数据（change: help-structured-data D3/D4）----------
+$artUrl  = help_canonical_url('article/' . $a['slug']);
+// SEO 字段优先，回退 summary → 正文首句；?? '' 保证迁移未执行时也不报错（change: help-content-seo D1）
+$artSeoTitle = trim((string)($a['seo_title'] ?? ''));
+$artSeoDesc  = trim((string)($a['meta_description'] ?? ''));
+$artDesc = $artSeoDesc !== '' ? $artSeoDesc : ($a['summary'] ?: help_plain_summary($a['content_richtext']));
+// steps 型文章正文在 content_steps 里，取步骤文本兜底，避免 description 为空
+if ($artDesc === '' && $steps) {
+    $artDesc = help_plain_summary(implode(' ', array_map(function ($s) {
+        return ($s['title'] ?? '') . '。' . ($s['text'] ?? '');
+    }, $steps)), 120);
+}
+$cover   = help_abs_image($a['cover_image'] ?? '');
+
+$jsonld = [
+    SeoHelper::articleSchema([
+        'headline'      => $a['title'],
+        'description'   => $artDesc,
+        'url'           => $artUrl,
+        'image'         => $cover,
+        'datePublished' => date('c', strtotime($a['created_at'])),
+        'dateModified'  => date('c', strtotime($a['updated_at'])),
+        'section'       => $a['cat_name'],
+        'inLanguage'    => 'zh-CN',
+    ]),
+];
+
+// HowTo：仅 steps 型文章，步骤取自页面渲染用的同一份 $steps
+if ($a['content_type'] === 'steps' && $steps) {
+    $howSteps = [];
+    foreach ($steps as $s) {
+        $howSteps[] = [
+            'name'  => $s['title'] ?? '',
+            'text'  => $s['text'] ?? '',
+            'image' => !empty($s['image']) ? help_abs_image($s['image']) : '',
+        ];
+    }
+    $jsonld[] = SeoHelper::howToSchema([
+        'name'        => $a['title'],
+        'description' => $artDesc,
+        'image'       => $cover,
+        'steps'       => $howSteps,
+    ]);
+}
+
+// FAQPage：与页面「相关常见问题」区块同源
+if ($faqs) {
+    $jsonld[] = SeoHelper::faqPageSchema($faqs);
+}
+
 help_header([
-    'title' => $a['title'],
-    'description' => $a['summary'] ?: help_plain_summary($a['content_richtext']),
+    'title' => $artSeoTitle !== '' ? $artSeoTitle : $a['title'],
+    'description' => $artDesc,
+    'canonical' => $artUrl,
+    'og_type' => 'article',
+    'og_image' => $cover,
+    'jsonld' => $jsonld,
+    'breadcrumb' => [
+        ['name' => '帮助中心', 'url' => help_canonical_url()],
+        ['name' => $a['cat_name'], 'url' => help_canonical_url('category/' . $a['cat_slug'])],
+        ['name' => $a['title'], 'url' => ''],
+    ],
 ]);
 ?>
 
@@ -116,9 +167,7 @@ help_header([
       </div>
 
       <?php if ($a['summary']): ?>
-        <div style="background:#fff7f0;border-radius:10px;padding:12px 16px;font-size:14px;color:var(--muted);margin-bottom:16px">
-          <i class="fa-solid fa-lightbulb" style="color:var(--brand)"></i> <?= e($a['summary']) ?>
-        </div>
+        <p class="hc-lead"><?= e($a['summary']) ?></p>
       <?php endif; ?>
 
       <div class="body" id="article-body">
@@ -169,6 +218,16 @@ help_header([
         <div class="t"><?= e($r['title']) ?></div>
         <span class="m">→</span>
       </a>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php $subsites = help_subsite_links($a['cat_slug']); ?>
+    <?php if ($subsites): ?>
+    <div class="hc-section-title"><i class="fa-solid fa-arrow-up-right-from-square"></i> 去<?= e($a['cat_name']) ?>相关功能</div>
+    <div class="hc-links">
+      <?php foreach ($subsites as $s): ?>
+      <a href="<?= e($s['url']) ?>" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i><?= e($s['name']) ?></a>
       <?php endforeach; ?>
     </div>
     <?php endif; ?>

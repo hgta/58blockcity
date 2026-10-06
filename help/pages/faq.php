@@ -34,6 +34,13 @@ help_header([
     'title' => '常见问题 FAQ',
     'description' => '58区块城市各功能常见问题解答：区块交易、BCT、NFT、商城、互访圈、拍卖、账户、支付提现等。',
     'active' => 'faq',
+    'canonical' => help_canonical_url('faq'),
+    // FAQPage 只送当前激活 tab 的问答（change: help-structured-data D3）；空分类时 schema 返回空串
+    'jsonld' => $items ? SeoHelper::faqPageSchema($items) : '',
+    'breadcrumb' => [
+        ['name' => '帮助中心', 'url' => help_canonical_url()],
+        ['name' => '常见问题', 'url' => ''],
+    ],
 ]);
 ?>
 

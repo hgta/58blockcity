@@ -16,12 +16,8 @@ $page  = max(1, (int)($_GET['page'] ?? 1));
 $per   = 20;
 
 if (!$cat) {
-    http_response_code(404);
-    require __DIR__ . '/../_layout.php';
-    help_header(['title' => '分类不存在', 'active' => '']);
-    echo '<div class="hc-empty"><i class="fa-solid fa-folder-minus"></i><div>分类不存在或已下线</div><a class="btn" href="' . e(help_url()) . '">返回帮助中心首页</a></div>';
-    help_footer();
-    exit;
+    require_once __DIR__ . '/../_layout.php';
+    help_404('分类不存在或已下线');
 }
 
 $total = (int)$pdo->query("SELECT COUNT(*) FROM help_articles WHERE category_id = " . (int)$cat['id'] . " AND status = 'published'")->fetchColumn();
@@ -39,10 +35,36 @@ $arts->execute();
 $arts = $arts->fetchAll();
 
 require __DIR__ . '/../_layout.php';
+
+// ---------- 结构化数据：CollectionPage + ItemList（当前页文章）----------
+// 分页自引用 canonical：?page=N 内容不同，收口到第一页会丢长尾（change: help-content-seo D4）
+$catUrl = help_canonical_url('category/' . $cat['slug']) . ($page > 1 ? '?page=' . $page : '');
+$catDesc = $cat['description'] ?: ($cat['name'] . '相关教程与常见问题');
+$listItems = [];
+foreach ($arts as $i => $art) {
+    $listItems[] = [
+        'url' => help_canonical_url('article/' . $art['slug']),
+        'name' => $art['title'],
+    ];
+}
+
 help_header([
     'title' => $cat['name'],
     'description' => $cat['description'] ?: ($cat['name'] . '相关教程与常见问题 - 58区块城市帮助中心'),
     'active' => 'cat-' . $cat['slug'],
+    'canonical' => $catUrl,
+    'jsonld' => [
+        SeoHelper::collectionPageSchema([
+            'name' => $cat['name'],
+            'description' => $catDesc,
+            'url' => $catUrl,
+        ]),
+        SeoHelper::itemListSchema($listItems, $cat['name'] . '教程列表'),
+    ],
+    'breadcrumb' => [
+        ['name' => '帮助中心', 'url' => help_canonical_url()],
+        ['name' => $cat['name'], 'url' => ''],
+    ],
 ]);
 ?>
 

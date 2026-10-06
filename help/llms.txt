@@ -1,0 +1,40 @@
+# 58区块城市帮助中心（help.58.tl）
+
+> 58区块城市帮助中心是「58区块城市」平台的官方文档与答疑子站，主站实体为 https://www.58.tl/ 。本站提供区块认领与交易、BCT 人气值、NFT 头像、人气商城、互访圈、拍卖、任务广场等玩法的图文教程、常见问题与术语解释，并提供基于官方教程的 AI 在线答疑。
+
+## 主要入口
+
+- [帮助中心首页](https://help.58.tl/): 分类导航、热门教程与最近更新
+- [常见问题 FAQ](https://help.58.tl/faq): 按功能分组的高频问答
+- [术语表](https://help.58.tl/glossary): 区块城市、区块、人气值、BCT、互访圈等核心概念定义
+- [AI 助手答疑](https://help.58.tl/ask): 基于官方教程回答并附引用来源
+
+## 分类教程
+
+- [新手上路](https://help.58.tl/category/getting-started): 平台全貌与第一次上手
+- [区块交易](https://help.58.tl/category/block): 认领地块、买卖区块与相邻合并
+- [BCT 人气值](https://help.58.tl/category/bct): BCT 获取、交易与大宗交易规则
+- [NFT 头像](https://help.58.tl/category/nft): 数字收藏头像的铸造与交易
+- [人气商城](https://help.58.tl/category/mall): 开店、上架商品与 BCT 支付购物
+- [互访圈](https://help.58.tl/category/club): 同城社交互访玩法
+- [拍卖](https://help.58.tl/category/bid): 区块与 NFT 竞拍出价规则
+- [任务广场](https://help.58.tl/category/task): 悬赏发布与众包接单
+- [账户与安全](https://help.58.tl/category/account): 注册登录与账号安全
+- [支付与提现](https://help.58.tl/category/payment): 充值、支付与提现流程
+- [规则与 FAQ](https://help.58.tl/category/rules): 平台规则与常见问题
+
+## 重点教程
+
+- [区块购买指南](https://help.58.tl/article/buy-blocks-guide): 分步操作教程
+- [如何创建城市](https://help.58.tl/article/create-city-guide): 创建与运营一个城市
+- [为什么要创建城市](https://help.58.tl/article/why-create-city): 创建城市对组织与个人的价值
+
+## 关于本站
+
+- 所属实体：[58区块城市主站](https://www.58.tl/)
+- 联系方式：support@58.tl
+
+## Optional
+
+- [Sitemap](https://help.58.tl/sitemap.xml): 本站全部可索引 URL
+- [robots.txt](https://help.58.tl/robots.txt): 抓取规则（对主流 AI 爬虫全部放行）

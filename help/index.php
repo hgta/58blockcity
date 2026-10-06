@@ -16,6 +16,13 @@
 
 require_once __DIR__ . '/_init.php';
 
+// 软 404：未知路径不再回落首页，直接返回 404（change: help-seo-foundation D2）
+// 显式带 ?route=xxx 的直连方式不受影响
+if (!isset($_GET['route']) && !help_is_known_path(help_request_path())) {
+    require_once __DIR__ . '/_layout.php';
+    help_404('页面不存在或已下线');
+}
+
 $route = isset($_GET['route']) ? preg_replace('/[^a-z0-9\-]/', '', (string)$_GET['route']) : 'home';
 
 $routes = [

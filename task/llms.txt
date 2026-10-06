@@ -21,7 +21,7 @@
 
 - [58区块城市主站](https://www.58.tl/): 组织实体总入口
 - [主站 llms.txt](https://www.58.tl/llms.txt)
-- [帮助中心](https://www.58.tl/help/help.html)
+- [帮助中心](https://help.58.tl/)
 
 ## Optional
 

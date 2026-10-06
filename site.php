@@ -24,7 +24,7 @@ if ($argc > 1) {
         'https://www.58.tl/top200city.php',
         'https://www.58.tl/all-cities.php',
         'https://www.58.tl/news.php',
-        'https://www.58.tl/help/help.html',
+        'https://help.58.tl/',
         'https://www.58.tl/rankings/rankings.html',
     ];
 }

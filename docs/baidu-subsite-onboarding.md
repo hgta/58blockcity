@@ -59,6 +59,7 @@ http://data.zz.baidu.com/urls?site=https://mall.58.tl&token=YOUR_BAIDU_TOKEN
 | `bct.58.tl` | canonical 已收口到 `renqizhi.com`，**不建议推送**（见下） |
 | `v.58.tl` | canonical 已收口到 `hufangquan.com`，**不建议推送** |
 | `bid.58.tl` / `club.58.tl` / `task.58.tl` | 未验证 |
+| `help.58.tl` | 验证文件已就位（`help/baidu_verify_codeva-vnMECzz0RR.html`），**待在平台完成验证后启用** |
 | `renqizhi.com` | 待验证后启用（BCT 主收录目标） |
 | `hufangquan.com` | 待验证后启用（互访圈主收录目标） |
 
@@ -112,6 +113,9 @@ http://data.zz.baidu.com/urls?site=https://mall.58.tl&token=YOUR_BAIDU_TOKEN
     'club.58.tl'  => ['token' => '', 'enabled' => false],
     'task.58.tl'  => ['token' => '', 'enabled' => false],
 
+    // help 子站：完成验证后填入 token 并启用（权威域 help.58.tl，不推 www.58.tl/help/*）
+    'help.58.tl'  => ['token' => '', 'enabled' => false],
+
     // 一级域名：验证后填入各自 token 并启用
     'renqizhi.com'   => ['token' => '', 'enabled' => false],
     'hufangquan.com' => ['token' => '', 'enabled' => false],
@@ -153,6 +157,47 @@ php site.php https://mall.58.tl/
 ```
 
 期望返回 `success` 计数。
+
+### 6. help.58.tl 专属说明（change: help-baidu-indexing）
+
+**验证方式**：HTML 文件验证（最简单，无需改 DNS）
+
+1. 验证文件已在仓库中：`help/baidu_verify_codeva-vnMECzz0RR.html`（内容为一串校验码）。
+2. 部署后访问 `https://help.58.tl/baidu_verify_codeva-vnMECzz0RR.html`，应返回该串明文。
+   - 它由 nginx 的 `try_files $uri` 直接命中静态文件，**无需改 nginx 配置**。
+   - 若返回 404：检查部署是否包含 `help/` 目录下的新文件。
+3. 在平台「添加站点 → help.58.tl → HTML 文件验证」点击验证即可。
+
+> DNS / CNAME 两种方式同样可用，流程与其它子域一致（见本节第 2 步）。
+
+**推送目标**：只推权威域地址，形如
+
+```
+https://help.58.tl/                      首页
+https://help.58.tl/faq                   常见问题（聚合页）
+https://help.58.tl/glossary              术语表（聚合页）
+https://help.58.tl/article/{slug}        文章详情
+```
+
+**绝不能推** `https://www.58.tl/help/…` —— 该前缀已整段 301（`help-seo-foundation` D1），
+推它会被跳走，既浪费配额又给百度错误信号。
+
+**触发时机**（已内置，无需手工）：
+
+| 操作 | 行为 |
+|------|------|
+| 新建文章且状态=已发布 | 推送该文章 URL |
+| 草稿/下架 → 已发布 | 推送该文章 URL |
+| 已发布文章仅改正文 | **不推**（避免烧配额，更新靠 sitemap 的 `lastmod`） |
+| 新增 / 发布 FAQ | 重推 `https://help.58.tl/faq` |
+| 新增术语 | 重推 `https://help.58.tl/glossary` |
+
+**节流**：同一 URL 默认 24 小时冷却（可用 `system_settings.help_push_cooldown_hours` 覆盖）。
+节流记录表 `help_push_log` 未建时降级为「不节流、直接推」，不会报错。
+
+**死链清单**：文章下架或改 slug 后，旧 URL 记入 `help_push_log(action='dead')`，
+由 `https://help.58.tl/deadlinks.php` 输出纯文本清单（每行一条 URL）。
+在平台「死链提交」入口登记该地址即可。
 
 ---
 

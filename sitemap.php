@@ -37,7 +37,7 @@ function urlNode($loc, $priority = '0.7', $changefreq = 'weekly', $lastmod = nul
  * lastmod 取自文件真实修改时间（filemtime），反映内容真实更新，
  * 避免使用生成时间导致「每天全站都更新」的噪声信号。
  *
- * @param string $relPath 相对站点根目录的路径，如 'help/help.html'
+ * @param string $relPath 相对站点根目录的路径，如 'rankings/rankings.html'
  */
 function staticNode($relPath, $priority = '0.7', $changefreq = 'weekly')
 {
@@ -52,19 +52,10 @@ urlNode('https://www.58.tl/', '1.0', 'daily', $now);
 urlNode('https://www.58.tl/top200city.php', '0.8', 'weekly', $now);
 urlNode('https://www.58.tl/all-cities.php', '0.8', 'weekly', $now);
 
-// 1b. 静态内容页（帮助中心 / 术语表 / 排行榜 / 新闻 / 城市入口）
+// 1b. 静态内容页（排行榜 / 新闻 / 城市入口）
 // 说明：静态页无数据库 updated_at，lastmod 统一取自 filemtime()
-// 帮助中心（9 篇解释型文章 + 术语表）
-staticNode('help/help.html', '0.8', 'monthly');
-staticNode('help/buy-blocks-guide.html', '0.8', 'monthly');
-staticNode('help/create-city.html', '0.8', 'monthly');
-staticNode('help/why-create-city.html', '0.8', 'monthly');
-staticNode('help/why-create-city-business.html', '0.7', 'monthly');
-staticNode('help/why-create-city-community.html', '0.7', 'monthly');
-staticNode('help/why-create-city-celebrity.html', '0.7', 'monthly');
-staticNode('help/why-create-city-influencer.html', '0.7', 'monthly');
-staticNode('help/why-create-city-organization.html', '0.7', 'monthly');
-staticNode('help/glossary.html', '0.8', 'monthly');
+// 帮助中心已迁移到 help.58.tl 独立子站（原 help/*.html 全部 301），
+// 其 URL 由 https://help.58.tl/sitemap.xml 负责，本域不再重复收录
 // 排行榜 / 数据页
 staticNode('rankings/rankings.html', '0.8', 'weekly');
 staticNode('rankings/gdp-total.html', '0.7', 'weekly');

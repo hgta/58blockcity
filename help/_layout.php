@@ -2,7 +2,27 @@
 /**
  * 帮助中心公共布局
  * change: help-center-ai-assistant (task 2.1)
+ * change: help-seo-foundation (canonical / og:url)
+ * change: help-structured-data (实体锚点 + JSON-LD 统一输出位)
  */
+
+// 全站品牌实体单一来源 + SEO 结构化数据工具（change: help-structured-data D1）
+require_once __DIR__ . '/../shared/organization.php';
+require_once __DIR__ . '/../classes/SeoHelper.php';
+
+/** help 子站默认 OG 图（品牌图，文章无 cover_image 时回退） */
+if (!defined('HELP_OG_IMAGE')) {
+    define('HELP_OG_IMAGE', 'https://www.58.tl/assets/images/og-main.jpg');
+}
+
+/** 相对图片路径补成绝对 URL（og:image / schema image 必须绝对） */
+function help_abs_image($u) {
+    $u = trim((string)$u);
+    if ($u === '') return '';
+    if (preg_match('#^https?://#i', $u)) return $u;
+    if (strpos($u, '//') === 0) return 'https:' . $u;
+    return 'https://www.58.tl/' . ltrim($u, '/');
+}
 
 function help_header(array $opts = []) {
     $title = isset($opts['title']) && $opts['title'] !== ''
@@ -12,7 +32,16 @@ function help_header(array $opts = []) {
         ? $opts['description']
         : '58区块城市图文帮助中心：区块认领、BCT人气值、NFT头像、人气商城、互访圈、拍卖等玩法教程与常见问题解答，另有AI助手在线答疑。';
     $active = isset($opts['active']) ? $opts['active'] : '';
+    // 权威域 canonical：页面可显式传，未传则按当前请求自动推导（change: help-seo-foundation D1）
+    $canonical = isset($opts['canonical']) && $opts['canonical'] !== ''
+        ? $opts['canonical']
+        : help_current_canonical();
     $q = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
+    // OG（change: help-structured-data D6）：文章页为 article + 封面图，其余为 website + 品牌图
+    // robots 指令（默认不输出；搜索页等薄内容页传 noindex,follow —— change: help-content-seo D4）
+    $robots  = isset($opts['robots']) ? trim((string)$opts['robots']) : '';
+    $ogType  = isset($opts['og_type']) && $opts['og_type'] !== '' ? $opts['og_type'] : 'website';
+    $ogImage = help_abs_image(isset($opts['og_image']) ? $opts['og_image'] : '') ?: HELP_OG_IMAGE;
     $mainSite = 'https://www.58.tl/';
     $aiEnabled = help_setting('ai_assistant_enabled', '1') === '1';
 ?>
@@ -25,7 +54,12 @@ function help_header(array $opts = []) {
 <meta name="description" content="<?= e($desc) ?>">
 <meta property="og:title" content="<?= e($title) ?>">
 <meta property="og:description" content="<?= e($desc) ?>">
-<meta property="og:type" content="website">
+<meta property="og:type" content="<?= e($ogType) ?>">
+<link rel="canonical" href="<?= e($canonical) ?>">
+<meta property="og:url" content="<?= e($canonical) ?>">
+<meta property="og:image" content="<?= e($ogImage) ?>">
+<meta property="og:site_name" content="58区块城市">
+<?php if ($robots !== ''): ?><meta name="robots" content="<?= e($robots) ?>"><?php endif; ?>
 <link rel="icon" href="https://www.58.tl/favicon.ico">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -140,6 +174,13 @@ img { max-width: 100%; }
 .hc-article { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 32px; }
 .hc-article h1 { font-size: 20px; margin-bottom: 6px; } /* 与 .hc-pagehead h1 同字号，保持各页标题观感一致 */
 .hc-article .meta { font-size: 13px; color: var(--muted); margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+/* 直答段落：位于标题/元信息之后、正文之前，语义上属正文一部分（答案前置，change: help-content-seo D2） */
+.hc-article .hc-lead { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.85; margin: 0 0 20px; }
+/* 跨子站入口（change: help-content-seo D5） */
+.hc-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.hc-links a { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink); }
+.hc-links a:hover { border-color: var(--brand); color: var(--brand); text-decoration: none; }
+.hc-links a i { color: var(--brand); }
 .hc-article .body { font-size: 15px; }
 .hc-article .body img { border-radius: 8px; border: 1px solid var(--line); margin: 8px 0; }
 .hc-article .body h2 { font-size: 19px; margin: 22px 0 10px; }
@@ -213,6 +254,18 @@ img { max-width: 100%; }
   .hc-article { padding: 20px 16px; }
 }
 </style>
+<?php
+// 结构化数据统一输出位（change: help-structured-data D5）
+// 顺序：canonical/og → Organization（实体锚点）→ 本页主 schema → BreadcrumbList
+echo organization_json_ld();
+$ld = isset($opts['jsonld']) ? $opts['jsonld'] : '';
+if (is_array($ld)) {
+    $ld = implode("\n", array_filter(array_map('strval', $ld), function ($s) { return $s !== ''; }));
+}
+if ($ld !== '') echo "\n" . $ld;
+$bc = isset($opts['breadcrumb']) ? $opts['breadcrumb'] : [];
+if ($bc) echo "\n" . SeoHelper::breadcrumbList($bc);
+?>
 </head>
 <body>
 <header class="hc-header">
@@ -293,6 +346,27 @@ function help_pagehead($title, $sub = '', $acts = '') {
   <?php if ($acts !== ''): ?><span class="acts"><?= $acts ?></span><?php endif; ?>
 </div>
 <?php
+}
+
+/**
+ * 统一 404 呈现（软 404 修复：未知路径与内容不存在都返回真 404，不再回落首页）
+ * change: help-seo-foundation (task 2.2)
+ *
+ * @param string $msg 提示文案
+ * @param string $backUrl 返回链接，默认帮助中心首页
+ * @param string $backLabel 返回链接文案
+ * @param int $status HTTP 状态码（下架内容可传 410）
+ */
+function help_404($msg = '页面不存在', $backUrl = '', $backLabel = '', $status = 404) {
+    http_response_code($status);
+    if ($backUrl === '') $backUrl = help_url();
+    if ($backLabel === '') $backLabel = '返回帮助中心首页';
+    help_header(['title' => '页面不存在']);
+    echo '<div class="hc-empty"><i class="fa-solid fa-circle-exclamation"></i>'
+       . '<div>' . e($msg) . '</div>'
+       . '<a class="btn" href="' . e($backUrl) . '">' . e($backLabel) . '</a></div>';
+    help_footer();
+    exit;
 }
 
 function help_footer() {

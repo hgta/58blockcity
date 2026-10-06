@@ -22,10 +22,34 @@ foreach ($terms as $t) {
 ksort($groups);
 
 require __DIR__ . '/../_layout.php';
+
+// ---------- 结构化数据：DefinedTermSet（与页面渲染同一份 $terms）----------
+$glossaryUrl = help_canonical_url('glossary');
+$termItems = [];
+foreach ($terms as $t) {
+    $termItems[] = [
+        'name' => $t['term'],
+        'description' => $t['definition'],
+        'url' => $t['art_slug'] ? help_canonical_url('article/' . $t['art_slug']) : '',
+        'inDefinedTermSet' => $glossaryUrl . '#termset',
+    ];
+}
+
 help_header([
     'title' => '术语表',
     'description' => '58区块城市平台术语表：区块、BCT人气值、NFT、互访圈、拍卖等名词解释，按拼音字母排序。',
     'active' => 'glossary',
+    'canonical' => $glossaryUrl,
+    'jsonld' => SeoHelper::definedTermSetSchema([
+        'name' => '58区块城市术语表',
+        'description' => '权威解释区块城市、区块、人气值、BCT、互访圈等核心概念',
+        'url' => $glossaryUrl . '#termset',
+        'terms' => $termItems,
+    ]),
+    'breadcrumb' => [
+        ['name' => '帮助中心', 'url' => help_canonical_url()],
+        ['name' => '术语表', 'url' => ''],
+    ],
 ]);
 ?>
 
