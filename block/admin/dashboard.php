@@ -28,9 +28,16 @@ $todayClaimsCount = $todayClaims->fetchColumn() ?: 0;
 $totalCities = $pdo->query("SELECT COUNT(*) FROM cities")->fetchColumn() ?: 0;
 $totalMerged = $pdo->query("SELECT COUNT(*) FROM merged_blocks")->fetchColumn() ?: 0;
 
-// 城市激活率 Top 10
+// 城市认领排行 Top 10
+// 口径说明：
+//   sold_blocks      = 本站 blocks 表中 status='sold' 的区块（本地已认领）
+//   activated_blocks = 官方榜单同步的「已开启区块数」（classes/Block.php 约定：
+//                      该字段由 sync-cities.php / 手动维护，不被本站认领操作覆盖）
+//   渗透率            = 本地已认领 / 官方已开启区块（本地占官方开启块的比例）
+// 注意：不要用 sold_blocks / COUNT(blocks) 当「激活率」——分母只是本站留下过记录
+//      的块数，并非城市容量，且取消认领只减分子不改分母，比率无业务含义。
 $cityStats = $pdo->query("
-    SELECT c.id, c.name, c.pinyin,
+    SELECT c.id, c.name, c.pinyin, c.activated_blocks,
            COUNT(b.id) as total_blocks,
            SUM(CASE WHEN b.status = 'sold' THEN 1 ELSE 0 END) as sold_blocks
     FROM cities c
@@ -80,10 +87,11 @@ $recentTx = $pdo->query("
 
 <!-- 双栏布局 -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-    <!-- 城市激活排行 -->
+    <!-- 城市认领排行 -->
     <div class="admin-card">
         <div class="admin-card-header">
-            <span class="admin-card-title"><i class="fas fa-trophy" style="margin-right:8px;color:var(--admin-accent);"></i>城市激活排行 Top 10</span>
+            <span class="admin-card-title"><i class="fas fa-trophy" style="margin-right:8px;color:var(--admin-accent);"></i>城市认领排行 Top 10</span>
+            <span style="font-size:12px;color:var(--admin-text-muted);">本地已认领 / 官方已开启区块</span>
         </div>
         <div class="admin-card-body" style="padding:0;">
             <table class="admin-data-table">
@@ -91,25 +99,34 @@ $recentTx = $pdo->query("
                     <tr>
                         <th>排名</th>
                         <th>城市</th>
-                        <th>已激活</th>
-                        <th>激活率</th>
+                        <th>本地已认领</th>
+                        <th>官方开启区块</th>
+                        <th>渗透率</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($cityStats as $i => $cs):
-                        $pct = $cs['total_blocks'] > 0 ? round($cs['sold_blocks'] / $cs['total_blocks'] * 100, 1) : 0;
+                        $sold     = (int)$cs['sold_blocks'];
+                        $official = (int)($cs['activated_blocks'] ?? 0);
+                        // 官方开启区块为 0（未同步）时不计算比率，避免显示误导性的 0%
+                        $rate     = $official > 0 ? round($sold / $official * 100, 1) : null;
                     ?>
                     <tr>
                         <td><span style="font-weight:700;color:<?= $i < 3 ? 'var(--admin-accent)' : 'var(--admin-text-muted)' ?>;">#<?= $i + 1 ?></span></td>
                         <td><?= htmlspecialchars($cs['name']) ?></td>
-                        <td><?= number_format($cs['sold_blocks']) ?></td>
+                        <td><?= number_format($sold) ?></td>
+                        <td><?= $official > 0 ? number_format($official) : '<span class="admin-text-muted">—</span>' ?></td>
                         <td>
+                            <?php if ($rate === null): ?>
+                                <span style="font-size:12px;color:var(--admin-text-muted);">未同步</span>
+                            <?php else: ?>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <div style="flex:1;height:6px;background:var(--admin-bg);border-radius:3px;overflow:hidden;">
-                                    <div style="width:<?= $pct ?>%;height:100%;background:linear-gradient(90deg,var(--admin-accent),var(--admin-accent-light));border-radius:3px;"></div>
+                                    <div style="width:<?= $rate ?>%;min-width:2px;height:100%;background:linear-gradient(90deg,var(--admin-accent),var(--admin-accent-light));border-radius:3px;"></div>
                                 </div>
-                                <span style="font-size:12px;min-width:36px;text-align:right;"><?= $pct ?>%</span>
+                                <span style="font-size:12px;min-width:40px;text-align:right;"><?= $rate ?>%</span>
                             </div>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
