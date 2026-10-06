@@ -29,6 +29,12 @@ Thumbs.db
 # 项目元数据
 .codebuddy/
 
+# 各 agent 本地 skill 目录（genui-app-builder 等，仅本机使用，不入库）
+.claude/
+.codex/
+.workbuddy/
+.skill/
+
 # ACME SSL 证书验证临时文件
 .well-known/
 
