@@ -72,7 +72,8 @@ if (isset($_GET['edit'])) {
 }
 
 $arts = $pdo->query("SELECT id, title FROM help_articles WHERE status = 'published' ORDER BY title")->fetchAll();
-$terms = $pdo->query("SELECT g.*, a.title AS art_title FROM help_glossary g LEFT JOIN help_articles a ON a.id = g.related_article_id ORDER BY g.sort_order, g.pinyin, g.id LIMIT 300")->fetchAll();
+// 统一排序：手动排序值升序（默认 0 时并列）→ 创建时间倒序（id DESC）兜底
+$terms = $pdo->query("SELECT g.*, a.title AS art_title FROM help_glossary g LEFT JOIN help_articles a ON a.id = g.related_article_id ORDER BY g.sort_order, g.id DESC LIMIT 300")->fetchAll();
 
 $admin_site_config = ['site' => 'main', 'page_title' => '术语表管理'];
 require_once '../shared/admin/admin-header.php';
@@ -121,7 +122,8 @@ require_once '../shared/admin/admin-header.php';
                     <input name="term" required value="<?= htmlspecialchars($editing['term'] ?? '') ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">拼音（字母序排布用）</label>
                     <input name="pinyin" value="<?= htmlspecialchars($editing['pinyin'] ?? '') ?>" placeholder="英文术语可留空自动取原词" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-family:monospace;"></div>
-                <div><label style="display:block;font-size:13px;margin-bottom:4px;">排序</label>
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">排序
+                    <span style="font-weight:400;color:#64748b;">小的靠前；默认 0 时按创建时间倒序，设负数可置顶</span></label>
                     <input name="sort_order" type="number" value="<?= $editing['sort_order'] ?? 0 ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
             </div>
             <div style="margin-top:12px;"><label style="display:block;font-size:13px;margin-bottom:4px;">释义 *</label>

@@ -272,7 +272,8 @@ $page = min($page, $pages);
 
 $listStmt = $pdo->prepare(
     "SELECT a.*, c.name AS cat_name FROM help_articles a JOIN help_categories c ON c.id = a.category_id
-     WHERE $where ORDER BY a.updated_at DESC LIMIT " . (($page - 1) * $per) . ", $per"
+     // 统一排序：置顶优先 → 更新时间倒序 → id 倒序兜底（help_articles 无 sort_order 字段）
+     WHERE $where ORDER BY a.is_pinned DESC, a.updated_at DESC, a.id DESC LIMIT " . (($page - 1) * $per) . ", $per"
 );
 $listStmt->execute($params);
 $arts = $listStmt->fetchAll();

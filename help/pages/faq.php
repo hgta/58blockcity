@@ -21,7 +21,7 @@ foreach ($cats as $c) {
              FROM help_faq f
              LEFT JOIN help_articles a ON a.id = f.related_article_id AND a.status = 'published'
              WHERE f.category_id = :cid AND f.status = 'published'
-             ORDER BY f.sort_order, f.id"
+             ORDER BY f.sort_order, f.id DESC"
         );
         $stmt->execute([':cid' => $c['id']]);
         $items = $stmt->fetchAll();

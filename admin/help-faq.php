@@ -89,7 +89,8 @@ $arts = $pdo->query("SELECT id, title FROM help_articles WHERE status = 'publish
 
 $fltCat = (int)($_GET['cat'] ?? 0);
 $where = $fltCat > 0 ? "WHERE f.category_id = " . $fltCat : '';
-$faqs = $pdo->query("SELECT f.*, c.name AS cat_name FROM help_faq f JOIN help_categories c ON c.id = f.category_id $where ORDER BY f.category_id, f.sort_order, f.id LIMIT 200")->fetchAll();
+// 统一排序：手动排序值升序（默认 0 时并列）→ 创建时间倒序（id DESC）兜底
+$faqs = $pdo->query("SELECT f.*, c.name AS cat_name FROM help_faq f JOIN help_categories c ON c.id = f.category_id $where ORDER BY f.sort_order, f.id DESC LIMIT 200")->fetchAll();
 
 $admin_site_config = ['site' => 'main', 'page_title' => 'FAQ 管理'];
 require_once '../shared/admin/admin-header.php';
@@ -162,7 +163,8 @@ require_once '../shared/admin/admin-header.php';
                         <option value="<?= $a['id'] ?>" <?= ($f['related_article_id'] ?? '') == $a['id'] ? 'selected' : '' ?>><?= htmlspecialchars(mb_substr($a['title'], 0, 24)) ?></option>
                         <?php endforeach; ?>
                     </select></div>
-                <div><label style="display:block;font-size:13px;margin-bottom:4px;">排序</label>
+                <div><label style="display:block;font-size:13px;margin-bottom:4px;">排序
+                    <span style="font-weight:400;color:#64748b;">小的靠前；默认 0 时按创建时间倒序，设负数可置顶</span></label>
                     <input name="sort_order" type="number" value="<?= $f['sort_order'] ?? 0 ?>" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;"></div>
                 <div><label style="display:block;font-size:13px;margin-bottom:4px;">状态</label>
                     <select name="status" style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;">
