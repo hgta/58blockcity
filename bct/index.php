@@ -268,7 +268,7 @@ require_once 'includes/header.php';
                         <?= $spread != 0 ? '¥'.number_format(abs($spread), 2) : '-' ?>
                     </td>
                     <td data-label="操作" class="text-center mob-actions">
-                        <a href="city.php?city=<?= urlencode($row['city']) ?>" class="btn btn-xs btn-primary">交易</a>
+                        <a href="orders.php?city=<?= urlencode($row['city']) ?>" class="btn btn-xs btn-primary">交易</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
