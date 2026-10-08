@@ -354,6 +354,19 @@
   .bct-trade-item .num { font-size: 11px; }
 }
 
+/* 买卖盘区段标题：明确红=卖盘、绿=买盘，不再只靠颜色辨认 */
+.bct-order-book .ob-side-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bct-order-book .ob-side-label i { font-size: 10px; }
+.bct-order-book .ob-side-label.sell { color: var(--bct-down); }
+.bct-order-book .ob-side-label.buy { color: var(--bct-up); }
+
 /* 挂单条目（首页买入/卖出列表）：3 列（城市/价格/数量），不套用成交 5 列的空列 */
 .bct-trade-item.bct-order-item { grid-template-columns: minmax(0, 1fr) 84px 88px; }
 .bct-trade-item.bct-order-item .price { grid-column: 2; }

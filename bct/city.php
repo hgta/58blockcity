@@ -128,6 +128,7 @@ require_once 'includes/header.php';
                                 <span class="text-right">累计</span>
                             </div>
                             <div class="order-book-asks">
+                                <div class="ob-side-label sell"><i class="fas fa-arrow-up"></i> 卖盘</div>
                                 <?php foreach ($orderBookAsks as $i => $ask): ?>
                                 <div class="bct-order-book-row ask <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($ask['cumulative_amount']/max(1,$orderBookAsks[count($orderBookAsks)-1]['cumulative_amount'])*100)) ?>%;"></span>
@@ -139,6 +140,7 @@ require_once 'includes/header.php';
                             </div>
                             <div style="height:1px;background:var(--bct-border);margin:8px 0;"></div>
                             <div class="order-book-bids">
+                                <div class="ob-side-label buy"><i class="fas fa-arrow-down"></i> 买盘</div>
                                 <?php foreach ($orderBookBids as $i => $bid): ?>
                                 <div class="bct-order-book-row bid <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($bid['cumulative_amount']/max(1,$orderBookBids[count($orderBookBids)-1]['cumulative_amount'])*100)) ?>%;"></span>
