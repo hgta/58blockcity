@@ -280,7 +280,7 @@ class CityBCT {
      * 都是一个价格点；成交量列 volume 同源（SUM(amount)），不再恒为 0。
      * 价格调价历史（bct_price_history）仅用于涨跌幅/24h 高低价统计。
      */
-    public function getPriceHistory($city, $interval = '24h') {
+    public function getPriceHistory($city, $interval = '30d') {
         $intervalMap = [
             '1h' => ['start' => 'INTERVAL 1 HOUR', 'group' => '%Y-%m-%d %H:%i'],
             '24h' => ['start' => 'INTERVAL 24 HOUR', 'group' => '%Y-%m-%d %H:00'],
@@ -305,6 +305,29 @@ class CityBCT {
         ");
         $stmt->execute([$cfg['group'], $city]);
         $rows = $stmt->fetchAll();
+
+        // 稀疏兜底：交易量小的时候，按天/小时分组后可能只剩 1 个点（例如 30d 视图下
+        // 两笔成交正好落在同一天），此时退化为「一笔成交一个点」，有成交就能画出走势
+        if (count($rows) < 2) {
+            $stmt = $this->pdo->prepare("
+                SELECT DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as time_key,
+                       price, amount, created_at
+                FROM bct_transactions
+                WHERE city = ? AND tx_type = 'trade' AND created_at >= DATE_SUB(NOW(), {$cfg['start']})
+                ORDER BY created_at ASC
+            ");
+            $stmt->execute([$city]);
+            $history = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $p = (float)$row['price'];
+                $history[] = [
+                    'time' => $row['time_key'],
+                    'open' => $p, 'high' => $p, 'low' => $p, 'close' => $p,
+                    'volume' => (float)$row['amount']
+                ];
+            }
+            return $history;
+        }
 
         $history = [];
         foreach ($rows as $row) {

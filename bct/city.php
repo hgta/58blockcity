@@ -26,9 +26,10 @@ $cityInfo['volume_24h'] = $cityBCT->getCity24hVolume($city);
 $cityInfo['market_cap'] = $cityInfo['circulating_supply'] * $cityInfo['current_price'];
 $highLow = $cityBCT->getCity24hHighLow($city);
 
-$interval = $_GET['interval'] ?? '24h';
+// 交易量尚少，默认展示 30 天走势（24h 常常没有成交点）
+$interval = $_GET['interval'] ?? '30d';
 $allowedIntervals = ['1h','24h','7d','30d'];
-if (!in_array($interval, $allowedIntervals)) $interval = '24h';
+if (!in_array($interval, $allowedIntervals)) $interval = '30d';
 $priceHistory = $cityBCT->getPriceHistory($city, $interval);
 
 $orderBookAsks = $bctOrder->getOrderBook($city, 'sell', 50);
