@@ -169,6 +169,7 @@ require_once 'includes/header.php';
                             $sideText = $side === 'buy' ? '买' : '卖';
                         ?>
                         <div class="bct-trade-item">
+                            <span><strong><?= htmlspecialchars($city) ?></strong></span>
                             <span class="side <?= $side ?>"><?= $sideText ?></span>
                             <span class="price">¥<?= number_format($t['price'], 2) ?></span>
                             <span class="num"><?= number_format($t['amount']) ?></span>
