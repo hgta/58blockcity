@@ -18,7 +18,7 @@ try {
             'amount' => $t['amount'],
             'price' => $t['price'],
             'order_type' => $t['order_type'] ?? 'buy',
-            'time' => date('H:i', strtotime($t['created_at']))
+            'time' => date('m-d H:i', strtotime($t['created_at']))
         ];
     }
 

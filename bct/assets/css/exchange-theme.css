@@ -330,7 +330,7 @@
 /* 最新成交列表：固定网格列，各列对齐（城市自适应缩省略，价格/数量右对齐，时间固定窄列） */
 .bct-trade-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px 84px 88px 42px;
+  grid-template-columns: minmax(0, 1fr) 30px 84px 88px 58px;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
@@ -350,7 +350,7 @@
 .bct-trade-item .num { grid-column: 4; text-align: right; font-family: monospace; }
 .bct-trade-item .time { grid-column: 5; text-align: right; color: var(--bct-text-muted); font-size: 11px; }
 @media (max-width: 575px) {
-  .bct-trade-item { grid-template-columns: minmax(0, 1fr) 26px 76px 76px 38px; font-size: 12px; }
+  .bct-trade-item { grid-template-columns: minmax(0, 1fr) 26px 76px 76px 50px; font-size: 12px; }
   .bct-trade-item .num { font-size: 11px; }
 }
 

@@ -218,7 +218,7 @@ require_once 'includes/header.php';
                     <span class="side <?= $side ?>"><?= $sideText ?></span>
                     <span class="price">¥<?= number_format($t['price'], 2) ?></span>
                     <span class="num"><?= number_format($t['amount']) ?></span>
-                    <span class="time"><?= date('H:i', strtotime($t['created_at'])) ?></span>
+                    <span class="time"><?= date('m-d H:i', strtotime($t['created_at'])) ?></span>
                 </div>
                 <?php endforeach; ?>
                 <?php endif; ?>
