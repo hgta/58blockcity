@@ -171,7 +171,7 @@ require_once 'includes/header.php';
                 <div class="text-center" style="padding:30px;color:var(--bct-text-secondary);">暂无买入挂单</div>
                 <?php else: ?>
                 <?php foreach ($activeBuyOrders as $o): ?>
-                <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item" style="text-decoration:none;" title="查看该挂单详情">
+                <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item bct-order-item" style="text-decoration:none;" title="查看该挂单详情">
                     <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
                     <span class="price">¥<?= number_format($o['price'], 2) ?></span>
                     <span class="num"><?= number_format($o['amount']) ?></span>
@@ -192,7 +192,7 @@ require_once 'includes/header.php';
                 <div class="text-center" style="padding:30px;color:var(--bct-text-secondary);">暂无卖出挂单</div>
                 <?php else: ?>
                 <?php foreach ($activeSellOrders as $o): ?>
-                <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item" style="text-decoration:none;" title="查看该挂单详情">
+                <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item bct-order-item" style="text-decoration:none;" title="查看该挂单详情">
                     <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
                     <span class="price">¥<?= number_format($o['price'], 2) ?></span>
                     <span class="num"><?= number_format($o['amount']) ?></span>

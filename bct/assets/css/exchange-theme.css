@@ -354,6 +354,14 @@
   .bct-trade-item .num { font-size: 11px; }
 }
 
+/* 挂单条目（首页买入/卖出列表）：3 列（城市/价格/数量），不套用成交 5 列的空列 */
+.bct-trade-item.bct-order-item { grid-template-columns: minmax(0, 1fr) 84px 88px; }
+.bct-trade-item.bct-order-item .price { grid-column: 2; }
+.bct-trade-item.bct-order-item .num { grid-column: 3; }
+@media (max-width: 575px) {
+  .bct-trade-item.bct-order-item { grid-template-columns: minmax(0, 1fr) 76px 76px; }
+}
+
 .bct-market-table th { cursor: pointer; user-select: none; }
 .bct-market-table th:hover { color: var(--bct-text); }
 .bct-market-table .sort-icon { font-size: 10px; margin-left: 4px; color: var(--bct-text-muted); }
