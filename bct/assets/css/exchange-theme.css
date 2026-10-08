@@ -773,3 +773,20 @@ body.bct-theme-dark .pagination > li > a:hover {
   background-color: var(--bct-bg-hover) !important;
   color: var(--bct-text) !important;
 }
+
+/* ===== 接单确认弹窗（挂单大厅 / 挂单详情页共用） ===== */
+.claim-modal { position: fixed; inset: 0; z-index: 9999; }
+.claim-modal-mask { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+.claim-modal-box {
+    position: relative; width: 92%; max-width: 420px; margin: 12vh auto 0;
+    background: var(--bct-bg-secondary); border: 1px solid var(--bct-border);
+    border-radius: 12px; padding: 20px;
+}
+.claim-modal-box h4 { margin: 0 0 14px; font-size: 16px; color: var(--bct-text); }
+.claim-modal-info { margin-bottom: 4px; }
+.claim-modal-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed var(--bct-border); }
+.claim-modal-row span { color: var(--bct-text-secondary); }
+.claim-modal-row strong { color: var(--bct-text); }
+.claim-modal-tip { font-size: 12px; color: var(--bct-text-secondary); line-height: 1.7; margin: 12px 0 16px; }
+.claim-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.claim-modal-box .claim-error { color: #e07b7b; font-size: 12px; margin-top: 8px; min-height: 16px; }

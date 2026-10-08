@@ -211,6 +211,7 @@ require_once 'includes/header.php';
                     <td data-label="剩余有效期" class="<?= $expCls ?><?= $expTitle ? ' has-tip' : '' ?>"<?= $expTitle ? ' title="' . htmlspecialchars($expTitle) . '"' : '' ?>><?= $expText ?></td>
                     <td data-label="发布时间" class="text-muted" style="white-space:nowrap;"><?= date('m-d H:i', strtotime($o['created_at'])) ?></td>
                     <td data-label="操作" class="mob-actions" style="white-space:nowrap;">
+                        <a href="order.php?id=<?= (int)$o['id'] ?>" class="btn btn-xs btn-default" title="查看该挂单详情"><i class="fas fa-file-invoice"></i> 详情</a>
                         <?php if ($isMine): ?>
                             <?php if ($inTrade): ?>
                             <a href="user/dashboard.php#claims" class="btn btn-xs btn-primary">交易中 · 去处理</a>
@@ -357,21 +358,7 @@ require_once 'includes/header.php';
 .bct-hall-table td.exp-trade    { color: var(--bct-text-secondary); font-style: italic; cursor: help; }
 .bct-hall-table td.has-tip      { cursor: help; }
 
-/* 接单确认弹窗 */
-.claim-modal { position: fixed; inset: 0; z-index: 9999; }
-.claim-modal-mask { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
-.claim-modal-box {
-    position: relative; width: 92%; max-width: 420px; margin: 12vh auto 0;
-    background: var(--bct-bg-secondary); border: 1px solid var(--bct-border);
-    border-radius: 12px; padding: 20px;
-}
-.claim-modal-box h4 { margin: 0 0 14px; font-size: 16px; color: var(--bct-text); }
-.claim-modal-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed var(--bct-border); }
-.claim-modal-row span { color: var(--bct-text-secondary); }
-.claim-modal-row strong { color: var(--bct-text); }
-.claim-modal-tip { font-size: 12px; color: var(--bct-text-secondary); line-height: 1.7; margin: 12px 0 16px; }
-.claim-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
-.claim-modal-box .claim-error { color: #e07b7b; font-size: 12px; margin-top: 8px; min-height: 16px; }
+/* 接单确认弹窗样式已提取到 assets/css/exchange-theme.css（挂单大厅与挂单详情页共用） */
 
 /* 移动端：表格转卡片堆叠，操作按钮始终可见 */
 @media (max-width: 767px) {
