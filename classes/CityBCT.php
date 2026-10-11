@@ -47,7 +47,8 @@ class CityBCT {
      *  - 记录失败不阻断价格更新（历史是派生数据，不应影响主流程）
      */
     public function updatePrice($city, $newPrice) {
-        $newPrice = round((float)$newPrice, 2);
+        // 单价精度 3 位小数（与 cities.bct_current_price decimal(10,3) 对齐）
+        $newPrice = round((float)$newPrice, 3);
 
         // 读取当前价与基础价：用于判断是否真的变化，以及记录当时的基础价
         $stmt = $this->pdo->prepare("SELECT bct_current_price, bct_base_price FROM cities WHERE name = ?");
@@ -61,7 +62,7 @@ class CityBCT {
         $ok = $stmt->execute([$newPrice, $city]);
 
         // 价格未变化则不重复记录
-        if ($ok && round((float)$before['bct_current_price'], 2) !== $newPrice) {
+        if ($ok && round((float)$before['bct_current_price'], 3) !== $newPrice) {
             $this->recordPriceHistory($city, $newPrice, $before['bct_base_price']);
         }
 

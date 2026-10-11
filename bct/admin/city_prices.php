@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cityBCT->updatePrice($city, $currentPrice);
             $cityBCT->updateBasePrice($city, $basePrice);
 
-            $_SESSION['message'] = "【{$city}】人气值单价已更新为 ¥" . number_format($currentPrice, 2);
+            $_SESSION['message'] = "【{$city}】人气值单价已更新为 ¥" . bct_fmt_price($currentPrice);
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
         }
