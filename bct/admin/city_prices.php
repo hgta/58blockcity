@@ -2,6 +2,7 @@
 require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../classes/CityBCT.php';
+require_once '../includes/price-fmt.php';
 
 $cityBCT = new CityBCT($pdo);
 
@@ -317,13 +318,13 @@ require_once '../../shared/admin/admin-header.php';
                             <td><?= $rankMap[$city['city']] ?? ($offset + $idx + 1) ?></td>
                             <td><strong><?= htmlspecialchars($city['city']) ?></strong></td>
                             <td>
-                                <input type="number" name="current_price" step="0.01" min="0.01" required
-                                       value="<?= number_format($city['current_price'], 2) ?>"
+                                <input type="number" name="current_price" step="0.001" min="0.001" required
+                                       value="<?= bct_fmt_price($city['current_price']) ?>"
                                        style="width:110px;padding:6px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
                             </td>
                             <td>
-                                <input type="number" name="base_price" step="0.01" min="0.01" required
-                                       value="<?= number_format($city['base_price'], 2) ?>"
+                                <input type="number" name="base_price" step="0.001" min="0.001" required
+                                       value="<?= bct_fmt_price($city['base_price']) ?>"
                                        style="width:110px;padding:6px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;">
                             </td>
                             <td style="color:<?= $city['change_pct'] >= 0 ? '#4ade80' : '#f87171' ?>;">

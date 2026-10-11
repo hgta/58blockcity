@@ -127,7 +127,7 @@ require_once 'includes/header.php';
     ?>
     <a href="city.php?city=<?= urlencode($city['city']) ?>" class="bct-city-card">
         <div class="city-name"><?= htmlspecialchars($city['city']) ?></div>
-        <div class="city-price">¥<?= number_format($city['current_price'], 2) ?></div>
+        <div class="city-price">¥<?= bct_fmt_price($city['current_price']) ?></div>
         <div class="city-change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</div>
         <div class="city-meta">
             <span>24h 成交 ¥<?= number_format($city['volume_24h'], 0) ?></span>
@@ -166,7 +166,7 @@ require_once 'includes/header.php';
                 <tr class="<?= $isTop5 ? 'top5' : '' ?>">
                     <td data-label="排名"><span class="rank"><?= $rank ?></span></td>
                     <td data-label="城市"><strong><?= htmlspecialchars($city['city']) ?></strong></td>
-                    <td data-label="价格" class="price">¥<?= number_format($city['current_price'], 2) ?></td>
+                    <td data-label="价格" class="price">¥<?= bct_fmt_price($city['current_price']) ?></td>
                     <td data-label="24h 涨跌" class="change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</td>
                     <td data-label="24h 成交量" class="volume">¥<?= number_format($city['volume_24h'], 2) ?></td>
                     <td data-label="流通市值" class="market-cap">¥<?= number_format($city['market_cap'] / 10000, 2) ?> 万</td>

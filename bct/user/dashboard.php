@@ -77,7 +77,7 @@ function renderOrdersPane(array $orders, string $paneTab, BCTOrder $order): void
                         <td data-label="类型"><span class="side <?= $isBuy ? 'buy' : 'sell' ?>"><?= $isBuy ? '求购' : '挂售' ?></span></td>
                         <td data-label="城市"><?= htmlspecialchars($o['city']) ?></td>
                         <td data-label="数量"><?= number_format($o['amount']) ?> BCT</td>
-                        <td data-label="价格">¥<?= number_format($o['price'], 2) ?></td>
+                        <td data-label="价格">¥<?= bct_fmt_price($o['price']) ?></td>
                         <td data-label="总金额">¥<?= number_format($o['total_amount'] ?? ($o['amount']*$o['price']), 2) ?></td>
                         <td data-label="交易方式" style="font-size:12px;"><?= $tradeTypes[$o['trade_type']] ?? $o['trade_type'] ?></td>
                         <td data-label="状态">
@@ -432,7 +432,7 @@ require_once '../includes/header.php';
                                         </span>
                                     </td>
                                     <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
-                                    <td class="text-right num">¥<?= number_format($row['price'], 2) ?></td>
+                                    <td class="text-right num">¥<?= bct_fmt_price($row['price']) ?></td>
                                     <td class="text-right">
                                         <div class="qty-stepper">
                                             <button type="button" class="qty-btn" data-step="-1" tabindex="-1" aria-label="减少">−</button>
@@ -518,7 +518,7 @@ require_once '../includes/header.php';
                         <td data-label="城市"><strong><?= htmlspecialchars($c['city']) ?></strong></td>
                         <td data-label="我的角色"><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
                         <td data-label="数量"><?= number_format((int)$c['amount']) ?> BCT</td>
-                        <td data-label="单价">¥<?= number_format((float)$c['price'], 2) ?></td>
+                        <td data-label="单价">¥<?= bct_fmt_price((float)$c['price']) ?></td>
                         <td data-label="总价">¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
                         <td data-label="对方">
                             <a href="../messages/index.php?with=<?= $counterId ?>" title="站内信联系">
@@ -588,7 +588,7 @@ require_once '../includes/header.php';
                         <td data-label="城市"><strong><?= htmlspecialchars($c['city']) ?></strong></td>
                         <td data-label="我的角色"><span class="side <?= $amBuyer ? 'buy' : 'sell' ?>"><?= $amBuyer ? '买方（付款）' : '卖方（收款）' ?></span></td>
                         <td data-label="数量"><?= number_format((int)$c['amount']) ?> BCT</td>
-                        <td data-label="单价">¥<?= number_format((float)$c['price'], 2) ?></td>
+                        <td data-label="单价">¥<?= bct_fmt_price((float)$c['price']) ?></td>
                         <td data-label="总价">¥<?= number_format((int)$c['amount'] * (float)$c['price'], 2) ?></td>
                         <td data-label="对方">
                             <a href="../messages/index.php?with=<?= $counterId ?>" title="站内信联系">

@@ -173,7 +173,7 @@ require_once 'includes/header.php';
                 <?php foreach ($activeBuyOrders as $o): ?>
                 <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item bct-order-item" style="text-decoration:none;" title="查看该挂单详情">
                     <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
-                    <span class="price">¥<?= number_format($o['price'], 2) ?></span>
+                    <span class="price">¥<?= bct_fmt_price($o['price']) ?></span>
                     <span class="num"><?= number_format($o['amount']) ?></span>
                 </a>
                 <?php endforeach; ?>
@@ -194,7 +194,7 @@ require_once 'includes/header.php';
                 <?php foreach ($activeSellOrders as $o): ?>
                 <a href="order.php?id=<?= (int)$o['id'] ?>" class="bct-trade-item bct-order-item" style="text-decoration:none;" title="查看该挂单详情">
                     <span><strong><?= htmlspecialchars($o['city']) ?></strong></span>
-                    <span class="price">¥<?= number_format($o['price'], 2) ?></span>
+                    <span class="price">¥<?= bct_fmt_price($o['price']) ?></span>
                     <span class="num"><?= number_format($o['amount']) ?></span>
                 </a>
                 <?php endforeach; ?>
@@ -216,7 +216,7 @@ require_once 'includes/header.php';
                 <div class="bct-trade-item">
                     <span><strong><?= htmlspecialchars($t['city']) ?></strong></span>
                     <span class="side <?= $side ?>"><?= $sideText ?></span>
-                    <span class="price">¥<?= number_format($t['price'], 2) ?></span>
+                    <span class="price">¥<?= bct_fmt_price($t['price']) ?></span>
                     <span class="num"><?= number_format($t['amount']) ?></span>
                     <span class="time"><?= date('m-d H:i', strtotime($t['created_at'])) ?></span>
                 </div>

@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `bct_orders` (
   `city` varchar(50) NOT NULL,
   `type` enum('buy','sell') NOT NULL,
   `amount` int(11) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
+  `price` decimal(10,3) NOT NULL,
   `total_amount` decimal(10,2) NOT NULL,
   `trade_type` enum('platform','mediator','direct') NOT NULL,
   `status` enum('pending','processing','completed','canceled','expired') DEFAULT 'pending',
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `bct_transactions` (
   `to_user` int(11) NOT NULL,
   `city` varchar(50) NOT NULL,
   `amount` int(11) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
+  `price` decimal(10,3) NOT NULL,
   `fee` decimal(10,2) DEFAULT '0.00',
   `fee_type` varchar(20) DEFAULT NULL,
   `net_amount` decimal(10,2) NOT NULL,
@@ -122,8 +122,8 @@ CREATE TABLE IF NOT EXISTS `bct_price_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   -- 显式对齐 cities.name 的排序规则（utf8mb4_unicode_ci），避免比较时报 #1267
   `city` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '城市/词条名',
-  `price` decimal(10,2) NOT NULL COMMENT '变更后的当前价',
-  `base_price` decimal(10,2) DEFAULT NULL COMMENT '变更时的基础价',
+  `price` decimal(10,3) NOT NULL COMMENT '变更后的当前价',
+  `base_price` decimal(10,3) DEFAULT NULL COMMENT '变更时的基础价',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
   PRIMARY KEY (`id`),
   KEY `idx_city_created` (`city`,`created_at`),
@@ -227,8 +227,8 @@ CREATE TABLE IF NOT EXISTS `cities` (
   `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'active' COMMENT '状态',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `bct_base_price` decimal(10,2) NOT NULL DEFAULT '0.10' COMMENT 'BCT 基础单价（人气值市场底价）',
-  `bct_current_price` decimal(10,2) NOT NULL DEFAULT '0.10' COMMENT 'BCT 当前单价（人气值市场实时价）',
+  `bct_base_price` decimal(10,3) NOT NULL DEFAULT '0.100' COMMENT 'BCT 基础单价（人气值市场底价）',
+  `bct_current_price` decimal(10,3) NOT NULL DEFAULT '0.100' COMMENT 'BCT 当前单价（人气值市场实时价）',
   `bct_price_updated` datetime DEFAULT NULL COMMENT 'BCT 单价最近更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='城市数据表';
 

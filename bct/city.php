@@ -55,7 +55,7 @@ require_once 'includes/header.php';
 
 <div class="bct-city-hero">
     <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-        <div class="city-price-large">¥<?= number_format($cityInfo['current_price'], 2) ?></div>
+        <div class="city-price-large">¥<?= bct_fmt_price($cityInfo['current_price']) ?></div>
         <?php $cls = $cityInfo['change_pct'] >= 0 ? 'up' : 'down'; $sign = $cityInfo['change_pct'] >= 0 ? '+' : ''; ?>
         <div class="city-change-large <?= $cls ?>"><?= $sign ?><?= number_format($cityInfo['change_pct'], 2) ?>%</div>
     </div>
@@ -132,7 +132,7 @@ require_once 'includes/header.php';
                                 <?php foreach ($orderBookAsks as $i => $ask): ?>
                                 <div class="bct-order-book-row ask <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($ask['cumulative_amount']/max(1,$orderBookAsks[count($orderBookAsks)-1]['cumulative_amount'])*100)) ?>%;"></span>
-                                    <span class="price"><?= number_format($ask['price'], 2) ?></span>
+                                    <span class="price"><?= bct_fmt_price($ask['price']) ?></span>
                                     <span class="text-right"><?= number_format($ask['total_amount']) ?></span>
                                     <span class="text-right"><?= number_format($ask['cumulative_amount']) ?></span>
                                 </div>
@@ -144,7 +144,7 @@ require_once 'includes/header.php';
                                 <?php foreach ($orderBookBids as $i => $bid): ?>
                                 <div class="bct-order-book-row bid <?= $i >= 10 ? 'hidden-row' : '' ?>">
                                     <span class="bar" style="width:<?= min(100, ($bid['cumulative_amount']/max(1,$orderBookBids[count($orderBookBids)-1]['cumulative_amount'])*100)) ?>%;"></span>
-                                    <span class="price"><?= number_format($bid['price'], 2) ?></span>
+                                    <span class="price"><?= bct_fmt_price($bid['price']) ?></span>
                                     <span class="text-right"><?= number_format($bid['total_amount']) ?></span>
                                     <span class="text-right"><?= number_format($bid['cumulative_amount']) ?></span>
                                 </div>
@@ -173,7 +173,7 @@ require_once 'includes/header.php';
                         <div class="bct-trade-item">
                             <span><strong><?= htmlspecialchars($city) ?></strong></span>
                             <span class="side <?= $side ?>"><?= $sideText ?></span>
-                            <span class="price">¥<?= number_format($t['price'], 2) ?></span>
+                            <span class="price">¥<?= bct_fmt_price($t['price']) ?></span>
                             <span class="num"><?= number_format($t['amount']) ?></span>
                             <span class="time"><?= date('m-d H:i', strtotime($t['created_at'])) ?></span>
                         </div>
@@ -199,7 +199,7 @@ require_once 'includes/header.php';
 
                 <div class="form-group">
                     <label>单价 (CNY/BCT)</label>
-                    <input type="number" name="price" id="quickPrice" class="form-control" step="0.01" min="0.01" value="<?= number_format($cityInfo['current_price'], 2) ?>" required>
+                    <input type="number" name="price" id="quickPrice" class="form-control" step="0.001" min="0.001" value="<?= bct_fmt_price($cityInfo['current_price']) ?>" required>
                 </div>
                 <div class="form-group">
                     <label>数量 (BCT)</label>
@@ -238,6 +238,10 @@ require_once 'includes/header.php';
 </div>
 
 <script>
+// 单价显示：最多 3 位小数，去尾零
+function fmtPrice3(v) {
+    return parseFloat(v).toFixed(3).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
 $(function() {
     // 图表
     <?php if (count($priceHistory) >= 2): ?>
@@ -304,7 +308,7 @@ $(function() {
                         html += '<div class="bct-trade-item">' +
                             '<span><strong>' + tradeCity + '</strong></span>' +
                             '<span class="side ' + side + '">' + text + '</span>' +
-                            '<span class="price">¥' + parseFloat(t.price).toFixed(4) + '</span>' +
+                            '<span class="price">¥' + fmtPrice3(t.price) + '</span>' +
                             '<span class="num">' + parseInt(t.amount).toLocaleString() + '</span>' +
                             '<span class="time">' + t.time + '</span>' +
                         '</div>';

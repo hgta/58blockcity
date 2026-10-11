@@ -121,7 +121,7 @@ if (isset($_SESSION['error'])) {
                     <tr>
                         <td><?= htmlspecialchars($it['city']) ?></td>
                         <td class="text-right num"><?= number_format($it['amount']) ?></td>
-                        <td class="text-right num"><?= number_format($it['price'], 2) ?></td>
+                        <td class="text-right num"><?= bct_fmt_price($it['price']) ?></td>
                         <td class="text-right num"><?= number_format($it['amount'] * $it['price'], 2) ?></td>
                         <td>
                             <?php if ($it['ok']): ?>
@@ -350,9 +350,9 @@ if (isset($_SESSION['error'])) {
                             <div class="field-col">
                                 <label class="field-label" for="price">单价 <span class="unit">元/BCT</span></label>
                                 <input type="number" class="form-control" id="price" name="price"
-                                       min="0.01" max="100" step="0.01" required
+                                       min="0.001" max="100" step="0.001" required
                                        placeholder="请输入单价"
-                                       value="<?= $selectedCityBCT ? number_format($selectedCityBCT['current_price'], 2) : '0.10' ?>">
+                                       value="<?= $selectedCityBCT ? bct_fmt_price($selectedCityBCT['current_price']) : '0.100' ?>">
                             </div>
                         </div>
                         <div class="field-hint">数量范围 <?= number_format(BatchOrderParser::MIN_AMOUNT) ?> - <?= number_format(BatchOrderParser::MAX_AMOUNT) ?> BCT · 最低单价 0.01 元</div>
@@ -1274,7 +1274,7 @@ $(document).ready(function() {
         const net = type === 'buy' ? total + fee : total - fee;
         
         $('#previewAmount').text(amount.toLocaleString());
-        $('#previewPrice').text(price.toFixed(2));
+        $('#previewPrice').text(fmtPrice3(price));
         $('#previewTotal').text(total.toFixed(2));
         $('#previewFee').text(fee.toFixed(2));
         $('#previewNet').text(net.toFixed(2));
@@ -1402,7 +1402,7 @@ function renderBatchPreview(res) {
             o.merged ? $('<span class="batch-merged">（累加）</span>') : ''
         ));
         $tr.append($('<td class="text-right num"></td>').attr('data-label', '数量').text(fmt(o.amount)));
-        $tr.append($('<td class="text-right num"></td>').attr('data-label', '单价').text(Number(o.price).toFixed(2)));
+        $tr.append($('<td class="text-right num"></td>').attr('data-label', '单价').text(fmtPrice3(o.price)));
         $tr.append($('<td class="text-right num"></td>').attr('data-label', '总价').text(Number(o.total).toFixed(2)));
 
         if (o.ok) {
@@ -1479,7 +1479,7 @@ function submitBatch() {
     var lines = [];
     $.each(batchRows, function(i, o) {
         if (o._removed || !o.ok) return;
-        lines.push(o.city + ' ' + o.amount + ' ' + Number(o.price).toFixed(2));
+        lines.push(o.city + ' ' + o.amount + ' ' + fmtPrice3(o.price));
     });
     if (!lines.length) {
         alert('没有可发布的挂单');
@@ -1496,6 +1496,10 @@ function submitBatch() {
 }
 
 function fmt(n) { return Number(n).toLocaleString(); }
+// 单价显示：最多 3 位小数，去尾零（与 PHP 端 bct_fmt_price 语义一致）
+function fmtPrice3(v) {
+    return parseFloat(v).toFixed(3).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
 function esc(s) {
     return $('<div></div>').text(s == null ? '' : s).html();
 }

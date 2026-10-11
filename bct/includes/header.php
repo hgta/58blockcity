@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/price-fmt.php';
 $site_config['title']       = $site_config['title'] ?? '58人气值市场 - BCT(BlockCity Token)大宗交易平台 | 58 BCT';
 $site_config['description'] = $site_config['description'] ?? '人气值市场是基于区块城市BlockCity的BCT人气值大宗交易平台，支持百万级交易、低至0%手续费、平台/中介/直接三种交易方式。';
 $site_config['keywords']    = $site_config['keywords'] ?? '58,人气值,BCT,区块城市,BlockCity,DAO,同城交流,BCT交易,人气值交易';

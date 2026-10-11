@@ -114,7 +114,7 @@ class BatchOrderParser
 
         foreach ($items as $item) {
             $city = isset($item['city']) ? $item['city'] : $item['input'];
-            $key = $city . "\x00" . number_format((float)$item['price'], 2, '.', '');
+            $key = $city . "\x00" . number_format((float)$item['price'], 3, '.', '');
 
             if (!isset($merged[$key])) {
                 $merged[$key] = [

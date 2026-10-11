@@ -183,7 +183,7 @@ require_once 'includes/header.php';
                         <?php if ($inTrade): ?><span class="hall-badge trading"><i class="fas fa-handshake"></i> 交易中</span><?php endif; ?>
                     </td>
                     <td data-label="城市"><a href="city.php?city=<?= urlencode($o['city']) ?>" style="color:var(--bct-text);"><strong><?= htmlspecialchars($o['city']) ?></strong></a></td>
-                    <td data-label="单价" class="price">¥<?= number_format($o['price'], 2) ?></td>
+                    <td data-label="单价" class="price">¥<?= bct_fmt_price($o['price']) ?></td>
                     <td data-label="数量"><?= number_format($o['amount']) ?></td>
                     <td data-label="总价">¥<?= number_format($o['amount'] * $o['price'], 2) ?></td>
                     <td data-label="挂单人">

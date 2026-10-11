@@ -23,7 +23,7 @@ if (!$orderId) {
     exit;
 }
 
-if ($amount <= 0 || $price < 0.01) {
+if ($amount <= 0 || $price < 0.001) {
     echo json_encode(['success' => false, 'message' => '数量或价格无效']);
     exit;
 }

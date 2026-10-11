@@ -8,6 +8,7 @@ require_once '../../config/database.php';
 require_once '../includes/auth.php';
 require_once '../../includes/functions.php';
 require_once '../../classes/City.php';
+require_once '../includes/price-fmt.php';
 
 checkAdmin();
 
@@ -339,7 +340,7 @@ require_once '../../shared/admin/admin-header.php';
                             </span>
                         </td>
                         <td style="text-align:right;font-family:monospace;"><?= number_format($o['amount']) ?></td>
-                        <td style="text-align:right;font-family:monospace;"><?= number_format($o['price'], 2) ?></td>
+                        <td style="text-align:right;font-family:monospace;"><?= bct_fmt_price($o['price']) ?></td>
                         <td style="text-align:right;font-family:monospace;"><?= number_format($o['total_amount'], 2) ?></td>
                         <td><?= $tradeLabels[$o['trade_type']] ?? $o['trade_type'] ?></td>
                         <td style="font-size:12px;color:#94a3b8;"><?= htmlspecialchars($o['contact_info'] ?: '-') ?></td>

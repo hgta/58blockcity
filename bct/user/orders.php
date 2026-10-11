@@ -110,7 +110,7 @@ if (isset($_SESSION['error'])) {
                     </td>
                     <td data-label="城市"><?= htmlspecialchars($order['city']) ?></td>
                     <td data-label="数量"><?= number_format($order['amount']) ?></td>
-                    <td data-label="单价">¥<?= number_format($order['price'], 2) ?></td>
+                    <td data-label="单价">¥<?= bct_fmt_price($order['price']) ?></td>
                     <td data-label="总金额">¥<?= number_format($order['total_amount'], 2) ?></td>
                     <td data-label="交易方式">
                         <?php 

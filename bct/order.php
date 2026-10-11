@@ -90,9 +90,9 @@ try {
 $msgUrl = $loggedIn ? 'messages/index.php?with=' . (int)$o['user_id'] : $loginUrl;
 
 $site_config['title'] = htmlspecialchars($o['city']) . ($isBuy ? ' 求购' : ' 挂售')
-    . ' ¥' . number_format((float)$o['price'], 2) . ' | BCT挂单详情';
+    . ' ¥' . bct_fmt_price((float)$o['price']) . ' | BCT挂单详情';
 $site_config['description'] = htmlspecialchars($o['city']) . ($isBuy ? '求购' : '挂售')
-    . '挂单：' . number_format((int)$o['amount']) . ' BCT @ ¥' . number_format((float)$o['price'], 2)
+    . '挂单：' . number_format((int)$o['amount']) . ' BCT @ ¥' . bct_fmt_price((float)$o['price'])
     . '，交易方式' . $tradeTypeText . '。查看并接单。';
 
 require_once 'includes/header.php';
@@ -120,7 +120,7 @@ require_once 'includes/header.php';
                 <div class="od-prices">
                     <div class="od-price-block">
                         <div class="od-price-label">单价</div>
-                        <div class="od-price-value">¥<?= number_format((float)$o['price'], 2) ?></div>
+                        <div class="od-price-value">¥<?= bct_fmt_price((float)$o['price']) ?></div>
                     </div>
                     <div class="od-price-op">×</div>
                     <div class="od-price-block">
