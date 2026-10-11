@@ -198,7 +198,24 @@ $buildUrl = function ($sortKey, $orderKey, $pageNo, $searchKw) {
 
 $admin_site_config = ['site' => 'bct', 'page_title' => '城市人气值单价管理'];
 require_once '../../shared/admin/admin-header.php';
+
+// 数据库单价精度自检：列仍是 decimal(10,2) 时，3 位小数会被库截断（存 0.065 变 0.07）
+$priceScale = null;
+try {
+    $priceScale = $pdo->query("SELECT NUMERIC_SCALE FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cities' AND COLUMN_NAME = 'bct_current_price'")->fetchColumn();
+} catch (Exception $e) { $priceScale = null; }
+$priceScaleReady = ($priceScale === null || (int)$priceScale >= 3);
 ?>
+
+<?php if (!$priceScaleReady): ?>
+<div class="admin-card" style="border-left:4px solid #f59e0b; margin-bottom:16px;">
+    <div class="admin-card-body" style="color:#fcd34d;">
+        数据库单价列仍是 decimal(10,2)，3 位小数存入后会被截断（0.065 会变成 0.07）。<br>
+        请执行迁移：<code style="color:#e2e8f0;">mysql -u 用户名 -p 库名 &lt; init/migration-bct-price-3dp.sql</code>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (!empty($_SESSION['message'])): ?>
 <div class="admin-card" style="border-left:4px solid #22c55e; margin-bottom:16px;">

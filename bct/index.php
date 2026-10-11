@@ -111,7 +111,7 @@ require_once 'includes/header.php';
         ?>
         <a href="city.php?city=<?= urlencode($city['city']) ?>" class="bct-ticker-item">
             <span class="city"><?= htmlspecialchars($city['city']) ?></span>
-            <span class="price">¥<?= number_format($city['current_price'], 2) ?></span>
+            <span class="price">¥<?= bct_fmt_price($city['current_price']) ?></span>
             <span class="change <?= $cls ?>"><?= $icon ?> <?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</span>
         </a>
         <?php endforeach; ?>
@@ -148,7 +148,7 @@ require_once 'includes/header.php';
     ?>
     <a href="city.php?city=<?= urlencode($city['city']) ?>" class="bct-city-card">
         <div class="city-name"><?= htmlspecialchars($city['city']) ?></div>
-        <div class="city-price">¥<?= number_format($city['current_price'], 2) ?></div>
+        <div class="city-price">¥<?= bct_fmt_price($city['current_price']) ?></div>
         <div class="city-change <?= $cls ?>"><?= $sign ?><?= number_format($city['change_pct'], 2) ?>%</div>
         <div class="city-meta">
             <span>24h 成交 ¥<?= number_format($city['volume_24h'], 0) ?></span>
@@ -262,10 +262,10 @@ require_once 'includes/header.php';
                     <td data-label="城市"><strong><?= htmlspecialchars($row['city']) ?></strong></td>
                     <td data-label="出售数量" class="text-right down"><?= $row['sell_amount'] > 0 ? number_format($row['sell_amount']) : '-' ?></td>
                     <td data-label="求购数量" class="text-right up"><?= $row['buy_amount'] > 0 ? number_format($row['buy_amount']) : '-' ?></td>
-                    <td data-label="最低售价" class="text-right"><?= $lowestSell > 0 ? '¥'.number_format($lowestSell, 2) : '-' ?></td>
-                    <td data-label="最高求购价" class="text-right"><?= $highestBuy > 0 ? '¥'.number_format($highestBuy, 2) : '-' ?></td>
+                    <td data-label="最低售价" class="text-right"><?= $lowestSell > 0 ? '¥'.bct_fmt_price($lowestSell) : '-' ?></td>
+                    <td data-label="最高求购价" class="text-right"><?= $highestBuy > 0 ? '¥'.bct_fmt_price($highestBuy) : '-' ?></td>
                     <td data-label="价差" class="text-right <?= $spread > 0 ? 'text-muted' : ($spread < 0 ? 'up' : 'text-muted') ?>">
-                        <?= $spread != 0 ? '¥'.number_format(abs($spread), 2) : '-' ?>
+                        <?= $spread != 0 ? '¥'.bct_fmt_price(abs($spread)) : '-' ?>
                     </td>
                     <td data-label="操作" class="text-center mob-actions">
                         <a href="orders.php?city=<?= urlencode($row['city']) ?>" class="btn btn-xs btn-primary">交易</a>
