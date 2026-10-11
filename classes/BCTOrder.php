@@ -837,7 +837,7 @@ class BCTOrder {
 			// 通知挂单人
 			$posterId = (int)$order['user_id'];
 			$takerName = $this->fetchUsername((int)$takerId);
-			$sideText = $order['type'] === 'sell' ? '求购' : '出售';
+			$sideText = $order['type'] === 'sell' ? '出售' : '求购';
 			$this->notify((int)$takerId, $posterId, sprintf(
 				"【BCT交易】用户 %s 接了你的%s单【%s】%d BCT @ ¥%s，请与其线下沟通付款与转账。",
 				$takerName, $sideText, $order['city'], (int)$order['amount'], number_format($order['price'], 2)
@@ -951,11 +951,11 @@ class BCTOrder {
 			// 成交价即最新市场价：更新城市现价（同时落一条价格历史，供涨跌统计）
 			$this->syncCityPriceAfterTrade($order['city'], (float)$order['price']);
 
-			// 双向通知
+			// 双向通知：操作者（卖方）收到"你已确认收款"，买方收到"对方已确认收款"
 			$this->notify((int)$userId, (int)$claim['buyer_side_user_id'],
-				"【BCT交易】对方已确认收款，你们在【{$order['city']}】的交易已完成（".(int)$order['amount']." BCT @ ¥".number_format($order['price'], 2)."），已计入成交记录。");
-			$this->notify((int)$claim['buyer_side_user_id'], (int)$userId,
 				"【BCT交易】你已确认收款，与对方在【{$order['city']}】的交易已完成（".(int)$order['amount']." BCT @ ¥".number_format($order['price'], 2)."），已计入成交记录。");
+			$this->notify((int)$claim['buyer_side_user_id'], (int)$userId,
+				"【BCT交易】对方已确认收款，你们在【{$order['city']}】的交易已完成（".(int)$order['amount']." BCT @ ¥".number_format($order['price'], 2)."），已计入成交记录。");
 
 			return ['success' => true, 'message' => '交易已完成'];
 		} catch (Exception $e) {
@@ -1047,11 +1047,11 @@ class BCTOrder {
 			}
 			$released++;
 
-			// 双方通知：各自收到来自对方会话的系统消息
+			// 双方通知：买方超时未确认付款——买方收"你未确认付款"，卖方收"对方未确认付款、挂单重新开放"
 			$buyerId = (int)$claim['buyer_side_user_id'];
 			$sellerId = (int)$claim['seller_side_user_id'];
-			$this->notify($sellerId, $buyerId, "【BCT交易】你接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，挂单重新开放。");
-			$this->notify($buyerId, $sellerId, "【BCT交易】对方 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，你的挂单重新开放。");
+			$this->notify($buyerId, $sellerId, "【BCT交易】你接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，挂单重新开放。");
+			$this->notify($sellerId, $buyerId, "【BCT交易】对方接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，你的挂单重新开放。");
 		}
 		return $released;
 	}
