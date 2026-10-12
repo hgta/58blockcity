@@ -13,6 +13,7 @@ require_once 'includes/auth.php';
 require_once 'includes/expiry-display.php';
 require_once '../classes/BCTOrder.php';
 require_once '../classes/CityBCT.php';
+require_once 'includes/price-fmt.php';
 
 $bctOrder = new BCTOrder($pdo);
 
