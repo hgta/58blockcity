@@ -44,6 +44,14 @@ const GEO_RATE_LIMIT  = 30;         // 同 IP 每分钟最多外部查询次数
 
 $cacheDir = dirname(__DIR__) . '/city/cache/geo';
 $cacheWritable = (is_dir($cacheDir) || @mkdir($cacheDir, 0775, true)) && is_writable($cacheDir);
+if (!$cacheWritable) {
+    // 项目目录不可写（部署属主/权限常见）→ 退到系统临时目录，保证缓存与频控仍生效
+    $tmpDir = rtrim(sys_get_temp_dir(), '/\\') . '/58tl-city-geo';
+    if ((is_dir($tmpDir) || @mkdir($tmpDir, 0775, true)) && is_writable($tmpDir)) {
+        $cacheDir = $tmpDir;
+        $cacheWritable = true;
+    }
+}
 
 // 诊断信息：仅当请求带 ?diag=1 时随 JSON 返回，便于线上直接定位失败环节
 // （服务器 PHP 日志常不可见/未开启，靠肉眼排查太慢）
@@ -111,7 +119,7 @@ function geo_cache_write($dir, $key, array $data) {
     @file_put_contents(geo_cache_path($dir, $key), json_encode($data, JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
-function geo_http_json($url) {
+function geo_http_raw($url) {
     global $diag;
     // 全项目其它外呼均走 cURL（部分主机 allow_url_fopen 被禁，
     // file_get_contents 请求 https 会直接失败），这里保持一致
@@ -151,8 +159,41 @@ function geo_http_json($url) {
             return null;
         }
     }
+    return $raw;
+}
+
+function geo_http_json($url) {
+    $raw = geo_http_raw($url);
+    if ($raw === null || $raw === '') return null;
     $data = json_decode($raw, true);
     return is_array($data) ? $data : null;
+}
+
+/**
+ * 二级来源：太平洋 IP 库（国内服务器访问快、无需 key）。
+ * 高德 v3/ip 对部分 IP（移动/机房出口）返回空 city，该库常能给出省级。
+ */
+function geo_lookup_pconline($ip) {
+    global $diag;
+    $url = 'https://whois.pconline.com.cn/ipJson.jsp?ip=' . rawurlencode($ip) . '&json=true';
+    $raw = geo_http_raw($url);
+    if ($raw === null || $raw === '') {
+        $diag['fb2_error'] = 'empty response';
+        return null;
+    }
+    $data = json_decode(trim($raw), true);
+    if (!is_array($data) && function_exists('mb_convert_encoding')) {
+        // 该接口偶发 GBK 编码，转码后再解
+        $data = json_decode(trim(mb_convert_encoding($raw, 'UTF-8', 'GBK,GB2312')), true);
+    }
+    $diag['fb2_raw'] = is_array($data) ? $data : substr((string)$raw, 0, 200);
+    if (!is_array($data)) return null;
+    $city = is_string($data['city'] ?? null) ? trim($data['city']) : '';
+    $prov = is_string($data['pro'] ?? null) ? trim($data['pro']) : '';
+    $addr = is_string($data['addr'] ?? null) ? trim($data['addr']) : '';
+    if ($city === '' && $prov === '') return null;
+    // err=nocity 表示只能定位到省级，此时用省名顶上（好过「未知城市」）
+    return ['city' => $city !== '' ? $city : $prov, 'province' => $prov, 'addr' => $addr];
 }
 
 /** 同 IP 频控：返回 true 表示允许查询外部接口 */
@@ -260,22 +301,33 @@ if (is_array($ipData)) {
     $diag['amap_province'] = $ipData['province'] ?? null;
     $diag['amap_city']     = $ipData['city'] ?? null;
 }
-if (!is_array($ipData) || ($ipData['status'] ?? '') !== '1') {
-    error_log('[city_geo] v3/ip bad response: ip=' . $ip
-        . ' status=' . var_export($ipData['status'] ?? null, true)
-        . ' info=' . ($ipData['info'] ?? '-')
-        . ' infocode=' . ($ipData['infocode'] ?? '-'));
+$city = '';
+$adcode = '';
+$diag['source'] = 'amap';
+if (is_array($ipData) && ($ipData['status'] ?? '') === '1') {
+    $rawCity = $ipData['city'] ?? null;
+    if (is_string($rawCity) && trim($rawCity) !== '') $city = trim($rawCity);
+    $rawAd = $ipData['adcode'] ?? null;
+    if (is_string($rawAd)) $adcode = $rawAd;
+}
+
+// 高德对部分 IP（移动/机房出口）返回空 city（province 也是空数组），
+// 此时用太平洋 IP 库兜底——通常至少能给出省级，好过显示「未知城市」
+if ($city === '') {
+    error_log('[city_geo] amap no city: ip=' . $ip . ' → 尝试 pconline 兜底');
+    $fb = geo_lookup_pconline($ip);
+    if ($fb !== null && $fb['city'] !== '') {
+        $city = $fb['city'];
+        $diag['source'] = 'pconline';
+        $diag['fb2_city'] = $fb['city'];
+        $diag['fb2_province'] = $fb['province'];
+    }
+}
+
+if ($city === '') {
+    error_log('[city_geo] all sources failed: ip=' . $ip);
     geo_respond(['ok' => false, 'city' => '', 'citycode' => '', 'reason' => 'lookup_failed']);
 }
-$city = $ipData['city'] ?? '';
-$adcode = $ipData['adcode'] ?? '';
-// 定位失败（局域网/境外/配额）时高德可能返回空字符串或空数组
-if (!is_string($city) || trim($city) === '') {
-    error_log('[city_geo] v3/ip no city: ip=' . $ip . ' province=' . var_export($ipData['province'] ?? null, true));
-    geo_respond(['ok' => false, 'city' => '', 'citycode' => '', 'reason' => 'lookup_failed']);
-}
-$city = trim($city);
-$adcode = is_string($adcode) ? $adcode : '';
 
 // ---------- 6. 电话区号（城市级缓存，长 TTL） ----------
 $codeKey = 'code_' . md5($city);
@@ -301,4 +353,5 @@ $_SESSION['city_geo'] = $result;
 if ($fsCache !== null) {
     geo_cache_write($fsCache, $ipHash, $result);
 }
-geo_respond(['ok' => true, 'city' => $city, 'citycode' => $citycode, 'adcode' => $adcode, 'from' => 'amap']);
+geo_respond(['ok' => true, 'city' => $city, 'citycode' => $citycode, 'adcode' => $adcode,
+             'from' => $diag['source']]);

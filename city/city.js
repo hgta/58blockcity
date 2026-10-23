@@ -11,7 +11,8 @@ var CITY_GEO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 天
 
 function applyCityInfo(city, citycode) {
   var cityEl = document.getElementById('userCity');
-  if (cityEl && city) cityEl.textContent = String(city).replace('市', '');
+  // 省级兜底（如「湖南省」）同样去掉行政后缀
+  if (cityEl && city) cityEl.textContent = String(city).replace(/(市|省|自治区|特别行政区)$/, '');
   if (!citycode) return;
   var href = 'https://www.blockcity.biz/' + citycode + '?iclc';
   var link = document.getElementById('cityLink');
