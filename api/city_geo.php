@@ -45,6 +45,10 @@ const GEO_RATE_LIMIT  = 30;         // 同 IP 每分钟最多外部查询次数
 $cacheDir = dirname(__DIR__) . '/city/cache/geo';
 $cacheWritable = (is_dir($cacheDir) || @mkdir($cacheDir, 0775, true)) && is_writable($cacheDir);
 
+// 诊断信息：仅当请求带 ?diag=1 时随 JSON 返回，便于线上直接定位失败环节
+// （服务器 PHP 日志常不可见/未开启，靠肉眼排查太慢）
+$diag = ['cache_dir' => $cacheDir, 'cache_writable' => $cacheWritable];
+
 /**
  * 取访客 IP。
  * 优先公网 REMOTE_ADDR；反代/CDN 后面（REMOTE_ADDR 为内网）时从
@@ -55,23 +59,36 @@ function geo_is_public_ip($ip) {
 }
 
 function geo_client_ip() {
+    global $diag;
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    $diag['remote_addr'] = $remote;
+    $diag['x_real_ip']   = $_SERVER['HTTP_X_REAL_IP'] ?? null;
+    $diag['x_forwarded'] = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null;
+    $diag['cf_ip']       = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null;
     if ($remote !== '' && geo_is_public_ip($remote)) {
+        $diag['ip_source'] = 'REMOTE_ADDR';
         return $remote;
     }
     foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'] as $key) {
         if (!empty($_SERVER[$key])) {
             $ip = trim(explode(',', $_SERVER[$key])[0]);
-            if ($ip !== '' && geo_is_public_ip($ip)) return $ip;
+            if ($ip !== '' && geo_is_public_ip($ip)) {
+                $diag['ip_source'] = $key;
+                return $ip;
+            }
         }
     }
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         // 反代会把真实 IP 追加在链尾，从后往前找第一个公网 IP
         $parts = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
         for ($i = count($parts) - 1; $i >= 0; $i--) {
-            if ($parts[$i] !== '' && geo_is_public_ip($parts[$i])) return $parts[$i];
+            if ($parts[$i] !== '' && geo_is_public_ip($parts[$i])) {
+                $diag['ip_source'] = 'X-Forwarded-For';
+                return $parts[$i];
+            }
         }
     }
+    $diag['ip_source'] = 'none(非公网)';
     return $remote !== '' ? $remote : '0.0.0.0';
 }
 
@@ -95,6 +112,7 @@ function geo_cache_write($dir, $key, array $data) {
 }
 
 function geo_http_json($url) {
+    global $diag;
     // 全项目其它外呼均走 cURL（部分主机 allow_url_fopen 被禁，
     // file_get_contents 请求 https 会直接失败），这里保持一致
     if (function_exists('curl_init')) {
@@ -110,6 +128,9 @@ function geo_http_json($url) {
             CURLOPT_SSL_VERIFYHOST => 0,
         ]);
         $raw = curl_exec($ch);
+        $diag['curl_errno'] = curl_errno($ch);
+        $diag['curl_error'] = curl_error($ch);
+        $diag['http_code']  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($raw === false) {
             error_log('[city_geo] curl failed: #' . curl_errno($ch) . ' ' . curl_error($ch));
             curl_close($ch);
@@ -152,6 +173,11 @@ function geo_rate_allow($dir, $ipHash) {
 }
 
 function geo_respond(array $payload) {
+    global $diag;
+    // ?diag=1 时附带诊断信息（服务器日志常不可见，线上可直接看 JSON 定位）
+    if (isset($_GET['diag']) && $_GET['diag'] !== '0' && $diag) {
+        $payload['diag'] = $diag;
+    }
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -168,7 +194,13 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
     @session_start();
 }
-if (!empty($_SESSION['city_geo']) && is_array($_SESSION['city_geo'])) {
+// ?nocache=1 跳过会话/文件缓存，强制重新查询（排查时用）
+$bypassCache = isset($_GET['nocache']) && $_GET['nocache'] !== '0';
+if ($bypassCache) {
+    unset($_SESSION['city_geo']);
+}
+
+if (!$bypassCache && !empty($_SESSION['city_geo']) && is_array($_SESSION['city_geo'])) {
     $s = $_SESSION['city_geo'];
     if (!empty($s['city']) && time() - (int)($s['ts'] ?? 0) < GEO_IP_TTL) {
         geo_respond(['ok' => true, 'city' => $s['city'], 'citycode' => $s['citycode'] ?? '',
@@ -181,7 +213,7 @@ $ipHash = md5($ip);
 $fsCache = $cacheWritable ? $cacheDir : null;
 
 // ---------- 2. IP 文件缓存 ----------
-$cached = $fsCache !== null ? geo_cache_read($fsCache, $ipHash, GEO_IP_TTL) : null;
+$cached = (!$bypassCache && $fsCache !== null) ? geo_cache_read($fsCache, $ipHash, GEO_IP_TTL) : null;
 if ($cached !== null && !empty($cached['city'])) {
     $_SESSION['city_geo'] = ['city' => $cached['city'], 'citycode' => $cached['citycode'] ?? '',
                              'adcode' => $cached['adcode'] ?? '', 'ts' => time()];
@@ -206,6 +238,9 @@ if (is_file($configFile)) {
 if ($key === '') {
     error_log('[city_geo] config/amap.php 未配置，正在回退旧 key（曾明文暴露于前端），建议尽快配置新 key');
     $key = GEO_AMAP_FALLBACK_KEY;
+    $diag['key_source'] = 'fallback(未配置 config/amap.php)';
+} else {
+    $diag['key_source'] = 'config/amap.php';
 }
 
 // ---------- 4. 频控 ----------
@@ -214,7 +249,17 @@ if (!geo_rate_allow($fsCache, $ipHash)) {
 }
 
 // ---------- 5. 高德 IP 定位 ----------
-$ipData = geo_http_json('https://restapi.amap.com/v3/ip?ip=' . rawurlencode($ip) . '&key=' . rawurlencode($key));
+$diag['resolved_ip'] = $ip;
+$url = 'https://restapi.amap.com/v3/ip?ip=' . rawurlencode($ip) . '&key=' . rawurlencode($key);
+$ipData = geo_http_json($url);
+$diag['amap_url'] = preg_replace('/key=[^&]+/', 'key=***', $url);
+if (is_array($ipData)) {
+    $diag['amap_status']   = $ipData['status'] ?? null;
+    $diag['amap_info']     = $ipData['info'] ?? null;
+    $diag['amap_infocode'] = $ipData['infocode'] ?? null;
+    $diag['amap_province'] = $ipData['province'] ?? null;
+    $diag['amap_city']     = $ipData['city'] ?? null;
+}
 if (!is_array($ipData) || ($ipData['status'] ?? '') !== '1') {
     error_log('[city_geo] v3/ip bad response: ip=' . $ip
         . ' status=' . var_export($ipData['status'] ?? null, true)
