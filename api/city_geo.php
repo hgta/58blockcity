@@ -46,17 +46,33 @@ $cacheDir = dirname(__DIR__) . '/city/cache/geo';
 $cacheWritable = (is_dir($cacheDir) || @mkdir($cacheDir, 0775, true)) && is_writable($cacheDir);
 
 /**
- * 取访客 IP：优先 Cloudflare 真实 IP，否则 REMOTE_ADDR。
- * 不信任 X-Forwarded-For（可伪造，会导致缓存投毒）。
+ * 取访客 IP。
+ * 优先公网 REMOTE_ADDR；反代/CDN 后面（REMOTE_ADDR 为内网）时从
+ * X-Real-IP / X-Forwarded-For 中取真实 IP。不盲信转发头，防伪造。
  */
+function geo_is_public_ip($ip) {
+    return (bool)filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+}
+
 function geo_client_ip() {
-    foreach (['HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR'] as $key) {
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    if ($remote !== '' && geo_is_public_ip($remote)) {
+        return $remote;
+    }
+    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP'] as $key) {
         if (!empty($_SERVER[$key])) {
             $ip = trim(explode(',', $_SERVER[$key])[0]);
-            if ($ip !== '') return $ip;
+            if ($ip !== '' && geo_is_public_ip($ip)) return $ip;
         }
     }
-    return '0.0.0.0';
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        // 反代会把真实 IP 追加在链尾，从后往前找第一个公网 IP
+        $parts = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+        for ($i = count($parts) - 1; $i >= 0; $i--) {
+            if ($parts[$i] !== '' && geo_is_public_ip($parts[$i])) return $parts[$i];
+        }
+    }
+    return $remote !== '' ? $remote : '0.0.0.0';
 }
 
 function geo_cache_path($dir, $key) {
@@ -79,15 +95,41 @@ function geo_cache_write($dir, $key, array $data) {
 }
 
 function geo_http_json($url) {
-    $ctx = stream_context_create([
-        'http' => [
-            'timeout' => GEO_HTTP_TIMEOUT,
-            'ignore_errors' => true,
-            'header' => "User-Agent: 58.tl city-geo\r\n",
-        ],
-    ]);
-    $raw = @file_get_contents($url, false, $ctx);
-    if ($raw === false || $raw === '') return null;
+    // 全项目其它外呼均走 cURL（部分主机 allow_url_fopen 被禁，
+    // file_get_contents 请求 https 会直接失败），这里保持一致
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => GEO_HTTP_TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_USERAGENT      => '58.tl city-geo',
+            // 与项目其它外呼（AiProvider/HermesClient 等）保持一致：
+            // 服务器未配置 CA 证书包，验证会直接失败（curl #60）
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+        ]);
+        $raw = curl_exec($ch);
+        if ($raw === false) {
+            error_log('[city_geo] curl failed: #' . curl_errno($ch) . ' ' . curl_error($ch));
+            curl_close($ch);
+            return null;
+        }
+        curl_close($ch);
+    } else {
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => GEO_HTTP_TIMEOUT,
+                'ignore_errors' => true,
+                'header' => "User-Agent: 58.tl city-geo\r\n",
+            ],
+        ]);
+        $raw = @file_get_contents($url, false, $ctx);
+        if ($raw === false || $raw === '') {
+            error_log('[city_geo] file_get_contents failed (allow_url_fopen off?): ' . $url);
+            return null;
+        }
+    }
     $data = json_decode($raw, true);
     return is_array($data) ? $data : null;
 }
@@ -174,12 +216,17 @@ if (!geo_rate_allow($fsCache, $ipHash)) {
 // ---------- 5. 高德 IP 定位 ----------
 $ipData = geo_http_json('https://restapi.amap.com/v3/ip?ip=' . rawurlencode($ip) . '&key=' . rawurlencode($key));
 if (!is_array($ipData) || ($ipData['status'] ?? '') !== '1') {
+    error_log('[city_geo] v3/ip bad response: ip=' . $ip
+        . ' status=' . var_export($ipData['status'] ?? null, true)
+        . ' info=' . ($ipData['info'] ?? '-')
+        . ' infocode=' . ($ipData['infocode'] ?? '-'));
     geo_respond(['ok' => false, 'city' => '', 'citycode' => '', 'reason' => 'lookup_failed']);
 }
 $city = $ipData['city'] ?? '';
 $adcode = $ipData['adcode'] ?? '';
 // 定位失败（局域网/境外/配额）时高德可能返回空字符串或空数组
 if (!is_string($city) || trim($city) === '') {
+    error_log('[city_geo] v3/ip no city: ip=' . $ip . ' province=' . var_export($ipData['province'] ?? null, true));
     geo_respond(['ok' => false, 'city' => '', 'citycode' => '', 'reason' => 'lookup_failed']);
 }
 $city = trim($city);
