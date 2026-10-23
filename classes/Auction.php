@@ -15,6 +15,7 @@
 require_once __DIR__ . '/Block.php';
 require_once __DIR__ . '/NFT.php';
 require_once __DIR__ . '/Notification.php';
+require_once __DIR__ . '/User.php';
 
 class Auction {
     private $pdo;
@@ -1038,7 +1039,17 @@ class Auction {
             ORDER BY {$orderSql}
             LIMIT " . intval($limit));
         $stmt->execute([intval($auctionId)]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // 头像归一为可访问的绝对 URL（历史数据可能是裸文件名 / 相对路径 / 空值）
+        // 统一在此处理，首屏 PHP 渲染与 /api/lot.php 轮询共用同一数据源
+        foreach ($rows as &$r) {
+            $av = User::avatarUrl($r['bidder_avatar'] ?? '');
+            // 跨站场景：根相对路径指向主站资源，需补域名才能在 bid.58.tl 命中
+            if ($av !== '' && $av[0] === '/') $av = 'https://www.58.tl' . $av;
+            $r['bidder_avatar'] = $av;
+        }
+        unset($r);
+        return $rows;
     }
 
     /**

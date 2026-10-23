@@ -286,6 +286,10 @@ class User {
         if (strpos($avatar, 'assets/uploads/avatars/') === 0) {
             $avatar = 'uploads/avatars/' . substr($avatar, strlen('assets/uploads/avatars/'));
         }
+        // 主站完整相对路径：assets/images/uploads/... → 去掉 assets/images/ 前缀，避免重复拼接
+        if (strpos($avatar, 'assets/images/') === 0) {
+            return $base . ltrim(substr($avatar, strlen('assets/images/')), '/');
+        }
         // 裸文件名（历史主站早期格式）→ 归一到 uploads/avatars/ 目录
         if (strpos($avatar, '/') === false) {
             $avatar = 'uploads/avatars/' . $avatar;

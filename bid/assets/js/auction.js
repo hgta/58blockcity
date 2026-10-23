@@ -7,6 +7,9 @@
 
     var AuctionUI = window.AuctionUI = {};
 
+    /* 默认头像（用户未设置或图片失效时兜底，与全站一致） */
+    var DEFAULT_AVATAR = 'https://www.58.tl/assets/images/default.jpg';
+
     /* ---------------- 服务端时间基准 ---------------- */
     var serverOffset = 0; // server 时间 - 本机时间（秒）
 
@@ -121,7 +124,12 @@
             var av = document.createElement('img');
             av.className = 'ac-bid-avatar';
             av.alt = '';
-            av.src = b.bidder_avatar ? b.bidder_avatar : (window.DEFAULT_AVATAR || '');
+            av.src = b.bidder_avatar || DEFAULT_AVATAR;
+            // 历史坏链接 / 图片失效时兜底默认头像，避免裂图
+            av.onerror = function () {
+                this.onerror = null;
+                this.src = DEFAULT_AVATAR;
+            };
             who.appendChild(av);
 
             var name = document.createElement('span');
