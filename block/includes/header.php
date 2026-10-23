@@ -43,7 +43,7 @@ $orgJsonLd = organization_json_ld();
     <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20261001">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.58.tl/assets/js/main.js?v=20261023"></script>
+    <script src="https://www.58.tl/assets/js/main.js?v=20261024"></script>
     <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
     <script>LA.init({id:"KplyYLrcc6uYhdjv",ck:"KplyYLrcc6uYhdjv"})</script>
     <script>var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?5949e57aa9d2303fbf9451b06d4df471";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();</script>
@@ -106,6 +106,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
     </div>
 </header>
 <div class="city-location-bar" id="cityLocationBar">
-    欢迎您，来自于<a href="https://www.blockcity.biz/" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.blockcity.biz/" id="cityLink2">点击进入您的区块城市</a>
+    欢迎您，来自于<a href="https://www.blockcity.biz/?iclc" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.blockcity.biz/?iclc" id="cityLink2">点击进入您的区块城市</a>
 </div>
 <div class="block-container">

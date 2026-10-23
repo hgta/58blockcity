@@ -341,8 +341,8 @@ function applyCityInfo(city, citycode) {
   var cityEl = document.getElementById('userCity');
   // 省级兜底（如「湖南省」）同样去掉行政后缀
   if (cityEl && city) cityEl.textContent = String(city).replace(/(市|省|自治区|特别行政区)$/, '');
-  if (!citycode) return;
-  var href = 'https://www.blockcity.biz/' + citycode + '?iclc';
+  // 无区号（省级兜底/未知城市）时也要保留推广码，不能退回裸域名
+  var href = 'https://www.blockcity.biz/' + (citycode ? citycode + '?iclc' : '?iclc');
   var link = document.getElementById('cityLink');
   if (link) link.href = href;
   var link2 = document.getElementById('cityLink2');

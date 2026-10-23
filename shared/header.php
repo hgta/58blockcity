@@ -134,7 +134,7 @@ $orgJsonLd = organization_json_ld();
     <link rel="stylesheet" href="https://www.58.tl/assets/css/main.css?v=20261001">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.58.tl/assets/js/main.js?v=20261023"></script>
+    <script src="https://www.58.tl/assets/js/main.js?v=20261024"></script>
     <script src="https://www.58.tl/assets/js/message-modal.js"></script>
     <!-- 头像全局常量（JS 端与 User::avatarUrl() 保持一致） -->
     <script>
@@ -309,7 +309,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
 <div class="menu-overlay" id="menuOverlay"></div>
 
 <div class="city-location-bar" id="cityLocationBar">
-    欢迎您，来自于<a href="https://www.blockcity.biz/" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.blockcity.biz/" id="cityLink2">点击进入您的区块城市</a>
+    欢迎您，来自于<a href="https://www.blockcity.biz/?iclc" id="cityLink" style="color:inherit;"><span id="userCity">未知城市</span></a>的朋友，<a href="https://www.blockcity.biz/?iclc" id="cityLink2">点击进入您的区块城市</a>
 </div>
 
 <main class="container <?= htmlspecialchars($site_config['main_class'] ?? '') ?>">
