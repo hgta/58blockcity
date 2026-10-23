@@ -51,7 +51,7 @@ $navLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 
 	<link rel="shortcut icon" href="/favicon.ico" />
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 	<link rel="manifest" href="/site.webmanifest" />
-	<script src="/city/city.js?v=20261002"></script>
+	<script src="/city/city.js?v=20261023"></script>
     <style>
         :root {
             --bg: #f5f5f5;

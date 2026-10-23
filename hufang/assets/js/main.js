@@ -23,44 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
  * 初始化城市定位功能
  */
 function initCityLocation() {
-    // 尝试从本地存储获取城市信息
-    const savedCity = localStorage.getItem('userCity');
-    if (savedCity) {
-        updateCityDisplay(savedCity);
+    // 浏览器定位（navigator.geolocation）会弹出授权框打扰访客，且此前的
+    // 兜底实现是随机城市 mock，均不可用；统一走服务端 IP 定位 getCityInfo()
+    if (typeof getCityInfo === 'function') {
+        getCityInfo();
         return;
     }
-    
-    // 如果没有保存的城市信息，尝试获取地理位置
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                // 根据经纬度获取城市信息
-                getCityFromCoords(position.coords.latitude, position.coords.longitude);
-            },
-            function(error) {
-                console.error('获取地理位置失败:', error);
-                updateCityDisplay('未知城市');
-            }
-        );
-    } else {
-        updateCityDisplay('未知城市');
-    }
-}
-
-/**
- * 根据经纬度获取城市信息
- */
-function getCityFromCoords(lat, lng) {
-    // 这里可以使用第三方地理编码API
-    // 示例使用模拟数据
-    const mockCities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉'];
-    const randomCity = mockCities[Math.floor(Math.random() * mockCities.length)];
-    
-    // 模拟API延迟
-    setTimeout(() => {
-        updateCityDisplay(randomCity);
-        localStorage.setItem('userCity', randomCity);
-    }, 1000);
+    updateCityDisplay('未知城市');
 }
 
 /**
@@ -358,39 +327,73 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // 获取当前城市的adcode和电话区号
-function getCityInfo() {
-  // 步骤1：通过IP定位获取当前城市adcode
-  fetch('https://restapi.amap.com/v3/ip?key=c7ebabae441606f172364f6d644a9ce4')
-	.then(response => response.json())
-	.then(ipData => {
-	  const city = ipData.city; // 当前城市名（如"北京市"）
-	  const adcode = ipData.adcode; // 当前adcode
-	  
-	  document.getElementById('userCity').textContent = city.replace('市', '');
+// 访客城市定位（服务端 IP 定位）
+// 变更说明（change: city-locate-server-side-ip）：
+//   此前前端直连高德（key 明文暴露、每 PV 两次调用），配额超限后 city 为
+//   undefined，city.replace() 抛异常滑进 catch 并调用 navigator.geolocation，
+//   导致每位访客都被弹「获取您的位置」授权框。现改为调用服务端接口，
+//   定位失败只显示「未知城市」，不再触发任何授权。
+var CITY_GEO_ENDPOINT = 'https://www.58.tl/api/city_geo.php';
+var CITY_GEO_CACHE_KEY = 'cityGeoCache';
+var CITY_GEO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 天
 
-	  // 步骤2：通过地理编码查询电话区号
-	  return fetch('https://restapi.amap.com/v3/geocode/geo?address='+city+'&key=c7ebabae441606f172364f6d644a9ce4');    
-	})
-	.then(response => response.json())
-	.then(geoData => {
-	  const citycode = geoData.geocodes[0].citycode;
-	  document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+citycode+'?iclc';  
-	})
-	.catch(error => {
-		if(navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(position => {
-				fetch('https://restapi.amap.com/v3/geocode/regeo?key=c7ebabae441606f172364f6d644a9ce4&location='+position.coords.longitude+','+position.coords.latitude)
-					.then(response => response.json())
-					.then(data => {
-						if(data.regeocode && data.regeocode.addressComponent.city) {
-							const city = data.regeocode.addressComponent.city.replace('市', '');
-							document.getElementById('userCity').textContent = city;
-							document.getElementById('cityLink').href = 'https://www.blockcity.biz/'+data.regeocode.addressComponent.citycode+'?iclc';
-						}
-					});
-			});
-		} 
-	});
+function applyCityInfo(city, citycode) {
+  var cityEl = document.getElementById('userCity');
+  if (cityEl && city) cityEl.textContent = String(city).replace('市', '');
+  if (!citycode) return;
+  var href = 'https://www.blockcity.biz/' + citycode + '?iclc';
+  var link = document.getElementById('cityLink');
+  if (link) link.href = href;
+  var link2 = document.getElementById('cityLink2');
+  if (link2) link2.href = href;
+}
+
+function readCityGeoCache() {
+  try {
+    var raw = localStorage.getItem(CITY_GEO_CACHE_KEY);
+    if (!raw) return null;
+    var data = JSON.parse(raw);
+    if (!data || !data.city || !data.ts) return null;
+    if (Date.now() - data.ts > CITY_GEO_CACHE_TTL) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeCityGeoCache(city, citycode) {
+  try {
+    localStorage.setItem(CITY_GEO_CACHE_KEY, JSON.stringify({
+      city: city, citycode: citycode || '', ts: Date.now()
+    }));
+  } catch (e) {
+    /* 隐私模式下 localStorage 不可用时忽略 */
+  }
+}
+
+// 获取当前城市（城市名 + 电话区号），用于欢迎条与城市链接
+function getCityInfo() {
+  if (!document.getElementById('userCity')) return;
+
+  var cached = readCityGeoCache();
+  if (cached) {
+    applyCityInfo(cached.city, cached.citycode);
+    return;
+  }
+
+  fetch(CITY_GEO_ENDPOINT, { credentials: 'include' })
+    .then(function (response) { return response.json(); })
+    .then(function (data) {
+      if (data && data.ok && data.city) {
+        applyCityInfo(data.city, data.citycode || '');
+        writeCityGeoCache(data.city, data.citycode || '');
+        return;
+      }
+      applyCityInfo('未知城市', '');
+    })
+    .catch(function () {
+      applyCityInfo('未知城市', '');
+    });
 }
 
 // 警告框关闭功能
