@@ -338,24 +338,34 @@
             body.append('amount', amount);
             body.append('csrf_token', opts.csrf || '');
 
+            var lastStatus = 0;
             fetch(opts.api || '/api/bid.php', {
                 method: 'POST',
                 body: body,
                 credentials: 'same-origin',
                 headers: { 'Accept': 'application/json' }
             })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data && data.success) {
+                .then(function (r) { lastStatus = r.status; return r.text(); })
+                .then(function (txt) {
+                    // 服务端异常的典型表现：PHP 报错输出 HTML，JSON 解析失败
+                    var data = null;
+                    try { data = JSON.parse(txt); } catch (e) { data = null; }
+                    if (!data) {
+                        AuctionUI.toast('服务返回异常，请刷新页面后重试', 'err');
+                        return;
+                    }
+                    if (data.success) {
                         AuctionUI.setServerNow(data.server_now);
                         AuctionUI.toast(data.message || '出价成功，你已领先', 'ok');
                         input.value = '';
                         if (typeof opts.onSuccess === 'function') opts.onSuccess(data);
                     } else {
-                        AuctionUI.toast((data && (data.message || data.msg)) || '出价失败', 'err');
+                        AuctionUI.toast((data.message || data.msg) || '出价失败', 'err');
                     }
                 })
-                .catch(function () { AuctionUI.toast('网络异常，请稍后重试', 'err'); })
+                .catch(function () {
+                    AuctionUI.toast(lastStatus >= 500 ? '服务暂时不可用（' + lastStatus + '），请稍后重试' : '网络异常，请稍后重试', 'err');
+                })
                 .finally(function () { if (submit) { submit.disabled = false; } });
         });
     };
@@ -370,10 +380,17 @@
             body.append('auction_id', opts.auctionId);
             body.append('csrf_token', opts.csrf || '');
             btn.disabled = true;
+            var lastStatus = 0;
             fetch(opts.api || '/api/watch.php', { method: 'POST', body: body, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data && data.success) {
+                .then(function (r) { lastStatus = r.status; return r.text(); })
+                .then(function (txt) {
+                    var data = null;
+                    try { data = JSON.parse(txt); } catch (e) { data = null; }
+                    if (!data) {
+                        AuctionUI.toast('服务返回异常，请刷新页面后重试', 'err');
+                        return;
+                    }
+                    if (data.success) {
                         var d = data.data || {};
                         btn.setAttribute('data-watching', d.watching ? '1' : '0');
                         btn.innerHTML = d.watching
@@ -388,10 +405,12 @@
                             location.href = 'https://58.tl/auth/login.php';
                             return;
                         }
-                        AuctionUI.toast((data && data.message) || '操作失败', 'err');
+                        AuctionUI.toast(data.message || '操作失败', 'err');
                     }
                 })
-                .catch(function () { AuctionUI.toast('网络异常，请稍后重试', 'err'); })
+                .catch(function () {
+                    AuctionUI.toast(lastStatus >= 500 ? '服务暂时不可用（' + lastStatus + '），请稍后重试' : '网络异常，请稍后重试', 'err');
+                })
                 .finally(function () { btn.disabled = false; });
         });
     };

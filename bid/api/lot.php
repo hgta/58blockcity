@@ -3,9 +3,10 @@
  * 拍卖详情轮询端点（只读）
  * GET /api/lot.php?id=123
  */
-require_once '../config/database.php';
-require_once '../classes/Auction.php';
-require_once '../includes/auth.php';
+// 注意：必须用 __DIR__ 锚定，php-fpm 下 CWD 为脚本目录，相对路径会解析到 bid/config 而失败
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../classes/Auction.php';
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/lot_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
