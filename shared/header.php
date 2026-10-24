@@ -13,6 +13,9 @@
  *     'extra_head'  => '',  // 额外的CSS/JS
  *     'theme_color' => '#ff6b00',  // 主题色
  *     'show_message'=> true,  // 是否显示站内信按钮（默认显示）
+ *     'url_messages'=> '/messages/',        // 站内信入口（各站模块不同：有独立站内信的为 /messages/，
+ *                                           // 无该模块的站必须覆盖为 /user/messages.php，否则导航死链 404）
+ *     'url_notifications' => '/user/messages.php', // 「查看全部通知」入口（通知中心）
  *     'show_cart'   => false, // 是否在右侧用户区显示购物车（默认不显示）
  *     'url_cart'    => '../cart/index.php', // 购物车链接（show_cart 开启时生效）
  * ];
@@ -24,6 +27,12 @@ if (!isset($site_config)) { die('缺少站点配置'); }
 // 故入口页应先 require includes/session.php 再输出。
 require_once __DIR__ . '/../includes/session.php';
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+// 消息入口：各站部署的消息模块路径不同（部分子站为根 /messages/ 独立站内信，
+// 部分子站只有 /user/messages.php 通知中心）。缺省值保持历史行为，
+// 缺少对应模块的站必须在 $site_config 中覆盖，否则「站内信」按钮会指向 404。
+$messagesUrl      = $site_config['url_messages']      ?? '/messages/';
+$notificationsUrl = $site_config['url_notifications'] ?? '/user/messages.php';
 
 // 统一判定登录态：isLoggedIn() 会在 session 为空时尝试用 remember_me cookie
 // 自动登录。仅检查 $_SESSION['user_id'] 会漏掉「记住我」的用户。
@@ -265,7 +274,7 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                         <?php else: ?>
                             <?php foreach ($notifications as $n): ?>
                                 <?php
-                                $link = $n['related_url'] ?? '../user/notifications.php';
+                                $link = $n['related_url'] ?? $notificationsUrl;
                                 if ($n['type'] === 'visit_request') {
                                     $link = "https://v.58.tl/user/visits.php?circle_id=" . intval($n['related_id']);
                                 } elseif (in_array($n['type'], ['visit_confirm', 'return_confirm'])) {
@@ -284,12 +293,12 @@ main.container { max-width:1200px; margin:0 auto; padding:0 15px; }
                                 </a>
                             <?php endforeach; ?>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-center text-primary" href="../user/messages.php">查看全部通知</a>
+                            <a class="dropdown-item text-center text-primary" href="<?= htmlspecialchars($notificationsUrl) ?>">查看全部通知</a>
                         <?php endif; ?>
                     </div>
                 </div>
                 <?php if (($site_config['show_message'] ?? true)): ?>
-                <a href="/messages/" class="nav-button" style="position:relative;">
+                <a href="<?= htmlspecialchars($messagesUrl) ?>" class="nav-button" style="position:relative;">
                     <i class="fas fa-envelope"></i> 站内信
                     <?php if ($message_unread > 0): ?>
                     <span class="notification-badge"><?= $message_unread > 9 ? '9+' : $message_unread ?></span>

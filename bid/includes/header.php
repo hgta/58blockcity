@@ -14,6 +14,8 @@ $site_config['nav_links']   = $site_config['nav_links'] ?? [
     ['url'=>'https://help.58.tl/','icon'=>'circle-question','text'=>'帮助'],
 ];
 // 登录/个人中心等共享链接改用域名根绝对路径，避免 user/ 子目录页面相对路径错乱
+// 本子站无根 /messages/ 独立站内信模块，共享导航需指向通知中心，否则按钮 404
+$site_config['url_messages']  = '/user/messages.php';
 $site_config['url_dashboard'] = '/user/dashboard.php';
 $site_config['url_logout']    = '/auth/logout.php';
 $site_config['url_login']     = '/auth/login.php';

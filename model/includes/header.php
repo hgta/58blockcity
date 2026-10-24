@@ -14,6 +14,9 @@ $site_config['extra_head'] = ($site_config['extra_head'] ?? '')
 // og 分享卡片默认图（页面可在引入本文件前自设覆盖，如详情页用模特封面）
 $site_config['og_image'] = $site_config['og_image'] ?? 'https://www.58.tl/assets/images/og-model.jpg';
 
+// 本子站未部署消息模块（/messages/ 与 /user/messages.php 均不存在），关闭入口避免死链 404
+$site_config['show_message'] = false;
+
 // 子站外壳类名（供 model.css 作用域生效）
 $__shellBodyClass = trim(($site_config['body_class'] ?? '') . ' model-shell-body');
 $site_config['body_class'] = $__shellBodyClass;
