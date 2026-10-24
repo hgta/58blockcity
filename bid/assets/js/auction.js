@@ -410,7 +410,8 @@
                         AuctionUI.toast(data.message || '已更新', 'ok');
                     } else {
                         if (data && data.need_login) {
-                            location.href = 'https://58.tl/auth/login.php';
+                            // 回跳用根相对路径，避免登录页 /auth/ 目录下相对解析 404
+                            location.href = '/auth/login.php?redirect=' + encodeURIComponent('/view.php?id=' + opts.auctionId);
                             return;
                         }
                         AuctionUI.toast(data.message || '操作失败', 'err');

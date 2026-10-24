@@ -240,7 +240,8 @@ require_once 'includes/header.php';
                     出价即代表接受拍卖规则。最后 <?= intval($extendWindow / 60) ?> 分钟内出价将自动顺延 <?= intval($extendStep / 60) ?> 分钟（最多 <?= $maxExtend ?> 次）。
                 </div>
                 <?php elseif (!$userId): ?>
-                    <a class="ac-btn ac-btn-primary ac-btn-block" href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $auctionId) ?>">
+                    <?php /* redirect 必须用根相对路径：登录页位于 /auth/ 下，'view.php?id=x' 会被解析成 /auth/view.php 导致 404 */ ?>
+                    <a class="ac-btn ac-btn-primary ac-btn-block" href="/auth/login.php?redirect=<?= urlencode('/view.php?id=' . $auctionId) ?>">
                         <i class="fas fa-sign-in-alt"></i> 登录后出价
                     </a>
                 <?php elseif ($isSeller): ?>

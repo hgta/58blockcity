@@ -228,7 +228,8 @@ require_once 'includes/header.php';
         <div class="tk-card" style="text-align:center;">
             <?php if (!$uid): ?>
                 <p style="color:#7a8087;margin-bottom:12px;">登录后可领取任务或查看进度</p>
-                <a class="tk-btn primary" href="auth/login.php?redirect=<?= urlencode('view.php?id=' . $taskId) ?>">登录后领取</a>
+                <?php /* redirect 必须用根相对路径：登录页位于 /auth/ 下，'view.php?id=x' 会被解析成 /auth/view.php 导致 404 */ ?>
+                <a class="tk-btn primary" href="/auth/login.php?redirect=<?= urlencode('/view.php?id=' . $taskId) ?>">登录后领取</a>
             <?php elseif (!$myClaim): ?>
                 <?php if ($claimable): ?>
                     <p style="color:#7a8087;margin-bottom:12px;">本任务共 <?= (int)$task['quota'] ?> 份名额，剩 <?= max(0, (int)$task['quota'] - (int)$task['claimed_count']) ?> 份，动作完成后提交凭证，验收通过即得赏金</p>
