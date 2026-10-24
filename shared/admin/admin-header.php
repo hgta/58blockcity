@@ -32,7 +32,8 @@ $siteConfig = getAdminSiteConfig($site);
 $sidebarMenus = getAdminMenus($site);
 
 // 当前页面文件名（用于高亮菜单）
-$currentFile = basename($_SERVER['PHP_SELF']);
+// 详情页等非菜单入口可通过 $admin_site_config['menu_active'] 指定要高亮的菜单项
+$currentFile = $admin_site_config['menu_active'] ?? basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">

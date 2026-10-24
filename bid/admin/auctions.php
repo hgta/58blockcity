@@ -48,7 +48,7 @@ require_once '../../shared/admin/admin-header.php';
 
 // ---- 筛选参数 ----
 $statusList = ['pending', 'active', 'sold', 'ended', 'canceled'];
-$typeList   = ['block', 'nft'];
+$typeList   = ['block', 'nft', 'product'];
 
 $fStatus = $_GET['status'] ?? '';
 $fType   = $_GET['type'] ?? '';
@@ -80,9 +80,11 @@ $stmt = $pdo->prepare("
            a.bid_increment, a.start_time, a.end_time, a.current_price, a.currency,
            a.status, a.current_bidder_id, a.created_at, a.featured_at,
            u.username AS seller_name,
+           bd.username AS leader_name,
            (SELECT COUNT(*) FROM auction_bids b WHERE b.auction_id = a.id) AS bid_count
     FROM auctions a
-    LEFT JOIN users u ON a.seller_id = u.id
+    LEFT JOIN users u  ON a.seller_id = u.id
+    LEFT JOIN users bd ON a.current_bidder_id = bd.id
     $whereSql
     ORDER BY (a.featured_at IS NOT NULL) DESC, a.created_at DESC
     LIMIT $perPage OFFSET $offset
@@ -133,8 +135,9 @@ function filterUrl($status, $type, $page) {
             <?php endforeach; ?>
             <span style="font-size:13px;color:var(--admin-text-muted);margin-left:12px;">类型：</span>
             <a class="admin-btn admin-btn-sm <?= $fType === '' ? 'admin-btn-primary' : 'admin-btn-secondary' ?>" href="<?= htmlspecialchars(filterUrl($fStatus, '', 1)) ?>">全部</a>
+            <?php $typeLabels = ['block' => '区块', 'nft' => 'NFT头像', 'product' => '商城商品']; ?>
             <?php foreach ($typeList as $t): ?>
-            <a class="admin-btn admin-btn-sm <?= $fType === $t ? 'admin-btn-primary' : 'admin-btn-secondary' ?>" href="<?= htmlspecialchars(filterUrl($fStatus, $t, 1)) ?>"><?= $t === 'block' ? '区块' : 'NFT头像' ?></a>
+            <a class="admin-btn admin-btn-sm <?= $fType === $t ? 'admin-btn-primary' : 'admin-btn-secondary' ?>" href="<?= htmlspecialchars(filterUrl($fStatus, $t, 1)) ?>"><?= $typeLabels[$t] ?></a>
             <?php endforeach; ?>
         </div>
 
@@ -145,7 +148,7 @@ function filterUrl($status, $type, $page) {
             <thead>
                 <tr>
                     <th>拍品</th><th>卖家</th><th>起拍价</th><th>当前价</th>
-                    <th>出价</th><th>开拍</th><th>落槌</th><th>状态</th><th>推荐</th><th>操作</th>
+                    <th>出价</th><th>领先者</th><th>开拍</th><th>落槌</th><th>状态</th><th>推荐</th><th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -155,13 +158,22 @@ function filterUrl($status, $type, $page) {
                 <?php $canFeature = in_array($a['status'], ['pending', 'active'], true); ?>
                 <tr>
                     <td>
-                        <a href="../view.php?id=<?= (int)$a['id'] ?>" style="color:var(--admin-accent);font-weight:600;">LOT <?= str_pad((string)$a['id'], 3, '0', STR_PAD_LEFT) ?></a>
-                        <span style="font-size:12px;color:var(--admin-text-muted);"><?= $a['item_type'] === 'block' ? '区块 #' . $a['item_id'] : 'NFT #' . $a['item_id'] ?></span>
+                        <a href="auction-detail.php?id=<?= (int)$a['id'] ?>" style="color:var(--admin-accent);font-weight:600;">LOT <?= str_pad((string)$a['id'], 3, '0', STR_PAD_LEFT) ?></a>
+                        <span style="font-size:12px;color:var(--admin-text-muted);"><?= ['block' => '区块 #', 'nft' => 'NFT #', 'product' => '商品 #'][$a['item_type']] ?? ($a['item_type'] . ' #') ?><?= (int)$a['item_id'] ?></span>
                     </td>
                     <td style="font-size:13px;"><?= htmlspecialchars($a['seller_name'] ?? ('用户' . $a['seller_id'])) ?></td>
                     <td><?= bid_money($a['start_price'], $a['currency']) ?></td>
                     <td style="font-weight:600;"><?= bid_money($a['current_price'] ?? $a['start_price'], $a['currency']) ?></td>
                     <td><?= (int)$a['bid_count'] ?></td>
+                    <td style="font-size:13px;">
+                        <?php if ((int)($a['current_bidder_id'] ?? 0) > 0): ?>
+                            <a href="auction-detail.php?id=<?= (int)$a['id'] ?>" style="color:var(--admin-accent);">
+                                <?= htmlspecialchars($a['leader_name'] ?? ('用户' . $a['current_bidder_id'])) ?>
+                            </a>
+                        <?php else: ?>
+                            <span style="color:var(--admin-text-muted);">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td style="font-size:12px;"><?= date('m-d H:i', strtotime($a['start_time'])) ?></td>
                     <td style="font-size:12px;"><?= date('m-d H:i', strtotime($a['end_time'])) ?></td>
                     <td><span class="admin-badge <?= $s[1] ?>"><?= $s[0] ?></span></td>
@@ -182,7 +194,10 @@ function filterUrl($status, $type, $page) {
                             <?php endif; ?>
                         </form>
                     </td>
-                    <td><a class="admin-btn admin-btn-sm admin-btn-secondary" href="../view.php?id=<?= (int)$a['id'] ?>">查看</a></td>
+                    <td style="white-space:nowrap;">
+                        <a class="admin-btn admin-btn-sm admin-btn-primary" href="auction-detail.php?id=<?= (int)$a['id'] ?>">详情</a>
+                        <a class="admin-btn admin-btn-sm admin-btn-secondary" href="../view.php?id=<?= (int)$a['id'] ?>" target="_blank" rel="noopener" title="前台页面">前台</a>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
