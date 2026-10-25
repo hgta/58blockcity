@@ -896,3 +896,52 @@ html:not([data-ac-theme="light"]) body.auction-body #back-to-top { background: v
 .ac-featured-item.is-hero .ac-featured-tag {
     background: linear-gradient(135deg, #f5a623, #f7931e);
 }
+
+/* ===== 卖家描述（详情页图片下方 · 突出展示） ===== */
+.ac-desc-block {
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--brand);
+    border-radius: 14px;
+    background: var(--surface-2);
+    padding: 14px 18px 16px;
+}
+.ac-desc-block-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--text);
+    margin-bottom: 10px;
+}
+.ac-desc-block-head .fas { color: var(--brand); }
+.ac-desc-report {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    text-decoration: none;
+}
+.ac-desc-report:hover { color: var(--brand); }
+
+/* ===== 首页卡片摘要（列表 / 推荐 / 即将结束） ===== */
+.ac-card-desc,
+.ac-rail-desc {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ac-card-desc {
+    margin: 0 0 8px;
+    -webkit-line-clamp: 2;
+}
+.ac-rail-desc {
+    margin: 4px 0 0;
+    -webkit-line-clamp: 2;
+}

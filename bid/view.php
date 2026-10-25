@@ -204,6 +204,17 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
+            <?php if (!empty(trim((string)($a['description'] ?? '')))): ?>
+            <!-- 卖家描述：紧跟拍品图片下方突出展示（卖家对拍品的详细表达） -->
+            <div class="ac-desc-block">
+                <div class="ac-desc-block-head">
+                    <span><i class="fas fa-align-left"></i> 卖家描述</span>
+                    <a data-stub="report" href="#" onclick="return false;" class="ac-desc-report">举报</a>
+                </div>
+                <?= ac_render_seller_description($a) ?>
+            </div>
+            <?php endif; ?>
+
             <!-- 竞拍数据 -->
             <div class="ac-stats" style="margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px;">
                 <div class="ac-stat"><b data-live="bid_count"><?= intval($snap['bid_count']) ?></b><span>出价次数</span></div>
@@ -391,16 +402,6 @@ require_once 'includes/header.php';
                 <li>落槌：<?= date('Y-m-d H:i', strtotime($a['end_time'])) ?></li>
             </ul>
         </div>
-
-        <?php if (!empty(trim((string)($a['description'] ?? '')))): ?>
-        <div class="ac-section">
-            <h3>
-                <i class="fas fa-align-left" style="color:var(--brand);"></i> 卖家描述
-                <a data-stub="report" href="#" onclick="return false;" style="font-size:12px;color:var(--muted);margin-left:auto;font-weight:400;">举报</a>
-            </h3>
-            <?= ac_render_seller_description($a) ?>
-        </div>
-        <?php endif; ?>
 
         <div class="ac-section">
             <h3><i class="fas fa-user" style="color:var(--brand);"></i> 卖家</h3>

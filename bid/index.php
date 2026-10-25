@@ -91,6 +91,10 @@ require_once 'includes/header.php';
         <a class="ac-rail-item ac-featured-item<?= $isHero ? ' is-hero' : '' ?><?= $fUrg ? ' is-urgent' : '' ?>" href="view.php?id=<?= intval($r['id']) ?>">
             <div class="ac-featured-tag"><i class="fas fa-star"></i> 推荐</div>
             <div class="t"><?= htmlspecialchars($r['item_title'] ?? ('拍品 #' . $r['id'])) ?></div>
+            <?php $featDesc = ac_seller_description_text($r, 46); ?>
+            <?php if ($featDesc !== ''): ?>
+                <div class="ac-rail-desc"><?= htmlspecialchars($featDesc) ?></div>
+            <?php endif; ?>
             <div class="p"><?= ac_money($r['current_price'] ?? $r['start_price'], $r['currency']) ?></div>
             <div class="ac-muted" style="font-size:11px;">
                 <?php if ($r['status'] === 'pending'): ?>
@@ -180,6 +184,10 @@ require_once 'includes/header.php';
         <?php foreach ($rail as $r): ?>
         <a class="ac-rail-item" href="view.php?id=<?= intval($r['id']) ?>">
             <div class="t"><?= htmlspecialchars($r['item_title'] ?? ('拍品 #' . $r['id'])) ?></div>
+            <?php $railDesc = ac_seller_description_text($r, 46); ?>
+            <?php if ($railDesc !== ''): ?>
+                <div class="ac-rail-desc"><?= htmlspecialchars($railDesc) ?></div>
+            <?php endif; ?>
             <div class="p"><?= ac_money($r['current_price'] ?? $r['start_price'], $r['currency']) ?></div>
             <?php ac_render_countdown($r, ''); ?>
         </a>
@@ -240,6 +248,10 @@ require_once 'includes/header.php';
                 <div class="ac-card-body">
                     <div class="ac-muted" style="font-size:11px;letter-spacing:.12em;"><?= ac_lot_no($a['id']) ?></div>
                     <div class="ac-card-title"><?= htmlspecialchars($a['item_title'] ?? ('拍品 #' . $a['id'])) ?></div>
+                    <?php $cardDesc = ac_seller_description_text($a, 70); ?>
+                    <?php if ($cardDesc !== ''): ?>
+                        <p class="ac-card-desc"><?= htmlspecialchars($cardDesc) ?></p>
+                    <?php endif; ?>
                     <div class="ac-card-price">
                         <div class="ac-price" style="font-size:19px;"><?= ac_money($a['current_price'] ?? $a['start_price'], $a['currency']) ?></div>
                         <?php if ($delta !== null): ?><span class="ac-delta ac-delta-up"><?= number_format($delta, 0) ?>%</span><?php endif; ?>
