@@ -101,13 +101,25 @@ $site_config['description'] = '正在拍卖：' . ($a['item_title'] ?? '') . '�
 // 拍品页若不覆盖，分享卡片显示的就不是当前拍品，而是那张通用默认图。
 $defaultOgImage = 'https://www.58.tl/assets/images/og-bid.jpg';
 $shareImg = '';
+$shareImgW = 800;
+$shareImgH = 800;
 if ($img !== '') {
     // og:image 必须是绝对 URL；ac_img() 返回的可能是根相对路径（/assets/...）
     $shareImg = preg_match('#^https?://#i', $img) ? $img : 'https://bid.58.tl' . $img;
 }
-// 微信/百度都不支持 SVG 缩略图，NFT 头像多为 .svg —— 降级到站点代表图
-if ($shareImg === '' || preg_match('#\.svg(\?|$)#i', $shareImg)) {
-    $shareImg = $defaultOgImage;
+// SVG 无法被微信/百度抓取，交给 NFT 子站的转换端点渲染成真实头像位图
+if ($shareImg !== '' && preg_match('#\.svg(\?|$)#i', $shareImg)) {
+    $svgBase = basename((string)parse_url($shareImg, PHP_URL_PATH));
+    if ($svgBase !== '' && preg_match('/^[A-Za-z0-9._-]+\.svg$/', $svgBase)) {
+        $shareImg  = 'https://nft.58.tl/avatar-png.php?f=' . rawurlencode($svgBase) . '&s=300';
+        $shareImgW = 300;
+        $shareImgH = 300;
+    } else {
+        $shareImg = $defaultOgImage;   // 无法定位的 SVG，回退站点代表图
+    }
+}
+if ($shareImg === '') {
+    $shareImg = $defaultOgImage;       // 无图时回退站点代表图
 }
 
 $canonicalUrl = $shareUrl;
@@ -119,8 +131,8 @@ $site_config['og_url']         = $canonicalUrl;
 $site_config['canonical_url']  = $canonicalUrl;
 // 拍品图通常是方图，覆盖掉 header 默认的 1200×630 声明（避免抓图工具按错比例裁切）
 $site_config['extra_head'] = ($site_config['extra_head'] ?? '')
-    . '<meta property="og:image:width" content="800">' . "\n"
-    . '<meta property="og:image:height" content="800">' . "\n";
+    . '<meta property="og:image:width" content="' . $shareImgW . '">' . "\n"
+    . '<meta property="og:image:height" content="' . $shareImgH . '">' . "\n";
 require_once 'includes/header.php';
 ?>
 

@@ -74,3 +74,6 @@ help/uploads/
 
 # playwright-cli 会话快照
 .playwright-cli/
+
+# NFT 头像 SVG→PNG 转换缓存（运行时按需生成，可安全删除后自动重建）
+nft/avatar-cache/

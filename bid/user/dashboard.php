@@ -63,6 +63,7 @@ require_once '../includes/header.php';
 
     <div class="dash-card">
         <div class="dash-links">
+            <a class="dash-link" href="profile.php">⚙️ 修改个人资料 <span class="arrow">›</span></a>
             <a class="dash-link" href="../my.php">🔨 我的拍卖 <span class="arrow">›</span></a>
             <a class="dash-link" href="../create.php">➕ 发起拍卖 <span class="arrow">›</span></a>
             <a class="dash-link" href="../index.php">🏠 返回拍卖大厅 <span class="arrow">›</span></a>
