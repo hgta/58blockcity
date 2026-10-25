@@ -275,8 +275,9 @@ require_once 'includes/header.php';
 
             <div class="ac-row2">
                 <div class="ac-field">
-                    <label>起拍价</label>
-                    <input type="number" name="start_price" step="0.01" min="0.01" required placeholder="如 100" value="<?= htmlspecialchars($fv['start_price']) ?>">
+                    <label>起拍价（填 0 即 0 元起拍）</label>
+                    <input type="number" name="start_price" step="0.01" min="0" required placeholder="0 = 0 元起拍" value="<?= htmlspecialchars($fv['start_price']) ?>">
+                    <div class="ac-hint" style="font-size:12px;margin-top:4px;">0 元起拍时，首口最低出价按「加价幅度」起步</div>
                 </div>
                 <div class="ac-field">
                     <label>底价（选填，低于底价流拍）</label>

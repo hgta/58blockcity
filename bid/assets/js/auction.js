@@ -315,13 +315,18 @@
                 var step = parseInt(btn.getAttribute('data-quick'), 10) || 1;
                 var price = parseFloat(form.getAttribute('data-price')) || 0;
                 var inc = parseFloat(form.getAttribute('data-increment')) || 0;
-                var base = price > 0 ? price : parseFloat(form.getAttribute('data-start-price')) || 0;
-                if (base <= 0 && price <= 0) {
+                var nextMinFallback = parseFloat(form.getAttribute('data-next-min')) || 0;
+                // 0 元起拍 / 无人出价时 current_price 与 start_price 均为 0，
+                // 基准改用服务端的「下一口价」（nextMinBid 已保证其 > 0），避免快捷加价失效
+                var base = price > 0 ? price : (parseFloat(form.getAttribute('data-start-price')) || nextMinFallback);
+                if (base <= 0) {
                     input.value = '';
                     input.focus();
                     return;
                 }
                 var amount = price > 0 ? (price + inc * step) : base;
+                var floorN = parseFloat(form.getAttribute('data-next-min')) || 0;
+                if (floorN > 0 && amount < floorN) amount = floorN;
                 input.value = amount.toFixed(2);
                 input.focus();
             });

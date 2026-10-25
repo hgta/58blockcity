@@ -67,6 +67,10 @@ $isOver    = in_array($a['status'], ['sold', 'ended', 'canceled'], true);
 $reserve   = $a['reserve_price'] !== null ? floatval($a['reserve_price']) : null;
 $reserveRatio = $reserve ? min(100, round(floatval($a['current_price'] ?? $a['start_price']) / $reserve * 100)) : 0;
 
+// 0 元起拍标识 / 是否已有出价（决定价格区显示「起拍价」还是「当前价」）
+$isZeroStart = floatval($a['start_price']) <= 0;
+$hasBid      = !empty($a['current_bidder_id']);
+
 // 子站详情链接（由 ac_item_cross_url 统一派生：product/block/nft）
 $detailUrl = ac_item_cross_url($a);
 $typeLabel = ac_item_type_label($a['item_type']);
@@ -181,10 +185,13 @@ require_once 'includes/header.php';
             <div class="ac-panel-price">
                 <div class="ac-panel-row" style="align-items:flex-end;">
                     <div>
-                        <div class="ac-eyebrow"><?= $isOver ? '成交价' : '当前价' ?></div>
+                        <div class="ac-eyebrow"><?= $isOver ? '成交价' : ($hasBid ? '当前价' : '起拍价') ?></div>
                         <div class="ac-price ac-price-lg">
                             <span class="ac-price-unit"><?= $symbol ?></span><span data-live="price"><?= number_format(floatval($a['current_price'] ?? $a['start_price']), 2) ?></span>
                         </div>
+                        <?php if ($isZeroStart): ?>
+                        <span style="display:inline-block;margin-top:6px;background:#ff4d4f;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">0 元起拍</span>
+                        <?php endif; ?>
                     </div>
                     <div style="text-align:right;">
                         <?php if ($delta !== null): ?><div class="ac-delta ac-delta-up"><?= number_format($delta, 1) ?>%</div><?php endif; ?>

@@ -72,7 +72,8 @@ class Auction {
         $description   = isset($data['description']) ? trim((string)$data['description']) : null;
         if ($description === '') $description = null;
 
-        if ($startPrice <= 0) return '请填写有效的起拍价';
+        // 起拍价允许为 0（0 元起拍），仅禁止负数
+        if ($startPrice < 0) return '起拍价不能为负数（0 元起拍请填 0）';
         if ($bidIncrement <= 0) return '请填写有效的加价幅度';
         if (empty($startTime) || empty($endTime)) return '请设置起止时间';
         if (strtotime($endTime) <= strtotime($startTime)) return '截止时间必须晚于开始时间';
@@ -219,7 +220,15 @@ class Auction {
      */
     public function nextMinBid($auction) {
         if (empty($auction['current_bidder_id'])) {
-            return floatval($auction['start_price']);
+            $start = floatval($auction['start_price']);
+            // 0 元起拍：无人出价时起步价不能为 0（0 元出价无意义且被 placeBid 拒绝），
+            // 改为按「一个加价幅度」起步，与「首次出价 ≥ 起拍价」保持一致的阶梯感。
+            // 加价幅度异常时用最小货币单位兜底。
+            if ($start <= 0) {
+                $inc = floatval($auction['bid_increment']);
+                return $inc > 0 ? $inc : 0.01;
+            }
+            return $start;
         }
         return floatval($auction['current_price']) + floatval($auction['bid_increment']);
     }
@@ -249,12 +258,9 @@ class Auction {
             if ($now < strtotime($a['start_time'])) throw new Exception('拍卖尚未开始');
             if ($now > strtotime($a['end_time'])) throw new Exception('拍卖已截止');
 
-            $currentPrice = floatval($a['current_price'] ?? $a['start_price']);
-            $minBid = $currentPrice + floatval($a['bid_increment']);
-            // 首次出价只需 ≥ 起拍价
-            if ($a['current_bidder_id'] === null) {
-                $minBid = floatval($a['start_price']);
-            }
+            // 最低可出价统一走 nextMinBid，与详情页展示的「下一口价」保持单一来源
+            // （含 0 元起拍：无人出价时按加价幅度起步）
+            $minBid = $this->nextMinBid($a);
             if ($amount < $minBid) {
                 throw new Exception('出价需 ≥ ' . number_format($minBid, 2));
             }
@@ -599,7 +605,8 @@ class Auction {
             return ['ok' => false, 'msg' => '拍品描述不超过 5000 字'];
         }
 
-        if ($startPrice <= 0) return ['ok' => false, 'msg' => '请填写有效的起拍价'];
+        // 起拍价允许为 0（0 元起拍），仅禁止负数
+        if ($startPrice < 0) return ['ok' => false, 'msg' => '起拍价不能为负数（0 元起拍请填 0）'];
         if ($bidIncrement <= 0) return ['ok' => false, 'msg' => '请填写有效的加价幅度'];
         if (empty($startTime) || empty($endTime)) return ['ok' => false, 'msg' => '请设置起止时间'];
         if (strtotime($endTime) <= strtotime($startTime)) return ['ok' => false, 'msg' => '截止时间必须晚于开始时间'];

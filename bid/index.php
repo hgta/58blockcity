@@ -108,7 +108,8 @@ require_once 'includes/header.php';
         $heroCounters = $auction->getCounters($hero);
         $heroDelta = ac_price_delta($hero);
         $heroImg = ac_auction_img($hero);
-        $heroMin = floatval($hero['current_bidder_id'] ? floatval($hero['current_price']) + floatval($hero['bid_increment']) : $hero['start_price']);
+        // 统一走 nextMinBid（0 元起拍时首口价按加价幅度起步，不显示 ¥0.00）
+        $heroMin = $auction->nextMinBid($hero);
     ?>
     <!-- 全场主推 -->
     <section class="ac-hero">
