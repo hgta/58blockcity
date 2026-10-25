@@ -95,6 +95,32 @@ $maxExtend     = intval($a['max_extend_times'] ?? 0) ?: 10;
 
 $site_config['title'] = ($a['item_title'] ?? '拍卖详情') . ' - ' . ac_lot_no($a['id']) . ' | 58拍卖';
 $site_config['description'] = '正在拍卖：' . ($a['item_title'] ?? '') . '，当前价 ' . $symbol . number_format(floatval($a['current_price'] ?? $a['start_price']), 2) . '，价高者得。';
+
+// ===== 分享图：拍品页必须覆盖 og:image，否则微信会抓到站点默认图 =====
+// 默认 og:image 是「站点代表图」og-bid.jpg（当初为百度/SEO 做的），
+// 拍品页若不覆盖，分享卡片显示的就不是当前拍品，而是那张通用默认图。
+$defaultOgImage = 'https://www.58.tl/assets/images/og-bid.jpg';
+$shareImg = '';
+if ($img !== '') {
+    // og:image 必须是绝对 URL；ac_img() 返回的可能是根相对路径（/assets/...）
+    $shareImg = preg_match('#^https?://#i', $img) ? $img : 'https://bid.58.tl' . $img;
+}
+// 微信/百度都不支持 SVG 缩略图，NFT 头像多为 .svg —— 降级到站点代表图
+if ($shareImg === '' || preg_match('#\.svg(\?|$)#i', $shareImg)) {
+    $shareImg = $defaultOgImage;
+}
+
+$canonicalUrl = $shareUrl;
+$site_config['og_title']       = $shareTitle;
+$site_config['og_description'] = $shareDesc;
+$site_config['og_type']        = 'product';
+$site_config['og_image']       = $shareImg;
+$site_config['og_url']         = $canonicalUrl;
+$site_config['canonical_url']  = $canonicalUrl;
+// 拍品图通常是方图，覆盖掉 header 默认的 1200×630 声明（避免抓图工具按错比例裁切）
+$site_config['extra_head'] = ($site_config['extra_head'] ?? '')
+    . '<meta property="og:image:width" content="800">' . "\n"
+    . '<meta property="og:image:height" content="800">' . "\n";
 require_once 'includes/header.php';
 ?>
 
@@ -525,6 +551,7 @@ window.AC_SERVER_NOW = <?= time() ?>;
 var SHARE_URL       = <?= json_encode($shareUrl) ?>;
 var SHARE_TITLE     = <?= json_encode($shareTitle) ?>;
 var SHARE_DESC      = <?= json_encode($shareDesc) ?>;
+var SHARE_IMG       = <?= json_encode($shareImg) ?>;
 var SHARE_HAS_NATIVE = (typeof navigator !== 'undefined' && !!navigator.share);
 
 function openShareModal() {
@@ -573,8 +600,9 @@ document.addEventListener('keydown', function (e) {
 function shareToWechat(btn) {
     try {
         if (typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge && WeixinJSBridge.invoke) {
+            // img_url 必须传绝对 URL，且不能是 SVG（微信不支持）；留空会丢失缩略图
             WeixinJSBridge.invoke('sendAppMessage', {
-                'appid': '', 'img_url': '', 'img_width': '200', 'img_height': '200',
+                'appid': '', 'img_url': SHARE_IMG, 'img_width': '300', 'img_height': '300',
                 'link': SHARE_URL, 'desc': SHARE_DESC, 'title': SHARE_TITLE
             }, function (res) { /* noop */ });
             return;
