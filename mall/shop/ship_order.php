@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Notification.php';
+require_once '../includes/functions.php';
 
 // 检查用户是否已登录
 if (!isset($_SESSION['user_id'])) {
@@ -146,7 +147,7 @@ $shippingCompanies = [
             </div>
             <div class="order-info-row">
                 <span class="order-info-label">实付金额</span>
-                <span class="order-info-value"><span class="bct-symbol">Ⓟ</span><?= number_format($orderInfo['total_amount'], 0) ?> 人气值</span>
+                <span class="order-info-value"><?= htmlspecialchars(order_money($orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity')) ?></span>
             </div>
             <div class="order-info-row">
                 <span class="order-info-label">收货地址</span>

@@ -67,6 +67,10 @@ $isOver    = in_array($a['status'], ['sold', 'ended', 'canceled'], true);
 $reserve   = $a['reserve_price'] !== null ? floatval($a['reserve_price']) : null;
 $reserveRatio = $reserve ? min(100, round(floatval($a['current_price'] ?? $a['start_price']) / $reserve * 100)) : 0;
 
+// 契约履约：落槌后才有契约；payment_status 为 NULL 的是本 change 之前的存量记录，按无契约处理
+$contractStage   = ac_contract_stage($a);
+$isContractParty = ($contractStage !== null) && $userId > 0 && ($isSeller || $isCurrent);
+
 // 0 元起拍标识 / 是否已有出价（决定价格区显示「起拍价」还是「当前价」）
 $isZeroStart = floatval($a['start_price']) <= 0;
 $hasBid      = !empty($a['current_bidder_id']);
@@ -145,6 +149,7 @@ require_once 'includes/header.php';
             <span class="ac-badge ac-badge-soft"><i class="fas fa-store"></i> 商品</span>
         <?php endif; ?>
         <?php ac_status_badge($a); ?>
+        <?= ac_contract_badge($a) ?>
         <?php if (!empty($a['extend_count'])): ?>
             <span class="ac-badge ac-badge-hot">已顺延 <?= intval($a['extend_count']) ?> 次</span>
         <?php endif; ?>
@@ -315,6 +320,24 @@ require_once 'includes/header.php';
                         <i class="fas fa-info-circle"></i> 已流拍（未达成交条件）
                     <?php endif; ?>
                 </div>
+
+                <?php if ($contractStage): ?>
+                <div class="ac-ct-panel" data-contract-stage="<?= htmlspecialchars($contractStage['key']) ?>">
+                    <div class="ac-ct-panel-head">
+                        <i class="fas fa-file-signature"></i>
+                        <span>契约履约 · <?= htmlspecialchars($contractStage['label']) ?></span>
+                    </div>
+                    <p class="ac-ct-panel-note">
+                        落槌即契约成立。付款由买卖双方线下自行结算，平台不代收不托管；
+                        物品所有权在卖家确认收款后交割。
+                    </p>
+                    <?php if ($isContractParty): ?>
+                        <a class="ac-btn ac-btn-primary ac-btn-block" href="user/contract.php?id=<?= intval($a['id']) ?>">
+                            <i class="fas fa-file-signature"></i> 查看契约
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
             <?php endif; ?>
 
             <div style="display:flex;gap:8px;">
@@ -406,7 +429,7 @@ require_once 'includes/header.php';
         <div class="ac-section">
             <h3><i class="fas fa-user" style="color:var(--brand);"></i> 卖家</h3>
             <p style="margin:0 0 6px;"><?= htmlspecialchars($a['seller_name'] ?? ('用户#' . $a['seller_id'])) ?></p>
-            <p class="ac-muted" style="margin:0;font-size:12px;">成交后物品所有权将直接转移给得标者。</p>
+            <p class="ac-muted" style="margin:0;font-size:12px;">落槌即契约成立，卖家确认收款后物品所有权才转移给得标者。</p>
         </div>
 
         <div class="ac-section">
@@ -415,7 +438,9 @@ require_once 'includes/header.php';
                 <li>出价需 ≥ 下一口价，价高者得。</li>
                 <li>最后 <?= intval($extendWindow / 60) ?> 分钟内出价将自动顺延 <?= intval($extendStep / 60) ?> 分钟，最多顺延 <?= $maxExtend ?> 次，杜绝最后时刻狙击。</li>
                 <li><?= $reserve !== null ? '当前价需达到底价方可成交，未达底价将流拍。' : '无底价拍卖，最高出价者即成交。' ?></li>
-                <li>落槌后系统自动转移物品所有权并通知买卖双方。</li>
+                <li>落槌即<b>契约成立</b>：买卖双方在契约页自行结算付款，平台不代收、不托管、不介入币种折算。</li>
+                <li>买家需在 7 天内声明付款；卖家核实到账后确认收款，<b>物品所有权在确认收款的那一刻才交割</b>。</li>
+                <li>逾期未声明付款的契约自动作废，物品解除占用、所有权从未转移。</li>
             </ul>
         </div>
     </div>
@@ -426,8 +451,10 @@ window.AC_PAGE = {
     auctionId: <?= $auctionId ?>,
     myId: <?= $userId ?>,
     csrf: '<?= generateCsrfToken() ?>',
-    poll: <?= ($isActive || $a['status'] === 'pending') ? 'true' : 'false' ?>,
+    // 契约未了结时继续轮询：让买卖双方看到履约状态推进，无需手动刷新
+    poll: <?= ($isActive || $a['status'] === 'pending' || ($contractStage && in_array($contractStage['key'], ['unpaid', 'buyer_declared'], true))) ? 'true' : 'false' ?>,
     initialStatus: '<?= $a['status'] ?>',
+    initialPaymentStatus: '<?= $a['payment_status'] ?? '' ?>',
     apiLot: '/api/lot.php',
     apiBid: '/api/bid.php',
     apiWatch: '/api/watch.php'

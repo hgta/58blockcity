@@ -6,6 +6,7 @@ require_once '../../classes/Shop.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/SeoHelper.php';
+require_once '../includes/functions.php';
 
 // 检查用户是否已登录（必须在输出 HTML 之前）
 if (!isset($_SESSION['user_id'])) {
@@ -426,7 +427,7 @@ require_once '../includes/header.php';
                                     <div class="order-info">
                                         <div class="order-top">
                                             <span class="buyer-name"><?= htmlspecialchars($o['buyer_name'] ?? '匿名用户') ?></span>
-                                            <span class="order-amount"><span class="bct-symbol">Ⓟ</span><?= number_format($o['total_amount'], 0) ?></span>
+                                            <span class="order-amount"><?= htmlspecialchars(order_money($o['total_amount'], $o['currency'] ?? 'popularity')) ?></span>
                                         </div>
                                         <div class="order-bottom">
                                             <span class="order-no"><?= htmlspecialchars($o['order_no']) ?></span>

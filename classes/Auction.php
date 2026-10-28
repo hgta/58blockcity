@@ -16,12 +16,14 @@ require_once __DIR__ . '/Block.php';
 require_once __DIR__ . '/NFT.php';
 require_once __DIR__ . '/Notification.php';
 require_once __DIR__ . '/User.php';
+require_once __DIR__ . '/Order.php';
 
 class Auction {
     private $pdo;
     private $block;
     private $nft;
     private $notify;
+    private $order;
 
     /** 自动延时默认参数（秒 / 次） */
     const AUTO_EXTEND_SECONDS   = 120;   // 每次顺延时长
@@ -44,6 +46,7 @@ class Auction {
         $this->block = new Block($pdo);
         $this->nft = new NFT($pdo);
         $this->notify = new Notification($pdo);
+        $this->order = new Order($pdo);
     }
 
     /* ========== 发布拍卖 ========== */
@@ -173,9 +176,15 @@ class Auction {
      * 是否已有 active/pending 拍卖
      */
     public function isItemInActiveAuction($itemType, $itemId) {
+        // 契约未了结（sold 且 unpaid / buyer_declared）同样算占用。
+        // 落槌后物品要在卖家手中停留整个契约期（物权改为收款后才交割），
+        // 不加锁就会一物二卖：同一件物品同时挂着两笔待付款契约。
+        // payment_status 为 NULL 的是本 change 之前的存量记录，不视为占用。
         $stmt = $this->pdo->prepare("
             SELECT COUNT(*) FROM auctions
-            WHERE item_type = ? AND item_id = ? AND status IN ('pending','active')");
+            WHERE item_type = ? AND item_id = ?
+              AND ( status IN ('pending','active')
+                 OR (status = 'sold' AND payment_status IN ('unpaid','buyer_declared')) )");
         $stmt->execute([$itemType, $itemId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -406,38 +415,34 @@ class Auction {
                 return;
             }
 
-            // 成交：转移所有权（product 返回订单 id，其余返回 null）
-            $wonOrderId = $this->transferOwnership($auctionId, $a['item_type'], intval($a['item_id']), $bidderId, $price);
+            // 落槌 = 契约成立。
+            // 只有商品拍品在此刻建 mall 订单（并原子扣库存，库存扣减即契约期占用）；
+            // block / nft 此刻不动物权——等卖家确认收款后才过户。
+            if ($a['item_type'] === 'product') {
+                $this->transferOwnership($auctionId, 'product', intval($a['item_id']), $bidderId, $price, $a['currency']);
+            }
 
             $stmt = $this->pdo->prepare("
-                UPDATE auctions SET status = 'sold', final_price = ?, sold_at = NOW(), updated_at = NOW()
+                UPDATE auctions
+                SET status = 'sold', final_price = ?, sold_at = NOW(),
+                    payment_status = 'unpaid', contract_expire_at = DATE_ADD(NOW(), INTERVAL 7 DAY),
+                    updated_at = NOW()
                 WHERE id = ?");
             $stmt->execute([$price, $auctionId]);
 
-            // 通知买卖双方（商品拍品通知带 mall 订单链接）
-            if ($a['item_type'] === 'product' && $wonOrderId) {
-                $this->notify->sendSystemNotify(
-                    $bidderId, 'auction_won_product', $auctionId,
-                    '恭喜！您已拍得商品，订单已生成，请前往商城完成付款（订单 7 天内有效）。',
-                    'https://mall.58.tl/user/order_detail.php?id=' . intval($wonOrderId)
-                );
-                $this->notify->sendSystemNotify(
-                    intval($a['seller_id']), 'auction_sold_product', $auctionId,
-                    '您的商品拍卖已成交，成交价 ' . number_format($price, 2) . '，系统已自动生成订单。',
-                    'https://bid.58.tl/view.php?id=' . $auctionId
-                );
-            } else {
-                $this->notify->sendSystemNotify(
-                    $bidderId, 'auction_won', $auctionId,
-                    '恭喜！您已赢得拍卖，物品所有权已转移给您。',
-                    'https://bid.58.tl/view.php?id=' . $auctionId
-                );
-                $this->notify->sendSystemNotify(
-                    intval($a['seller_id']), 'auction_sold', $auctionId,
-                    '您的拍卖已成交，成交价 ' . number_format($price, 2) . '。',
-                    'https://bid.58.tl/view.php?id=' . $auctionId
-                );
-            }
+            // 通知买卖双方：契约入口统一在拍卖站契约页，不再直达商城付款
+            $contractUrl = 'https://bid.58.tl/user/contract.php?id=' . $auctionId;
+            $money       = $this->moneyText($price, $a['currency']);
+            $this->notify->sendSystemNotify(
+                $bidderId, 'auction_contract_created', $auctionId,
+                '恭喜！您已拍得该拍品，契约已成立，成交价 ' . $money . '。请在 7 天内与卖家完成付款。',
+                $contractUrl
+            );
+            $this->notify->sendSystemNotify(
+                intval($a['seller_id']), 'auction_contract_created', $auctionId,
+                '您的拍卖已成交，成交价 ' . $money . '，契约已成立。请在收到款项后再确认收款、交付物品。',
+                $contractUrl
+            );
 
             $this->pdo->commit();
         } catch (Exception $e) {
@@ -447,22 +452,34 @@ class Auction {
     }
 
     /**
+     * 金额文案（含货币符号）
+     * 与 bid/includes/lot_helpers.php 的 ac_money() 同语义；
+     * 此处内联，避免业务类依赖拍卖站的渲染辅助文件。
+     */
+    private function moneyText($amount, $currency) {
+        return ($currency === 'popularity' ? 'Ⓟ ' : '¥ ') . number_format(floatval($amount), 2);
+    }
+
+    /**
      * 成交转移所有权
      * block/nft：转移物品归属并写交易流水，返回 null
      * product：原子扣库存 + 创建 pending 订单（7 天有效）+ 写 order_items，返回订单 id
      *          任一环节失败抛异常，由 settle() 的事务整体回滚（视为流拍）
      */
-    private function transferOwnership($auctionId, $itemType, $itemId, $buyerId, $price) {
+    private function transferOwnership($auctionId, $itemType, $itemId, $buyerId, $price, $currency) {
         if ($itemType === 'block') {
-            $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$buyerId, $itemId]);
-            // 写流水
+            // 顺序关键：必须在过户前读取 owner_id 作为 seller_id。
+            // 若先 UPDATE 再读，读到的是已被改成买家的 owner_id，
+            // 流水会被记成「买家把区块卖给自己」，真实卖家永久丢失。
             $b = $this->block->getBlockById($itemId);
             $sellerId = $b ? intval($b['owner_id']) : 0;
+            $stmt = $this->pdo->prepare("UPDATE blocks SET owner_id = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$buyerId, $itemId]);
+            // 写流水（币种继承拍卖）
             $stmt = $this->pdo->prepare("
-                INSERT INTO transactions (block_id, seller_id, buyer_id, price, transaction_type, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, 'resale', 'completed', NOW(), NOW())");
-            $stmt->execute([$itemId, $sellerId, $buyerId, $price]);
+                INSERT INTO transactions (block_id, seller_id, buyer_id, price, currency, transaction_type, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'resale', 'completed', NOW(), NOW())");
+            $stmt->execute([$itemId, $sellerId, $buyerId, $price, $currency]);
             return null;
         }
         if ($itemType === 'product') {
@@ -494,11 +511,12 @@ class Auction {
             $oStmt = $this->pdo->prepare("
                 INSERT INTO orders
                     (order_no, user_id, shop_id, total_amount, payment_city, payment_amount,
-                     payment_block_id, buyer_note, shipping_address, status, expire_at)
-                VALUES (?, ?, ?, ?, '', ?, '', ?, '', 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY))");
+                     payment_block_id, buyer_note, shipping_address, status, expire_at,
+                     currency, auction_id)
+                VALUES (?, ?, ?, ?, '', ?, '', ?, '', 'pending', DATE_ADD(NOW(), INTERVAL 7 DAY), ?, ?)");
             $oStmt->execute([
                 $orderNo, intval($buyerId), intval($prod['shop_id']), $price, $price,
-                '拍卖 ' . $lotNo . ' 成交',
+                '拍卖 ' . $lotNo . ' 成交', $currency, intval($auctionId),
             ]);
             $orderId = intval($this->pdo->lastInsertId());
 
@@ -523,9 +541,218 @@ class Auction {
         // 写 NFT 交易流水
         $stmt = $this->pdo->prepare("
             INSERT INTO nft_transactions (nft_id, seller_id, buyer_id, price, currency, transaction_type, status, city_id, completed_at, created_at)
-            VALUES (?, ?, ?, ?, 'popularity', 'platform', 'completed', ?, NOW(), NOW())");
-        $stmt->execute([$rec['nft_id'], $sellerId, $buyerId, $price, $rec['city_id']]);
+            VALUES (?, ?, ?, ?, ?, 'platform', 'completed', ?, NOW(), NOW())");
+        $stmt->execute([$rec['nft_id'], $sellerId, $buyerId, $price, $currency, $rec['city_id']]);
         return null;
+    }
+
+    /* ========== 契约履约 ==========
+     *
+     * 拍卖只产生契约：钱由买卖双方线下自行结算，平台不碰资金、不做币种折算。
+     * 契约本体就是 auctions 行：
+     *
+     *   unpaid ──买家声明──> buyer_declared ──卖家确认──> settled（物权在此刻交割）
+     *     └──────── 7 天届满 ────────> voided
+     *
+     * 物权交割发生在 settled，因此 voided 时物权仍在卖家手中，无需回滚。
+     */
+
+    /** 契约详情（含拍品摘要与买卖双方） */
+    public function getContract($auctionId) {
+        return $this->getAuctionById(intval($auctionId));
+    }
+
+    /**
+     * 契约列表
+     * @param string $role buyer（我拍到的）| seller（我发起的）
+     */
+    public function getContractsFor($userId, $role, $limit = 50) {
+        $col = ($role === 'seller') ? 'a.seller_id' : 'a.current_bidder_id';
+        $sql = "SELECT a.*, u.username AS seller_name, u.avatar AS seller_avatar,
+                       b.username AS buyer_name
+                FROM auctions a
+                LEFT JOIN users u ON a.seller_id = u.id
+                LEFT JOIN users b ON a.current_bidder_id = b.id
+                WHERE {$col} = ? AND a.status = 'sold' AND a.payment_status IS NOT NULL
+                ORDER BY COALESCE(a.settled_at, a.sold_at) DESC
+                LIMIT " . max(1, intval($limit));
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([intval($userId)]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->attachItemInfo($rows);
+        return $rows;
+    }
+
+    /** 买家声明已付款：unpaid → buyer_declared */
+    public function declarePaid($auctionId, $userId) {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id, seller_id, current_bidder_id, status, payment_status, currency, final_price, current_price
+                FROM auctions WHERE id = ? FOR UPDATE");
+            $stmt->execute([intval($auctionId)]);
+            $a = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$a) throw new Exception('契约不存在');
+            if (intval($a['current_bidder_id']) !== intval($userId)) throw new Exception('无权操作该契约');
+            if ($a['status'] !== 'sold' || $a['payment_status'] !== 'unpaid') throw new Exception('契约当前状态无法声明付款');
+
+            $upd = $this->pdo->prepare("
+                UPDATE auctions
+                SET payment_status = 'buyer_declared', payment_declared_at = NOW(), updated_at = NOW()
+                WHERE id = ?");
+            $upd->execute([intval($auctionId)]);
+
+            $money = $this->moneyText(floatval($a['final_price'] ?: $a['current_price']), $a['currency']);
+            $this->notify->sendSystemNotify(
+                intval($a['seller_id']), 'auction_contract_buyer_paid', intval($auctionId),
+                '买家已标记付款，成交价 ' . $money . '，请核实到账后再确认收款。',
+                'https://bid.58.tl/user/contract.php?id=' . intval($auctionId)
+            );
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 卖家确认收款：buyer_declared → settled
+     * 物权交割就发生在这一步——落槌只是契约成立，不是交割。
+     */
+    public function confirmPaid($auctionId, $userId) {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM auctions WHERE id = ? FOR UPDATE");
+            $stmt->execute([intval($auctionId)]);
+            $a = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$a) throw new Exception('契约不存在');
+            if (intval($a['seller_id']) !== intval($userId)) throw new Exception('无权操作该契约');
+            if ($a['status'] !== 'sold' || $a['payment_status'] !== 'buyer_declared') throw new Exception('契约当前状态无法确认收款');
+
+            $price    = floatval($a['final_price'] ?: $a['current_price']);
+            $buyerId  = intval($a['current_bidder_id']);
+            $currency = $a['currency'];
+
+            if ($a['item_type'] === 'product') {
+                // 商品：物权交割 = 卖家发货（走 mall 订单流程），此处只把订单置为已付款
+                $contractOrder = $this->order->getOrderByAuctionId(intval($auctionId));
+                if ($contractOrder) {
+                    $this->order->markPaidByContract(intval($contractOrder['id']));
+                }
+            } else {
+                // block / nft：物权在此刻交割
+                $this->transferOwnership(intval($auctionId), $a['item_type'], intval($a['item_id']), $buyerId, $price, $currency);
+            }
+
+            $upd = $this->pdo->prepare("
+                UPDATE auctions
+                SET payment_status = 'settled', settled_at = NOW(), updated_at = NOW()
+                WHERE id = ?");
+            $upd->execute([intval($auctionId)]);
+
+            $tail = ($a['item_type'] === 'product') ? '卖家将尽快发货。' : '物品所有权已转移给您。';
+            $this->notify->sendSystemNotify(
+                $buyerId, 'auction_contract_settled', intval($auctionId),
+                '卖家已确认收款，契约完成，成交价 ' . $this->moneyText($price, $currency) . '。' . $tail,
+                'https://bid.58.tl/user/contract.php?id=' . intval($auctionId)
+            );
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 契约作废
+     * 物权尚未交割，block / nft 无需回滚；商品需回滚库存并取消 mall 订单。
+     */
+    public function voidContract($auctionId, $reason = 'expired') {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM auctions WHERE id = ? FOR UPDATE");
+            $stmt->execute([intval($auctionId)]);
+            $a = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$a) throw new Exception('契约不存在');
+            if (in_array($a['payment_status'], ['settled', 'voided'], true)) {
+                throw new Exception('契约已了结，无法作废');
+            }
+
+            if ($a['item_type'] === 'product') {
+                // 不复用 Order::autoCancelExpiredOrder()——它内部会 beginTransaction，
+                // 与本事务嵌套。这里内联完成「回滚库存 + 取消订单」。
+                $contractOrder = $this->order->getOrderByAuctionId(intval($auctionId));
+                // 仅在订单仍待付款时回滚——已取消 / 已付款的订单回滚会造成库存重复回补
+                if ($contractOrder && $contractOrder['status'] === 'pending') {
+                    $itemsStmt = $this->pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+                    $itemsStmt->execute([intval($contractOrder['id'])]);
+                    foreach ($itemsStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
+                        $qty = intval($it['quantity']);
+                        $rb  = $this->pdo->prepare("
+                            UPDATE products
+                            SET stock = stock + ?, sold_count = GREATEST(sold_count - ?, 0), updated_at = NOW()
+                            WHERE id = ?");
+                        $rb->execute([$qty, $qty, intval($it['product_id'])]);
+                    }
+                    $cancel = $this->pdo->prepare("UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = ?");
+                    $cancel->execute([intval($contractOrder['id'])]);
+                }
+            }
+
+            $upd = $this->pdo->prepare("UPDATE auctions SET payment_status = 'voided', updated_at = NOW() WHERE id = ?");
+            $upd->execute([intval($auctionId)]);
+
+            $note = ($reason === 'expired')
+                ? '契约因超过 7 天未完成付款而作废，物品所有权未发生转移。'
+                : '契约已作废，物品所有权未发生转移。';
+            $url  = 'https://bid.58.tl/user/contract.php?id=' . intval($auctionId);
+            $this->notify->sendSystemNotify(intval($a['current_bidder_id']), 'auction_contract_voided', intval($auctionId), $note, $url);
+            $this->notify->sendSystemNotify(intval($a['seller_id']), 'auction_contract_voided', intval($auctionId), $note, $url);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 惰性清扫：7 天未声明付款的契约作废
+     * 由 bid/index.php / bid/my.php / bid/admin/dashboard.php 调用；
+     * 刻意不进 bid/api/lot.php 的 3 秒轮询路径，避免高频写入。
+     */
+    public function expireOverdueContracts($limit = 200) {
+        $stmt = $this->pdo->prepare("
+            SELECT id FROM auctions
+            WHERE status = 'sold' AND payment_status = 'unpaid' AND contract_expire_at < NOW()
+            LIMIT " . max(1, intval($limit)));
+        $stmt->execute();
+        $ids  = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $done = 0;
+        foreach ($ids as $id) {
+            try {
+                $this->voidContract(intval($id), 'expired');
+                $done++;
+            } catch (Exception $e) {
+                error_log('Auction::expireOverdueContracts 作废失败 #' . $id . ': ' . $e->getMessage());
+            }
+        }
+        return $done;
+    }
+
+    /** 物品是否处于未了结的契约中（契约期占用） */
+    public function isItemInOpenContract($itemType, $itemId) {
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) FROM auctions
+            WHERE item_type = ? AND item_id = ?
+              AND status = 'sold' AND payment_status IN ('unpaid','buyer_declared')");
+        $stmt->execute([$itemType, intval($itemId)]);
+        return $stmt->fetchColumn() > 0;
     }
 
     /* ========== 卖家管理 ========== */
@@ -1097,7 +1324,7 @@ class Auction {
             SELECT id, status, currency, current_price, start_price, current_bidder_id, seller_id,
                    end_time, start_time, bid_increment, reserve_price,
                    bid_count, bidder_count, watch_count, extend_count,
-                   auto_extend_seconds, extend_window_seconds
+                   auto_extend_seconds, extend_window_seconds, payment_status
             FROM auctions WHERE id = ?");
         $stmt->execute([$auctionId]);
         $a = $stmt->fetch(PDO::FETCH_ASSOC);

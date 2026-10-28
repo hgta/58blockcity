@@ -19,6 +19,7 @@ require_once '../../classes/Order.php';
 require_once '../../classes/Address.php';
 require_once '../../classes/User.php';
 require_once '../../classes/Shop.php';
+require_once '../includes/functions.php';
 
 $cart = new Cart($pdo);
 $product = new Product($pdo);
@@ -725,7 +726,7 @@ function normalizeImageUrl($imageUrl) {
                                                      class="product-image">
                                                 <div class="product-info">
                                                     <div class="product-name"><?php echo htmlspecialchars($item['name']); ?></div>
-                                                    <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['price'], 0); ?> 人气值</div>
+                                                    <div class="product-price"><?php echo htmlspecialchars(order_money($item['price'])); ?></div>
                                                 </div>
                                                 <div class="product-quantity">x<?php echo $item['quantity']; ?></div>
                                             </div>
@@ -777,7 +778,7 @@ function normalizeImageUrl($imageUrl) {
                             <h3 class="section-title">订单摘要</h3>
                             <div class="summary-row">
                                 <span>商品总价</span>
-                                <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($totalAmount, 0); ?> 人气值</span>
+                                <span><?php echo htmlspecialchars(order_money($totalAmount)); ?></span>
                             </div>
                             <div class="summary-row">
                                 <span>运费</span>
@@ -789,7 +790,7 @@ function normalizeImageUrl($imageUrl) {
                             </div>
                             <div class="summary-row summary-total">
                                 <span>应付总额</span>
-                                <span><span class="bct-symbol">Ⓟ</span><?php echo number_format($totalAmount, 0); ?> 人气值</span>
+                                <span><?php echo htmlspecialchars(order_money($totalAmount)); ?></span>
                             </div>
                             
                             <button type="submit" class="btn-submit" id="submit-btn">

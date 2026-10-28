@@ -520,7 +520,7 @@ $statusClassMap = [
                                             <?php echo htmlspecialchars($detail['specification'] ?: '默认规格'); ?>
                                         </div>
                                         <div class="product-price">
-                                            <span class="bct-symbol">Ⓟ</span><?php echo number_format($detail['unit_price'], 0); ?> 人气值
+                                            <?php echo htmlspecialchars(order_money($detail['unit_price'], $orderItem['currency'] ?? 'popularity')); ?>
                                         </div>
                                     </div>
                                     
@@ -533,7 +533,7 @@ $statusClassMap = [
                         
                         <div class="order-footer">
                             <div class="order-total">
-                                实付: <span class="bct-symbol">Ⓟ</span><?php echo number_format($orderItem['total_amount'], 0); ?> 人气值
+                                实付: <?php echo htmlspecialchars(order_money($orderItem['total_amount'], $orderItem['currency'] ?? 'popularity')); ?>
                             </div>
                             
                             <div class="order-actions">

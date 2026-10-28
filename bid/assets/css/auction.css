@@ -112,6 +112,18 @@ html[data-ac-theme="light"] body.auction-body {
 .ac-badge-sold   { background: var(--brand-dim); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 30%, transparent); }
 .ac-badge-soft   { background: var(--soft); }
 
+/* 契约履约状态角标（落槌后才有；与 .ac-badge 同基座） */
+.ac-ct-todo      { background: color-mix(in srgb, #f39c12 14%, transparent); color: #f39c12; border-color: color-mix(in srgb, #f39c12 35%, transparent); }
+.ac-ct-done      { background: var(--brand-dim); color: var(--brand); border-color: color-mix(in srgb, var(--brand) 30%, transparent); }
+.ac-ct-void      { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+
+/* 详情页契约面板 */
+.ac-ct-panel { margin-top: 12px; padding: 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.ac-ct-panel-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.ac-ct-panel-head i { color: var(--brand); }
+.ac-ct-panel-note { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 0 0 10px; }
+.ac-ct-panel a { text-decoration: none; }
+
 .ac-live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: ac-pulse 1.4s infinite; }
 
 /* ---------- 倒计时 ---------- */

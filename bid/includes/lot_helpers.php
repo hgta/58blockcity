@@ -183,6 +183,81 @@ if (!function_exists('ac_price_delta')) {
     }
 }
 
+/* ========== 契约履约（落槌 = 契约成立，钱由买卖双方线下自行结算） ========== */
+
+if (!function_exists('ac_contract_stage')) {
+    /**
+     * 契约履约阶段
+     *
+     * @param array $auction 拍卖记录（需含 status / payment_status）
+     * @return array{key:string,label:string,step:int,cls:string}|null
+     *         null = 该记录不在契约流程中：未落槌，或落槌发生在本 change 之前
+     *         （存量记录的 payment_status 为 NULL，不回溯补契约）
+     */
+    function ac_contract_stage($auction) {
+        if (($auction['status'] ?? '') !== 'sold') return null;
+        $ps = $auction['payment_status'] ?? null;
+        if ($ps === null || $ps === '') return null;
+        $map = [
+            'unpaid'         => ['key' => 'unpaid',         'label' => '待买家付款',    'step' => 1, 'cls' => 'ac-ct-todo'],
+            'buyer_declared' => ['key' => 'buyer_declared', 'label' => '待卖家确认收款', 'step' => 2, 'cls' => 'ac-ct-todo'],
+            'settled'        => ['key' => 'settled',        'label' => '契约已完成',    'step' => 3, 'cls' => 'ac-ct-done'],
+            'voided'         => ['key' => 'voided',         'label' => '契约已作废',    'step' => 0, 'cls' => 'ac-ct-void'],
+        ];
+        return $map[$ps] ?? null;
+    }
+}
+
+if (!function_exists('ac_contract_badge')) {
+    /** 契约履约角标（无契约时返回空串，由调用方决定是否渲染） */
+    function ac_contract_badge($auction) {
+        $st = ac_contract_stage($auction);
+        if (!$st) return '';
+        $icon = $st['key'] === 'settled' ? 'handshake' : ($st['key'] === 'voided' ? 'ban' : 'file-signature');
+        return '<span class="ac-badge ' . $st['cls'] . '"><i class="fas fa-' . $icon . '"></i> ' . $st['label'] . '</span>';
+    }
+}
+
+if (!function_exists('ac_render_contract_progress')) {
+    /**
+     * 输出三节点履约进度条
+     *   契约成立 → 买家付款 → 卖家确认收款（物权交割发生在这一步）
+     */
+    function ac_render_contract_progress($auction) {
+        $st = ac_contract_stage($auction);
+        if (!$st) return;
+
+        if ($st['key'] === 'voided') {
+            echo '<div class="ac-ct-bar is-void">'
+               . '<div class="ac-ct-node is-void"><span class="ac-ct-dot"><i class="fas fa-ban"></i></span>'
+               . '<span class="ac-ct-label">契约已作废，物品所有权未发生转移</span></div>'
+               . '</div>';
+            return;
+        }
+
+        $step  = intval($st['step']);
+        $nodes = [
+            ['契约成立', 'gavel'],
+            ['买家付款', 'money-bill-wave'],
+            ['卖家确认收款 · 交割', 'handshake'],
+        ];
+        echo '<div class="ac-ct-bar">';
+        $total = count($nodes);
+        foreach ($nodes as $i => $n) {
+            $idx   = $i + 1;
+            $state = $idx < $step ? 'is-done' : ($idx === $step ? 'is-active' : '');
+            echo '<div class="ac-ct-node ' . $state . '">'
+               . '<span class="ac-ct-dot"><i class="fas fa-' . $n[1] . '"></i></span>'
+               . '<span class="ac-ct-label">' . htmlspecialchars($n[0]) . '</span>'
+               . '</div>';
+            if ($idx < $total) {
+                echo '<span class="ac-ct-line ' . ($idx < $step ? 'is-done' : '') . '"></span>';
+            }
+        }
+        echo '</div>';
+    }
+}
+
 if (!function_exists('ac_render_seller_description')) {
     /**
      * 输出拍品卖家描述（Markdown）。description 为 NULL/空串时输出空串。

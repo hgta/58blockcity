@@ -315,14 +315,14 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
                         <div class="spec">默认规格</div>
                     </div>
                     <div class="product-price-qty">
-                        <div class="price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'], 0); ?> 人气值</div>
+                        <div class="price"><?php echo htmlspecialchars(order_money($item['unit_price'], $orderInfo['currency'] ?? 'popularity')); ?></div>
                         <div class="qty">x<?php echo $item['quantity']; ?></div>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
             <div class="total-section">
-                实付总额: <span class="total"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
+                实付总额: <span class="total"><?php echo htmlspecialchars(order_money($orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity')); ?></span>
             </div>
         </div>
         
@@ -361,7 +361,7 @@ $currentStatus = $statusMap[$orderInfo['status']] ?? $statusMap['pending'];
             <div class="card-title"><i class="fas fa-credit-card"></i> 支付信息</div>
             <div class="info-row">
                 <span class="info-label">支付金额</span>
-                <span class="info-value"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['payment_amount'] ?? $orderInfo['total_amount'], 0); ?> 人气值</span>
+                <span class="info-value"><?php echo htmlspecialchars(order_money($orderInfo['payment_amount'] ?? $orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity')); ?></span>
             </div>
             <?php if ($paymentBlockInfo): ?>
             <div class="info-row">

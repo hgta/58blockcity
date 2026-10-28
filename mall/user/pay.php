@@ -51,6 +51,13 @@ if ($orderInfo['status'] != 'pending') {
     exit();
 }
 
+// 契约订单（拍卖落槌自动生成的订单）：付款声明统一在拍卖站契约页完成。
+// 商城只保留常规订单的 BCT 支付引导——人民币契约不能被引导去转人气值。
+if (!empty($orderInfo['auction_id'])) {
+    header('Location: https://bid.58.tl/user/contract.php?id=' . intval($orderInfo['auction_id']), true, 302);
+    exit();
+}
+
 // 获取订单对应的收款区块信息（来自订单创建时选定的 block_id）
 $paymentBlockInfo = null;
 if (!empty($orderInfo['payment_block_id'])) {
@@ -80,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $shopOwner = $shop->getShopById($orderInfo['shop_id']);
             if ($shopOwner) {
                 $notify->sendSystemNotify($shopOwner['user_id'], 'order_paid', $orderId,
-                    '订单 ' . $orderInfo['order_no'] . ' 已付款，金额 ' . number_format($orderInfo['total_amount'], 0) . ' 人气值，请及时发货',
+                    '订单 ' . $orderInfo['order_no'] . ' 已付款，金额 ' . order_money($orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity') . '，请及时发货',
                     '../../shop/orders.php?id=' . $orderInfo['shop_id']
                 );
             }
@@ -358,7 +365,7 @@ $orderItems = $order->getOrderDetails($orderId);
                 </div>
                 <div style="text-align:right;">
                     <div class="label">应付金额</div>
-                    <div class="amount-highlight"><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</div>
+                    <div class="amount-highlight"><?php echo htmlspecialchars(order_money($orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity')); ?></div>
                 </div>
             </div>
             <div class="steps">
@@ -392,13 +399,13 @@ $orderItems = $order->getOrderDetails($orderId);
                     <div class="product-meta">
                         <div class="name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                     </div>
-                    <div class="product-price"><span class="bct-symbol">Ⓟ</span><?php echo number_format($item['unit_price'], 0); ?> 人气值 x<?php echo $item['quantity']; ?></div>
+                    <div class="product-price"><?php echo htmlspecialchars(order_money($item['unit_price'], $orderInfo['currency'] ?? 'popularity')); ?> x<?php echo $item['quantity']; ?></div>
                 </div>
                 <?php endforeach; ?>
             </div>
             <div class="total-row">
                 <span>应付总额</span>
-                <span class="amount"><span class="bct-symbol">Ⓟ</span><?php echo number_format($orderInfo['total_amount'], 0); ?> 人气值</span>
+                <span class="amount"><?php echo htmlspecialchars(order_money($orderInfo['total_amount'], $orderInfo['currency'] ?? 'popularity')); ?></span>
             </div>
         </div>
         

@@ -13,6 +13,9 @@ $viewerId = intval($_SESSION['user_id'] ?? 0);
 // 惰性推进状态机：激活到点的 pending 并结算到点的 active
 $auction->tick();
 
+// 惰性清扫：7 天未声明付款的契约自动作废（页面级入口，不进 3 秒轮询）
+$auction->expireOverdueContracts();
+
 // 首页顶部推荐位（后台手动指定；active/pending 才展示，已结束的自动下线）
 $featuredList = $auction->getFeaturedAuctions(8);
 

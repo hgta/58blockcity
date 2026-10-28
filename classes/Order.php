@@ -190,6 +190,31 @@ class Order {
         ");
         return $stmt->execute([$blockId, $orderId]);
     }
+
+    /**
+     * 契约收款确认后，将拍卖落槌订单置为已付款
+     *
+     * 与 updatePaymentInfo() 的区别：不写 payment_block_id。
+     * 契约的钱由买卖双方线下自行结算，平台不碰资金，也不存在收款区块。
+     */
+    public function markPaidByContract($orderId) {
+        $stmt = $this->pdo->prepare("
+            UPDATE orders
+            SET status = 'paid', paid_at = NOW(), updated_at = NOW()
+            WHERE id = ?
+        ");
+        return $stmt->execute([intval($orderId)]);
+    }
+
+    /**
+     * 按拍卖单反查契约订单
+     * 取代早期「按 buyer_note 前缀『拍卖 LOT』解析」的字符串反查。
+     */
+    public function getOrderByAuctionId($auctionId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM orders WHERE auction_id = ? LIMIT 1");
+        $stmt->execute([intval($auctionId)]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 	
 		
 	/**
@@ -513,7 +538,10 @@ class Order {
     public function expireOverdueOrders($userId = null, $limit = 200) {
         $limit = max(1, (int)$limit);
         $params = [];
-        $sql = "SELECT id FROM orders WHERE status = 'pending' AND expire_at IS NOT NULL AND expire_at < NOW()";
+        // 拍卖契约订单（auction_id 非空）不在此处处理：它的作废要同时把
+        // auctions.payment_status 置为 voided，由拍卖侧的 Auction::expireOverdueContracts()
+        // 统一负责。若两边都扫，会出现「商城先取消并回滚库存、拍卖侧再回滚一次」的双重回补。
+        $sql = "SELECT id FROM orders WHERE status = 'pending' AND auction_id IS NULL AND expire_at IS NOT NULL AND expire_at < NOW()";
         if ($userId !== null) {
             $sql .= " AND user_id = ?";
             $params[] = intval($userId);

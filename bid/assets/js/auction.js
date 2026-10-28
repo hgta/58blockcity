@@ -173,6 +173,7 @@
         var timer = null;
         var stopped = false;
         var initialStatus = opts.initialStatus || '';
+        var initialPaymentStatus = opts.initialPaymentStatus || '';
 
         function setText(sel, text) {
             document.querySelectorAll(sel).forEach(function (el) { el.textContent = text; });
@@ -185,6 +186,13 @@
 
             // 状态变化（即将开拍→竞拍中 / 竞拍中→落槌·流拍）→ 整页刷新，重排竞价台
             if (initialStatus && d.status && d.status !== initialStatus) {
+                location.reload();
+                return;
+            }
+
+            // 契约履约状态推进（待付款→待确认→已交割 / 作废）→ 整页刷新，重排契约面板
+            if (initialPaymentStatus && d.payment_status !== undefined
+                && String(d.payment_status) !== String(initialPaymentStatus)) {
                 location.reload();
                 return;
             }

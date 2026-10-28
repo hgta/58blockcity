@@ -144,6 +144,7 @@ class Shop {
                     o.id,
                     o.order_no,
                     o.total_amount,
+                    o.currency,
                     o.status,
                     o.created_at,
                     u.username as buyer_name,

@@ -10,6 +10,7 @@ require_once '../../classes/Product.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/User.php';
 require_once '../../classes/Order.php';
+require_once '../includes/functions.php';
 
 $product = new Product($pdo);
 $shop = new Shop($pdo);
@@ -120,7 +121,7 @@ require_once '../../shared/admin/admin-header.php';
                     <tr>
                         <td><?= htmlspecialchars($o['order_no'] ?? '#'.$o['id']) ?></td>
                         <td>用户<?= $o['user_id'] ?></td>
-                        <td>¥<?= number_format($o['total_amount'] ?? 0, 2) ?></td>
+                        <td><?= htmlspecialchars(order_money($o['total_amount'] ?? 0, $o['currency'] ?? 'popularity')) ?></td>
                         <td>
                             <?php
                             $statusMap = [

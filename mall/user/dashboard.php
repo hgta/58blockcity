@@ -6,6 +6,7 @@ require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
 require_once '../../classes/Product.php';
 require_once '../../classes/Coupon.php';
+require_once '../includes/functions.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../auth/login.php');
@@ -208,7 +209,7 @@ require_once '../includes/header.php';
                                                 </span>
                                             </div>
                                             <div class="order-mini-right">
-                                                <div class="order-mini-amount">¥<?= number_format($o['total_amount'], 2) ?></div>
+                                                <div class="order-mini-amount"><?= htmlspecialchars(order_money($o['total_amount'], $o['currency'] ?? 'popularity')) ?></div>
                                             </div>
                                         </a>
                                     <?php endforeach; ?>
@@ -279,7 +280,7 @@ require_once '../includes/header.php';
                                     <?php foreach ($pendingShopOrders as $po): ?>
                                     <a href="../shop/ship_order.php?id=<?= $shopId ?>&order_id=<?= $po['id'] ?>" class="pending-order-item">
                                         <span class="pending-order-no"><?= htmlspecialchars($po['order_no']) ?></span>
-                                        <span class="pending-order-amount">¥<?= number_format($po['total_amount'], 0) ?></span>
+                                        <span class="pending-order-amount"><?= htmlspecialchars(order_money($po['total_amount'], $po['currency'] ?? 'popularity')) ?></span>
                                         <i class="fas fa-chevron-right text-muted" style="font-size:11px;"></i>
                                     </a>
                                     <?php endforeach; ?>

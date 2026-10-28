@@ -61,9 +61,12 @@ check('Auction: 原子扣库存 WHERE stock >= 1', strpos($a, 'WHERE id = ? AND 
 check('Auction: 落槌订单 7 天过期', strpos($a, 'DATE_ADD(NOW(), INTERVAL 7 DAY)') !== false);
 check('Auction: buyer_note 含 LOT 编号', strpos($a, "'拍卖 ' . \$lotNo . ' 成交'") !== false);
 check('Auction: order_items quantity=1', strpos($a, 'VALUES (?, ?, ?, ?, 1, ?, ?, NOW())') !== false);
-check('Auction: 得标通知类型 auction_won_product', strpos($a, 'auction_won_product') !== false);
-check('Auction: 卖家通知类型 auction_sold_product', strpos($a, 'auction_sold_product') !== false);
-check('Auction: 得标通知链 mall 订单详情', strpos($a, 'https://mall.58.tl/user/order_detail.php?id=') !== false);
+// 落槌 = 契约成立：通知统一改到契约页，不再直达 mall 付款（change: auction-contract-settlement）
+check('Auction: 落槌通知 auction_contract_created', strpos($a, 'auction_contract_created') !== false);
+check('Auction: 买家声明通知 auction_contract_buyer_paid', strpos($a, 'auction_contract_buyer_paid') !== false);
+check('Auction: 收款确认通知 auction_contract_settled', strpos($a, 'auction_contract_settled') !== false);
+check('Auction: 契约作废通知 auction_contract_voided', strpos($a, 'auction_contract_voided') !== false);
+check('Auction: 通知链指向契约页', strpos($a, 'https://bid.58.tl/user/contract.php?id=') !== false);
 check('Auction: updateAuction 商品再校验', strpos($a, '商品拍品：编辑时再次校验商品仍可拍') !== false && strpos($a, 'checkProductSellable(intval($a[\'item_id\']), $sellerId)') !== false);
 check('Auction: mapProductItem 图集 + 跨站 URL', strpos($a, 'item_images') !== false && strpos($a, 'mallImageUrl') !== false);
 check('Auction: 列表筛选含 product', substr_count($a, "['block', 'nft', 'product'], true)") >= 3);
@@ -103,7 +106,8 @@ check('index: 商品芯片', strpos($i, "ac_q(['type' => 'product', 'page' => 1]
 
 // --- bid/my.php ---
 $m = src('bid/my.php');
-check('my: 得标者订单链接（商品拍品）', strpos($m, '前往订单 →') !== false && strpos($m, 'user/order_detail.php?id=') !== false);
+// 契约化后：列表不再直达 mall 付款，统一走契约页（change: auction-contract-settlement）
+check('my: 得标者契约入口', strpos($m, '查看契约') !== false && strpos($m, 'user/contract.php?id=') !== false);
 check('my: 反查带缓存避免重复 SQL', strpos($m, 'wonOrderCache') !== false);
 check('my: 查不到回退订单中心', strpos($m, 'mall.58.tl/user/orders.php') !== false);
 
@@ -113,6 +117,54 @@ check('css: 图集组件样式', strpos($css, '.ac-stage-gallery') !== false && 
 check('css: 商品选择网格样式', strpos($css, '.ac-item-opt-prod') !== false);
 check('css: 数字 tabular-nums', strpos($css, '.ac-prod-meta') !== false && strpos($css, 'tabular-nums') !== false);
 check('css: 移动端适配', strpos($css, '.ac-gal-thumbs img { width: 44px') !== false);
+
+/* ========== C. 契约状态机（change: auction-contract-settlement） ========== */
+
+// 落槌不再立即过户；物权交割推迟到卖家确认收款
+check('契约: settle 落槌置 unpaid', strpos($a, "payment_status = 'unpaid'") !== false);
+check('契约: settle 写 7 天契约期', strpos($a, 'contract_expire_at = DATE_ADD(NOW(), INTERVAL 7 DAY)') !== false);
+check('契约: confirmPaid 内才调 transferOwnership', strpos($a, 'public function confirmPaid(') !== false);
+check('契约: declarePaid 校验 current_bidder_id', strpos($a, 'public function declarePaid(') !== false);
+check('契约: voidContract', strpos($a, 'public function voidContract(') !== false);
+check('契约: expireOverdueContracts 惰性清扫', strpos($a, 'public function expireOverdueContracts(') !== false);
+check('契约: isItemInActiveAuction 计入契约期占用', strpos($a, "payment_status IN ('unpaid','buyer_declared')") !== false);
+// 落槌时 transferOwnership 的调用点被硬编码为 'product'（block/nft 推迟到 confirmPaid）
+check('契约: 落槌只对 product 建单', strpos($a, "\$this->transferOwnership(\$auctionId, 'product'") !== false);
+
+check('Order: markPaidByContract', strpos($o, 'public function markPaidByContract(') !== false);
+check('Order: getOrderByAuctionId 取代 buyer_note 反查', strpos($o, 'public function getOrderByAuctionId(') !== false);
+
+// 契约页
+$cpPath = $root . '/bid/user/contract.php';
+check('契约: bid/user/contract.php 存在', file_exists($cpPath));
+if (file_exists($cpPath)) {
+    $cp = file_get_contents($cpPath);
+    // POST 处理必须早于任何 HTML 输出，否则 header() 重定向失效
+    check('契约: POST 处理先于 header 输出',
+        strpos($cp, 'declare_paid') !== false
+        && strpos($cp, 'declare_paid') < strpos($cp, 'includes/header.php'));
+    check('契约: 买家「我已付款」', strpos($cp, "'declare_paid'") !== false);
+    check('契约: 卖家「确认收到款项」', strpos($cp, "'confirm_paid'") !== false);
+    check('契约: CSRF 校验', strpos($cp, 'verifyCsrfToken') !== false);
+    check('契约: 履约进度条', strpos($cp, 'ac_render_contract_progress') !== false);
+    check('契约: 人气值走 accept_cities', strpos($cp, 'accept_cities') !== false);
+    check('契约: 非当事人不可见', strpos($cp, "header('Location: /view.php?id='") !== false);
+}
+
+// 履约状态辅助函数
+$h = src('bid/includes/lot_helpers.php');
+check('契约: ac_contract_stage 四态齐全',
+    strpos($h, "'unpaid'") !== false && strpos($h, "'buyer_declared'") !== false
+    && strpos($h, "'settled'") !== false && strpos($h, "'voided'") !== false);
+check('契约: ac_contract_badge', strpos($h, 'function ac_contract_badge') !== false);
+
+// 过期驱动只挂页面级入口，不进 3 秒轮询
+$i = src('bid/index.php');
+$adm = src('bid/admin/dashboard.php');
+check('契约: index.php 挂 expireOverdueContracts', strpos($i, 'expireOverdueContracts') !== false);
+check('契约: admin/dashboard.php 挂 expireOverdueContracts', strpos($adm, 'expireOverdueContracts') !== false);
+check('契约: api/lot.php 不挂清扫（避免高频写入）', strpos(src('bid/api/lot.php'), 'expireOverdueContracts') === false);
+check('契约: api/lot.php 返回 payment_status', strpos(src('bid/api/lot.php'), "'payment_status'") !== false);
 
 echo PHP_EOL . "=== RESULT: PASS=$pass FAIL=$fail ===" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);

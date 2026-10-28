@@ -288,7 +288,7 @@ require_once '../includes/header.php';
                                         </div>
                                         <div class="order-amount">
                                             <div class="amount-label">实付金额</div>
-                                            <div class="amount-value"><span style="font-weight:bold;color:#e74c3c;">Ⓟ</span><?= number_format($o['total_amount'], 0) ?> 人气值</div>
+                                            <div class="amount-value"><?= htmlspecialchars(order_money($o['total_amount'], $o['currency'] ?? 'popularity')) ?></div>
                                         </div>
                                         <div class="order-actions-col">
                                             <?php if ($o['status'] === 'paid'): ?>

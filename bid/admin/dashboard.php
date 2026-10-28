@@ -18,6 +18,9 @@ $auction = new Auction($pdo);
 // 惰性推进状态机（与 api/lot.php 同策略：管理员访问时顺带激活/落槌到点拍品）
 $auction->tick();
 
+// 惰性清扫：7 天未声明付款的契约自动作废
+$auction->expireOverdueContracts();
+
 // ---- POST 处理：推荐位开关（必须在 HTML 输出前完成 redirect） ----
 $flash = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'toggle_featured') {
@@ -98,6 +101,24 @@ $recentBids = $pdo->query("
     ORDER BY b.created_at DESC
     LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+// ---- 超时契约：买家声明付款后超过 7 天卖家仍未确认收款，需人工介入 ----
+// 自动清扫只处理 7 天「未声明付款」的契约（unpaid）；卡在 buyer_declared 的
+// 要么卖家没核实到账，要么双方有纠纷，只能由管理员人工判断。
+$stuckContracts = $pdo->query("
+    SELECT a.id, a.item_type, a.currency, a.final_price, a.current_price,
+           a.payment_declared_at, a.contract_expire_at, a.seller_id, a.current_bidder_id,
+           s.username AS seller_name, b.username AS buyer_name
+    FROM auctions a
+    LEFT JOIN users s ON a.seller_id = s.id
+    LEFT JOIN users b ON a.current_bidder_id = b.id
+    WHERE a.status = 'sold'
+      AND a.payment_status = 'buyer_declared'
+      AND a.payment_declared_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ORDER BY a.payment_declared_at ASC
+    LIMIT 30
+")->fetchAll(PDO::FETCH_ASSOC);
+$typeLabelMap = ['block' => '区块', 'nft' => 'NFT头像', 'product' => '商城商品'];
 
 /** 金额展示：¥ / 人气值 */
 function bid_money($amount, $currency) {
@@ -205,6 +226,39 @@ function bid_money($amount, $currency) {
                         </form>
                         <a class="admin-btn admin-btn-sm admin-btn-secondary" href="../view.php?id=<?= (int)$f['id'] ?>">查看</a>
                     </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- 超时契约（待人工介入） -->
+<div class="admin-card" style="margin-bottom:20px;">
+    <div class="admin-card-header">
+        <span class="admin-card-title"><i class="fas fa-file-signature" style="margin-right:8px;color:#f39c12;"></i>超时契约（<?= count($stuckContracts) ?>）</span>
+        <span style="font-size:12px;color:var(--admin-text-muted);">买家声明付款后超过 7 天卖家仍未确认收款；自动清扫不处理此类，需人工判断</span>
+    </div>
+    <div class="admin-card-body" style="padding:0;">
+        <?php if (empty($stuckContracts)): ?>
+            <div class="admin-empty-state"><i class="fas fa-handshake"></i><h4>暂无超时契约</h4><p>所有契约均在正常履约中</p></div>
+        <?php else: ?>
+        <table class="admin-data-table">
+            <thead><tr><th>契约</th><th>成交价</th><th>卖家</th><th>买家</th><th>声明付款</th><th>契约期限</th><th>操作</th></tr></thead>
+            <tbody>
+                <?php foreach ($stuckContracts as $c): ?>
+                <tr>
+                    <td>
+                        <a href="auction-detail.php?id=<?= (int)$c['id'] ?>" style="color:var(--admin-accent);font-weight:600;">LOT <?= str_pad((string)$c['id'], 3, '0', STR_PAD_LEFT) ?></a>
+                        <span style="font-size:12px;color:var(--admin-text-muted);"><?= $typeLabelMap[$c['item_type']] ?? $c['item_type'] ?></span>
+                    </td>
+                    <td style="font-weight:600;"><?= bid_money($c['final_price'] ?: $c['current_price'], $c['currency']) ?></td>
+                    <td style="font-size:13px;"><?= htmlspecialchars($c['seller_name'] ?? ('用户' . $c['seller_id'])) ?></td>
+                    <td style="font-size:13px;"><?= htmlspecialchars($c['buyer_name'] ?? ('用户' . $c['current_bidder_id'])) ?></td>
+                    <td style="font-size:12px;color:var(--admin-text-muted);"><?= date('Y-m-d H:i', strtotime($c['payment_declared_at'])) ?></td>
+                    <td style="font-size:12px;color:var(--admin-text-muted);"><?= $c['contract_expire_at'] ? date('Y-m-d H:i', strtotime($c['contract_expire_at'])) : '—' ?></td>
+                    <td><a class="admin-btn admin-btn-sm admin-btn-secondary" href="auction-detail.php?id=<?= (int)$c['id'] ?>">查看</a></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
