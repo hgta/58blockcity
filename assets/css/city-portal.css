@@ -244,9 +244,11 @@
 }
 
 /* ---------- 区块街景 ---------- */
+/* 最多 6 张卡：桌面一行 6 张，窄屏 3 张/行，手机 2 张/行，
+   避免 auto-fill 出现「5 + 1」的孤立换行 */
 .cp-bgrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -881,6 +883,12 @@ header .nav-button:hover {
         grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
     }
 
+    /* 6 张街景卡 → 3 张/行（2 行），手机 → 2 张/行（3 行） */
+    .cp-bgrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
     header .header-container {
         flex-direction: column;
         gap: 10px;
@@ -913,5 +921,15 @@ header .nav-button:hover {
 
     .cp-footer-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* 手机：6 张街景卡 → 2 张/行（3 行） */
+    .cp-bgrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .cp-bname {
+        font-size: 13px;
     }
 }
