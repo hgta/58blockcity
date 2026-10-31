@@ -135,6 +135,7 @@ class CityBCT {
     public function getMarketStats() {
         $stats = [
             'total_volume_24h' => 0,
+            'total_volume_all' => 0,
             'total_market_cap' => 0,
             'gainers_count' => 0,
             'losers_count' => 0,
@@ -154,6 +155,17 @@ class CityBCT {
             $stats['total_volume_24h'] = (float)$stmt->fetchColumn();
         } catch (Exception $e) {
             error_log('getMarketStats total_volume_24h: ' . $e->getMessage());
+        }
+
+        // 历史总成交额（全部成交记录）
+        try {
+            $stmt = $this->pdo->query("
+                SELECT COALESCE(SUM(amount * price), 0) as volume
+                FROM bct_transactions
+            ");
+            $stats['total_volume_all'] = (float)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log('getMarketStats total_volume_all: ' . $e->getMessage());
         }
 
         // 总市值 = SUM(真实流通量 * cities.bct_current_price)

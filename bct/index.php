@@ -126,6 +126,10 @@ require_once 'includes/header.php';
         <div class="value">¥<?= number_format($marketStats['total_volume_24h'], 2) ?></div>
     </div>
     <div class="bct-stat-card">
+        <div class="label">历史总成交额</div>
+        <div class="value"><?php if ($marketStats['total_volume_all'] >= 100000000): ?>¥<?= number_format($marketStats['total_volume_all'] / 100000000, 2) ?> 亿<?php else: ?>¥<?= number_format($marketStats['total_volume_all'], 2) ?><?php endif; ?></div>
+    </div>
+    <div class="bct-stat-card">
         <div class="label">总市值</div>
         <div class="value">¥<?= number_format($marketStats['total_market_cap'] / 100000000, 2) ?> 亿</div>
     </div>

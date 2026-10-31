@@ -254,7 +254,8 @@
 
 .bct-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* 5 张卡自适应均分，避免 4 列布局下第 5 张孤卡换行 */
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -535,13 +536,11 @@
   .bct-top5-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 992px) {
-  .bct-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .bct-top5-grid { grid-template-columns: repeat(2, 1fr); }
   .bct-hero-stats { grid-template-columns: repeat(2, 1fr); }
   .bct-portfolio-summary { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 576px) {
-  .bct-stats-grid { grid-template-columns: 1fr; }
   .bct-top5-grid { grid-template-columns: 1fr; }
   .bct-hero-stats { grid-template-columns: 1fr; }
   .bct-portfolio-summary { grid-template-columns: 1fr; }
