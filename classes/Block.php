@@ -81,7 +81,10 @@ class Block {
         $stmt->execute([$block['city_id'], $block['zone']]);
         $result = $stmt->fetch();
         
-        // 如果达到793个区块，触发扩容投票
+        // 注意：793 是「下一区开放」的触发阈值，不是区容量，两者无需相等。
+        // 区容量按 config/zones.php 的列范围计算：A–H 各 12 列 × 99 行 = 1188，Z 区 3 × 99 = 297。
+        // 业务规则：当前区售出达到 793 块即发起下一区扩容投票，
+        // 不需要等本区全部 1188 块卖完才能开下一区。请勿「修正」为 1188。
         if ($result['sold_count'] == 793) {
             $nextZone = $this->getNextZone($block['zone']);
             if ($nextZone) {
