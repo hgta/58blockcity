@@ -358,24 +358,25 @@ if (!function_exists('city_portal_render')) {
                         $zt   = $st ? (int)$st['total'] : 0;
                         $zn   = !empty($byZone[$z]) ? $byZone[$z] : '';
                     ?>
-                        <span class="cp-minizone"<?= $zn !== '' ? ' title="' . cp_e($zn . '区 · 已开 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
+                        <span class="cp-minizone"<?= $zn !== '' ? ' title="' . cp_e($zn . '区 · 已认领 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
                             <b><?= $z ?></b><?= $open > 0 ? '<i class="cp-mini-open">' . $open . '</i>' : '' ?>
                         </span>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="cp-zones-tip">该城还没有被命名认领的区块，<a href="<?= cp_e($L['blocks']) ?>" rel="nofollow">去区块地图抢注你的地盘 →</a></div>
+                <div class="cp-zones-tip">该城还没有被认领的区块，<a href="<?= cp_e($L['blocks']) ?>" rel="nofollow">去区块地图抢注你的地盘 →</a></div>
                 <div class="cp-zones">
                     <?php foreach ($zones as $z):
-                        $st = $zoneStats[$z] ?? ['total' => 0, 'opened' => 0];
+                        $st = $zoneStats[$z] ?? ['total' => 0, 'opened' => 0, 'count' => 0];
                         $areaName = !empty($byZone[$z]) ? (string)$byZone[$z] : '';
-                        $zt   = (int)$st['total'];
-                        $open = (int)$st['opened'];
+                        $zt    = (int)$st['total'];       // 该区容量（A–H 1188 / Z 297）
+                        $open  = (int)$st['opened'];      // 已认领
+                        $rsCnt = (int)($st['count'] ?? 0); // 本站已有记录的块数
                     ?>
-                        <a class="cp-zone" href="https://block.58.tl/city.php?name=<?= cp_e($pinyin) ?>#zone-<?= $z ?>" rel="nofollow"<?= $areaName !== '' ? ' title="' . cp_e($areaName . '区 · 已开 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
+                        <a class="cp-zone" href="https://block.58.tl/city.php?name=<?= cp_e($pinyin) ?>#zone-<?= $z ?>" rel="nofollow"<?= $areaName !== '' ? ' title="' . cp_e($areaName . '区 · 已认领 ' . $open . ' / ' . $zt . ' 块') . '"' : '' ?>>
                             <span class="cp-zone-letter"><?= cp_e($z) ?> 区</span>
                             <?php if ($areaName !== ''): ?><span class="cp-zone-name"><?= cp_e(cp_clip($areaName, 7)) ?></span><?php endif; ?>
-                            <span class="cp-zone-num"><?= $zt > 0 ? $open . ' / ' . $zt . ' 块已开' : '该区暂未开放' ?></span>
+                            <span class="cp-zone-num"><?= $rsCnt > 0 ? '已认领 ' . $open . ' / ' . number_format($zt) : '该区暂未开放' ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>

@@ -66,16 +66,18 @@ class CityPortal {
 
     /* ================= 各模块 getter ================= */
 
-    /** 🏘 区块街景：最新命名区块（有名字 + 已售出/预留）+ 分区统计 zone_stats */
+    /** 🏘 区块街景：最新已认领区块（含皮肤）+ 分区统计 zone_stats */
     public function blocks($cityId) {
         return $this->guard(function () use ($cityId) {
+            // 说明：blocks.name 目前没有任何写入入口（认领 INSERT 不写 name，用户只能设置
+            // 「皮肤」display_type/display_text/display_image），若按 name 过滤会导致街景
+            // 永远为空。故取全部已认领块，标题优先 name → display_text → 「已认领」。
             $sql = "SELECT zone, block_number, name, status, display_type,
                            display_image, display_text, display_color, updated_at
-                    FROM blocks
-                    WHERE city_id = ? AND name IS NOT NULL AND name <> ''
-                      AND status IN ('sold','reserved')
-                    ORDER BY (status = 'sold') DESC, updated_at DESC
-                    LIMIT 6";
+                   FROM blocks
+                   WHERE city_id = ? AND status IN ('sold','reserved')
+                   ORDER BY (status = 'sold') DESC, updated_at DESC
+                   LIMIT 6";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([(int)$cityId]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -86,10 +88,17 @@ class CityPortal {
                 if ($img !== '' && strpos($img, 'http') !== 0) {
                     $img = 'https://block.58.tl/' . ltrim($img, '/');
                 }
+                $label = trim((string)($r['name'] ?? ''));
+                if ($label === '') {
+                    $label = trim((string)($r['display_text'] ?? ''));
+                }
+                if ($label === '') {
+                    $label = '已认领';
+                }
                 $items[] = [
                     'zone'       => $r['zone'] ?? '',
                     'number'     => $r['block_number'] ?? '',
-                    'name'       => $r['name'] ?? '',
+                    'name'       => $label,
                     'status'     => $r['status'] ?? 'sold',
                     'display_text' => $r['display_text'] ?? '',
                     'display_color' => $r['display_color'] ?? 'red',
@@ -99,26 +108,35 @@ class CityPortal {
             }
             $res = $this->pack($items);
 
-            // 分区统计：每区总块数 + 已开(售出/预留)块数，供空态 9 区概览 / mapstrip 使用。
-            // 单独 try：聚合失败只丢 zone_stats，不影响命名区块主结果。
+            // 分区统计：total = 该区容量（config/zones.php 列范围 × 99 行，A–H=1188、Z=297），
+            // opened = 已认领（sold/reserved），count = 本站已产生记录的块数。
+            // 注意：total 绝不能用 COUNT(*)——那只是「有记录的块数」，会退化成 X/X 的假比率。
+            // 单独 try：聚合失败只丢 zone_stats，不影响街景主结果。
             $res['zone_stats'] = [];
+            $zoneConfig = require __DIR__ . '/../config/zones.php';
+            foreach ($zoneConfig as $z => $cfg) {
+                $cols = max(0, (int)($cfg['col_end'] ?? 0) - (int)($cfg['col_start'] ?? 0) + 1);
+                $res['zone_stats'][strtoupper((string)$z)] = [
+                    'total'  => $cols * 99,
+                    'opened' => 0,
+                    'count'  => 0,
+                ];
+            }
             try {
                 $stmt = $this->pdo->prepare(
                     "SELECT zone,
-                            COUNT(*) AS total,
+                            COUNT(*) AS cnt,
                             SUM(status IN ('sold','reserved')) AS opened
                      FROM blocks WHERE city_id = ? GROUP BY zone"
                 );
                 $stmt->execute([(int)$cityId]);
                 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
                     $z = strtoupper(trim((string)($r['zone'] ?? '')));
-                    if ($z === '') {
+                    if ($z === '' || !isset($res['zone_stats'][$z])) {
                         continue;
                     }
-                    $res['zone_stats'][$z] = [
-                        'total'  => (int)($r['total'] ?? 0),
-                        'opened' => (int)($r['opened'] ?? 0),
-                    ];
+                    $res['zone_stats'][$z]['opened'] = (int)($r['opened'] ?? 0);
+                    $res['zone_stats'][$z]['count']  = (int)($r['cnt'] ?? 0);
                 }
             } catch (\Throwable $e) {
                 error_log('[CityPortal::blocks] zone_stats 聚合失败: ' . $e->getMessage());
