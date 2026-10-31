@@ -25,27 +25,80 @@ $userStmt = $pdo->prepare("SELECT username, email, created_at, avatar FROM users
 $userStmt->execute([$userId]);
 $userInfo = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-// 店铺信息
-$userShop = $shop->getShopByUserId($userId);
-$hasShop = !empty($userShop);
+// 店铺信息（支持多店铺：默认取第一个用于兼容旧逻辑）
+$allUserShops = $shop->getUserShops($userId);
+$userShop = !empty($allUserShops) ? $allUserShops[0] : null;
+$hasShop = !empty($allUserShops);
 $shopId = $hasShop ? $userShop['id'] : 0;
 
 // 订单统计
 $orderStats = $order->getUserOrderStats($userId);
 $recentOrders = $order->getUserOrders($userId, ['page' => 1, 'per_page' => 5]);
 
-// 店铺数据（如果有）
+// 店铺数据（汇总用户名下所有店铺）
 $shopDailyStats = [];
 $shopProductStats = [];
 $shopCouponStats = [];
 $shopOrderStatusStats = [];
+$pendingShopOrders = [];
+$shopStatsByShop = []; // sid => ['daily'=>[], 'product'=>[], 'coupon'=>[]]
 if ($hasShop) {
-    $shopDailyStats = $shop->getShopDailyStats($shopId);
-    $shopProductStats = $product->getShopProductStats($shopId);
-    $shopCouponStats = $coupon->getShopCouponStats($shopId);
-    $shopOrderStatusStats = $order->getShopOrderStatusStats($shopId);
-    // 获取店铺待处理订单列表（最多5条）
-    $pendingShopOrders = $order->getShopOrdersWithFilter($shopId, ['status' => 'paid', 'page' => 1, 'per_page' => 5]);
+    $shopDailyStats = [
+        'today' => ['orders' => 0, 'revenue' => 0, 'buyers' => 0],
+        'yesterday' => ['orders' => 0, 'revenue' => 0, 'buyers' => 0],
+        'month' => ['orders' => 0, 'revenue' => 0],
+    ];
+    $shopProductStats = ['total_products' => 0, 'active_products' => 0, 'sold_out_products' => 0, 'total_sales' => 0];
+    $shopCouponStats = ['total' => 0, 'active' => 0, 'inactive' => 0, 'expired' => 0, 'total_used' => 0];
+    $shopOrderStatusStats = ['total' => 0, 'pending' => 0, 'paid' => 0, 'shipped' => 0, 'completed' => 0, 'cancelled' => 0];
+
+    foreach ($allUserShops as $us) {
+        $sid = $us['id'];
+
+        $d = $shop->getShopDailyStats($sid);
+        foreach (['today', 'yesterday', 'month'] as $k) {
+            $shopDailyStats[$k]['orders']  += (int)($d[$k]['orders'] ?? 0);
+            $shopDailyStats[$k]['revenue'] += (float)($d[$k]['revenue'] ?? 0);
+            $shopDailyStats[$k]['buyers']  += (int)($d[$k]['buyers'] ?? 0);
+        }
+
+        $p = $product->getShopProductStats($sid);
+        if (is_array($p)) {
+            foreach (array_keys($shopProductStats) as $k) {
+                $shopProductStats[$k] += (int)($p[$k] ?? 0);
+            }
+        }
+
+        $c = $coupon->getShopCouponStats($sid);
+        if (is_array($c)) {
+            foreach (array_keys($shopCouponStats) as $k) {
+                $shopCouponStats[$k] += (int)($c[$k] ?? 0);
+            }
+        }
+
+        $s = $order->getShopOrderStatusStats($sid);
+        if (is_array($s)) {
+            foreach (array_keys($shopOrderStatusStats) as $k) {
+                $shopOrderStatusStats[$k] += (int)($s[$k] ?? 0);
+            }
+        }
+
+        // 各店待发货订单（合并，标注来源店铺）
+        $pos = $order->getShopOrdersWithFilter($sid, ['status' => 'paid', 'page' => 1, 'per_page' => 5]);
+        foreach ($pos as $po) {
+            $po['shop_id_ref']  = $sid;
+            $po['shop_name_ref'] = $us['shop_name'];
+            $pendingShopOrders[] = $po;
+        }
+
+        $shopStatsByShop[$sid] = ['daily' => $d, 'product' => $p, 'coupon' => $c];
+    }
+
+    // 合并后按下单时间倒序，最多保留 5 条
+    usort($pendingShopOrders, function ($a, $b) {
+        return strtotime($b['created_at']) - strtotime($a['created_at']);
+    });
+    $pendingShopOrders = array_slice($pendingShopOrders, 0, 5);
 }
 
 $recentProducts = $product->getRecentProducts(6);
@@ -130,8 +183,8 @@ require_once '../includes/header.php';
             <!-- 店铺数据看板 -->
             <div class="shop-dashboard-section">
                 <div class="section-header">
-                    <h5><i class="fas fa-store text-primary mr-2"></i>店铺数据看板</h5>
-                    <a href="../shop/manage.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-primary">进入店铺管理</a>
+                    <h5><i class="fas fa-store text-primary mr-2"></i>店铺数据看板<?= count($allUserShops) > 1 ? '<span class="text-muted small ml-2">（' . count($allUserShops) . ' 家店铺汇总）</span>' : '' ?></h5>
+                    <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/manage.php?id=' . $shopId ?>" class="btn btn-sm btn-outline-primary">进入店铺管理</a>
                 </div>
                 <div class="dashboard-stats-row">
                     <div class="dash-stat-card stat-red">
@@ -147,7 +200,7 @@ require_once '../includes/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    <a href="../shop/orders.php?id=<?= $shopId ?>" class="dash-stat-card stat-teal" style="text-decoration:none;color:#fff;">
+                    <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/orders.php?id=' . $shopId ?>" class="dash-stat-card stat-teal" style="text-decoration:none;color:#fff;">
                         <div class="dash-stat-icon"><i class="fas fa-file-invoice"></i></div>
                         <div class="dash-stat-info">
                             <div class="dash-stat-value"><?= $shopDailyStats['today']['orders'] ?? 0 ?></div>
@@ -180,7 +233,7 @@ require_once '../includes/header.php';
                         <?php endif; ?>
                         </span>
                     </div>
-                    <a href="../shop/orders.php?id=<?= $shopId ?>&status=paid" class="btn btn-sm btn-warning">立即处理</a>
+                    <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/orders.php?id=' . $shopId . '&status=paid' ?>" class="btn btn-sm btn-warning">立即处理</a>
                 </div>
                 <?php endif; ?>
             </div>
@@ -230,62 +283,69 @@ require_once '../includes/header.php';
                     <?php if ($hasShop): ?>
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">我的店铺</h5>
-                                <a href="../shop/manage.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-primary">管理</a>
+                                <h5 class="card-title mb-0">我的店铺<?= count($allUserShops) > 1 ? '（' . count($allUserShops) . '）' : '' ?></h5>
+                                <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/manage.php?id=' . $shopId ?>" class="btn btn-sm btn-outline-primary">管理</a>
                             </div>
                             <div class="card-body">
+                                <?php foreach ($allUserShops as $us):
+                                    $usId = $us['id'];
+                                    $usStats = $shopStatsByShop[$usId] ?? [];
+                                    $usProduct = $usStats['product'] ?? [];
+                                    $usCoupon = $usStats['coupon'] ?? [];
+                                ?>
                                 <div class="d-flex align-items-center mb-3">
                                     <div class="shop-avatar mr-3">
-                                        <?php if (!empty($userShop['shop_logo'])): ?>
-                                            <img src="../<?= htmlspecialchars($userShop['shop_logo']) ?>" alt="" class="rounded" style="width:48px;height:48px;object-fit:cover;">
+                                        <?php if (!empty($us['shop_logo'])): ?>
+                                            <img src="../<?= htmlspecialchars($us['shop_logo']) ?>" alt="" class="rounded" style="width:48px;height:48px;object-fit:cover;">
                                         <?php else: ?>
                                             <div class="shop-avatar-placeholder"><i class="fas fa-store"></i></div>
                                         <?php endif; ?>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1"><?= htmlspecialchars($userShop['shop_name']) ?></h6>
-                                        <span class="badge badge-<?= $userShop['status'] === 'active' ? 'success' : 'warning' ?>">
-                                            <?= $userShop['status'] === 'active' ? '营业中' : '审核中' ?>
+                                        <h6 class="mb-1"><?= htmlspecialchars($us['shop_name']) ?></h6>
+                                        <span class="badge badge-<?= $us['status'] === 'active' ? 'success' : 'warning' ?>">
+                                            <?= $us['status'] === 'active' ? '营业中' : '审核中' ?>
                                         </span>
                                     </div>
                                 </div>
                                 <div class="shop-mini-stats">
                                     <div class="shop-mini-stat">
-                                        <div class="sms-value"><?= $shopProductStats['total_products'] ?? 0 ?></div>
+                                        <div class="sms-value"><?= $usProduct['total_products'] ?? 0 ?></div>
                                         <div class="sms-label">商品</div>
                                     </div>
                                     <div class="shop-mini-stat">
-                                        <div class="sms-value"><?= $userShop['total_sales'] ?? 0 ?></div>
+                                        <div class="sms-value"><?= $us['total_sales'] ?? 0 ?></div>
                                         <div class="sms-label">销量</div>
                                     </div>
                                     <div class="shop-mini-stat">
-                                        <div class="sms-value"><?= number_format($userShop['rating'] ?? 5, 1) ?></div>
+                                        <div class="sms-value"><?= number_format($us['rating'] ?? 5, 1) ?></div>
                                         <div class="sms-label">评分</div>
                                     </div>
                                     <div class="shop-mini-stat">
-                                        <div class="sms-value"><?= $shopCouponStats['total'] ?? 0 ?></div>
+                                        <div class="sms-value"><?= $usCoupon['total'] ?? 0 ?></div>
                                         <div class="sms-label">优惠券</div>
                                     </div>
                                 </div>
                                 <div class="mt-3 d-flex gap-2">
-                                    <a href="../shop/products.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">商品</a>
-                                    <a href="../shop/orders.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">订单</a>
-                                    <a href="../shop/coupons.php?id=<?= $shopId ?>" class="btn btn-sm btn-outline-secondary flex-fill">优惠券</a>
+                                    <a href="../shop/products.php?id=<?= $usId ?>" class="btn btn-sm btn-outline-secondary flex-fill">商品</a>
+                                    <a href="../shop/orders.php?id=<?= $usId ?>" class="btn btn-sm btn-outline-secondary flex-fill">订单</a>
+                                    <a href="../shop/coupons.php?id=<?= $usId ?>" class="btn btn-sm btn-outline-secondary flex-fill">优惠券</a>
                                 </div>
+                                <?php endforeach; ?>
                                 <?php if (!empty($pendingShopOrders)): ?>
                                 <div class="mt-3">
                                     <div class="pending-title">
                                         <i class="fas fa-clock text-warning"></i> 待发货订单
                                     </div>
                                     <?php foreach ($pendingShopOrders as $po): ?>
-                                    <a href="../shop/ship_order.php?id=<?= $shopId ?>&order_id=<?= $po['id'] ?>" class="pending-order-item">
-                                        <span class="pending-order-no"><?= htmlspecialchars($po['order_no']) ?></span>
+                                    <a href="../shop/ship_order.php?id=<?= $po['shop_id_ref'] ?>&order_id=<?= $po['id'] ?>" class="pending-order-item">
+                                        <span class="pending-order-no"><?= count($allUserShops) > 1 ? '<em class="text-muted" style="font-style:normal;font-size:11px;">[' . htmlspecialchars($po['shop_name_ref']) . ']</em> ' : '' ?><?= htmlspecialchars($po['order_no']) ?></span>
                                         <span class="pending-order-amount"><?= htmlspecialchars(order_money($po['total_amount'], $po['currency'] ?? 'popularity')) ?></span>
                                         <i class="fas fa-chevron-right text-muted" style="font-size:11px;"></i>
                                     </a>
                                     <?php endforeach; ?>
                                     <?php if (count($pendingShopOrders) >= 5): ?>
-                                    <a href="../shop/orders.php?id=<?= $shopId ?>&status=paid" class="pending-view-all">查看全部待发货订单 →</a>
+                                    <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/orders.php?id=' . $shopId . '&status=paid' ?>" class="pending-view-all">查看全部待发货订单 →</a>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
@@ -318,7 +378,7 @@ require_once '../includes/header.php';
                                     <i class="fas fa-user-cog text-info"></i>
                                     <span>个人设置</span>
                                 </a>
-                                <a href="../shop/coupons.php?id=<?= $shopId ?>" class="qa-item">
+                                <a href="<?= count($allUserShops) > 1 ? 'shops.php' : '../shop/coupons.php?id=' . $shopId ?>" class="qa-item">
                                     <i class="fas fa-ticket-alt text-warning"></i>
                                     <span>优惠券</span>
                                 </a>
