@@ -254,8 +254,8 @@
 
 .bct-stats-grid {
   display: grid;
-  /* 5 张卡自适应均分，避免 4 列布局下第 5 张孤卡换行 */
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  /* 5 张统计卡固定同行均分 */
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -533,14 +533,17 @@
 .bct-page-title .subtitle { color: var(--bct-text-secondary); font-size: 14px; }
 
 @media (max-width: 1200px) {
+  .bct-stats-grid { grid-template-columns: repeat(3, 1fr); }
   .bct-top5-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 992px) {
+  .bct-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .bct-top5-grid { grid-template-columns: repeat(2, 1fr); }
   .bct-hero-stats { grid-template-columns: repeat(2, 1fr); }
   .bct-portfolio-summary { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 576px) {
+  .bct-stats-grid { grid-template-columns: 1fr; }
   .bct-top5-grid { grid-template-columns: 1fr; }
   .bct-hero-stats { grid-template-columns: 1fr; }
   .bct-portfolio-summary { grid-template-columns: 1fr; }
