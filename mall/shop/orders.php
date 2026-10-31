@@ -4,6 +4,7 @@ require_once '../../classes/User.php';
 require_once '../../includes/auth.php';
 require_once '../../classes/Shop.php';
 require_once '../../classes/Order.php';
+require_once '../../classes/Notification.php';
 require_once '../includes/functions.php';
 
 // 兜底：如果公共函数库未部署，在此文件内也定义一次 normalizeImageUrl
@@ -54,7 +55,22 @@ if (isset($_GET['action']) && isset($_GET['order_id'])) {
     $orderInfo = $order->getOrderById($orderId);
 
     if ($orderInfo && $orderInfo['shop_id'] == $shopId) {
-        if ($actionType === 'ship' && $orderInfo['status'] === 'paid') {
+        if ($actionType === 'confirm_paid' && $orderInfo['status'] === 'pending') {
+            // 卖家线下已收款，主动确认：pending → paid（进入待发货）
+            if ($order->updateOrderStatus($orderId, 'paid')) {
+                $success = '订单已确认收款，请尽快发货';
+                // 通知买家：卖家已确认收款
+                try {
+                    $notify = new Notification($pdo);
+                    $notify->sendSystemNotify($orderInfo['user_id'], 'order_paid', $orderId,
+                        '订单 ' . $orderInfo['order_no'] . ' 卖家已确认收款，等待卖家发货',
+                        '../../user/order_detail.php?id=' . $orderId
+                    );
+                } catch (Exception $e) { /* 通知失败不影响主流程 */ }
+            } else {
+                $error = '操作失败，请重试';
+            }
+        } elseif ($actionType === 'ship' && $orderInfo['status'] === 'paid') {
             $order->updateOrderStatus($orderId, 'shipped');
             $success = '订单已标记为发货';
         } elseif ($actionType === 'complete' && $orderInfo['status'] === 'shipped') {
@@ -291,7 +307,14 @@ require_once '../includes/header.php';
                                             <div class="amount-value"><?= htmlspecialchars(order_money($o['total_amount'], $o['currency'] ?? 'popularity')) ?></div>
                                         </div>
                                         <div class="order-actions-col">
-                                            <?php if ($o['status'] === 'paid'): ?>
+                                            <button type="button" class="btn btn-sm btn-outline-primary mb-1" onclick="showOrderDetail(<?= $o['id'] ?>)">
+                                                <i class="fas fa-eye"></i> 详情
+                                            </button>
+                                            <?php if ($o['status'] === 'pending'): ?>
+                                                <a href="orders.php?action=confirm_paid&id=<?= $shopId ?>&order_id=<?= $o['id'] ?>" class="btn btn-sm btn-success mb-1" onclick="return confirm('确认已线下收到买家付款？\n确认后订单将进入「待发货」，请核实款项后再操作。')">
+                                                    <i class="fas fa-hand-holding-usd"></i> 确认收款
+                                                </a>
+                                            <?php elseif ($o['status'] === 'paid'): ?>
                                                 <a href="ship_order.php?id=<?= $shopId ?>&order_id=<?= $o['id'] ?>" class="btn btn-sm btn-primary mb-1">
                                                     <i class="fas fa-truck"></i> 发货
                                                 </a>
@@ -305,6 +328,52 @@ require_once '../includes/header.php';
                                                     取消
                                                 </a>
                                             <?php endif; ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- 订单详情数据（隐藏，点击「详情」时注入弹窗） -->
+                                    <div id="order-detail-data-<?= $o['id'] ?>" style="display:none;">
+                                        <div class="od-section">
+                                            <div class="od-section-title"><i class="fas fa-user"></i> 买家与收货信息</div>
+                                            <div class="od-grid">
+                                                <div class="od-item"><span class="od-label">买家</span><span><?= htmlspecialchars($o['buyer_name'] ?? '未知用户') ?></span></div>
+                                                <div class="od-item"><span class="od-label">联系电话</span><span><?= !empty($o['buyer_phone']) ? htmlspecialchars($o['buyer_phone']) : '未填写' ?></span></div>
+                                                <div class="od-item od-full">
+                                                    <span class="od-label">收货地址</span>
+                                                    <span class="od-address"><?= !empty($o['shipping_address']) ? htmlspecialchars($o['shipping_address']) : '未填写' ?></span>
+                                                    <?php if (!empty($o['shipping_address'])): ?>
+                                                        <button type="button" class="od-copy-btn" onclick="copyOrderText(this, '<?= htmlspecialchars(addslashes($o['shipping_address'])) ?>')">复制</button>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <?php if (!empty($o['buyer_note'])): ?>
+                                                    <div class="od-item od-full"><span class="od-label">买家备注</span><span><?= htmlspecialchars($o['buyer_note']) ?></span></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <div class="od-section">
+                                            <div class="od-section-title"><i class="fas fa-box"></i> 商品明细</div>
+                                            <?php foreach ($items as $item): ?>
+                                                <div class="od-goods-item">
+                                                    <img src="../<?= htmlspecialchars($item['product_image'] ?: 'assets/images/default-product.png') ?>" alt="">
+                                                    <div class="od-goods-info">
+                                                        <div class="od-goods-name"><?= htmlspecialchars($item['product_name']) ?></div>
+                                                        <div class="od-goods-qty">x<?= $item['quantity'] ?></div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <div class="od-section">
+                                            <div class="od-section-title"><i class="fas fa-file-invoice"></i> 订单信息</div>
+                                            <div class="od-grid">
+                                                <div class="od-item"><span class="od-label">订单号</span><span><?= htmlspecialchars($o['order_no']) ?></span></div>
+                                                <div class="od-item"><span class="od-label">状态</span><span><?= $statusMap[$o['status']] ?? '未知' ?></span></div>
+                                                <div class="od-item"><span class="od-label">下单时间</span><span><?= date('Y-m-d H:i:s', strtotime($o['created_at'])) ?></span></div>
+                                                <div class="od-item"><span class="od-label">付款时间</span><span><?= !empty($o['paid_at']) ? date('Y-m-d H:i:s', strtotime($o['paid_at'])) : '未付款' ?></span></div>
+                                                <div class="od-item"><span class="od-label">实付金额</span><span class="od-amount"><?= htmlspecialchars(order_money($o['total_amount'], $o['currency'] ?? 'popularity')) ?></span></div>
+                                                <?php if (!empty($o['shipping_company'])): ?>
+                                                    <div class="od-item od-full"><span class="od-label">物流信息</span><span><?= htmlspecialchars($o['shipping_company']) ?><?= !empty($o['tracking_no']) ? '：' . htmlspecialchars($o['tracking_no']) : '' ?></span></div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -583,6 +652,65 @@ require_once '../includes/header.php';
         gap: 10px;
     }
 }
+
+/* ===== 订单详情弹窗 ===== */
+.od-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 16px;
+}
+.od-modal-backdrop.show { display: flex; }
+.od-modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    animation: odFadeIn .2s ease;
+}
+@keyframes odFadeIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.od-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ecef;
+    position: sticky; top: 0; background: #fff;
+}
+.od-modal-title { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+.od-modal-close {
+    width: 30px; height: 30px; border: none; background: #f1f5f9;
+    border-radius: 50%; cursor: pointer; color: #64748b;
+    display: flex; align-items: center; justify-content: center;
+}
+.od-modal-close:hover { background: #e2e8f0; }
+.od-modal-body { padding: 16px 20px 20px; }
+.od-section { margin-bottom: 18px; }
+.od-section:last-child { margin-bottom: 0; }
+.od-section-title {
+    font-size: 13px; font-weight: 700; color: #ff6b00;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.od-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.od-item { font-size: 13px; color: #334155; display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.od-item.od-full { grid-column: 1 / -1; }
+.od-label { color: #94a3b8; flex: none; min-width: 60px; }
+.od-address { word-break: break-all; line-height: 1.5; }
+.od-copy-btn {
+    border: 1px solid #e2e8f0; background: #f8fafc; color: #475569;
+    font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer; flex: none;
+}
+.od-copy-btn:hover { background: #eff6ff; border-color: #bfdbfe; }
+.od-goods-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #f1f5f9; }
+.od-goods-item:last-child { border-bottom: none; }
+.od-goods-item img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: #f8f9fa; flex: none; }
+.od-goods-info { flex: 1; min-width: 0; }
+.od-goods-name { font-size: 13px; color: #1a1a2e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.od-goods-qty { font-size: 12px; color: #6c757d; }
+.od-amount { color: #e74c3c; font-weight: 700; }
 </style>
 
 <script>
@@ -605,6 +733,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ===== 订单详情弹窗 =====
+function showOrderDetail(orderId) {
+    var dataEl = document.getElementById('order-detail-data-' + orderId);
+    var modal = document.getElementById('orderDetailModal');
+    if (!dataEl || !modal) return;
+    document.getElementById('orderDetailBody').innerHTML = dataEl.innerHTML;
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeOrderDetail() {
+    var modal = document.getElementById('orderDetailModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeOrderDetail();
+});
+
+// 复制文本（详情弹窗内）
+function copyOrderText(btn, text) {
+    var onOk = function() {
+        var orig = btn.textContent;
+        btn.textContent = '已复制';
+        setTimeout(function() { btn.textContent = orig; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onOk, function() { fallbackCopy(text, onOk); });
+    } else {
+        fallbackCopy(text, onOk);
+    }
+}
+function fallbackCopy(text, onOk) {
+    var tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { document.execCommand('copy'); onOk(); } catch (e) {}
+    document.body.removeChild(tmp);
+}
 </script>
+
+<!-- 订单详情弹窗 -->
+<div class="od-modal-backdrop" id="orderDetailModal" onclick="if(event.target === this) closeOrderDetail()">
+    <div class="od-modal" role="dialog" aria-modal="true">
+        <div class="od-modal-header">
+            <div class="od-modal-title"><i class="fas fa-file-invoice"></i> 订单详情</div>
+            <button type="button" class="od-modal-close" onclick="closeOrderDetail()" aria-label="关闭">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="od-modal-body" id="orderDetailBody"></div>
+    </div>
+</div>
 
 <?php require_once '../includes/footer.php'; ?>
