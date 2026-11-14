@@ -15,19 +15,26 @@ $userId = $_SESSION['user_id'];
 $msg = '';
 $err = '';
 
-// 编辑模式：?edit=<id> 仅「未开始」且归属本人的拍卖可编辑
+// 编辑模式：?edit=<id> 仅归属本人的拍卖可编辑（pending 全字段 / active 白名单，见 openspec active-auction-editable-fields）
 $editId = isset($_GET['edit']) ? intval($_GET['edit']) : 0;
 $editAuction = null;
+$editStatus = null;
 if ($editId > 0) {
     $editAuction = $auction->getAuctionById($editId);
     if (!$editAuction || intval($editAuction['seller_id']) !== $userId) {
         $err = '无权编辑该拍卖';
         $editAuction = null;
-    } elseif ($editAuction['status'] !== 'pending') {
-        $err = '仅「未开始」的拍卖可编辑';
-        $editAuction = null;
+    } else {
+        $editStatus = $editAuction['status'];
+        // 已结束（含契约期）：全字段锁定，直接回「我的拍卖」，不渲染编辑表单
+        if (in_array($editStatus, ['sold', 'ended', 'canceled'], true)) {
+            header('Location: my.php');
+            exit;
+        }
     }
 }
+// active 编辑 = 锁定渲染模式：仅描述/接受城市/落槌时间/底价可改，其余字段 disabled + hidden 补值
+$isEditActive = ($editStatus === 'active');
 
 // 获取用户拥有的区块
 $myBlocks = $block->getUserBlocks($userId);
@@ -146,7 +153,9 @@ require_once 'includes/header.php';
         <i class="fas fa-gavel" style="color:var(--brand);"></i> <?= $editId > 0 ? '编辑拍卖' : '发起拍卖' ?>
     </h1>
     <p class="ac-hint" style="margin:0 0 16px;">
-        <?= $editId > 0 ? '仅「未开始」的拍卖可编辑，拍卖品不可更换。' : '发布后拍品将进入竞价大厅，秒级倒计时开拍，价高者得。' ?>
+        <?= $isEditActive
+            ? '竞拍中的拍卖仅可修改：拍品描述、接受城市、落槌时间（只能延长）、底价（只能下调）；其余参数已锁定，保障已出价买家的权益。'
+            : ($editId > 0 ? '仅「未开始」的拍卖可编辑，拍卖品不可更换。' : '发布后拍品将进入竞价大厅，秒级倒计时开拍，价高者得。') ?>
     </p>
 
     <?php if ($err): ?><div class="ac-alert ac-alert-err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
@@ -276,25 +285,31 @@ require_once 'includes/header.php';
             <div class="ac-row2">
                 <div class="ac-field">
                     <label>起拍价（填 0 即 0 元起拍）</label>
-                    <input type="number" name="start_price" step="0.01" min="0" required placeholder="0 = 0 元起拍" value="<?= htmlspecialchars($fv['start_price']) ?>">
-                    <div class="ac-hint" style="font-size:12px;margin-top:4px;">0 元起拍时，首口最低出价按「加价幅度」起步</div>
+                    <input type="number" name="start_price" step="0.01" min="0" required placeholder="0 = 0 元起拍" value="<?= htmlspecialchars($fv['start_price']) ?>" <?= $isEditActive ? 'disabled' : '' ?>>
+                    <?php if ($isEditActive): ?><input type="hidden" name="start_price" value="<?= htmlspecialchars($fv['start_price']) ?>"><div class="ac-hint" style="font-size:12px;margin-top:4px;color:var(--muted);"><i class="fas fa-lock"></i> 竞拍中不可修改</div>
+                    <?php else: ?><div class="ac-hint" style="font-size:12px;margin-top:4px;">0 元起拍时，首口最低出价按「加价幅度」起步</div><?php endif; ?>
                 </div>
                 <div class="ac-field">
-                    <label>底价（选填，低于底价流拍）</label>
-                    <input type="number" name="reserve_price" step="0.01" min="0" placeholder="可不填" value="<?= htmlspecialchars($fv['reserve_price']) ?>">
+                    <label>底价（选填，低于底价流拍<?= $isEditActive ? '，<span style="color:var(--brand);">竞拍中只能下调</span>' : '' ?>）</label>
+                    <?php $lockReserve = $isEditActive && $fv['reserve_price'] === ''; ?>
+                    <input type="number" name="reserve_price" step="0.01" min="0" placeholder="可不填" value="<?= htmlspecialchars($fv['reserve_price']) ?>" <?= $lockReserve ? 'disabled' : '' ?>>
+                    <?php if ($lockReserve): ?><input type="hidden" name="reserve_price" value=""><div class="ac-hint" style="font-size:12px;margin-top:4px;color:var(--muted);"><i class="fas fa-lock"></i> 竞拍中不能新增底价</div><?php endif; ?>
                 </div>
             </div>
 
             <div class="ac-row2">
                 <div class="ac-field">
                     <label>加价幅度（快捷加价按此分档）</label>
-                    <input type="number" name="bid_increment" step="0.01" min="0.01" required value="<?= htmlspecialchars($fv['bid_increment']) ?>">
+                    <input type="number" name="bid_increment" step="0.01" min="0.01" required value="<?= htmlspecialchars($fv['bid_increment']) ?>" <?= $isEditActive ? 'disabled' : '' ?>>
+                    <?php if ($isEditActive): ?><input type="hidden" name="bid_increment" value="<?= htmlspecialchars($fv['bid_increment']) ?>"><div class="ac-hint" style="font-size:12px;margin-top:4px;color:var(--muted);"><i class="fas fa-lock"></i> 竞拍中不可修改</div><?php endif; ?>
                 </div>
                 <div class="ac-field">
                     <label>计价货币</label>
-                    <div class="ac-radio-row" style="padding-top:9px;">
-                        <label><input type="radio" name="currency" value="popularity" <?= $fv['currency'] === 'popularity' ? 'checked' : '' ?> onchange="toggleCities(true)"> 人气值 Ⓟ</label>
-                        <label><input type="radio" name="currency" value="cny" <?= $fv['currency'] === 'cny' ? 'checked' : '' ?> onchange="toggleCities(false)"> 人民币 ¥</label>
+                    <div class="ac-radio-row" style="padding-top:9px;<?= $isEditActive ? 'opacity:.55;' : '' ?>">
+                        <?php if ($isEditActive): ?><input type="hidden" name="currency" value="<?= htmlspecialchars($fv['currency']) ?>"><?php endif; ?>
+                        <label><input type="radio" name="currency" value="popularity" <?= $fv['currency'] === 'popularity' ? 'checked' : '' ?> onchange="toggleCities(true)" <?= $isEditActive ? 'disabled' : '' ?>> 人气值 Ⓟ</label>
+                        <label><input type="radio" name="currency" value="cny" <?= $fv['currency'] === 'cny' ? 'checked' : '' ?> onchange="toggleCities(false)" <?= $isEditActive ? 'disabled' : '' ?>> 人民币 ¥</label>
+                        <?php if ($isEditActive): ?><span class="ac-hint" style="font-size:12px;"><i class="fas fa-lock"></i> 竞拍中不可修改</span><?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -302,19 +317,25 @@ require_once 'includes/header.php';
             <div class="ac-row2">
                 <div class="ac-field">
                     <label>开始时间</label>
-                    <input type="datetime-local" name="start_time" required value="<?= htmlspecialchars($fv['start_time']) ?>">
+                    <input type="datetime-local" name="start_time" required value="<?= htmlspecialchars($fv['start_time']) ?>" <?= $isEditActive ? 'disabled' : '' ?>>
+                    <?php if ($isEditActive): ?><input type="hidden" name="start_time" value="<?= htmlspecialchars($fv['start_time']) ?>"><div class="ac-hint" style="font-size:12px;margin-top:4px;color:var(--muted);"><i class="fas fa-lock"></i> 竞拍中不可修改</div><?php endif; ?>
                 </div>
                 <div class="ac-field">
-                    <label>截止时间</label>
-                    <input type="datetime-local" name="end_time" required value="<?= htmlspecialchars($fv['end_time']) ?>">
+                    <label>截止时间<?= $isEditActive ? '（<span style="color:var(--brand);">竞拍中只能延长</span>）' : '' ?></label>
+                    <input type="datetime-local" name="end_time" required value="<?= htmlspecialchars($fv['end_time']) ?>" <?= $isEditActive ? 'min="' . htmlspecialchars($fv['end_time']) . '"' : '' ?>>
                 </div>
             </div>
 
             <div class="ac-field <?= $fv['currency'] === 'popularity' ? '' : 'ac-hidden' ?>" id="accept-cities-group">
-                <label>接受哪些城市的人气值支付（不选则接受全部）</label>
+                <label>接受哪些城市的人气值支付（不选则接受全部<?= $isEditActive ? '，<span style="color:var(--brand);">竞拍中不能取消已开放的城市</span>' : '' ?>）</label>
                 <div class="ac-check-grid">
                     <?php foreach ($allCities as $c): $accChecked = in_array($c['id'], $fv['accept_cities']); ?>
+                    <?php if ($isEditActive && $accChecked): ?>
+                    <!-- active 编辑：已开放城市锁死（disabled 不提交，用 hidden 补值防丢失），仅允许新增 -->
+                    <label style="opacity:.55;cursor:not-allowed;"><input type="checkbox" disabled checked> <?= htmlspecialchars($c['name']) ?></label><input type="hidden" name="accept_cities[]" value="<?= $c['id'] ?>">
+                    <?php else: ?>
                     <label><input type="checkbox" name="accept_cities[]" value="<?= $c['id'] ?>" <?= $accChecked ? 'checked' : '' ?>> <?= htmlspecialchars($c['name']) ?></label>
+                    <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </div>

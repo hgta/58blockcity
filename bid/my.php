@@ -162,9 +162,11 @@ require_once 'includes/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="ac-row-side">
-                    <?php if ($a['status'] === 'pending'): ?>
-                        <a class="ac-btn ac-btn-ghost" style="padding:7px 12px;font-size:12px;" href="create.php?edit=<?= intval($a['id']) ?>#description">
-                            <i class="fas fa-pen"></i> <?= !empty(trim((string)($a['description'] ?? ''))) ? '编辑描述' : '写描述' ?>
+                    <?php /* pending 全字段编辑；active 白名单编辑（描述/城市/落槌时间/底价），入口统一为「编辑拍卖」 */ ?>
+                    <?php if ($a['status'] === 'pending' || $a['status'] === 'active'): ?>
+                        <a class="ac-btn ac-btn-ghost" style="padding:7px 12px;font-size:12px;" href="create.php?edit=<?= intval($a['id']) ?>" title="<?= $a['status'] === 'active' ? '竞拍中：仅可改描述、接受城市、落槌时间（延长）、底价（下调）' : '编辑拍卖参数与描述' ?>">
+                            <i class="fas fa-pen"></i>
+                            <?php if ($a['status'] === 'active'): ?>编辑拍卖<?php else: ?><?= !empty(trim((string)($a['description'] ?? ''))) ? '编辑拍卖' : '写描述' ?><?php endif; ?>
                         </a>
                     <?php endif; ?>
                     <?php if (ac_contract_stage($a)): ?>

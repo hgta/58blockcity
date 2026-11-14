@@ -805,8 +805,12 @@ class Auction {
     }
 
     /**
-     * 编辑拍卖（仅卖家本人且仅 pending 状态；物品不可更换）
-     * 允许修改：起拍价/底价/加价幅度/起止时间/货币/接受城市。
+     * 编辑拍卖（仅卖家本人；物品不可更换）
+     * 状态分叉（见 openspec change active-auction-editable-fields / design D1）：
+     * - pending：全字段可改，current_price 重置为起拍价（无人出价，安全）
+     * - active：仅白名单四字段，且带方向约束；独立 UPDATE，
+     *           绝不触碰 current_price / status / start_price / bid_increment / currency
+     * - sold / ended / canceled：全字段锁定
      * @return array ['ok'=>bool, 'msg'=>string]
      */
     public function updateAuction($auctionId, $sellerId, $data) {
@@ -819,7 +823,11 @@ class Auction {
         $a = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$a) return ['ok' => false, 'msg' => '拍卖不存在'];
         if (intval($a['seller_id']) !== $sellerId) return ['ok' => false, 'msg' => '无权操作该拍卖'];
-        if ($a['status'] !== 'pending') return ['ok' => false, 'msg' => '仅「未开始」的拍卖可编辑'];
+
+        $status = $a['status'];
+        if (in_array($status, ['sold', 'ended', 'canceled'], true)) {
+            return ['ok' => false, 'msg' => '拍卖已结束，不能再编辑'];
+        }
 
         // 商品拍品：编辑时再次校验商品仍可拍（可能已被店主下架 / 库存清零）
         if ($a['item_type'] === 'product') {
@@ -827,18 +835,92 @@ class Auction {
             if ($err !== null) return ['ok' => false, 'msg' => $err];
         }
 
-        // 校验（与 createAuction 一致）
+        $description = array_key_exists('description', $data) ? trim((string)$data['description']) : $a['description'];
+        if ($description === '') $description = null;
+        if ($description !== null && mb_strlen($description) > 5000) {
+            return ['ok' => false, 'msg' => '拍品描述不超过 5000 字'];
+        }
+
+        /* ---------------- active：白名单 + 方向约束（D1/D2） ---------------- */
+        if ($status === 'active') {
+            // 底价：只降不升（且通用校验：底价 ≥ 起拍价保留，起拍价在 active 下不可改）
+            $oldReserve = $a['reserve_price'] !== null && $a['reserve_price'] !== '' ? floatval($a['reserve_price']) : null;
+            if (array_key_exists('reserve_price', $data)) {
+                $newReserve = ($data['reserve_price'] !== '' && $data['reserve_price'] !== null)
+                    ? floatval($data['reserve_price']) : null;
+                if ($oldReserve === null && $newReserve !== null) {
+                    // 无底价 → 有底价会抬高流拍门槛，对已出价买家不利，视同「升」拒绝
+                    return ['ok' => false, 'msg' => '竞拍中的拍卖不能新增底价'];
+                }
+                if ($oldReserve !== null && $newReserve !== null && $newReserve > $oldReserve) {
+                    return ['ok' => false, 'msg' => '竞拍中的拍卖只能下调底价'];
+                }
+                if ($newReserve !== null && $newReserve < floatval($a['start_price'])) {
+                    return ['ok' => false, 'msg' => '底价不能低于起拍价'];
+                }
+                if ($newReserve !== $oldReserve) {
+                    $stmt = $this->pdo->prepare("UPDATE auctions SET reserve_price = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$newReserve, $auctionId]);
+                }
+            }
+
+            // 落槌时间：只延不缩（防狙击自动顺延机制不冲突，倒计时随轮询自动刷新）
+            if (isset($data['end_time']) && $data['end_time'] !== '') {
+                $newEnd = strtotime($data['end_time']);
+                $oldEnd = strtotime($a['end_time']);
+                if ($newEnd === false) return ['ok' => false, 'msg' => '落槌时间格式无效'];
+                if ($newEnd < $oldEnd) {
+                    return ['ok' => false, 'msg' => '竞拍中的拍卖只能延长落槌时间'];
+                }
+                if ($newEnd !== $oldEnd) {
+                    $stmt = $this->pdo->prepare("UPDATE auctions SET end_time = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([date('Y-m-d H:i:s', $newEnd), $auctionId]);
+                }
+            }
+
+            // 接受城市：只增不减（新集合必须包含旧集合全部城市）
+            if (array_key_exists('accept_cities', $data)) {
+                $cities = is_array($data['accept_cities']) ? $data['accept_cities'] : json_decode((string)$data['accept_cities'], true);
+                $newIds = [];
+                if (is_array($cities)) {
+                    foreach ($cities as $v) { $cid = intval($v); if ($cid > 0) $newIds[] = $cid; }
+                    $newIds = array_values(array_unique($newIds));
+                }
+                $oldIds = [];
+                $decoded = $a['accept_cities'] ? json_decode((string)$a['accept_cities'], true) : null;
+                if (is_array($decoded)) {
+                    foreach ($decoded as $v) { $cid = intval($v); if ($cid > 0) $oldIds[] = $cid; }
+                }
+                // 旧值为空 = 不限城市，新集合任意合法；旧值非空则必须包含全部旧城市
+                if (!empty($oldIds)) {
+                    $removed = array_diff($oldIds, $newIds);
+                    if (!empty($removed)) {
+                        return ['ok' => false, 'msg' => '竞拍中的拍卖不能移除已开放的城市'];
+                    }
+                }
+                $newJson = !empty($newIds) ? json_encode($newIds) : null;
+                if ($newJson !== $a['accept_cities']) {
+                    $stmt = $this->pdo->prepare("UPDATE auctions SET accept_cities = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$newJson, $auctionId]);
+                }
+            }
+
+            // 描述：任意修改
+            if ($description !== $a['description']) {
+                $stmt = $this->pdo->prepare("UPDATE auctions SET description = ?, updated_at = NOW() WHERE id = ?");
+                $stmt->execute([$description, $auctionId]);
+            }
+
+            return ['ok' => true, 'msg' => '修改已保存'];
+        }
+
+        /* ---------------- pending：全字段（现状行为保留，D1） ---------------- */
         $startPrice    = floatval($data['start_price'] ?? 0);
         $reservePrice  = isset($data['reserve_price']) && $data['reserve_price'] !== '' ? floatval($data['reserve_price']) : null;
         $bidIncrement  = floatval($data['bid_increment'] ?? 0);
         $startTime     = $data['start_time'] ?? '';
         $endTime       = $data['end_time'] ?? '';
         $currency      = in_array($data['currency'] ?? '', ['popularity', 'cny'], true) ? $data['currency'] : 'cny';
-        $description   = array_key_exists('description', $data) ? trim((string)$data['description']) : $a['description'];
-        if ($description === '') $description = null;
-        if ($description !== null && mb_strlen($description) > 5000) {
-            return ['ok' => false, 'msg' => '拍品描述不超过 5000 字'];
-        }
 
         // 起拍价允许为 0（0 元起拍），仅禁止负数
         if ($startPrice < 0) return ['ok' => false, 'msg' => '起拍价不能为负数（0 元起拍请填 0）'];
