@@ -258,16 +258,67 @@ html[data-ac-theme="light"] body.auction-body {
 .ac-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
 
 /* ---------- 成交榜 ---------- */
-.ac-sold-strip { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px; }
-.ac-sold-list { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
-.ac-sold-item {
-    flex: 0 0 210px; display: flex; gap: 10px; align-items: center;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+.ac-sold-strip { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 22px; }
+.ac-rail-head-side { display: flex; align-items: center; gap: 14px; }
+.ac-rail-note { font-size: 12px; color: var(--muted); }
+.ac-rail-more { font-size: 12px; font-weight: 600; color: var(--brand); text-decoration: none; white-space: nowrap; }
+.ac-rail-more i { font-size: 10px; margin-left: 2px; }
+.ac-rail-more:hover { opacity: .78; }
+
+/* 横向滑轨容器：隐藏原生滚动条，改用两端箭头翻页 */
+.ac-scroller { position: relative; }
+.ac-scroller-track::-webkit-scrollbar,
+.ac-sold-list::-webkit-scrollbar { display: none; }
+.ac-sold-list {
+    display: flex; gap: 12px; overflow-x: auto;
+    scrollbar-width: none; -ms-overflow-style: none;
+    scroll-behavior: smooth; scroll-snap-type: x proximity;
+    padding: 2px 2px 4px;
 }
-.ac-sold-thumb { width: 46px; height: 46px; border-radius: 8px; background: var(--inset); overflow: hidden; flex: 0 0 46px; }
-.ac-sold-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.ac-sold-item .t { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ac-sold-item .p { font-size: 14px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+.ac-scroller-nav {
+    position: absolute; top: calc(50% - 26px); transform: translateY(-50%);
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    display: none; align-items: center; justify-content: center; z-index: 3;
+    cursor: pointer; box-shadow: var(--shadow); transition: border-color .15s, opacity .15s;
+}
+.ac-scroller-nav.prev { left: -10px; }
+.ac-scroller-nav.next { right: -10px; }
+.ac-scroller-nav:hover { border-color: var(--line-strong); }
+.ac-scroller-nav[disabled] { opacity: 0; pointer-events: none; }
+.ac-scroller.has-overflow .ac-scroller-nav { display: flex; }
+
+/* 成交卡：竖版，大图 + 成交角标 + 两行标题 */
+.ac-sold-item {
+    flex: 0 0 190px; scroll-snap-align: start;
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.ac-sold-item:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow); }
+.ac-sold-media { position: relative; aspect-ratio: 4 / 3; background: var(--inset); overflow: hidden; }
+.ac-sold-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.ac-sold-item:hover .ac-sold-media img { transform: scale(1.05); }
+.ac-sold-media .ph {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; color: var(--hl);
+}
+.ac-sold-flag {
+    position: absolute; left: 8px; top: 8px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #fff;
+    background: rgba(17, 20, 26, .72); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    border-radius: 6px; padding: 2px 7px;
+}
+.ac-sold-flag i { font-size: 9.5px; }
+.ac-sold-body { padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.ac-sold-title {
+    font-size: 12.5px; font-weight: 600; line-height: 1.45; color: var(--text);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ac-sold-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: auto; }
+.ac-sold-price { font-size: 15px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+.ac-sold-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
 /* ---------- 详情页布局 ---------- */
 .ac-lot { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr); gap: 22px; align-items: start; }
@@ -685,6 +736,13 @@ html[data-ac-theme="light"] body.auction-body {
     .ac-row { flex-wrap: wrap; }
     .ac-row-side { align-items: flex-start; text-align: left; }
     .ac-stats { gap: 14px; }
+    /* 成交榜：窄屏收窄卡片，箭头改贴边避免遮挡内容 */
+    .ac-sold-item { flex: 0 0 156px; }
+    .ac-sold-title { font-size: 12px; }
+    .ac-sold-price { font-size: 14px; }
+    .ac-scroller-nav.prev { left: -6px; }
+    .ac-scroller-nav.next { right: -6px; }
+    .ac-rail-note { display: none; }
 }
 
 /* ==========================================================================

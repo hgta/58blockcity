@@ -494,10 +494,53 @@
         });
     };
 
+    /* ---------------- 横向滑轨翻页（成交榜等） ---------------- */
+    /**
+     * 原生滚动条在 Windows 上粗重且有明显的上下箭头，故选隐藏滚动条 + 两端箭头翻页。
+     * 结构：<div data-scroller> 内放 [data-scroller-track] 与 prev/next 按钮。
+     */
+    AuctionUI.initScrollers = function () {
+        document.querySelectorAll('[data-scroller]').forEach(function (wrap) {
+            var track = wrap.querySelector('[data-scroller-track]');
+            if (!track) return;
+            var prev = wrap.querySelector('[data-scroller-prev]');
+            var next = wrap.querySelector('[data-scroller-next]');
+
+            function pageStep() {
+                // 一次翻约 80% 可视宽度，保留上一屏末尾卡片作视觉衔接
+                return Math.max(180, Math.round(track.clientWidth * 0.8));
+            }
+
+            function sync() {
+                var max = track.scrollWidth - track.clientWidth;
+                var overflow = max > 8;
+                wrap.classList.toggle('has-overflow', overflow);
+                if (prev) prev.disabled = !overflow || track.scrollLeft <= 2;
+                if (next) next.disabled = !overflow || track.scrollLeft >= max - 2;
+            }
+
+            if (prev) {
+                prev.addEventListener('click', function () {
+                    track.scrollBy({ left: -pageStep(), behavior: 'smooth' });
+                });
+            }
+            if (next) {
+                next.addEventListener('click', function () {
+                    track.scrollBy({ left: pageStep(), behavior: 'smooth' });
+                });
+            }
+
+            track.addEventListener('scroll', sync, { passive: true });
+            window.addEventListener('resize', sync);
+            sync();
+        });
+    };
+
     /* ---------------- 启动 ---------------- */
     function boot() {
         if (typeof window.AC_SERVER_NOW !== 'undefined') AuctionUI.setServerNow(window.AC_SERVER_NOW);
         AuctionUI.initTheme();
+        AuctionUI.initScrollers();
         refreshCountdowns();
         setInterval(refreshCountdowns, 1000);
 

@@ -298,24 +298,43 @@ require_once 'includes/header.php';
     <section class="ac-sold-strip">
         <div class="ac-rail-head">
             <h2><i class="fas fa-gavel" style="color:var(--brand);"></i> 刚落槌</h2>
-            <span class="ac-muted" style="font-size:12px;">成交 <?= intval($total ?? 0) ?> 件拍品，下一件等你出手</span>
+            <div class="ac-rail-head-side">
+                <span class="ac-rail-note">下一件等你出手</span>
+                <a class="ac-rail-more" href="<?= htmlspecialchars(ac_q(['tab' => 'ended', 'page' => 1])) ?>">全部成交 <i class="fas fa-arrow-right"></i></a>
+            </div>
         </div>
-        <div class="ac-sold-list">
-            <?php foreach ($soldList as $s):
-                $sImg = ac_auction_img($s);
-                $soldTs = strtotime($s['sold_at'] ?? $s['updated_at'] ?? $s['end_time']);
-            ?>
-            <a class="ac-sold-item" href="view.php?id=<?= intval($s['id']) ?>">
-                <div class="ac-sold-thumb">
-                    <?php if ($sImg): ?><img src="<?= htmlspecialchars($sImg) ?>" alt="" loading="lazy"><?php endif; ?>
-                </div>
-                <div style="min-width:0;">
-                    <div class="t"><?= htmlspecialchars($s['item_title'] ?? ('拍品 #' . $s['id'])) ?></div>
-                    <div class="p"><?= ac_money($s['final_price'] ?? $s['current_price'], $s['currency']) ?></div>
-                    <div class="ac-muted" style="font-size:11px;" data-ts="<?= $soldTs ?>">—</div>
-                </div>
-            </a>
-            <?php endforeach; ?>
+        <div class="ac-scroller" data-scroller>
+            <div class="ac-sold-list" data-scroller-track>
+                <?php foreach ($soldList as $s):
+                    $sImg = ac_auction_img($s);
+                    $sTitle = $s['item_title'] ?? ('拍品 #' . $s['id']);
+                    $soldTs = strtotime($s['sold_at'] ?? $s['updated_at'] ?? $s['end_time']);
+                ?>
+                <a class="ac-sold-item" href="view.php?id=<?= intval($s['id']) ?>" title="<?= htmlspecialchars($sTitle) ?>">
+                    <div class="ac-sold-media">
+                        <?php if ($sImg): ?>
+                            <img src="<?= htmlspecialchars($sImg) ?>" alt="<?= htmlspecialchars($sTitle) ?>" loading="lazy">
+                        <?php else: ?>
+                            <span class="ph"><i class="fas fa-image"></i></span>
+                        <?php endif; ?>
+                        <span class="ac-sold-flag"><i class="fas fa-gavel"></i> 成交</span>
+                    </div>
+                    <div class="ac-sold-body">
+                        <div class="ac-sold-title"><?= htmlspecialchars($sTitle) ?></div>
+                        <div class="ac-sold-meta">
+                            <span class="ac-sold-price"><?= ac_money($s['final_price'] ?? $s['current_price'], $s['currency']) ?></span>
+                            <span class="ac-sold-time" data-ts="<?= $soldTs ?>">—</span>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <button type="button" class="ac-scroller-nav prev" data-scroller-prev aria-label="向前翻">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" class="ac-scroller-nav next" data-scroller-next aria-label="向后翻">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </section>
     <?php endif; ?>
