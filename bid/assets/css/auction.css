@@ -178,6 +178,28 @@ html[data-ac-theme="light"] body.auction-body {
 .ac-price { font-size: 30px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .ac-price-lg { font-size: 38px; }
 .ac-price-unit { font-size: 14px; font-weight: 600; color: var(--muted); margin-right: 4px; }
+/* 人气值单位后缀：99 人气值（不显示小数点，单位用小字弱化） */
+.ac-price-suffix { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+.ac-price-lg .ac-price-suffix { font-size: 15px; }
+
+/* 人气值结算的接受城市徽标 */
+.ac-city-row { margin-top: 8px; }
+.ac-city-scope {
+    display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px;
+    font-size: 12px; line-height: 1.7; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 10px;
+}
+.ac-city-scope i { font-size: 11px; color: var(--brand); }
+.ac-city-scope em {
+    font-style: normal; font-weight: 600; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: 0 6px;
+}
+.ac-city-scope em.more { color: var(--muted); font-weight: 500; border-color: transparent; background: transparent; }
+.ac-city-scope-sm { font-size: 11.5px; padding: 2px 8px; }
+.ac-card-city { margin-top: 6px; }
+
 .ac-delta { font-size: 13px; font-weight: 700; color: var(--lead); }
 .ac-delta-up::before { content: '▲ '; font-size: 10px; }
 

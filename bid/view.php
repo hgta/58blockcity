@@ -60,6 +60,9 @@ $isCurrent = intval($a['current_bidder_id'] ?? 0) === $userId;
 $myState   = $snap['my_state'] ?? 'none';
 $isWatching = $myState === 'watching' || $auction->isWatching($auctionId, $userId);
 $minBid    = $snap['next_min'];
+// 人气值为整数资产：展示与输入一律不出现小数点
+$isPop     = ($a['currency'] === 'popularity');
+$minBidShow = $isPop ? (int)ceil($minBid) : $minBid;
 $delta     = ac_price_delta($a);
 $img       = ac_auction_img($a);
 $isActive  = $a['status'] === 'active';
@@ -241,10 +244,14 @@ require_once 'includes/header.php';
                     <div>
                         <div class="ac-eyebrow"><?= $isOver ? '成交价' : ($hasBid ? '当前价' : '起拍价') ?></div>
                         <div class="ac-price ac-price-lg">
-                            <span class="ac-price-unit"><?= $symbol ?></span><span data-live="price"><?= number_format(floatval($a['current_price'] ?? $a['start_price']), 2) ?></span>
+                            <span class="ac-price-unit"><?= $symbol ?></span><span data-live="price" data-currency="<?= htmlspecialchars($a['currency']) ?>"><?= ac_amount_text($a['current_price'] ?? $a['start_price'], $a['currency']) ?></span><?php if ($a['currency'] === 'popularity'): ?><span class="ac-price-suffix">人气值</span><?php endif; ?>
                         </div>
                         <?php if ($isZeroStart): ?>
                         <span style="display:inline-block;margin-top:6px;background:#ff4d4f;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">0 元起拍</span>
+                        <?php endif; ?>
+                        <?php $cityScope = ac_accept_cities_html($a, 4); ?>
+                        <?php if ($cityScope !== ''): ?>
+                        <div class="ac-city-row"><?= $cityScope ?></div>
                         <?php endif; ?>
                     </div>
                     <div style="text-align:right;">
@@ -278,7 +285,7 @@ require_once 'includes/header.php';
 
                 <div class="ac-panel-row">
                     <span class="ac-panel-label">下一口价</span>
-                    <span class="ac-price" style="font-size:18px;"><span class="ac-price-unit"><?= $symbol ?></span><span data-live="next_min"><?= number_format($minBid, 2) ?></span></span>
+                    <span class="ac-price" style="font-size:18px;"><span class="ac-price-unit"><?= $symbol ?></span><span data-live="next_min" data-currency="<?= htmlspecialchars($a['currency']) ?>"><?= ac_amount_text($minBidShow, $a['currency']) ?></span><?php if ($isPop): ?><span class="ac-price-suffix">人气值</span><?php endif; ?></span>
                 </div>
 
                 <?php if ($userId && !$isSeller): ?>
@@ -287,14 +294,16 @@ require_once 'includes/header.php';
                     <button type="button" class="ac-btn ac-btn-ghost" data-quick="3">+3 档</button>
                     <button type="button" class="ac-btn ac-btn-ghost" data-quick="5">+5 档</button>
                 </div>
+                <?php $minBidInput = $minBidShow; ?>
                 <form class="ac-bid-form" id="acBidForm" method="POST"
                       data-price="<?= floatval($a['current_price'] ?? $a['start_price']) ?>"
                       data-increment="<?= floatval($a['bid_increment']) ?>"
                       data-next-min="<?= floatval($minBid) ?>"
-                      data-start-price="<?= floatval($a['start_price']) ?>">
+                      data-start-price="<?= floatval($a['start_price']) ?>"
+                      data-currency="<?= htmlspecialchars($a['currency']) ?>">
                     <input type="hidden" name="action_bid" value="1">
                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-                    <input class="ac-input" type="number" name="amount" step="0.01" min="<?= $minBid ?>" value="<?= $minBid ?>" required>
+                    <input class="ac-input" type="number" name="amount" step="<?= $isPop ? '1' : '0.01' ?>" min="<?= $minBidInput ?>" value="<?= $minBidInput ?>" required>
                     <button type="submit" class="ac-btn ac-btn-primary"><i class="fas fa-gavel"></i> 出价</button>
                 </form>
                 <div class="ac-hint" data-help-hint="bid-guide">
@@ -389,7 +398,7 @@ require_once 'includes/header.php';
             <span class="ac-muted" style="font-size:11px;">每 3 秒自动刷新</span>
         </div>
         <div class="ac-bids" id="acBids">
-            <?php ac_render_bids($bids, $userId, $symbol); ?>
+            <?php ac_render_bids($bids, $userId, $symbol, $a['currency']); ?>
         </div>
     </div>
 

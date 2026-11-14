@@ -144,8 +144,12 @@ require_once 'includes/header.php';
                 <div>
                     <div class="ac-eyebrow">当前价</div>
                     <div class="ac-price ac-price-lg">
-                        <span class="ac-price-unit"><?= ac_currency_symbol($hero['currency']) ?></span><span data-live="price"><?= number_format(floatval($hero['current_price'] ?? $hero['start_price']), 2) ?></span>
+                        <span class="ac-price-unit"><?= ac_currency_symbol($hero['currency']) ?></span><span data-live="price" data-currency="<?= htmlspecialchars($hero['currency']) ?>"><?= ac_amount_text($hero['current_price'] ?? $hero['start_price'], $hero['currency']) ?></span><?php if ($hero['currency'] === 'popularity'): ?><span class="ac-price-suffix">人气值</span><?php endif; ?>
                     </div>
+                    <?php $heroCityScope = ac_accept_cities_html($hero, 3); ?>
+                    <?php if ($heroCityScope !== ''): ?>
+                    <div class="ac-city-row"><?= $heroCityScope ?></div>
+                    <?php endif; ?>
                 </div>
                 <div style="text-align:right;">
                     <div class="ac-eyebrow">起拍价</div>
@@ -259,6 +263,10 @@ require_once 'includes/header.php';
                         <div class="ac-price" style="font-size:19px;"><?= ac_money($a['current_price'] ?? $a['start_price'], $a['currency']) ?></div>
                         <?php if ($delta !== null): ?><span class="ac-delta ac-delta-up"><?= number_format($delta, 0) ?>%</span><?php endif; ?>
                     </div>
+                    <?php $cardCityScope = ac_accept_cities_html($a, 3, true); ?>
+                    <?php if ($cardCityScope !== ''): ?>
+                    <div class="ac-card-city"><?= $cardCityScope ?></div>
+                    <?php endif; ?>
                     <?php if ($isEnded): ?>
                         <div class="ac-muted" style="font-size:12px;">
                             <?= $a['status'] === 'sold' ? '成交 ' . ac_money($a['final_price'] ?? $a['current_price'], $a['currency']) : '未成交（流拍）' ?>

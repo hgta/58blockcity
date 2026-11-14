@@ -64,10 +64,33 @@
         return Math.floor(diff / 86400) + ' 天前';
     };
 
-    AuctionUI.fmtMoney = function (v) {
+    /**
+     * 金额数字格式化
+     * 人气值是整数资产，不显示小数点（99.00 → 99）；人民币保留两位小数
+     */
+    AuctionUI.fmtMoney = function (v, currency) {
         var n = parseFloat(v) || 0;
+        if (currency === 'popularity') {
+            return Math.round(n).toLocaleString('zh-CN');
+        }
         return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
+
+    /** 完整价格文案（含币种单位），与服务端 ac_money() 输出保持一致 */
+    AuctionUI.fmtPrice = function (v, currency) {
+        if (currency === 'popularity') {
+            return AuctionUI.fmtMoney(v, currency) + ' 人气值';
+        }
+        return '¥ ' + AuctionUI.fmtMoney(v, currency);
+    };
+
+    /** 当前页面拍卖的结算币种（从带 data-currency 的节点读取，缺省人民币） */
+    function pageCurrency() {
+        var el = document.getElementById('acBidForm')
+            || document.querySelector('[data-live="price"][data-currency]');
+        var c = el && el.getAttribute('data-currency');
+        return c === 'popularity' ? 'popularity' : 'cny';
+    }
 
     /* ---------------- 倒计时 ---------------- */
     function refreshCountdowns() {
@@ -148,7 +171,7 @@
 
             var amount = document.createElement('span');
             amount.className = 'ac-bid-amount';
-            amount.textContent = (b.currency_symbol || '') + AuctionUI.fmtMoney(b.amount);
+            amount.textContent = AuctionUI.fmtPrice(b.amount, b.currency || pageCurrency());
 
             var time = document.createElement('span');
             time.className = 'ac-bid-time';
@@ -201,12 +224,13 @@
             var cd = document.getElementById('acCountdown');
             if (cd && d.end_ts) cd.setAttribute('data-end-ts', d.end_ts);
 
-            // 数值
-            setText('[data-live="price"]', AuctionUI.fmtMoney(d.current_price));
+            // 数值（人气值取整，与服务端 ac_amount_text 一致；币种由接口下发）
+            var cur = d.currency || pageCurrency();
+            setText('[data-live="price"]', AuctionUI.fmtMoney(d.current_price, cur));
             setText('[data-live="bid_count"]', d.bid_count);
             setText('[data-live="bidder_count"]', d.bidder_count);
             setText('[data-live="watch_count"]', d.watch_count);
-            setText('[data-live="next_min"]', AuctionUI.fmtMoney(d.next_min));
+            setText('[data-live="next_min"]', AuctionUI.fmtMoney(d.next_min, cur));
 
             // 快捷加价基准
             var form = document.getElementById('acBidForm');
@@ -231,7 +255,7 @@
                     verdict.innerHTML = '<i class="fas fa-eye"></i> 你尚未参与这口竞价';
                 }
                 if (prev && prev === 'leading' && d.my_state === 'outbid') {
-                    AuctionUI.toast('你已被超越！当前价 ' + AuctionUI.fmtMoney(d.current_price), 'live');
+                    AuctionUI.toast('你已被超越！当前价 ' + AuctionUI.fmtPrice(d.current_price, cur), 'live');
                 }
             }
 
@@ -335,7 +359,10 @@
                 var amount = price > 0 ? (price + inc * step) : base;
                 var floorN = parseFloat(form.getAttribute('data-next-min')) || 0;
                 if (floorN > 0 && amount < floorN) amount = floorN;
-                input.value = amount.toFixed(2);
+                // 人气值是整数资产：输入框不出现小数
+                input.value = form.getAttribute('data-currency') === 'popularity'
+                    ? String(Math.round(amount))
+                    : amount.toFixed(2);
                 input.focus();
             });
         });
@@ -349,7 +376,12 @@
                 return;
             }
             if (amount < nextMin) {
-                AuctionUI.toast('出价需 ≥ ' + AuctionUI.fmtMoney(nextMin), 'err');
+                AuctionUI.toast('出价需 ≥ ' + AuctionUI.fmtPrice(nextMin, pageCurrency()), 'err');
+                return;
+            }
+            // 人气值不接受小数，避免提交后被服务端取整导致「出价未达标」
+            if (pageCurrency() === 'popularity' && Math.round(amount) !== amount) {
+                AuctionUI.toast('人气值出价请使用整数', 'err');
                 return;
             }
 

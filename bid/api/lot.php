@@ -39,6 +39,7 @@ foreach (($snapshot['bids'] ?? []) as $b) {
         'bidder_name'    => $b['bidder_name'] ?? '',
         'bidder_avatar'  => $b['bidder_avatar'] ?? '',
         'amount'         => floatval($b['amount']),
+        'currency'       => $snapshot['currency'],
         'created_ts'     => strtotime($b['created_at']),
     ];
 }
@@ -51,6 +52,7 @@ echo json_encode([
         'status'         => $snapshot['status'],
         // 落槌后才有值；NULL = 未落槌或本 change 之前的存量记录（无契约）
         'payment_status' => $snapshot['payment_status'],
+        'currency'       => $snapshot['currency'],
         'currency_symbol'=> $symbol,
         'current_price'  => $snapshot['current_price'],
         'start_price'    => $snapshot['start_price'],

@@ -271,7 +271,11 @@ class Auction {
             // （含 0 元起拍：无人出价时按加价幅度起步）
             $minBid = $this->nextMinBid($a);
             if ($amount < $minBid) {
-                throw new Exception('出价需 ≥ ' . number_format($minBid, 2));
+                // 人气值为整数资产，提示文案不出现小数点
+                $minText = $a['currency'] === 'popularity'
+                    ? number_format((int)ceil($minBid)) . ' 人气值'
+                    : '¥' . number_format($minBid, 2);
+                throw new Exception('出价需 ≥ ' . $minText);
             }
 
             $prevBidderId = intval($a['current_bidder_id'] ?? 0);
@@ -457,7 +461,11 @@ class Auction {
      * 此处内联，避免业务类依赖拍卖站的渲染辅助文件。
      */
     private function moneyText($amount, $currency) {
-        return ($currency === 'popularity' ? 'Ⓟ ' : '¥ ') . number_format(floatval($amount), 2);
+        // 人气值是整数资产，不显示小数点（99.00 → 99 人气值）
+        if ($currency === 'popularity') {
+            return number_format((int)round(floatval($amount))) . ' 人气值';
+        }
+        return '¥ ' . number_format(floatval($amount), 2);
     }
 
     /**
@@ -1089,6 +1097,10 @@ class Auction {
                 $a['nft_id'] = $rec['nft_id'] ?? null;
             }
         }
+        // 人气值拍卖：补充「接受哪个城市的人气值结算」的城市名（空数组 = 不限城市）
+        $tmp = [$a];
+        $this->attachAcceptCities($tmp);
+        $a = $tmp[0];
         return $a;
     }
 
@@ -1255,6 +1267,60 @@ class Auction {
             $r['bid_count']    = intval($bidMap[$id]['c'] ?? 0);
             $r['bidder_count'] = intval($bidMap[$id]['d'] ?? 0);
             $r['watch_count']  = $watchMap[$id] ?? 0;
+        }
+        unset($r);
+
+        // 列表页也要展示「接受哪些城市的人气值」，与统计一并批量补全
+        $this->attachAcceptCities($rows);
+    }
+
+    /**
+     * 批量附加人气值结算城市名
+     *
+     * auctions.accept_cities 存城市 id 的 JSON 数组，空数组/无效值表示「不限城市」。
+     * 一次 IN 查询覆盖整页数据（列表/首页多卡片），避免逐条查 cities。
+     *
+     * @param array $rows 拍卖记录数组（引用，原地写入 accept_city_names / accept_city_count）
+     */
+    private function attachAcceptCities(array &$rows) {
+        if (empty($rows)) return;
+
+        $rowIds = [];   // 每行解析出的 city id 列表（保持用户勾选顺序）
+        $need   = [];   // 去重后的全部 city id
+        foreach ($rows as $i => $r) {
+            $ids = [];
+            $raw = $r['accept_cities'] ?? '';
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $v) {
+                        $cid = intval($v);
+                        if ($cid > 0) $ids[] = $cid;
+                    }
+                    $ids = array_values(array_unique($ids));
+                }
+            }
+            $rowIds[$i] = $ids;
+            foreach ($ids as $cid) $need[$cid] = true;
+        }
+
+        $nameMap = [];
+        if (!empty($need)) {
+            $in = implode(',', array_fill(0, count($need), '?'));
+            $stmt = $this->pdo->prepare("SELECT id, name FROM cities WHERE id IN ($in)");
+            $stmt->execute(array_keys($need));
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                $nameMap[intval($c['id'])] = $c['name'];
+            }
+        }
+
+        foreach ($rows as $i => &$r) {
+            $names = [];
+            foreach ($rowIds[$i] as $cid) {
+                if (isset($nameMap[$cid])) $names[] = $nameMap[$cid];
+            }
+            $r['accept_city_names'] = $names;          // 空数组 = 接受全部城市
+            $r['accept_city_count'] = count($names);
         }
         unset($r);
     }

@@ -10,10 +10,85 @@ if (!function_exists('ac_currency_symbol')) {
     }
 }
 
+if (!function_exists('ac_amount_text')) {
+    /**
+     * 金额「数字」部分（不含符号/单位）
+     * 人气值是整数资产，不显示小数点（99.00 → 99）；人民币保留两位小数
+     */
+    function ac_amount_text($amount, $currency = 'cny') {
+        if ($currency === 'popularity') {
+            return number_format((int)round(floatval($amount)));
+        }
+        return number_format(floatval($amount), 2);
+    }
+}
+
 if (!function_exists('ac_money')) {
-    /** 金额展示（含符号，千分位） */
+    /**
+     * 金额完整展示（行内文案用）
+     * - 人气值：99 人气值（整数，无小数点）
+     * - 人民币：¥ 99.00
+     */
     function ac_money($amount, $currency = 'cny') {
-        return ac_currency_symbol($currency) . number_format(floatval($amount), 2);
+        if ($currency === 'popularity') {
+            return ac_amount_text($amount, 'popularity') . ' 人气值';
+        }
+        return '¥ ' . ac_amount_text($amount, 'cny');
+    }
+}
+
+if (!function_exists('ac_price_unit_label')) {
+    /** 大字号价格旁的单位小字（人气值需要明确单位，人民币符号已足够） */
+    function ac_price_unit_label($currency) {
+        return $currency === 'popularity' ? '人气值' : '';
+    }
+}
+
+if (!function_exists('ac_accept_cities_html')) {
+    /**
+     * 「接受哪些城市的人气值结算」徽标
+     *
+     * accept_city_names 由 Auction::attachAcceptCities() 批量补全；
+     * 空数组表示卖家未限制城市 —— 接受全部城市的人气值。
+     *
+     * @param array $auction 拍卖记录
+     * @param int   $max     展开显示的城市名个数，超出折叠为 +N
+     * @param bool  $compact 紧凑模式：只显示「N 城可用」（列表卡片用）
+     * @return string 非人气值拍卖返回空串
+     */
+    function ac_accept_cities_html($auction, $max = 3, $compact = false) {
+        if (($auction['currency'] ?? '') !== 'popularity') return '';
+
+        $names = $auction['accept_city_names'] ?? [];
+        $names = is_array($names) ? $names : [];
+        $total = count($names);
+
+        // 未勾选任何城市 = 不限城市
+        if ($total === 0) {
+            return '<span class="ac-city-scope"><i class="fas fa-city"></i> 接受全部城市人气值</span>';
+        }
+
+        $allTitle = htmlspecialchars(implode(' / ', $names), ENT_QUOTES, 'UTF-8');
+
+        if ($compact) {
+            return '<span class="ac-city-scope ac-city-scope-sm" title="' . $allTitle . '">'
+                . '<i class="fas fa-city"></i> ' . $total . ' 城可用</span>';
+        }
+
+        $shown = array_slice($names, 0, max(1, intval($max)));
+        $rest  = $total - count($shown);
+
+        $html = '<span class="ac-city-scope" title="' . $allTitle . '">'
+            . '<i class="fas fa-city"></i> 接受 ';
+        foreach ($shown as $n) {
+            $html .= '<em>' . htmlspecialchars($n) . '</em>';
+        }
+        if ($rest > 0) {
+            $html .= '<em class="more">+' . $rest . '</em>';
+        }
+        $html .= ' 人气值结算</span>';
+
+        return $html;
     }
 }
 
@@ -150,7 +225,7 @@ if (!function_exists('ac_render_bids')) {
     /**
      * 输出叫价流（首屏服务端渲染，结构与 auction.js 动态渲染保持一致）
      */
-    function ac_render_bids(array $bids, $viewerId, $symbol) {
+    function ac_render_bids(array $bids, $viewerId, $symbol, $currency = 'cny') {
         if (empty($bids)) {
             echo '<div class="ac-hint" style="padding:14px 4px;">等待第一口出价</div>';
             return;
@@ -165,7 +240,7 @@ if (!function_exists('ac_render_bids')) {
             echo '<span>' . htmlspecialchars(ac_bidder_label($b, $viewerId)) . '</span>';
             echo '</div>';
             echo '<div style="display:flex;align-items:center;gap:12px;">';
-            echo '<span class="ac-bid-amount">' . htmlspecialchars($symbol . number_format(floatval($b['amount']), 2)) . '</span>';
+            echo '<span class="ac-bid-amount">' . htmlspecialchars(ac_money($b['amount'], $currency)) . '</span>';
             echo '<span class="ac-bid-time" data-ts="' . strtotime($b['created_at']) . '">—</span>';
             echo '</div>';
             echo '</div>';
