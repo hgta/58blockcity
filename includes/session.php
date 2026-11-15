@@ -43,7 +43,13 @@ if (!defined('AUTH_SESSION_TTL')) {
 //   · 位于站点根之外，sess_* 文件不会被 Web 直接访问；
 //   · PHP 的 GC 只扫描 save_path 下以 sess_ 开头的文件、且不递归子目录，
 //     因此同机其他站点（save_path=/tmp）清理时不会误删本站会话。
-// 如需改用固定磁盘目录，在 config 中 define('AUTH_SESSION_DIR', '/your/path') 即可。
+// 如需改用固定磁盘目录（例如 /tmp 为 tmpfs 时重启会丢会话）：
+//   新建 config/session.php，写入 define('AUTH_SESSION_DIR', '/www/wwwroot/sessions-58tl');
+//   该目录同样必须在站点根之外，并归属 PHP 运行用户、权限 0700。
+$authSessionCfg = dirname(__DIR__) . '/config/session.php';
+if (is_file($authSessionCfg)) {
+    require_once $authSessionCfg;
+}
 if (!defined('AUTH_SESSION_DIR')) {
     define('AUTH_SESSION_DIR', rtrim(sys_get_temp_dir(), '/\\') . '/58blockcity-sessions');
 }
