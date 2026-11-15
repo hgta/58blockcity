@@ -1,12 +1,21 @@
+<?php
+// 品牌名常量（BRAND_NAME / BRAND_ALT_NAMES）必须在 <head> 产出前可用，
+// 故提前引入。该文件只定义常量与函数、不产生任何输出；下方原第 37 行的
+// require_once 因幂等不受影响。
+require_once __DIR__ . '/shared/organization.php';
+?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>58区块城市 - 元宇宙同城生活服务平台 | 58 BlockCity </title>
+    <title><?= BRAND_NAME ?> - 元宇宙同城生活服务平台 | 58 BlockCity </title>
     <meta name="description" content="58区块城市是基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理，为您提供全新的本地生活体验。">
     <meta name="keywords" content="58,区块城市,区块同城,元宇宙,BlockCity,DAO,同城服务,本地生活,区块链城市">
-    <meta property="og:title" content="58区块城市 - 元宇宙同城生活服务平台">
+    <!-- 站点品牌信号：与 Organization.name / WebSite.name 保持同一取值 -->
+    <meta name="application-name" content="<?= BRAND_NAME ?>">
+    <meta property="og:site_name" content="<?= BRAND_NAME ?>">
+    <meta property="og:title" content="<?= BRAND_NAME ?> - 元宇宙同城生活服务平台">
     <meta property="og:description" content="基于元宇宙技术的下一代同城生活服务平台">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.58.tl">
@@ -434,7 +443,7 @@ $navLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 
     
     <!-- JSON-LD结构化数据：WebSite（挂接到全局组织实体） -->
     <?= SeoHelper::webSiteSchema([
-        'name'        => '58区块城市',
+        'name'        => BRAND_NAME,
         'url'         => 'https://www.58.tl/',
         'search'      => 'https://www.58.tl/search?q={search_term_string}',
         'description' => '基于元宇宙技术的下一代同城生活服务平台，整合BlockCity DAO社区治理。',

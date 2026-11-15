@@ -24,6 +24,28 @@ if (!defined('ORG_ENTITY_ID')) {
     define('ORG_ENTITY_ID', 'https://www.58.tl/#organization');
 }
 
+/**
+ * 品牌名 —— 全站单一来源
+ *
+ * 出现位置：<title>、og:title、og:site_name、application-name、
+ *          Organization.name、WebSite.name。
+ * 改品牌只改这里，避免「标题里一个名、结构化数据里另一个名」的漂移。
+ *
+ * 命名取舍（见 docs/baidu-brand-display.md）：
+ *   沿用「58区块城市」——用户认知最强。含「58」，提交百度品牌展现时
+ *   存在被判为第三方品牌的审核风险，故不在本文件内做任何规避性改写，
+ *   待资质核实后再决定是否调整。
+ */
+if (!defined('BRAND_NAME')) {
+    define('BRAND_NAME', '58区块城市');
+}
+
+// 品牌别名：仅用于 structured data 的 alternateName。
+// 不擅自新增品牌别名，避免与生态方（BlockCity.vip）品牌混淆。
+if (!defined('BRAND_ALT_NAMES')) {
+    define('BRAND_ALT_NAMES', ['58 BlockCity', 'BlockCity 58', 'BlockCity DAO']);
+}
+
 if (!function_exists('organization_json_ld')) {
     /**
      * 生成全局 Organization JSON-LD 脚本标签
@@ -37,8 +59,8 @@ if (!function_exists('organization_json_ld')) {
             '@context'    => 'https://schema.org',
             '@type'       => 'Organization',
             '@id'         => ORG_ENTITY_ID,
-            'name'        => '58区块城市',
-            'alternateName' => ['58 BlockCity', 'BlockCity 58', 'BlockCity DAO'],
+            'name'        => BRAND_NAME,
+            'alternateName' => BRAND_ALT_NAMES,
             'url'         => 'https://www.58.tl/',
             'logo'        => [
                 '@type'  => 'ImageObject',
