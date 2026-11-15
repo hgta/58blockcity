@@ -52,11 +52,11 @@ if (!function_exists('ac_accept_cities_html')) {
      * 空数组表示卖家未限制城市 —— 接受全部城市的人气值。
      *
      * @param array $auction 拍卖记录
-     * @param int   $max     展开显示的城市名个数，超出折叠为 +N
+     * @param int   $max     展开显示的城市名个数（默认 6），超出折叠为 +N
      * @param bool  $compact 紧凑模式：只显示「N 城可用」（列表卡片用）
      * @return string 非人气值拍卖返回空串
      */
-    function ac_accept_cities_html($auction, $max = 3, $compact = false) {
+    function ac_accept_cities_html($auction, $max = 6, $compact = false) {
         if (($auction['currency'] ?? '') !== 'popularity') return '';
 
         $names = $auction['accept_city_names'] ?? [];
@@ -78,15 +78,18 @@ if (!function_exists('ac_accept_cities_html')) {
         $shown = array_slice($names, 0, max(1, intval($max)));
         $rest  = $total - count($shown);
 
-        $html = '<span class="ac-city-scope" title="' . $allTitle . '">'
-            . '<i class="fas fa-city"></i> 接受 ';
+        // 文案收进前缀，避免尾部「人气值结算」在城市换行时单独掉成一行
+        $html = '<span class="ac-city-scope" title="接受以下城市的人气值结算：' . $allTitle . '">'
+            . '<span class="cap"><i class="fas fa-city"></i> 接受</span>';
         foreach ($shown as $n) {
             $html .= '<em>' . htmlspecialchars($n) . '</em>';
         }
         if ($rest > 0) {
-            $html .= '<em class="more">+' . $rest . '</em>';
+            $html .= '<em class="more" title="另有 ' . $rest . ' 个城市：'
+                . htmlspecialchars(implode(' / ', array_slice($names, count($shown))), ENT_QUOTES, 'UTF-8')
+                . '">+' . $rest . '</em>';
         }
-        $html .= ' 人气值结算</span>';
+        $html .= '</span>';
 
         return $html;
     }

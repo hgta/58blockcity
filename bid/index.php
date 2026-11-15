@@ -146,7 +146,7 @@ require_once 'includes/header.php';
                     <div class="ac-price ac-price-lg">
                         <span class="ac-price-unit"><?= ac_currency_symbol($hero['currency']) ?></span><span data-live="price" data-currency="<?= htmlspecialchars($hero['currency']) ?>"><?= ac_amount_text($hero['current_price'] ?? $hero['start_price'], $hero['currency']) ?></span><?php if ($hero['currency'] === 'popularity'): ?><span class="ac-price-suffix">人气值</span><?php endif; ?>
                     </div>
-                    <?php $heroCityScope = ac_accept_cities_html($hero, 3); ?>
+                    <?php $heroCityScope = ac_accept_cities_html($hero, 6); ?>
                     <?php if ($heroCityScope !== ''): ?>
                     <div class="ac-city-row"><?= $heroCityScope ?></div>
                     <?php endif; ?>

@@ -186,13 +186,15 @@ html[data-ac-theme="light"] body.auction-body {
 .ac-city-row { margin-top: 8px; }
 .ac-city-scope {
     display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px;
-    font-size: 12px; line-height: 1.7; color: var(--muted);
+    font-size: 12px; line-height: 1.9; color: var(--muted);
     background: var(--surface-2); border: 1px solid var(--line);
-    border-radius: 999px; padding: 3px 10px;
+    /* 城市多时会换行，圆角收敛为块状而非胶囊，避免两行时两端半圆变形 */
+    border-radius: 10px; padding: 4px 10px; max-width: 100%;
 }
+.ac-city-scope .cap { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ac-city-scope i { font-size: 11px; color: var(--brand); }
 .ac-city-scope em {
-    font-style: normal; font-weight: 600; color: var(--text);
+    font-style: normal; font-weight: 600; color: var(--text); white-space: nowrap;
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 6px; padding: 0 6px;
 }

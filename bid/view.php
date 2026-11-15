@@ -249,7 +249,7 @@ require_once 'includes/header.php';
                         <?php if ($isZeroStart): ?>
                         <span style="display:inline-block;margin-top:6px;background:#ff4d4f;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">0 元起拍</span>
                         <?php endif; ?>
-                        <?php $cityScope = ac_accept_cities_html($a, 4); ?>
+                        <?php $cityScope = ac_accept_cities_html($a, 6); ?>
                         <?php if ($cityScope !== ''): ?>
                         <div class="ac-city-row"><?= $cityScope ?></div>
                         <?php endif; ?>
