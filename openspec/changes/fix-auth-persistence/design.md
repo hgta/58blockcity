@@ -122,6 +122,23 @@
 
 ## Open Questions
 
-- 生产 `session.save_path` 是否已被其他站点共用、`gc_maxlifetime` 现值多少 —— 需用户执行 `php -i | grep session.` 确认，结论回写本文件
+### 已由实测解决（2026-11-15，生产 `php -i`）
+
+```text
+session.gc_maxlifetime => 1440 => 1440      # 24 分钟
+session.gc_probability => 1 => 1            # 概率式 GC（divisor 默认 100）
+session.save_path      => no value          # 回落到 sys_get_temp_dir()，即 /tmp
+```
+
+**结论：`GC 型掉线` 确认成立，且是当前主因。**
+
+- 会话文件 24 分钟未写入即成为 GC 候选；cookie 声明 30 天，服务器只给 24 分钟，两者严重不一致
+- `save_path` 无值意味着落到 `/tmp`，与同机所有站点共用同一目录：**任一站点按其自身 `gc_maxlifetime`（多为默认 1440）触发 GC，会连带删除本站会话文件**
+- 这解释了「勾选 30 天仍频繁重登」：session 被清后能否无感恢复，完全取决于 `remember_me`，而该链路本身还有互踢与「失败即删 cookie」两处缺陷（D5/D6）
+
+**影响优先级调整**：服务器侧配置（独立 `save_path` + 足够大的 `gc_maxlifetime`）收益最大且零代码，应作为第一步；代码侧 `api/city_geo.php` 降级 cookie（D1）与失败分级（D6）紧随其后。
+
+剩余待确认：
+
 - 是否进一步引入 Redis session（当前几百并发下 MySQL + 文件足够，暂不引入）
 - 后台超时 2 小时是否合适 —— 可按实际编辑时长调整

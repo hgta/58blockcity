@@ -1,6 +1,14 @@
 # Tasks — fix-auth-persistence
 
 > 部署硬约束：第 3.1 的 migration **必须先于代码**执行；索引变更对旧代码向后兼容，可安全回滚。
+>
+> 实测前提（2026-11-15）：`session.gc_maxlifetime=1440`（24 分钟）、`session.save_path` 无值（落 `/tmp`，与全机共用）→ **GC 型掉线已确认**，第 0 组收益最大且不需要改代码。
+
+## 0. 服务器配置（运维执行，可先做，零代码）
+
+- [ ] 0.1 建立站点独立 session 目录（**必须位于站点根目录之外**，避免会话文件被 Web 访问）：`/www/wwwroot/sessions-58tl`，`chown www:www`、`chmod 700`
+- [ ] 0.2 宝塔 → 软件商店 → PHP 设置 → 配置修改：`session.gc_maxlifetime = 2592000`（30 天）、`session.save_path = /www/wwwroot/sessions-58tl`，保存后 `php -i | grep -E "gc_maxlifetime|save_path"` 复核
+- [ ] 0.3 低峰期执行并记录：切换 `save_path` 会使**所有在线用户掉一次登录**（旧会话文件不在新目录），需提前说明；观察 24 小时确认不再出现"挂机一会儿就掉线"
 
 ## 1. 止血（P0，先做，风险最低）
 
