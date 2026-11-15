@@ -506,42 +506,95 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
+    /* 移动端：头像图片卡片排最前 */
     .left-sidebar {
-        order: 2;
-    }
-    
-    .right-content {
         order: 1;
+    }
+
+    .right-content {
+        order: 2;
     }
 }
 
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
-    
+
+    .stat-card {
+        padding: 14px 10px;
+    }
+
+    .stat-number {
+        font-size: 1.4rem;
+    }
+
     .action-buttons {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
     }
-    
+
+    .btn-action {
+        padding: 12px 6px;
+        font-size: 0.85rem;
+    }
+
     .view-container {
-        padding: 15px;
+        padding: 12px;
+    }
+
+    .detail-hero {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .detail-hero .detail-title {
+        font-size: 15px;
+    }
+
+    .detail-hero .hero-link {
+        padding: 3px 10px;
+    }
+
+    .nft-image-container {
+        padding: 20px;
+        min-height: 0;
+    }
+
+    .nft-image {
+        max-height: 280px;
+    }
+
+    .activity-list {
+        max-height: 200px;
     }
 }
 
 @media (max-width: 480px) {
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
-    
+
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
     .nft-image-container {
-        padding: 20px;
-        min-height: 250px;
+        padding: 16px;
     }
-    
+
     .nft-image {
-        max-height: 200px;
+        max-height: 240px;
+    }
+
+    .nft-tags {
+        justify-content: flex-start;
+    }
+
+    .tags-title {
+        text-align: left;
     }
 }
 </style>
