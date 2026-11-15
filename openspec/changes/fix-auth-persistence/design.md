@@ -51,14 +51,22 @@
 
 **备选**：保持各处独立 —— 否决，现状已证明会漂移（5 处里 1 处写成 `lifetime=0`）。
 
-### D3 会话寿命：显式 gc_maxlifetime + 独立 save_path
+### D3 会话寿命：请求内覆盖，**禁止改 php.ini**
 
 - `ini_set('session.gc_maxlifetime', AUTH_SESSION_TTL)`，`AUTH_SESSION_TTL = 86400 * 30`
-- `session.save_path` 支持配置为站点独立目录（常量 `AUTH_SESSION_DIR`，缺省时回退系统默认）：目录不存在则 `mkdir 0700`，创建失败只记录日志并回退，不阻断请求
+- `session.save_path` 覆盖为 `AUTH_SESSION_DIR`，默认 `sys_get_temp_dir() . '/58blockcity-sessions'`；目录不存在则 `mkdir 0700`，不可写时回退系统默认并记日志，不阻断请求
 
-**为什么必须配独立目录**：`gc_maxlifetime` 只影响本站触发的 GC；同机其他站点若共用 `/tmp`，会按它们的默认 1440 秒清掉整个目录，本站设置再大也无效。
+**为什么禁止改 php.ini**：宝塔的 php.ini 按 **PHP 版本**全局共享，改 `session.save_path` 会让同版本下**所有站点**把会话写进同一个目录（甚至写进本项目的目录），比现状更糟。请求内 `ini_set` 的作用域仅本站，且随代码部署、可回滚。
 
-**备选**：只改 php.ini —— 否决，需要在服务器手动维护且多站共用目录问题仍在。
+**为什么默认是 `/tmp/<站点专名>` 子目录**：
+
+- 位于站点根之外，`sess_*` 文件不会被 Web 直接访问（放 docroot 内等于会话泄露）
+- PHP 的 GC 只 `readdir(save_path)` 并删除以 `sess_` 开头的条目，**不递归子目录**；因此同机其他站点以 `save_path=/tmp` 清理时，不会碰到 `/tmp/58blockcity-sessions/` 下的本站文件
+- 不写死部署路径，换机器不用改代码；需要固定磁盘目录时，在 `config/` 里 `define('AUTH_SESSION_DIR', '/your/path')` 即可
+
+**备选**：① 改 php.ini —— 否决，全局污染（用户已指出该风险）；② `.user.ini` —— 取决于 `user_ini.filename` 是否启用且有 300 秒缓存，可靠性不如请求内覆盖。
+
+**副作用（必须提前告知）**：切换 `save_path` 后，旧目录中的会话文件不再可见，**所有在线用户掉一次登录**，需低峰期上线。
 
 ### D4 空闲超时分离
 

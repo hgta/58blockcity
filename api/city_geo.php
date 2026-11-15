@@ -223,31 +223,13 @@ function geo_respond(array $payload) {
     exit;
 }
 
-// ---------- 1. 会话缓存 ----------
-if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path' => '/',
-        'domain' => '.58.tl',
-        'secure' => true,
-        'httponly' => true,
-        'samesite' => 'None',
-    ]);
-    @session_start();
-}
-// ?nocache=1 跳过会话/文件缓存，强制重新查询（排查时用）
+// ---------- 1. 缓存旁路开关 ----------
+// 本接口刻意不使用 PHP 会话：定位结果只是缓存优化，一旦 session_start()
+// 就会重发 Set-Cookie，历史上曾把主站 30 天的 PHPSESSID 覆盖成「关浏览器即失效」
+// 的会话级 cookie（lifetime=0 / SameSite=None），导致用户频繁掉登录。
+// 见 openspec/changes/fix-auth-persistence。
+// ?nocache=1 跳过文件缓存，强制重新查询（排查时用）
 $bypassCache = isset($_GET['nocache']) && $_GET['nocache'] !== '0';
-if ($bypassCache) {
-    unset($_SESSION['city_geo']);
-}
-
-if (!$bypassCache && !empty($_SESSION['city_geo']) && is_array($_SESSION['city_geo'])) {
-    $s = $_SESSION['city_geo'];
-    if (!empty($s['city']) && time() - (int)($s['ts'] ?? 0) < GEO_IP_TTL) {
-        geo_respond(['ok' => true, 'city' => $s['city'], 'citycode' => $s['citycode'] ?? '',
-                     'adcode' => $s['adcode'] ?? '', 'from' => 'session']);
-    }
-}
 
 $ip = geo_client_ip();
 $ipHash = md5($ip);
@@ -256,8 +238,6 @@ $fsCache = $cacheWritable ? $cacheDir : null;
 // ---------- 2. IP 文件缓存 ----------
 $cached = (!$bypassCache && $fsCache !== null) ? geo_cache_read($fsCache, $ipHash, GEO_IP_TTL) : null;
 if ($cached !== null && !empty($cached['city'])) {
-    $_SESSION['city_geo'] = ['city' => $cached['city'], 'citycode' => $cached['citycode'] ?? '',
-                             'adcode' => $cached['adcode'] ?? '', 'ts' => time()];
     geo_respond(['ok' => true, 'city' => $cached['city'], 'citycode' => $cached['citycode'] ?? '',
                  'adcode' => $cached['adcode'] ?? '', 'from' => 'cache']);
 }
@@ -349,7 +329,6 @@ if ($codeCached !== null) {
 
 // ---------- 7. 回写缓存并输出 ----------
 $result = ['city' => $city, 'citycode' => $citycode, 'adcode' => $adcode, 'ts' => time()];
-$_SESSION['city_geo'] = $result;
 if ($fsCache !== null) {
     geo_cache_write($fsCache, $ipHash, $result);
 }

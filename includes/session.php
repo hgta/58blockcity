@@ -29,8 +29,42 @@ if (!defined('AUTH_REGENERATE_SECONDS')) {
 if (!defined('AUTH_IDLE_TIMEOUT')) {
     define('AUTH_IDLE_TIMEOUT', 3600);
 }
+if (!defined('AUTH_SESSION_TTL')) {
+    define('AUTH_SESSION_TTL', 86400 * AUTH_REMEMBER_DAYS);
+}
+// 会话存储目录（站点级隔离）
+//
+// 为什么不改 php.ini：宝塔的 php.ini 是按 **PHP 版本**全局共享的，
+// 改 session.save_path / gc_maxlifetime 会波及同版本下所有站点
+// （所有站会话混进同一目录，或反过来被别人的 1440 秒默认值清掉）。
+// 这里在本请求内 ini_set 覆盖，作用域仅本站，随代码部署生效、与应用同版本管理。
+//
+// 默认取「系统临时目录 + 站点专名」的子目录，原因：
+//   · 位于站点根之外，sess_* 文件不会被 Web 直接访问；
+//   · PHP 的 GC 只扫描 save_path 下以 sess_ 开头的文件、且不递归子目录，
+//     因此同机其他站点（save_path=/tmp）清理时不会误删本站会话。
+// 如需改用固定磁盘目录，在 config 中 define('AUTH_SESSION_DIR', '/your/path') 即可。
+if (!defined('AUTH_SESSION_DIR')) {
+    define('AUTH_SESSION_DIR', rtrim(sys_get_temp_dir(), '/\\') . '/58blockcity-sessions');
+}
 
 if (session_status() === PHP_SESSION_NONE) {
+    // 独立会话目录（不可写时回退系统默认，只记录日志、不阻断请求）
+    $authSessionDir = AUTH_SESSION_DIR;
+    if (!is_dir($authSessionDir)) {
+        @mkdir($authSessionDir, 0700, true);
+        @chmod($authSessionDir, 0700);
+    }
+    if (is_dir($authSessionDir) && is_writable($authSessionDir)) {
+        @ini_set('session.save_path', $authSessionDir);
+    } else {
+        error_log('[session] 独立会话目录不可用，回退系统默认 save_path: ' . $authSessionDir);
+    }
+    // 会话数据存活期跟随「记住我」（默认 30 天）。
+    // 不设时 php.ini 默认 1440 秒（24 分钟）就会把会话文件 GC 掉，
+    // 与 Cookie 声明的 30 天严重不一致 —— 这是"勾了 30 天仍频繁重登"的主因。
+    @ini_set('session.gc_maxlifetime', (string)AUTH_SESSION_TTL);
+
     session_set_cookie_params([
         'lifetime' => 86400 * AUTH_REMEMBER_DAYS,
         'path'     => '/',
