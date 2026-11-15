@@ -463,41 +463,153 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
     padding: 20px;
 }
 
+/* 评价输入表单 */
 .comment-form {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 18px;
+    padding: 16px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #eef2f7;
 }
 
+.comment-form .form-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 10px;
+}
+
+.comment-textarea {
+    display: block;
+    width: 100%;
+    min-height: 96px;
+    max-height: 240px;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: #2d3748;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.comment-textarea::placeholder { color: #a0aec0; }
+
+.comment-textarea:focus {
+    border-color: #ff8a3d;
+    box-shadow: 0 0 0 3px rgba(255,107,0,0.12);
+}
+
+.comment-form-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.comment-counter {
+    font-size: 0.78rem;
+    color: #a0aec0;
+}
+
+.btn-comment-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff8a3d, #e55a00);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255,107,0,0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-comment-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(255,107,0,0.32);
+}
+
+.btn-comment-submit:active { transform: translateY(0); }
+
+/* 评价列表 */
 .comment-item {
-    padding: 15px 0;
-    border-bottom: 1px solid #f7fafc;
+    display: flex;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f4f8;
 }
 
 .comment-item:last-child {
     border-bottom: none;
 }
 
+.comment-avatar {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+}
+
+.comment-main {
+    flex: 1;
+    min-width: 0;
+}
+
 .comment-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .comment-author {
     font-weight: 600;
     color: #2d3748;
+    font-size: 0.9rem;
 }
 
 .comment-time {
-    font-size: 0.8rem;
+    flex: 0 0 auto;
+    font-size: 0.75rem;
     color: #a0aec0;
 }
 
 .comment-content {
     color: #4a5568;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 0.9rem;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.comments-empty {
+    text-align: center;
+    color: #a0aec0;
+    padding: 24px 0;
+    font-size: 0.9rem;
 }
 
 /* 响应式设计 */
@@ -736,30 +848,50 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commen
                 <div class="comments-body">
                     <!-- 评论表单 -->
                     <form method="post" class="comment-form">
-                        <div class="mb-3">
-                            <label for="commentText" class="form-label">发表您的评价</label>
-                            <textarea class="form-control" id="commentText" name="comment_text" rows="3" 
-                                      placeholder="请输入您的评价..." required></textarea>
+                        <label for="commentText" class="form-label">
+                            <i class="fas fa-pen-to-square"></i> 发表您的评价
+                        </label>
+                        <textarea class="comment-textarea" id="commentText" name="comment_text" rows="3"
+                                  maxlength="300" placeholder="说说你对这个 NFT 头像的看法吧…（最多 300 字）" required></textarea>
+                        <div class="comment-form-footer">
+                            <span class="comment-counter"><span id="commentCount">0</span>/300</span>
+                            <button type="submit" class="btn-comment-submit">
+                                <i class="fas fa-paper-plane"></i> 提交评价
+                            </button>
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> 提交评价
-                        </button>
                     </form>
-                    
+                    <script>
+                    (function () {
+                        var input = document.getElementById('commentText');
+                        var counter = document.getElementById('commentCount');
+                        if (!input || !counter) return;
+                        input.addEventListener('input', function () {
+                            counter.textContent = input.value.length;
+                        });
+                    })();
+                    </script>
+
                     <!-- 评论列表 -->
                     <div class="comments-section">
                         <?php if (!empty($comments)): ?>
                             <?php foreach ($comments as $commentItem): ?>
+                                <?php
+                                $commentUser = trim($commentItem['username'] ?? '');
+                                $commentInitial = $commentUser !== '' ? mb_substr($commentUser, 0, 1) : 'U';
+                                ?>
                                 <div class="comment-item">
-                                    <div class="comment-header">
-                                        <span class="comment-author"><?= htmlspecialchars($commentItem['username']) ?></span>
-                                        <span class="comment-time"><?= date('m-d H:i', strtotime($commentItem['created_at'])) ?></span>
+                                    <div class="comment-avatar"><?= htmlspecialchars($commentInitial) ?></div>
+                                    <div class="comment-main">
+                                        <div class="comment-header">
+                                            <span class="comment-author"><?= htmlspecialchars($commentUser ?: '匿名用户') ?></span>
+                                            <span class="comment-time"><?= date('m-d H:i', strtotime($commentItem['created_at'])) ?></span>
+                                        </div>
+                                        <div class="comment-content"><?= htmlspecialchars($commentItem['content']) ?></div>
                                     </div>
-                                    <div class="comment-content"><?= htmlspecialchars($commentItem['content']) ?></div>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div class="text-center text-muted py-3">
+                            <div class="comments-empty">
                                 <i class="fas fa-comment-slash"></i> 暂无评价，快来发表第一条评论吧！
                             </div>
                         <?php endif; ?>
