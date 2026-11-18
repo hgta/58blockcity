@@ -2116,6 +2116,68 @@ function showConfirm(message, key, onYes) {
 document.getElementById('clear-selection').addEventListener('click', clearSelection);
 
 
+// 区块单价（取网格单元格的 data-price，单位：元）
+function blockPriceOf(number) {
+    var cell = document.querySelector('[data-block-number="' + number + '"]');
+    var p = cell ? parseFloat(cell.getAttribute('data-price')) : NaN;
+    return isNaN(p) ? 0 : p;
+}
+
+// 选中区块合计金额（各块单价之和，与服务端逐块计价一致）
+function selectedTotal() {
+    return selectedBlocks.reduce(function (sum, b) { return sum + blockPriceOf(b.number); }, 0);
+}
+
+// 金额格式化：4,730元
+function fmtYuan(n) {
+    return Number(n).toLocaleString('zh-CN', { maximumFractionDigits: 2 }) + '元';
+}
+
+// 选中区块清单 + 合计行
+function renderSelectedList() {
+    var listEl = document.getElementById('selected-blocks-list');
+    if (!listEl) return;
+    if (selectedBlocks.length === 0) {
+        listEl.innerHTML = '';
+        listEl.style.display = 'none';
+        return;
+    }
+    listEl.style.display = 'block';
+    listEl.innerHTML = selectedBlocks.map(function (b) {
+        return '<div class="selected-block-item">' + b.number + ' · ' + fmtYuan(blockPriceOf(b.number)) + '</div>';
+    }).join('') + '<div class="selected-total">合计 ' + selectedBlocks.length + ' 块：' + fmtYuan(selectedTotal()) + '</div>';
+}
+
+// 多选时详情面板显示「编号列表 + 合计价」，避免只显示最后点选的那一块
+function showMultiDetail() {
+    var numbers = selectedBlocks.map(function (b) { return b.number; });
+    document.getElementById('detail-block-number').textContent = numbers.join(' / ');
+    document.getElementById('detail-block-price').textContent = fmtYuan(selectedTotal()) + '（合计 ' + numbers.length + ' 块）';
+    document.getElementById('detail-block-status').textContent = '待认领';
+    document.getElementById('owner-info').style.display = 'none';
+}
+
+function resetDetailPanel() {
+    document.getElementById('detail-block-number').textContent = '--';
+    document.getElementById('detail-block-price').textContent = '--';
+    document.getElementById('detail-block-status').textContent = '--';
+    document.getElementById('owner-info').style.display = 'none';
+}
+
+// 选择变化后同步右侧详情面板：0 块清空 / 1 块单块详情 / ≥2 块合计详情
+function syncDetailWithSelection() {
+    if (selectedBlocks.length >= 2) { showMultiDetail(); return; }
+    if (selectedBlocks.length === 1) {
+        var b = selectedBlocks[0];
+        var cell = document.querySelector('[data-block-number="' + b.number + '"]');
+        updateBlockDetail(b.number,
+            cell ? cell.getAttribute('data-status') : 'available',
+            cell ? cell.getAttribute('data-owner') : null);
+        return;
+    }
+    resetDetailPanel();
+}
+
 function updateMultiSelectUI() {
     var count = selectedBlocks.length;
     var multiInfo = document.getElementById('multiple-selection-info');
@@ -2134,12 +2196,13 @@ function updateMultiSelectUI() {
     } else {
         if (multiInfo) {
             multiInfo.style.display = 'block';
-            multiInfo.textContent = '已选择 ' + count + ' 个区块';
+            multiInfo.textContent = '已选择 ' + count + ' 个区块 · 合计 ' + fmtYuan(selectedTotal());
         }
         if (singleActions) singleActions.style.display = 'none';
         if (multiActions) multiActions.style.display = 'block';
         if (btnMulti) { btnMulti.textContent = '认领选中区块 (' + count + ')'; btnMulti.disabled = false; }
     }
+    renderSelectedList();
 }
 
 function clearSelection() {
@@ -2165,6 +2228,7 @@ document.querySelectorAll('.block-item').forEach(cell => {
             selectedBlocks.splice(idx, 1);
             this.classList.remove('selected');
             updateMultiSelectUI();
+            syncDetailWithSelection();
             return;
         }
 
@@ -2208,8 +2272,8 @@ document.querySelectorAll('.block-item').forEach(cell => {
         selectedBlocks.push({ number: blockNumber, row: row, col: col });
         updateMultiSelectUI();
 
-        // 更新详情面板
-        updateBlockDetail(blockNumber, blockStatus, blockOwner);
+        // 更新详情面板（≥2 块时显示编号列表与合计价，而非最后点选的单块价）
+        syncDetailWithSelection();
     });
 });
 
@@ -2281,10 +2345,8 @@ function handleMultipleSelection(cell, blockNumber, blockStatus, row, col) {
 // 更新选择显示
 function updateSelectionDisplay() {
     document.getElementById('selected-count').textContent = selectedBlocks.length;
-    document.getElementById('selected-blocks-list').innerHTML = selectedBlocks.map(block => 
-        `<div class="selected-block-item">${block.number}</div>`
-    ).join('');
-    
+    renderSelectedList();
+
     // 显示/隐藏多区块操作
     if (selectedBlocks.length > 0) {
         document.getElementById('single-block-actions').style.display = 'none';
@@ -2468,7 +2530,7 @@ document.getElementById('claim-multiple-button').addEventListener('click', async
     }
 
     const blockNumbers = selectedBlocks.map(block => block.number).join(', ');
-    showConfirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}`, 'claim', async function() {
+    showConfirm(`确定要认领以下 ${selectedBlocks.length} 个区块吗？\n${blockNumbers}\n合计：${fmtYuan(selectedTotal())}`, 'claim', async function() {
 
 
     try {
@@ -2556,6 +2618,16 @@ initPinchZoom('#desktopMap', '.block-list');
     border-radius: 3px;
     font-size: 12px;
     display: inline-block;
+}
+
+.selected-total {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed #ddd;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ff6b00;
+    text-align: right;
 }
 </style>
 
