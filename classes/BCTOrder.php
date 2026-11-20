@@ -30,6 +30,55 @@ class BCTOrder {
     }
 
     /**
+     * 「事实有效」判定：status 可能因 cron 未部署 / 迁移未执行而滞后，
+     * expires_at 才是权威口径（NULL / 0000-00-00 = 长期有效）。
+     *
+     * 所有列表展示与可操作入口都以本方法为准，不能只看 status === 'pending'，
+     * 否则会出现「页面显示已过期、按钮仍可接单」的僵尸单。
+     * 注意：已进入交易中的订单由 claim 流程负责（允许顺延），此处只判定挂单本身，
+     * 调用方需自行区分 inTrade 场景。
+     *
+     * @param array $order 至少含 status / expires_at
+     */
+    public static function isEffectivelyActive($order) {
+        if (!is_array($order)) return false;
+        if (!in_array($order['status'] ?? '', ['pending', 'processing'], true)) return false;
+        $exp = $order['expires_at'] ?? null;
+        if ($exp === null || $exp === '' || $exp === '0000-00-00 00:00:00') return true;
+        $ts = strtotime($exp);
+        return $ts !== false && $ts > time();
+    }
+
+    /**
+     * bct_order_claims 表是否存在（线上老库可能未执行迁移）。
+     * 不存在时过期推进 SQL 不能带 NOT EXISTS 子查询，否则整条 UPDATE 抛异常，
+     * 被页面的 try/catch 吞掉后过期状态永远得不到推进。
+     */
+    private function claimsTableExists() {
+        static $exists = null;
+        if ($exists === null) {
+            try {
+                $this->pdo->query("SELECT 1 FROM bct_order_claims LIMIT 1");
+                $exists = true;
+            } catch (Exception $e) {
+                $exists = false;
+            }
+        }
+        return $exists;
+    }
+
+    /**
+     * SQL 片段：未过期（NULL = 长期有效）。用于所有挂单查询的 WHERE。
+     * 时间由 PHP date() 生成（与 expires_at 写入口径一致），不含用户输入。
+     *
+     * @param string $alias 表别名，如 'o'
+     */
+    public static function sqlNotExpired($alias = '') {
+        $p = $alias !== '' ? $alias . '.' : '';
+        return "({$p}expires_at IS NULL OR {$p}expires_at > '" . date('Y-m-d H:i:s') . "')";
+    }
+
+    /**
      * 获取有效期选项列表（供页面渲染下拉/分段控件）
      *
      * @return array 选项值 => 展示名
@@ -191,9 +240,11 @@ class BCTOrder {
 
         // 有活跃接单（交易中）的订单不做过期处理：
         // 释放/完成由接单流程（放弃、超时释放、确认收款）负责，避免交易中的订单被误置过期
-        $sql .= " AND NOT EXISTS (
-                    SELECT 1 FROM bct_order_claims c
-                    WHERE c.order_id = bct_orders.id AND c.status IN ('matched','buyer_confirmed'))";
+        if ($this->claimsTableExists()) {
+            $sql .= " AND NOT EXISTS (
+                        SELECT 1 FROM bct_order_claims c
+                        WHERE c.order_id = bct_orders.id AND c.status IN ('matched','buyer_confirmed'))";
+        }
         $params = [$now];
 
         if ($userId !== null) {
@@ -222,6 +273,10 @@ class BCTOrder {
                 WHERE status IN ('pending','processing') 
                   AND expires_at IS NOT NULL 
                   AND expires_at < ?";
+        if ($this->claimsTableExists()) {
+            $sql .= " AND NOT EXISTS (SELECT 1 FROM bct_order_claims c
+                        WHERE c.order_id = bct_orders.id AND c.status IN ('matched','buyer_confirmed'))";
+        }
         $params = [date('Y-m-d H:i:s')];
         if ($userId !== null) {
             $sql .= " AND user_id = ?";
@@ -238,7 +293,7 @@ class BCTOrder {
             $this->pdo->beginTransaction();
             
             // 获取订单信息（FOR UPDATE 锁定，避免并发重复撮合同一笔订单）
-            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending' FOR UPDATE");
+            $stmt = $this->pdo->prepare("SELECT * FROM bct_orders WHERE id = ? AND status = 'pending' AND " . self::sqlNotExpired() . " FOR UPDATE");
             $stmt->execute([$orderId]);
             $order = $stmt->fetch();
 
@@ -262,6 +317,7 @@ class BCTOrder {
                 // 买单：找卖单价格 <= 买单价格的订单，按价格从低到高，同价格按时间优先
                 $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
                     WHERE city = ? AND type = ? AND status = 'pending' 
+                    AND " . self::sqlNotExpired() . "
                     AND trade_type = 'platform' 
                     AND id <> ?
                     AND price <= ?
@@ -272,6 +328,7 @@ class BCTOrder {
                 // 卖单：找买单价格 >= 卖单价格的订单，按价格从高到低，同价格按时间优先
                 $stmt = $this->pdo->prepare("SELECT * FROM bct_orders 
                     WHERE city = ? AND type = ? AND status = 'pending' 
+                    AND " . self::sqlNotExpired() . "
                     AND trade_type = 'platform' 
                     AND id <> ?
                     AND price >= ?
@@ -335,6 +392,9 @@ class BCTOrder {
             
             if (!$order1 || !$order2) {
                 throw new Exception("订单不存在或已不可交易");
+            }
+            if (!self::isEffectivelyActive($order1) || !self::isEffectivelyActive($order2)) {
+                throw new Exception("挂单已过期，不可交易");
             }
             
             // 验证方向相反
@@ -470,6 +530,7 @@ class BCTOrder {
             SELECT price, SUM(amount) as total_amount, COUNT(*) as order_count
             FROM bct_orders
             WHERE city = ? AND status IN ('pending', 'processing')
+              AND " . self::sqlNotExpired() . "
         ";
         $params = [$city];
 
@@ -585,7 +646,7 @@ class BCTOrder {
 	public static function buildStatusCondition($status) {
 		$allowed = ['pending', 'processing', 'completed', 'canceled', 'expired'];
 		if ($status === 'active') {
-			return " AND status IN ('pending','processing')";
+			return " AND status IN ('pending','processing') AND " . self::sqlNotExpired();
 		}
 		if (in_array($status, $allowed, true)) {
 			return " AND status = '{$status}'";
@@ -599,11 +660,11 @@ class BCTOrder {
 	public function getUserOrderStats($userId) {
 		$stats = ['buy_active' => 0, 'sell_active' => 0, 'completed' => 0];
 		
-		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='buy' AND status IN ('pending','processing')");
+		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='buy' AND status IN ('pending','processing') AND " . self::sqlNotExpired());
 		$stmt->execute([$userId]);
 		$stats['buy_active'] = (int)$stmt->fetchColumn();
 
-		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='sell' AND status IN ('pending','processing')");
+		$stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders WHERE user_id = ? AND type='sell' AND status IN ('pending','processing') AND " . self::sqlNotExpired());
 		$stmt->execute([$userId]);
 		$stats['sell_active'] = (int)$stmt->fetchColumn();
 
@@ -628,7 +689,8 @@ class BCTOrder {
 		$sql = "SELECT o.*, u.username 
 				FROM bct_orders o 
 				LEFT JOIN users u ON o.user_id = u.id 
-				WHERE o.status IN ('pending', 'processing')";
+				WHERE o.status IN ('pending', 'processing')
+			  AND " . self::sqlNotExpired('o');
 		
 		$params = [];
 		
@@ -657,7 +719,8 @@ class BCTOrder {
 		$sql = " FROM bct_orders o
 			LEFT JOIN users u ON o.user_id = u.id
 			LEFT JOIN bct_order_claims c ON c.order_id = o.id AND c.status IN ('matched','buyer_confirmed')
-			WHERE o.status IN ('pending', 'processing')";
+			WHERE o.status IN ('pending', 'processing')
+			  AND " . self::sqlNotExpired('o');
 		$params = [];
 
 		if (!empty($filters['type']) && in_array($filters['type'], ['buy', 'sell'], true)) {
@@ -809,6 +872,9 @@ class BCTOrder {
 			if (!$order) throw new Exception('订单不存在');
 			if ($order['trade_type'] !== 'direct') throw new Exception('该订单类型不适用接单流程');
 			if ($order['status'] !== 'pending') throw new Exception('该订单当前不可接单');
+			// status 可能因过期推进未运行而滞后，必须按 expires_at 兜底判定，
+			// 否则「已过期」的僵尸单仍能被接单、写 claim、改成 processing
+			if (!self::isEffectivelyActive($order)) throw new Exception('该挂单已过期，无法接单');
 			if ((int)$order['user_id'] === (int)$takerId) throw new Exception('不能接自己的挂单');
 
 			$stmt = $this->pdo->prepare("SELECT id FROM bct_order_claims
@@ -1051,7 +1117,7 @@ class BCTOrder {
 			$buyerId = (int)$claim['buyer_side_user_id'];
 			$sellerId = (int)$claim['seller_side_user_id'];
 			$this->notify($buyerId, $sellerId, "【BCT交易】你接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，挂单重新开放。");
-			$this->notify($sellerId, $buyerId, "【BCT交易】对方接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，你的挂单重新开放。");
+			$this->notify($sellerId, $buyerId, "【BCT交易】对方接单后 " . self::CLAIM_STALE_HOURS . " 小时内未确认付款，交易已自动释放，你的挂单状态已更新（若已过有效期则自动过期）。");
 		}
 		return $released;
 	}
@@ -1069,7 +1135,22 @@ class BCTOrder {
 			SET status = ?, finished_at = ?, ended_by = ?, reason = ? WHERE id = ?");
 		$stmt->execute([$finalStatus, $now, $endedBy, $reason, (int)$claim['id']]);
 
-		// 订单回到待成交并重新开放接单
+		// 订单回到待成交并重新开放接单；若有效期已过，直接置终态，
+		// 否则「过期单被释放回 pending」会变成可接单的僵尸单
+		$stmt = $this->pdo->prepare("SELECT status, expires_at FROM bct_orders WHERE id = ?");
+		$stmt->execute([(int)$claim['order_id']]);
+		$row = $stmt->fetch();
+		if ($row && !self::isEffectivelyActive($row)) {
+			try {
+				$this->pdo->prepare("UPDATE bct_orders SET status = 'expired', counterparty_id = NULL WHERE id = ?")
+					->execute([(int)$claim['order_id']]);
+			} catch (Exception $e) {
+				// 线上 status 枚举可能尚未加 expired（迁移未执行），canceled 同样是终态
+				$this->pdo->prepare("UPDATE bct_orders SET status = 'canceled', counterparty_id = NULL WHERE id = ?")
+					->execute([(int)$claim['order_id']]);
+			}
+			return;
+		}
 		$stmt = $this->pdo->prepare("UPDATE bct_orders SET status = 'pending', counterparty_id = NULL WHERE id = ?");
 		$stmt->execute([(int)$claim['order_id']]);
 	}

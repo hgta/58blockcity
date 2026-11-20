@@ -77,6 +77,7 @@ try {
             MAX(CASE WHEN type='buy' THEN price END) as highest_buy
         FROM bct_orders
         WHERE status IN ('pending', 'processing')
+          AND " . BCTOrder::sqlNotExpired() . "
         GROUP BY city
         ORDER BY (SUM(CASE WHEN type='sell' THEN amount ELSE 0 END) + SUM(CASE WHEN type='buy' THEN amount ELSE 0 END)) DESC
         LIMIT 20

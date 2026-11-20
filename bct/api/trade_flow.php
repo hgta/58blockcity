@@ -51,7 +51,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
     $canClaim = !$claim
         && !$isPoster
         && $order['trade_type'] === 'direct'
-        && $order['status'] === 'pending';
+        && $order['status'] === 'pending'
+        && BCTOrder::isEffectivelyActive($order);
 
     jsonOut([
         'success'      => true,

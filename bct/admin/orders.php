@@ -27,6 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $orderId = (int)($_POST['order_id'] ?? 0);
     $returnQuery = $_POST['return_query'] ?? '';
 
+    // 一键清理过期挂单：修正历史遗留的「有效期已过但 status 仍是 pending」僵尸单
+    if ($action === 'expire_now') {
+        require_once '../../classes/BCTOrder.php';
+        $cleaner = new BCTOrder($pdo);
+        $cleaned = 0;
+        try {
+            for ($i = 0; $i < 20; $i++) {
+                $n = $cleaner->expireOverdueOrders(null, null, 500);
+                $cleaned += $n;
+                if ($n < 500) break;
+            }
+            $_SESSION['admin_order_message'] = "已清理 {$cleaned} 笔过期挂单";
+        } catch (Exception $e) {
+            $_SESSION['admin_order_error'] = '清理失败：' . $e->getMessage()
+                . '（请确认已执行 init/migration-bct-order-expiry.sql）';
+        }
+        header('Location: orders.php' . ($returnQuery !== '' ? '?' . $returnQuery : ''));
+        exit;
+    }
+
     if ($orderId <= 0) adminOrderFail('无效的订单');
 
     try {
@@ -49,7 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
 
             case 'pending':
-                // 恢复为进行中
+                // 恢复为进行中：已过有效期的挂单不允许恢复，否则会变成可接单的僵尸单
+                if (!empty($target['expires_at']) && strtotime($target['expires_at']) <= time()) {
+                    adminOrderFail('该挂单已超过有效期，不能恢复为进行中');
+                }
                 $pdo->prepare("UPDATE bct_orders SET status = 'pending' WHERE id = ?")->execute([$orderId]);
                 $_SESSION['admin_order_message'] = '订单 ' . $target['order_no'] . ' 已恢复为进行中';
                 break;
@@ -247,6 +270,18 @@ require_once '../../shared/admin/admin-header.php';
         <div class="stat-label">已过期</div>
     </div>
 </div>
+
+<!-- 一键清理：把事实过期但状态未推进的历史挂单标记为 expired -->
+<form method="post" style="margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <input type="hidden" name="action" value="expire_now">
+    <input type="hidden" name="return_query" value="<?= htmlspecialchars($_SERVER['QUERY_STRING'] ?? '') ?>">
+    <button type="submit"
+            onclick="return confirm('立即把所有超过有效期、且不在交易中的挂单标记为已过期？')"
+            style="padding:8px 16px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.06);color:inherit;cursor:pointer;">
+        <i class="fas fa-hourglass-end"></i> 清理过期挂单
+    </button>
+    <span style="font-size:12px;color:#94a3b8;">用于修正历史遗留：有效期已过、状态仍为「待成交」的挂单</span>
+</form>
 
 <!-- 筛选 -->
 <div class="admin-card" style="margin-bottom:20px;">

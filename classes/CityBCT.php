@@ -192,8 +192,10 @@ class CityBCT {
 
         // 活跃订单数
         try {
+            // 与 BCTOrder::sqlNotExpired() 同口径：NULL = 长期有效
             $stmt = $this->pdo->query("
                 SELECT COUNT(*) FROM bct_orders WHERE status IN ('pending', 'processing')
+                  AND (expires_at IS NULL OR expires_at > '" . date('Y-m-d H:i:s') . "')
             ");
             $stats['active_orders'] = (int)$stmt->fetchColumn();
         } catch (Exception $e) {
@@ -392,7 +394,8 @@ class CityBCT {
      */
     private function getPendingOrdersCount($city, $type) {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM bct_orders 
-            WHERE city = ? AND type = ? AND status = 'pending' AND trade_type = 'platform'");
+            WHERE city = ? AND type = ? AND status = 'pending' AND trade_type = 'platform'
+              AND (expires_at IS NULL OR expires_at > '" . date('Y-m-d H:i:s') . "')");
         $stmt->execute([$city, $type]);
         return $stmt->fetchColumn();
     }

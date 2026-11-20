@@ -40,6 +40,10 @@ try {
     if ($order['status'] !== 'pending') {
         throw new Exception('只能取消待成交状态的订单');
     }
+    // status 可能滞后于 expires_at，过期挂单不允许再操作
+    if (!empty($order['expires_at']) && strtotime($order['expires_at']) <= time()) {
+        throw new Exception('该挂单已过期');
+    }
     
     // 如果是出售订单，需要解冻冻结的余额
     if ($order['type'] === 'sell') {

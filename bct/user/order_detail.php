@@ -36,6 +36,12 @@ try {
     // 检查用户权限（只能查看自己的订单或交易对手的订单）
     $isOwner = $order['user_id'] == $_SESSION['user_id'];
     $isCounterparty = false;
+
+    // 有效期已过但 status 尚未推进的僵尸单：隐藏编辑/取消/购买等一切操作入口
+    // （服务端 cancel_order.php / update_order.php / claimOrder 也已同步拦截）
+    $expiredByTime = !empty($order['expires_at']) && strtotime($order['expires_at']) <= time();
+    $canManage = $isOwner && $order['status'] == 'pending' && !$expiredByTime;
+    $canAct = $order['status'] == 'pending' && !$expiredByTime;
     
     // 如果是交易中的订单，检查是否是交易对手
     if (in_array($order['status'], ['processing', 'completed'])) {
@@ -201,7 +207,7 @@ $tradeTypeText = [
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3><i class="fas fa-yen-sign"></i> 交易详情</h3>
-                        <?php if ($isOwner && $order['status'] == 'pending'): ?>
+                        <?php if ($canManage): ?>
                         <button class="btn btn-sm btn-outline-primary" onclick="showEditModal()">
                             <i class="fas fa-edit"></i> 编辑
                         </button>
@@ -380,7 +386,7 @@ $tradeTypeText = [
                 </div>
                 <div class="card-body">
                     <div class="action-buttons">
-                        <?php if ($isOwner && $order['status'] == 'pending'): ?>
+                        <?php if ($canManage): ?>
                         <button class="btn btn-warning btn-block" onclick="cancelOrder(<?= $order['id'] ?>)">
                             <i class="fas fa-times"></i> 取消订单
                         </button>
@@ -389,7 +395,7 @@ $tradeTypeText = [
                         </button>
                         <?php endif; ?>
                         
-                        <?php if (!$isOwner && $order['status'] == 'pending'): ?>
+                        <?php if (!$isOwner && $canAct): ?>
                         <?php if ($order['type'] == 'sell'): ?>
                         <button class="btn btn-primary btn-block" onclick="buyFromOrder(<?= $order['id'] ?>)">
                             <i class="fas fa-shopping-cart"></i> 立即购买

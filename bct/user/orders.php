@@ -26,12 +26,19 @@ if (!isset($statusLabels[$status])) {
 
 $order = new BCTOrder($pdo);
 
-// 惰性推进：先把该用户已超期的挂单置为过期，再查询列表，
-// 保证用户看到的始终是最新状态（全站兜底由 bct/cron/expire_orders.php 负责）
+// 惰性推进：先释放超时接单，再循环把该用户已超期的挂单置为过期，
+// 保证「我的挂单」状态新鲜（全站兜底由 bct/cron/expire_orders.php 负责）
 try {
-    $order->expireOverdueOrders($userId, null, 200);
+    $order->releaseStaleClaims($userId, 20);
 } catch (Exception $e) {
-    // 过期推进失败不应影响订单列表展示
+    error_log('BCT user orders release claims error: ' . $e->getMessage());
+}
+try {
+    for ($i = 0; $i < 5; $i++) {
+        if ($order->expireOverdueOrders($userId, null, 200) < 200) break;
+    }
+} catch (Exception $e) {
+    error_log('BCT user orders expire error: ' . $e->getMessage());
 }
 
 $orders = $order->getUserOrders($userId, $type, $status === '' ? 'all' : $status, $page, $perPage);

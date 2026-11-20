@@ -17,16 +17,17 @@ require_once 'includes/price-fmt.php';
 
 $bctOrder = new BCTOrder($pdo);
 
-// 惰性推进：过期订单 / 超时接单（与挂单大厅一致，保证详情页状态新鲜）
-try {
-    $bctOrder->expireOverdueOrders(null, null, 500);
-} catch (Exception $e) {
-    error_log('BCT order detail expire error: ' . $e->getMessage());
-}
+// 惰性推进：必须先释放超时接单、再推进过期，否则被释放回 pending 的过期单
+// 本轮不会再被标为 expired（变成「已过期但仍可接单」的僵尸单）
 try {
     $bctOrder->releaseStaleClaims(null, 20);
 } catch (Exception $e) {
     error_log('BCT order detail release claims error: ' . $e->getMessage());
+}
+try {
+    $bctOrder->expireOverdueOrders(null, null, 500);
+} catch (Exception $e) {
+    error_log('BCT order detail expire error: ' . $e->getMessage());
 }
 
 $orderId = (int)($_GET['id'] ?? 0);
@@ -54,14 +55,21 @@ $isParty = $inTrade && $currentUserId > 0 && (
     $currentUserId === (int)($claim['buyer_side_user_id'] ?? 0)
     || $currentUserId === (int)($claim['seller_side_user_id'] ?? 0)
 );
-$canClaim = $loggedIn && !$isMine && !$inTrade && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
+// 事实过期（expires_at 已过但 status 尚未被推进）的挂单一律不可接单
+$effectivelyExpired = !$inTrade
+    && in_array($o['status'], ['pending', 'processing'], true)
+    && !BCTOrder::isEffectivelyActive($o);
+$canClaim = $loggedIn && !$isMine && !$inTrade && !$effectivelyExpired
+    && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
 
 $tradeTypes = ['direct' => '直接交易', 'platform' => '平台交易', 'mediator' => '中介交易'];
 $tradeTypeText = $tradeTypes[$o['trade_type']] ?? $o['trade_type'];
 
-// 状态徽标：交易中优先，其次按订单状态
+// 状态徽标：交易中优先；其次事实过期（避免 status 滞后显示「待成交」）；再按订单状态
 if ($inTrade) {
     $statusBadge = ['交易中', 'badge-info'];
+} elseif ($effectivelyExpired) {
+    $statusBadge = ['已过期', 'badge-default'];
 } else {
     switch ($o['status']) {
         case 'pending':    $statusBadge = ['待成交', 'badge-warning']; break;
@@ -200,8 +208,8 @@ require_once 'includes/header.php';
                             <span class="od-cta-muted">该挂单已完成</span>
                         <?php endif; ?>
                         <a href="orders.php" class="btn btn-default">看看其他挂单</a>
-                    <?php elseif ($o['status'] === 'canceled' || $o['status'] === 'expired'): ?>
-                        <span class="od-cta-muted"><?= $o['status'] === 'expired' ? '该挂单已过期' : '该挂单已取消' ?></span>
+                    <?php elseif ($o['status'] === 'canceled' || $o['status'] === 'expired' || $effectivelyExpired): ?>
+                        <span class="od-cta-muted"><?= $o['status'] === 'canceled' ? '该挂单已取消' : '该挂单已过期' ?></span>
                         <a href="orders.php" class="btn btn-default">去挂单大厅</a>
                     <?php elseif ($isMine): ?>
                         <?php if ($inTrade): ?>

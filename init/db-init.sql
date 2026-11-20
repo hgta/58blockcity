@@ -932,7 +932,8 @@ ALTER TABLE `bct_orders`
   ADD UNIQUE KEY `order_no` (`order_no`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `city` (`city`),
-  ADD KEY `status` (`status`);
+  ADD KEY `status` (`status`),
+  ADD KEY `idx_status_expires` (`status`, `expires_at`);
 
 --
 -- Indexes for table `bct_transactions`

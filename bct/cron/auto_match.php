@@ -53,6 +53,7 @@ $log[] = '[' . date('Y-m-d H:i:s') . '] BCT自动撮合任务开始';
 try {
     $stmt = $pdo->prepare("SELECT DISTINCT city FROM bct_orders 
         WHERE status = 'pending' AND trade_type = 'platform' 
+          AND " . BCTOrder::sqlNotExpired() . "
         ORDER BY city");
     $stmt->execute();
     $cities = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -87,6 +88,7 @@ try {
 
             $stmt = $pdo->prepare("SELECT id FROM bct_orders 
                 WHERE city = ? AND status = 'pending' AND trade_type = 'platform'
+                  AND " . BCTOrder::sqlNotExpired() . "
                 $excludeSql
                 ORDER BY created_at ASC, id ASC
                 LIMIT 1");

@@ -49,6 +49,10 @@ try {
     if ($order['status'] !== 'pending') {
         throw new Exception('只能编辑待成交状态的订单');
     }
+    // status 可能滞后于 expires_at，过期挂单不允许再编辑（避免改价续命）
+    if (!empty($order['expires_at']) && strtotime($order['expires_at']) <= time()) {
+        throw new Exception('该挂单已过期');
+    }
     
     // 计算新的总金额
     $totalAmount = $amount * $price;

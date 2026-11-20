@@ -6,18 +6,16 @@ require_once '../classes/BCTOrder.php';
 
 $bctOrder = new BCTOrder($pdo);
 
-// 惰性推进过期订单，保证大厅不展示已超期的挂单
-try {
-    $bctOrder->expireOverdueOrders(null, null, 500);
-} catch (Exception $e) {
-    error_log('BCT hall expire error: ' . $e->getMessage());
-}
-
-// 惰性推进超时接单（买方 24h 未确认付款的释放回 pending），大厅不展示死锁中的旧交易
+// 惰性推进：先释放超时接单，再推进过期（顺序颠倒会把刚释放的过期单复活为可接单）
 try {
     $bctOrder->releaseStaleClaims(null, 20);
 } catch (Exception $e) {
     error_log('BCT hall release claims error: ' . $e->getMessage());
+}
+try {
+    $bctOrder->expireOverdueOrders(null, null, 500);
+} catch (Exception $e) {
+    error_log('BCT hall expire error: ' . $e->getMessage());
 }
 
 $loggedIn = isLoggedIn();
@@ -175,7 +173,9 @@ require_once 'includes/header.php';
                     $inTrade = !empty($o['claim_status']);
                     $isParty = $inTrade && $currentUserId > 0
                         && ($currentUserId === (int)($o['claim_buyer_id'] ?? 0) || $currentUserId === (int)($o['claim_seller_id'] ?? 0));
-                    $canClaim = $loggedIn && !$isMine && !$inTrade && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
+                    $canClaim = $loggedIn && !$isMine && !$inTrade
+                        && BCTOrder::isEffectivelyActive($o)
+                        && $o['trade_type'] === 'direct' && $o['status'] === 'pending';
                 ?>
                 <tr>
                     <td data-label="方向">

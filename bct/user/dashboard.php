@@ -11,11 +11,18 @@ $userId = $_SESSION['user_id'];
 $order = new BCTOrder($pdo);
 $holdings = new UserHoldings($pdo);
 
-// 惰性推进超时接单（买方 24h 未确认付款的释放回 pending）
+// 惰性推进：先释放超时接单，再把该用户已超期的挂单置为过期
 try {
     $order->releaseStaleClaims((int)$userId, 50);
 } catch (Exception $e) {
     error_log('BCT dashboard release claims error: ' . $e->getMessage());
+}
+try {
+    for ($i = 0; $i < 5; $i++) {
+        if ($order->expireOverdueOrders((int)$userId, null, 200) < 200) break;
+    }
+} catch (Exception $e) {
+    error_log('BCT dashboard expire error: ' . $e->getMessage());
 }
 
 $tab = $_GET['tab'] ?? 'buy';
