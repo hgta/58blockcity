@@ -98,6 +98,37 @@ $fv = [
 ];
 $selectedItemId = $editAuction ? intval($editAuction['item_id']) : 0;
 
+// 跨站预填：收藏页「发起拍卖」带参跳转（?item_type=nft&item_id=<ncu_id>&prefill=1）
+// 仅新建模式生效；item_id 必须命中本人持有的 NFT，否则忽略
+$prefillDesc = '';
+if (!$editAuction && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $getType = $_GET['item_type'] ?? '';
+    $getId = intval($_GET['item_id'] ?? 0);
+    if ($getType === 'nft' && $getId > 0) {
+        foreach ($myNfts as $n) {
+            if (intval($n['ncu_id']) === $getId) {
+                $selectedItemId = $getId;
+                $editItemType = 'nft';
+                if (isset($_GET['prefill'])) {
+                    require_once '../classes/NFT.php';
+                    $nftPre = new NFT($pdo);
+                    $preTags = $nftPre->getNftTags(intval($n['nft_id']));
+                    $preTagNames = [];
+                    foreach ($preTags as $t) {
+                        if (!empty($t['name'])) $preTagNames[] = $t['name'];
+                    }
+                    $prefillDesc = "## 拍品信息\n"
+                        . 'NFT 头像 #' . $n['code'] . '（' . $n['city_name'] . ' 认领）' . "\n\n"
+                        . ($preTagNames ? "## 标签\n" . implode('、', $preTagNames) . "\n\n" : '')
+                        . '[查看头像详情](https://nft.58.tl/nft/' . intval($n['nft_id']) . '.html)';
+                    $fv['description'] = $prefillDesc;
+                }
+                break;
+            }
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $itemType = $_POST['item_type'] ?? '';
     $itemId = intval($_POST['item_id'] ?? 0);
@@ -214,7 +245,7 @@ require_once 'includes/header.php';
                 <?php else: ?>
                 <div class="ac-item-grid">
                     <?php foreach ($myNfts as $n): ?>
-                    <div class="ac-item-opt" data-type="nft" data-id="<?= $n['ncu_id'] ?>" onclick="selectItem(this, '<?= $n['ncu_id'] ?>')">
+                    <div class="ac-item-opt <?= (!$editAuction && $selectedItemId == $n['ncu_id'] && $editItemType === 'nft') ? 'active' : '' ?>" data-type="nft" data-id="<?= $n['ncu_id'] ?>" onclick="selectItem(this, '<?= $n['ncu_id'] ?>')">
                         <?php if ($n['base_image']): ?><img src="https://nft.58.tl/avatar/<?= htmlspecialchars($n['base_image']) ?>" alt="" onerror="this.style.display='none'"><?php endif; ?>
                         <span class="lbl">#<?= htmlspecialchars($n['code']) ?>（<?= htmlspecialchars($n['city_name']) ?>）</span>
                     </div>
@@ -279,7 +310,7 @@ require_once 'includes/header.php';
                 <?php endif; ?>
             </div>
 
-            <input type="hidden" name="item_id" id="item_id" value="">
+            <input type="hidden" name="item_id" id="item_id" value="<?= (!$editAuction && $editItemType === 'nft' && $selectedItemId > 0) ? intval($selectedItemId) : '' ?>">
             <?php endif; ?>
 
             <div class="ac-row2">

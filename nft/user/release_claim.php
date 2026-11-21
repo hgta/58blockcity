@@ -26,10 +26,12 @@ $nft = new NFT($pdo);
 // releaseClaim 内部会校验该认领确实属于当前用户（is_current=1）
 $result = $nft->releaseClaim($nftId, $cityId, $userId);
 if ($result['success']) {
-    $_SESSION['message'] = '认领已移除，真正的主人现在可以重新认领该头像';
+    $_SESSION['message'] = '认领已移除，其他用户现在可以重新认领该头像';
 } else {
     $_SESSION['error'] = $result['message'];
 }
 
-header('Location: collection.php');
+// 跳回原分页并锚定到该卡片，保持用户停留位置
+$page = max(1, intval($_POST['page'] ?? 1));
+header('Location: collection.php?page=' . $page . '#claim-' . $nftId . '-' . $cityId);
 exit;

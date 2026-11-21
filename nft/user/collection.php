@@ -123,7 +123,8 @@ $currentAvatar = $userData['avatar'];
                         $isSold = isset($soldMap[$item['nft_id'] . '-' . $item['city_id']]);
                         ?>
                         <div class="col">
-                            <div class="nft-collection-card card h-100 border-0 position-relative <?= $isSold ? 'is-sold-card' : '' ?>">
+                            <div id="claim-<?= (int)$item['nft_id'] ?>-<?= (int)$item['city_id'] ?>"
+                                 class="nft-collection-card card h-100 border-0 position-relative <?= $isSold ? 'is-sold-card' : '' ?>">
                                 <!-- 当前头像标记 -->
                                 <?php if ($currentAvatar == $item['base_image']): ?>
                                     <div class="current-avatar-badge position-absolute top-0 end-0 m-1">
@@ -172,10 +173,18 @@ $currentAvatar = $userData['avatar'];
                                            data-bs-toggle="tooltip">
                                             <i class="fas fa-tag"></i>
                                         </a>
+                                        <a href="https://bid.58.tl/create.php?item_type=nft&item_id=<?= (int)$item['ncu_id'] ?>&prefill=1"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-warning rounded-circle"
+                                           title="发起拍卖"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-gavel"></i>
+                                        </a>
                                         <form method="post" action="/user/release_claim.php"
                                               onsubmit="return confirm('确定移除认领吗？移除后将释放该城市的认领占位，其他用户即可重新认领。');">
                                             <input type="hidden" name="nft_id" value="<?= (int)$item['nft_id'] ?>">
                                             <input type="hidden" name="city_id" value="<?= (int)$item['city_id'] ?>">
+                                            <input type="hidden" name="page" value="<?= (int)$page ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
                                                     title="移除认领" data-bs-toggle="tooltip">
                                                 <i class="fas fa-unlink"></i>

@@ -419,7 +419,7 @@ class NFT {
         "); */
 		
 		$sql = "
-            SELECT n.*, c.name AS city_name, c.id AS city_id, n.id AS nft_id,c.rank AS city_rank
+            SELECT n.*, c.name AS city_name, c.id AS city_id, n.id AS nft_id,c.rank AS city_rank, ncu.id AS ncu_id
             FROM nft_avatars n
             JOIN nft_city_user ncu ON n.id = ncu.nft_id
             JOIN cities c ON ncu.city_id = c.id
