@@ -138,10 +138,10 @@ if (isset($_POST['rename']) && isset($_POST['oldname']) && isset($_POST['newname
 }
 
 // 获取符合条件的图片文件
-// 编号格式（两字母+两数字，如 QR86）的文件永远优先显示、不受上限挤占，
-// 便于重新初始化/修正已有编号；其余按文件名长度过滤，最多显示 $maxCount 张
-function getFilteredImageFiles($dir, $extensions, $maxCount, $minLength) {
-    $codeFiles = [];
+// 编号格式（两字母+两数字，如 QR86）但"尚未入库"的文件优先显示（待初始化/待恢复），
+// 已入库的编号文件不占显示名额；其余按文件名长度过滤，最多显示 $maxCount 张
+function getFilteredImageFiles($dir, $extensions, $maxCount, $minLength, $knownBaseImages = []) {
+    $pendingCodeFiles = []; // 编号格式且未入库 → 优先展示
     $normalFiles = [];
     if (!is_dir($dir)) return [];
 
@@ -154,18 +154,40 @@ function getFilteredImageFiles($dir, $extensions, $maxCount, $minLength) {
         $filename = pathinfo($item, PATHINFO_FILENAME);
 
         if (preg_match('/^[A-Za-z]{2}\d{2}$/', $filename)) {
-            $codeFiles[] = $item;
+            if (!isset($knownBaseImages[$item])) {
+                $pendingCodeFiles[] = $item;
+            }
         } elseif (strlen($filename) >= $minLength) {
             $normalFiles[] = $item;
         }
     }
 
-    // 编号文件在前，普通文件补足到上限
-    $files = array_slice(array_merge($codeFiles, $normalFiles), 0, $maxCount);
-    return $files;
+    // 待初始化的编号文件在前，普通文件补足到上限
+    $remain = max(0, $maxCount - count($pendingCodeFiles));
+    return array_merge($pendingCodeFiles, array_slice($normalFiles, 0, $remain));
 }
 
-$images = getFilteredImageFiles($imageDir, $allowedExtensions, $maxDisplayCount, $minFilenameLength);
+// 已入库的 base_image 集合（用于识别"编号格式但尚未入库"的待处理文件）
+$knownBaseImages = [];
+try {
+    foreach ($pdo->query("SELECT base_image FROM nft_avatars", PDO::FETCH_COLUMN, 0) as $bi) {
+        $knownBaseImages[$bi] = true;
+    }
+} catch (PDOException $e) {
+    error_log("数据库错误: " . $e->getMessage());
+}
+
+$images = getFilteredImageFiles($imageDir, $allowedExtensions, $maxDisplayCount, $minFilenameLength, $knownBaseImages);
+
+// 可选：按文件名关键字过滤（?f=xxx），便于在大量文件中快速定位
+if (!empty($_GET['f'])) {
+    $kw = strtolower(trim((string)$_GET['f']));
+    if ($kw !== '') {
+        $images = array_values(array_filter($images, function ($f) use ($kw) {
+            return strpos(strtolower($f), $kw) !== false;
+        }));
+    }
+}
 
 
 // 获取已存在的NFT信息和标签
@@ -375,7 +397,15 @@ try {
 <body>
     <h1>图片管理器</h1>
     <div class="info-bar">
-        <p>共找到 <?php echo count($images); ?> 张图片（编号格式文件如 QR86 优先显示；其余只显示文件名长度≥<?php echo $minFilenameLength; ?>且扩展名为<?php echo implode(', ', $allowedExtensions); ?>的文件，最多显示<?php echo $maxDisplayCount; ?>张）</p>
+        <p>共找到 <?php echo count($images); ?> 张图片（"编号格式但未入库"的文件优先显示；其余只显示文件名长度≥<?php echo $minFilenameLength; ?>且扩展名为<?php echo implode(', ', $allowedExtensions); ?>的文件，最多显示<?php echo $maxDisplayCount; ?>张）</p>
+        <form method="get" style="margin-top:8px;">
+            <input type="text" name="f" value="<?php echo htmlspecialchars($_GET['f'] ?? '', ENT_QUOTES); ?>"
+                   placeholder="按文件名过滤，如 QR86 或 63546d" style="padding:5px 8px;width:280px;">
+            <button type="submit" style="padding:5px 14px;cursor:pointer;">过滤</button>
+            <?php if (!empty($_GET['f'])): ?>
+                <a href="init-avatar-tag.php" style="margin-left:8px;color:#666;">清除</a>
+            <?php endif; ?>
+        </form>
     </div>
     
     <div class="gallery">
