@@ -138,28 +138,30 @@ if (isset($_POST['rename']) && isset($_POST['oldname']) && isset($_POST['newname
 }
 
 // 获取符合条件的图片文件
+// 编号格式（两字母+两数字，如 QR86）的文件永远优先显示、不受上限挤占，
+// 便于重新初始化/修正已有编号；其余按文件名长度过滤，最多显示 $maxCount 张
 function getFilteredImageFiles($dir, $extensions, $maxCount, $minLength) {
-    $files = [];
-    if (!is_dir($dir)) return $files;
-    
-    $items = scandir($dir);
-    $count = 0;
-    
-    foreach ($items as $item) {
+    $codeFiles = [];
+    $normalFiles = [];
+    if (!is_dir($dir)) return [];
+
+    foreach (scandir($dir) as $item) {
         if ($item === '.' || $item === '..') continue;
-        if ($count >= $maxCount) break;
-        
+
         $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+        if (!in_array($ext, $extensions)) continue;
+
         $filename = pathinfo($item, PATHINFO_FILENAME);
-        
-        // 编号格式（如 QR86）的文件始终显示，便于重新初始化/修正已有编号
-        if (in_array($ext, $extensions)
-            && (strlen($filename) >= $minLength || preg_match('/^[A-Za-z]{2}\d{2}$/', $filename))) {
-            $files[] = $item;
-            $count++;
+
+        if (preg_match('/^[A-Za-z]{2}\d{2}$/', $filename)) {
+            $codeFiles[] = $item;
+        } elseif (strlen($filename) >= $minLength) {
+            $normalFiles[] = $item;
         }
     }
-    
+
+    // 编号文件在前，普通文件补足到上限
+    $files = array_slice(array_merge($codeFiles, $normalFiles), 0, $maxCount);
     return $files;
 }
 
@@ -373,7 +375,7 @@ try {
 <body>
     <h1>图片管理器</h1>
     <div class="info-bar">
-        <p>共找到 <?php echo count($images); ?> 张图片 (只显示文件名长度≥<?php echo $minFilenameLength; ?>且扩展名为<?php echo implode(', ', $allowedExtensions); ?>的文件，最多显示<?php echo $maxDisplayCount; ?>张)</p>
+        <p>共找到 <?php echo count($images); ?> 张图片（编号格式文件如 QR86 优先显示；其余只显示文件名长度≥<?php echo $minFilenameLength; ?>且扩展名为<?php echo implode(', ', $allowedExtensions); ?>的文件，最多显示<?php echo $maxDisplayCount; ?>张）</p>
     </div>
     
     <div class="gallery">
