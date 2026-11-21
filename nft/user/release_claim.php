@@ -23,14 +23,7 @@ if ($nftId <= 0 || $cityId <= 0) {
 
 $nft = new NFT($pdo);
 
-// 仅允许移除"已售出"的认领（存在 pending/completed 交易且无在售记录）
-$soldMap = $nft->getSoldClaimMap($userId);
-if (!isset($soldMap[$nftId . '-' . $cityId])) {
-    $_SESSION['error'] = '该头像未处于已售出状态，无法移除认领';
-    header('Location: collection.php');
-    exit;
-}
-
+// releaseClaim 内部会校验该认领确实属于当前用户（is_current=1）
 $result = $nft->releaseClaim($nftId, $cityId, $userId);
 if ($result['success']) {
     $_SESSION['message'] = '认领已移除，真正的主人现在可以重新认领该头像';

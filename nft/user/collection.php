@@ -160,30 +160,27 @@ $currentAvatar = $userData['avatar'];
                                 <!-- 操作按钮 - 紧凑布局 -->
                                 <div class="card-footer border-0 bg-transparent pt-0 pb-2 px-2">
                                     <div class="nft-actions d-flex justify-content-center gap-1">
-                                        <?php if ($isSold): ?>
-                                            <form method="post" action="/user/release_claim.php"
-                                                  onsubmit="return confirm('确定移除认领吗？移除后将释放该城市的认领占位，真正的主人即可重新认领。');">
-                                                <input type="hidden" name="nft_id" value="<?= (int)$item['nft_id'] ?>">
-                                                <input type="hidden" name="city_id" value="<?= (int)$item['city_id'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
-                                                        title="移除认领（已售出）" data-bs-toggle="tooltip">
-                                                    <i class="fas fa-unlink"></i>
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <a href="/user/set_profile_avatar.php?id=<?= $item['nft_id'] ?>"
-                                               class="btn btn-sm btn-outline-primary rounded-circle"
-                                               title="设为头像"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-user-circle"></i>
-                                            </a>
-                                            <a href="/nft/sell.php?id=<?= $item['nft_id'] ?>&city_id=<?= $item['city_id'] ?>"
-                                               class="btn btn-sm btn-outline-success rounded-circle"
-                                               title="出售"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-tag"></i>
-                                            </a>
-                                        <?php endif; ?>
+                                        <a href="/user/set_profile_avatar.php?id=<?= $item['nft_id'] ?>"
+                                           class="btn btn-sm btn-outline-primary rounded-circle"
+                                           title="设为头像"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-user-circle"></i>
+                                        </a>
+                                        <a href="/nft/sell.php?id=<?= $item['nft_id'] ?>&city_id=<?= $item['city_id'] ?>"
+                                           class="btn btn-sm btn-outline-success rounded-circle"
+                                           title="出售"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-tag"></i>
+                                        </a>
+                                        <form method="post" action="/user/release_claim.php"
+                                              onsubmit="return confirm('确定移除认领吗？移除后将释放该城市的认领占位，其他用户即可重新认领。');">
+                                            <input type="hidden" name="nft_id" value="<?= (int)$item['nft_id'] ?>">
+                                            <input type="hidden" name="city_id" value="<?= (int)$item['city_id'] ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
+                                                    title="移除认领" data-bs-toggle="tooltip">
+                                                <i class="fas fa-unlink"></i>
+                                            </button>
+                                        </form>
                                         <a href="/nft/view.php?id=<?= $item['nft_id'] ?>"
                                            class="btn btn-sm btn-outline-info rounded-circle"
                                            title="查看详情"
