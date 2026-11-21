@@ -185,7 +185,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片管理器</title>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://www.58.tl/assets/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -362,8 +362,8 @@ try {
         <?php endforeach; ?>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://www.58.tl/assets/js/jquery-3.6.0.min.js"></script>
+    <script src="https://www.58.tl/assets/js/select2.min.js"></script>
     <script>
         let currentOpenForm = null;
         

@@ -46,65 +46,91 @@ if (isset($_POST['rename']) && isset($_POST['oldname']) && isset($_POST['newname
         $pdo->beginTransaction();
         
         try {
-            // 重命名文件
-            if (rename($imageDir . $oldName, $imageDir . $newNameWithExt)) {
-                // 检查是否已存在记录
-                $stmt = $pdo->prepare("SELECT id FROM nft_avatars WHERE code = ? OR avatar_id = ?");
-                $stmt->execute([$newName, $avatarId]);
-                $existing = $stmt->fetch();
-                
-                if ($existing) {
-                    $nftId = $existing['id'];
-                    // 更新现有记录
-                    $stmt = $pdo->prepare("UPDATE nft_avatars SET code = ?, base_image = ?, avatar_id = ? WHERE id = ?");
-                    $stmt->execute([$newName, $newNameWithExt, $avatarId, $nftId]);
-                } else {
-                    // 插入新记录
-                    $stmt = $pdo->prepare("INSERT INTO nft_avatars (code, base_image, avatar_id, avatar_key) VALUES (?, ?, ?, ?)");
-                    $stmt->execute([$newName, $newNameWithExt, $avatarId, $oldfilename]);
-                    $nftId = $pdo->lastInsertId();
-                }
-                
-                // 处理标签
-                if ($nftId && !empty($tags)) {
-                    // 先删除旧的标签关联
-                    $stmt = $pdo->prepare("DELETE FROM nft_tags WHERE nft_avatar_id = ?");
-                    $stmt->execute([$nftId]);
-                    
-                    // 添加新标签
-                    foreach ($tags as $tagName) {
-                        $tagName = trim($tagName);
-                        if (empty($tagName)) continue;
-                        
-                        // 查找或创建标签
-                        $stmt = $pdo->prepare("SELECT id FROM tags WHERE name = ?");
-                        $stmt->execute([$tagName]);
-                        $tag = $stmt->fetch();
-                        
-                        if (!$tag) {
-                            $stmt = $pdo->prepare("INSERT INTO tags (name) VALUES (?)");
-                            $stmt->execute([$tagName]);
-                            $tagId = $pdo->lastInsertId();
-                        } else {
-                            $tagId = $tag['id'];
-                        }
-                        
-                        // 关联标签
-                        $stmt = $pdo->prepare("INSERT IGNORE INTO nft_tags (nft_avatar_id, tag_id) VALUES (?, ?)");
-                        $stmt->execute([$nftId, $tagId]);
-                    }
-                }
-                
-                $pdo->commit();
-                echo "<script>alert('操作成功！'); window.location.href = window.location.href;</script>";
-                exit;
-            } else {
-                $pdo->rollBack();
-                echo "<script>alert('文件重命名失败！');</script>";
+            // 1) 防止静默覆盖已有文件：目标文件名被占用时拒绝（除非就是本文件）
+            if ($newNameWithExt !== $oldName && file_exists($imageDir . $newNameWithExt)) {
+                throw new Exception('目标文件 ' . htmlspecialchars($newNameWithExt) . ' 已存在，为防止误覆盖已中止操作');
             }
-        } catch (PDOException $e) {
-            $pdo->rollBack();
-            echo "<script>alert('数据库错误: " . addslashes($e->getMessage()) . "');</script>";
+
+            // 2) 本图片自己对应的记录（按 base_image 精确匹配，只允许更新自己的记录）
+            $stmt = $pdo->prepare("SELECT id FROM nft_avatars WHERE base_image = ? LIMIT 1");
+            $stmt->execute([$oldName]);
+            $selfRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+            $selfId = $selfRecord ? (int)$selfRecord['id'] : 0;
+
+            // 3) 编号冲突检查：编号已被"其他记录"使用 → 拒绝，绝不静默改写他人记录
+            $stmt = $pdo->prepare("SELECT id, base_image FROM nft_avatars WHERE code = ? LIMIT 1");
+            $stmt->execute([$newName]);
+            $codeOwner = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($codeOwner && (int)$codeOwner['id'] !== $selfId) {
+                throw new Exception('编号 ' . htmlspecialchars($newName) . ' 已被记录 #' . $codeOwner['id']
+                    . '（' . htmlspecialchars($codeOwner['base_image']) . '）使用，请先处理该记录或更换编号');
+            }
+
+            // 4) Avatar ID 冲突检查：同上，防止通过 avatar_id 撞库改写别人的记录
+            $stmt = $pdo->prepare("SELECT id, code FROM nft_avatars WHERE avatar_id = ? LIMIT 1");
+            $stmt->execute([$avatarId]);
+            $aidOwner = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($aidOwner && (int)$aidOwner['id'] !== $selfId) {
+                throw new Exception('Avatar ID ' . htmlspecialchars($avatarId) . ' 已被记录 #'
+                    . $aidOwner['id'] . '（' . htmlspecialchars($aidOwner['code']) . '）使用，请勿复用');
+            }
+
+            // 5) 先写库、后重命名文件：rename 失败则整体回滚，避免库与文件不一致
+            if ($selfId > 0) {
+                // 更新本图片自己的记录
+                $stmt = $pdo->prepare("UPDATE nft_avatars SET code = ?, base_image = ?, avatar_id = ? WHERE id = ?");
+                $stmt->execute([$newName, $newNameWithExt, $avatarId, $selfId]);
+                $nftId = $selfId;
+            } else {
+                // 插入新记录
+                $stmt = $pdo->prepare("INSERT INTO nft_avatars (code, base_image, avatar_id, avatar_key) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$newName, $newNameWithExt, $avatarId, $oldfilename]);
+                $nftId = $pdo->lastInsertId();
+            }
+            
+            // 处理标签
+            if ($nftId && !empty($tags)) {
+                // 先删除旧的标签关联
+                $stmt = $pdo->prepare("DELETE FROM nft_tags WHERE nft_avatar_id = ?");
+                $stmt->execute([$nftId]);
+                
+                // 添加新标签
+                foreach ($tags as $tagName) {
+                    $tagName = trim($tagName);
+                    if (empty($tagName)) continue;
+                    
+                    // 查找或创建标签
+                    $stmt = $pdo->prepare("SELECT id FROM tags WHERE name = ?");
+                    $stmt->execute([$tagName]);
+                    $tag = $stmt->fetch();
+                    
+                    if (!$tag) {
+                        $stmt = $pdo->prepare("INSERT INTO tags (name) VALUES (?)");
+                        $stmt->execute([$tagName]);
+                        $tagId = $pdo->lastInsertId();
+                    } else {
+                        $tagId = $tag['id'];
+                    }
+                    
+                    // 关联标签
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO nft_tags (nft_avatar_id, tag_id) VALUES (?, ?)");
+                    $stmt->execute([$nftId, $tagId]);
+                }
+            }
+            
+            // 6) 数据库就绪后再重命名文件
+            if (!rename($imageDir . $oldName, $imageDir . $newNameWithExt)) {
+                throw new Exception('文件重命名失败，数据库已回滚');
+            }
+            
+            $pdo->commit();
+            echo "<script>alert('操作成功！'); window.location.href = window.location.href;</script>";
+            exit;
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo "<script>alert('" . addslashes($e->getMessage()) . "');</script>";
         }
     } else {
         echo "<script>alert('无效的输入数据！');</script>";
@@ -126,7 +152,9 @@ function getFilteredImageFiles($dir, $extensions, $maxCount, $minLength) {
         $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
         $filename = pathinfo($item, PATHINFO_FILENAME);
         
-        if (in_array($ext, $extensions) && strlen($filename) >= $minLength) {
+        // 编号格式（如 QR86）的文件始终显示，便于重新初始化/修正已有编号
+        if (in_array($ext, $extensions)
+            && (strlen($filename) >= $minLength || preg_match('/^[A-Za-z]{2}\d{2}$/', $filename))) {
             $files[] = $item;
             $count++;
         }
@@ -191,10 +219,6 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片管理器</title>
      <link href="https://www.58.tl/assets/css/select2.min.css" rel="stylesheet" />
-	
-	<!-- 确保使用最新版Select2 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -423,8 +447,8 @@ try {
         <?php endforeach; ?>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://www.58.tl/assets/js/jquery-3.6.0.min.js"></script>
+    <script src="https://www.58.tl/assets/js/select2.min.js"></script>
     <script>
         let currentOpenForm = null;
 
