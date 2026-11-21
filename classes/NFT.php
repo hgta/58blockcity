@@ -541,7 +541,241 @@ class NFT {
 			];
 		}
 	}	
-	
+
+	/* ==================== 批量认领（openspec: nft-batch-claim） ==================== */
+
+	/** 单批编号上限 */
+	const BATCH_CLAIM_MAX_CODES = 50;
+	/** 同用户每日认领写入总量上限 */
+	const BATCH_CLAIM_DAILY_LIMIT = 2000;
+
+	/**
+	 * 从自由文本解析 NFT 编号列表
+	 * 格式：两字母+两数字（如 ML24），忽略大小写、大写归一化、去重保序、截断上限
+	 * @return array ['codes' => [...], 'ignored' => int 被上限截断的数量]
+	 */
+	public function parseNftCodes(string $input): array {
+		// 编号格式如需扩展（如 3 位数字）仅需调整此处正则
+		preg_match_all('/[A-Za-z]{2}\d{2}/u', $input, $m);
+		$codes = [];
+		foreach ($m[0] as $raw) {
+			$code = strtoupper($raw);
+			if (!in_array($code, $codes, true)) {
+				$codes[] = $code;
+			}
+		}
+		$ignored = 0;
+		if (count($codes) > self::BATCH_CLAIM_MAX_CODES) {
+			$ignored = count($codes) - self::BATCH_CLAIM_MAX_CODES;
+			$codes = array_slice($codes, 0, self::BATCH_CLAIM_MAX_CODES);
+		}
+		return ['codes' => $codes, 'ignored' => $ignored];
+	}
+
+	/**
+	 * 竞态安全的认领：事务内行锁 + 服务端占用复查
+	 * 防止并发认领同一 NFT+城市插出两行 is_current=1
+	 * @return array ['status' => ok|claimed|fail, 'message' => string]
+	 */
+	public function claimNftSafe(int $nftId, int $userId, int $cityId, $blockId): array {
+		try {
+			$this->pdo->beginTransaction();
+
+			// 行锁：锁定该 NFT+城市的当前认领记录（走 nft_id/city_id 索引）
+			$lockStmt = $this->pdo->prepare("
+				SELECT id, user_id FROM nft_city_user
+				WHERE nft_id = ? AND city_id = ? AND is_current = 1
+				FOR UPDATE
+			");
+			$lockStmt->execute([$nftId, $cityId]);
+			$holder = $lockStmt->fetch(PDO::FETCH_ASSOC);
+
+			if ($holder && intval($holder['user_id']) !== intval($userId)) {
+				// 已被他人占用
+				$this->pdo->rollBack();
+				return ['status' => 'claimed', 'message' => '已被他人认领'];
+			}
+
+			if ($holder) {
+				// 本人已认领：更新区块
+				$upd = $this->pdo->prepare("
+					UPDATE nft_city_user SET block_id = ?, updated_at = NOW() WHERE id = ?
+				");
+				$upd->execute([$blockId, $holder['id']]);
+			} else {
+				// 新认领
+				$ins = $this->pdo->prepare("
+					INSERT INTO nft_city_user (nft_id, city_id, user_id, block_id, created_at)
+					VALUES (?, ?, ?, ?, NOW())
+				");
+				$ins->execute([$nftId, $cityId, $userId, $blockId]);
+			}
+
+			$this->pdo->commit();
+			return ['status' => 'ok', 'message' => '认领成功'];
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) {
+				$this->pdo->rollBack();
+			}
+			error_log("claimNftSafe 失败: nft={$nftId} city={$cityId} user={$userId} " . $e->getMessage());
+			return ['status' => 'fail', 'message' => '认领失败，请重试'];
+		}
+	}
+
+	/**
+	 * 批量认领预校验（dry-run，不落库）
+	 * @param array $codes 已解析的编号列表
+	 * @return array ['items' => [['code','status','detail','nft_id'],...], 'summary' => [...]]
+	 */
+	public function batchClaimPreview(int $userId, int $cityId, array $codes): array {
+		$items = [];
+		$summary = ['available' => 0, 'claimed' => 0, 'missing' => 0, 'ambiguous' => 0, 'self' => 0];
+
+		foreach ($codes as $code) {
+			// 编号查找（大小写归一）
+			$stmt = $this->pdo->prepare("SELECT id FROM nft_avatars WHERE UPPER(code) = ?");
+			$stmt->execute([$code]);
+			$matches = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+
+			if (count($matches) === 0) {
+				$items[] = ['code' => $code, 'status' => 'missing', 'detail' => '编号不存在', 'nft_id' => 0];
+				$summary['missing']++;
+				continue;
+			}
+			if (count($matches) > 1) {
+				$items[] = ['code' => $code, 'status' => 'ambiguous', 'detail' => '编号歧义（多条记录），已跳过', 'nft_id' => 0];
+				$summary['ambiguous']++;
+				continue;
+			}
+
+			$nftId = intval($matches[0]);
+			$stmt = $this->pdo->prepare("
+				SELECT user_id, u.username, IFNULL(ncu.block_id, '') AS block_id
+				FROM nft_city_user ncu
+				LEFT JOIN users u ON ncu.user_id = u.id
+				WHERE ncu.nft_id = ? AND ncu.city_id = ? AND ncu.is_current = 1
+				LIMIT 1
+			");
+			$stmt->execute([$nftId, $cityId]);
+			$holder = $stmt->fetch(PDO::FETCH_ASSOC);
+
+			if ($holder) {
+				if (intval($holder['user_id']) === intval($userId)) {
+					$items[] = ['code' => $code, 'status' => 'self', 'detail' => '您已认领（执行时将更新区块）', 'nft_id' => $nftId];
+					$summary['self']++;
+				} else {
+					$items[] = [
+						'code' => $code, 'status' => 'claimed',
+						'detail' => '已被 ' . (($holder['username'] ?? '') ?: '未知用户') . ' 认领（' . ($holder['block_id'] ?? '') . ' 区块）',
+						'nft_id' => $nftId,
+					];
+					$summary['claimed']++;
+				}
+			} else {
+				$items[] = ['code' => $code, 'status' => 'available', 'detail' => '可认领', 'nft_id' => $nftId];
+				$summary['available']++;
+			}
+		}
+
+		return ['items' => $items, 'summary' => $summary];
+	}
+
+	/**
+	 * 批量执行认领：先确保区块存在一次，再逐条独立事务
+	 * @return array ['items' => [...], 'summary' => [...], 'block_id' => string]
+	 */
+	public function batchClaim(int $userId, int $cityId, string $blockId, array $codes): array {
+		// 每日总量防刷
+		$used = $this->getDailyClaimCount($userId);
+		if ($used >= self::BATCH_CLAIM_DAILY_LIMIT) {
+			return ['items' => [], 'summary' => [], 'error' => '今日认领已达上限（' . self::BATCH_CLAIM_DAILY_LIMIT . ' 个），请明日再试'];
+		}
+		$remaining = self::BATCH_CLAIM_DAILY_LIMIT - $used;
+
+		// 区块：不存在则自动创建一次（避免逐条重复创建）
+		require_once __DIR__ . '/Block.php';
+		$block = new Block($this->pdo);
+		$blockInfo = $block->getBlockByCityAndNumber($cityId, $blockId);
+		if (!$blockInfo) {
+			$zone = $block->determineZoneByBlockId($blockId);
+			$basePrice = $block->calculateBasePrice($blockId, $zone);
+			if (!$block->createBlock($cityId, $zone, $blockId, $userId, $basePrice)) {
+				return ['items' => [], 'summary' => [], 'error' => '创建区块记录失败，请重试'];
+			}
+		}
+
+		// 逐条校验 + 执行（跳过不可认领项）
+		$preview = $this->batchClaimPreview($userId, $cityId, $codes);
+		$items = [];
+		$summary = ['ok' => 0, 'claimed' => 0, 'missing' => 0, 'ambiguous' => 0, 'self' => 0, 'fail' => 0, 'quota' => 0];
+
+		foreach ($preview['items'] as $p) {
+			$row = ['code' => $p['code'], 'status' => $p['status'], 'detail' => $p['detail']];
+
+			switch ($p['status']) {
+				case 'available':
+					if ($remaining <= 0) {
+						$row['status'] = 'quota';
+						$row['detail'] = '今日认领已达上限，未执行';
+						$summary['quota']++;
+						break;
+					}
+					$result = $this->claimNftSafe(intval($p['nft_id']), $userId, $cityId, $blockId);
+					if ($result['status'] === 'ok') {
+						$row['detail'] = '认领成功 → ' . $blockId . ' 区块';
+						$summary['ok']++;
+						$remaining--;
+					} elseif ($result['status'] === 'claimed') {
+						$row['status'] = 'claimed';
+						$row['detail'] = '已被他人抢先认领，已跳过';
+						$summary['claimed']++;
+					} else {
+						$row['status'] = 'fail';
+						$row['detail'] = $result['message'];
+						$summary['fail']++;
+					}
+					break;
+
+				case 'self':
+					// 本人已认领：更新区块归属
+					$result = $this->claimNftSafe(intval($p['nft_id']), $userId, $cityId, $blockId);
+					if ($result['status'] === 'ok') {
+						$row['detail'] = '已更新到 ' . $blockId . ' 区块';
+						$summary['self']++;
+					} else {
+						$row['status'] = 'fail';
+						$row['detail'] = $result['message'];
+						$summary['fail']++;
+					}
+					break;
+
+				default:
+					// claimed / missing / ambiguous：直接沿用预览结果计数
+					if (isset($summary[$p['status']])) {
+						$summary[$p['status']]++;
+					}
+					break;
+			}
+			$items[] = $row;
+		}
+
+		return ['items' => $items, 'summary' => $summary, 'block_id' => $blockId];
+	}
+
+	/**
+	 * 用户当日认领写入数（按服务器日期，用于每日防刷上限）
+	 */
+	public function getDailyClaimCount(int $userId): int {
+		$stmt = $this->pdo->prepare("
+			SELECT COUNT(*) FROM nft_city_user
+			WHERE user_id = ? AND created_at >= CURDATE()
+		");
+		$stmt->execute([$userId]);
+		return (int)$stmt->fetchColumn();
+	}
+
+	/* ==================== 批量认领结束 ==================== */
+
 	// 在classes/NFT.php中添加以下方法
 
 	/**

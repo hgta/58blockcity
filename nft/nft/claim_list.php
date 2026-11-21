@@ -348,6 +348,7 @@ $allTags = $nft->getAllTags();
         <?php if ($searchCode || $searchTag): ?>
             <a href="claim_list.php" class="cl-reset"><i class="fas fa-sync-alt"></i> 重置</a>
         <?php endif; ?>
+        <a href="/nft/claim_batch.php" class="cl-btn" style="margin-left:auto;background:linear-gradient(135deg,#ff8a3d,#e55a00);color:#fff;"><i class="fas fa-layer-group"></i> 批量认领</a>
     </form>
     
     

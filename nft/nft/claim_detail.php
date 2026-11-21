@@ -68,14 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		}
 
-		if ($blockInfo && $nft->claimNft($nftId, $userId, $cityId, $blockId)) {
-			$_SESSION['success_message'] = '认领成功！';
-			// 百度主动推送
-			SeoHelper::pushContentUrl(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
-			header("Location: /nft/claim_list.php");
-			exit;
-		} else {
-			$_SESSION['error_message'] = '认领失败，请重试';    
+		if ($blockInfo) {
+			// 竞态安全认领（事务内行锁 + 占用复查，openspec: nft-batch-claim）
+			$claimResult = $nft->claimNftSafe($nftId, $userId, $cityId, $blockId);
+			if ($claimResult['status'] === 'ok') {
+				$_SESSION['success_message'] = '认领成功！';
+				// 百度主动推送
+				SeoHelper::pushContentUrl(SeoHelper::nftUrl($nftId, $nftInfo['name'] ?? ''));
+				header("Location: /nft/claim_list.php");
+				exit;
+			} elseif ($claimResult['status'] === 'claimed') {
+				$_SESSION['error_message'] = '该NFT已被他人认领';
+			} else {
+				$_SESSION['error_message'] = $claimResult['message'];
+			}
 		}
     }
 }  
