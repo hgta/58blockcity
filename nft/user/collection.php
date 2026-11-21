@@ -17,6 +17,9 @@ $cityObj = new City($pdo);
 // 获取用户收藏的NFT按城市分组
 $collection = $nft->getUserCollection($userId);
 
+// 已售出但仍持有认领的记录（键：nftId-cityId，值：交易状态）
+$soldMap = $nft->getSoldClaimMap((int)$userId);
+
 // 按城市分组并统计数量
 $cityGroups = [];
 foreach ($collection as $item) {
@@ -116,13 +119,25 @@ $currentAvatar = $userData['avatar'];
                 <!-- NFT网格 -->
                 <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
                     <?php foreach ($cityGroup['items'] as $item): ?>
+                        <?php
+                        $isSold = isset($soldMap[$item['nft_id'] . '-' . $item['city_id']]);
+                        ?>
                         <div class="col">
-                            <div class="nft-collection-card card h-100 border-0 position-relative">
+                            <div class="nft-collection-card card h-100 border-0 position-relative <?= $isSold ? 'is-sold-card' : '' ?>">
                                 <!-- 当前头像标记 -->
                                 <?php if ($currentAvatar == $item['base_image']): ?>
                                     <div class="current-avatar-badge position-absolute top-0 end-0 m-1">
                                         <span class="badge bg-success rounded-circle p-1" title="当前头像">
                                             <i class="fas fa-check fa-xs"></i>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- 已售出标记 -->
+                                <?php if ($isSold): ?>
+                                    <div class="sold-badge position-absolute top-0 start-0 m-1">
+                                        <span class="badge sold-badge-label" title="该头像已售出，可移除认领让真正的主人重新认领">
+                                            <i class="fas fa-exchange-alt me-1"></i>已售出
                                         </span>
                                     </div>
                                 <?php endif; ?>
@@ -145,19 +160,31 @@ $currentAvatar = $userData['avatar'];
                                 <!-- 操作按钮 - 紧凑布局 -->
                                 <div class="card-footer border-0 bg-transparent pt-0 pb-2 px-2">
                                     <div class="nft-actions d-flex justify-content-center gap-1">
-                                        <a href="/user/set_profile_avatar.php?id=<?= $item['nft_id'] ?>" 
-                                           class="btn btn-sm btn-outline-primary rounded-circle"
-                                           title="设为头像"
-                                           data-bs-toggle="tooltip">
-                                            <i class="fas fa-user-circle"></i>
-                                        </a>
-                                        <a href="/nft/sell.php?id=<?= $item['nft_id'] ?>&city_id=<?= $item['city_id'] ?>" 
-                                           class="btn btn-sm btn-outline-success rounded-circle"
-                                           title="出售"
-                                           data-bs-toggle="tooltip">
-                                            <i class="fas fa-tag"></i>
-                                        </a>
-                                        <a href="/nft/view.php?id=<?= $item['nft_id'] ?>" 
+                                        <?php if ($isSold): ?>
+                                            <form method="post" action="/user/release_claim.php"
+                                                  onsubmit="return confirm('确定移除认领吗？移除后将释放该城市的认领占位，真正的主人即可重新认领。');">
+                                                <input type="hidden" name="nft_id" value="<?= (int)$item['nft_id'] ?>">
+                                                <input type="hidden" name="city_id" value="<?= (int)$item['city_id'] ?>">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
+                                                        title="移除认领（已售出）" data-bs-toggle="tooltip">
+                                                    <i class="fas fa-unlink"></i>
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <a href="/user/set_profile_avatar.php?id=<?= $item['nft_id'] ?>"
+                                               class="btn btn-sm btn-outline-primary rounded-circle"
+                                               title="设为头像"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-user-circle"></i>
+                                            </a>
+                                            <a href="/nft/sell.php?id=<?= $item['nft_id'] ?>&city_id=<?= $item['city_id'] ?>"
+                                               class="btn btn-sm btn-outline-success rounded-circle"
+                                               title="出售"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-tag"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                        <a href="/nft/view.php?id=<?= $item['nft_id'] ?>"
                                            class="btn btn-sm btn-outline-info rounded-circle"
                                            title="查看详情"
                                            data-bs-toggle="tooltip">
@@ -293,10 +320,38 @@ $currentAvatar = $userData['avatar'];
     transform: scale(1.1);
 }
 
+/* 当前头像标记 */
 .current-avatar-badge .badge {
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     font-size: 0.5rem;
     padding: 0.25rem;
+}
+
+/* 已售出标记与卡片 */
+.sold-badge-label {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #fff !important;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.3rem 0.55rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.35);
+    cursor: help;
+}
+
+.nft-actions form {
+    margin: 0;
+    display: flex;
+}
+
+.nft-actions .btn-outline-danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.nft-actions .btn-outline-danger:hover {
+    background: #dc2626;
+    color: #fff;
 }
 
 /* 城市标题样式 */

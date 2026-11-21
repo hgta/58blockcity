@@ -437,6 +437,63 @@ class NFT {
     }
     
     /**
+     * 获取用户"已售出但仍持有认领"的记录（用于移除认领功能）
+     * 判定：存在该用户作为卖家的 pending/completed 交易，
+     * 且该 NFT+城市当前没有该用户的 listed 在售交易
+     *
+     * @return array 键为 "nftId-cityId"，值为最近一次售出交易状态（pending 优先）
+     */
+    public function getSoldClaimMap(int $userId): array {
+        $sql = "SELECT t.nft_id, t.city_id, t.status
+                FROM nft_transactions t
+                WHERE t.seller_id = ? AND t.status IN ('pending','completed')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM nft_transactions t2
+                      WHERE t2.nft_id = t.nft_id AND t2.city_id = t.city_id
+                        AND t2.seller_id = ? AND t2.status = 'listed'
+                  )";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$userId, $userId]);
+
+        $map = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $key = $row['nft_id'] . '-' . $row['city_id'];
+            if (!isset($map[$key]) || $map[$key] !== 'pending') {
+                $map[$key] = $row['status'];
+            }
+        }
+        return $map;
+    }
+
+    /**
+     * 移除认领：释放当前用户对指定 NFT 在指定城市的认领占位
+     * 用于头像卖出后释放占位，让真正的主人可以重新认领
+     */
+    public function releaseClaim(int $nftId, int $cityId, int $userId): array {
+        $stmt = $this->pdo->prepare("
+            SELECT id FROM nft_city_user
+            WHERE nft_id = ? AND city_id = ? AND user_id = ? AND is_current = 1
+            LIMIT 1
+        ");
+        $stmt->execute([$nftId, $cityId, $userId]);
+        $claim = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$claim) {
+            return ['success' => false, 'message' => '未找到您在该城市的认领记录'];
+        }
+
+        try {
+            $upd = $this->pdo->prepare("
+                UPDATE nft_city_user SET is_current = 0, updated_at = NOW() WHERE id = ?
+            ");
+            $upd->execute([$claim['id']]);
+            return ['success' => true, 'message' => '认领已移除'];
+        } catch (PDOException $e) {
+            error_log('移除认领失败: ' . $e->getMessage());
+            return ['success' => false, 'message' => '移除认领失败，请稍后重试'];
+        }
+    }
+
+    /**
      * 获取用户挂售的NFT
      */
 	 /*
