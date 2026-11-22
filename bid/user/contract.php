@@ -409,7 +409,22 @@ function copyContractText(btn, text) {
 
     <?php if ($stage['key'] === 'unpaid' && $isSeller): ?>
         <div class="ct-alert ok">
-            <i class="fas fa-hourglass-half"></i> 契约已成立，等待买家付款。请在收到款项后再确认，不要提前确认。
+            <i class="fas fa-hourglass-half"></i> 契约已成立，等待买家声明付款。若你已在线下收到全部款项，可直接确认收款，无需等待买家操作。
+        </div>
+        <div class="ct-card">
+            <div class="ct-h"><i class="fas fa-handshake"></i> 我是卖家</div>
+            <p class="ct-note" style="margin-bottom:12px;">
+                买家尚未点击「我已付款」，但<strong>这不影响你确认</strong>——线下已实际收到款项即可直接确认。
+                确认后物权立即交割<?= $c['item_type'] === 'product' ? '，商城订单同步转为已付款并进入发货流程' : '给买家' ?>，此操作不可撤销。
+                <strong style="color:#e74c3c;">未收到款项请勿确认。</strong>
+            </p>
+            <form method="POST" onsubmit="return confirm('请再次确认款项已实际到账。确认后物权立即交割，且不可撤销。');">
+                <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                <input type="hidden" name="action" value="confirm_paid">
+                <button type="submit" class="ac-btn ac-btn-primary" style="padding:11px 22px;">
+                    <i class="fas fa-handshake"></i> 我已线下收到款项，直接确认
+                </button>
+            </form>
         </div>
     <?php endif; ?>
 
@@ -425,7 +440,7 @@ function copyContractText(btn, text) {
             <p style="margin-bottom:8px;">1. 落槌即视为买卖双方之间成立交易契约，成交价与币种以本页记录为准，任何一方不得单方变更。</p>
             <p style="margin-bottom:8px;">2. 付款由买卖双方自行完成，平台不代收、不托管、不提供资金担保，亦不介入币种折算。</p>
             <p style="margin-bottom:8px;">3. 物品所有权在卖家确认收款的那一刻交割。契约作废的，所有权自始未发生转移。</p>
-            <p>4. 买家须在落槌后 7 天内声明付款；逾期未声明的契约自动作废，物品解除占用。</p>
+            <p>4. 买家须在落槌后 7 天内声明付款；逾期未声明且卖家未确认收款的契约自动作废，物品解除占用。</p>
         </div>
     </div>
 </div>

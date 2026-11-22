@@ -626,8 +626,10 @@ class Auction {
     }
 
     /**
-     * 卖家确认收款：buyer_declared → settled
+     * 卖家确认收款：unpaid / buyer_declared → settled
      * 物权交割就发生在这一步——落槌只是契约成立，不是交割。
+     * 平台不碰资金，确认收款本质是卖家的单方声明：买家先点「已付款」只是
+     * 常规路径而非前置条件——卖家线下已收到款可直接确认（不必干等买家）。
      */
     public function confirmPaid($auctionId, $userId) {
         $this->pdo->beginTransaction();
@@ -637,15 +639,22 @@ class Auction {
             $a = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$a) throw new Exception('契约不存在');
             if (intval($a['seller_id']) !== intval($userId)) throw new Exception('无权操作该契约');
-            if ($a['status'] !== 'sold' || $a['payment_status'] !== 'buyer_declared') throw new Exception('契约当前状态无法确认收款');
+            if ($a['status'] !== 'sold' || !in_array($a['payment_status'], ['unpaid', 'buyer_declared'], true)) {
+                throw new Exception('契约当前状态无法确认收款');
+            }
 
             $price    = floatval($a['final_price'] ?: $a['current_price']);
             $buyerId  = intval($a['current_bidder_id']);
             $currency = $a['currency'];
 
             if ($a['item_type'] === 'product') {
-                // 商品：物权交割 = 卖家发货（走 mall 订单流程），此处只把订单置为已付款
+                // 商品：物权交割 = 卖家发货（走 mall 订单流程），此处只把订单置为已付款。
+                // 防复活：订单若已被买家在商城取消（cancelled），置回 paid 会造成
+                // 「库存已回滚但仍要发货」的超卖，必须拒绝确认。
                 $contractOrder = $this->order->getOrderByAuctionId(intval($auctionId));
+                if ($contractOrder && !in_array($contractOrder['status'], ['pending', 'paid'], true)) {
+                    throw new Exception('商城订单已取消（状态 ' . $contractOrder['status'] . '），无法确认收款。请联系买家重建订单，或作废契约后重新拍卖。');
+                }
                 if ($contractOrder) {
                     $this->order->markPaidByContract(intval($contractOrder['id']));
                 }
