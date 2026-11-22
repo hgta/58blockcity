@@ -77,3 +77,6 @@ help/uploads/
 
 # NFT 头像 SVG→PNG 转换缓存（运行时按需生成，可安全删除后自动重建）
 nft/avatar-cache/
+
+# NFT 头像单文件不入库（磁盘保留）
+nft/avatar/63546e0924246396.svg
