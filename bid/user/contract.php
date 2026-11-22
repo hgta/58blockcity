@@ -36,6 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($action === 'confirm_paid') {
                 $auction->confirmPaid($auctionId, $userId);
                 $opMsg = '已确认收款，契约完成，物品所有权已交割给买家。';
+            } elseif ($action === 'save_contact') {
+                $r = $auction->updateContractContact(
+                    $auctionId, $userId,
+                    $_POST['contact_phone'] ?? '',
+                    $_POST['contact_wechat'] ?? ''
+                );
+                if ($r['ok']) { $opMsg = $r['msg']; } else { $opErr = $r['msg']; }
             } else {
                 $opErr = '未知操作';
             }
@@ -90,6 +97,22 @@ if ($currency === 'popularity') {
     }
 }
 
+// 契约联系方式（openspec: contract-contact-info）：仅契约成立后、当事人可见
+$oppoPhone = $oppoWechat = '';
+if ($isSeller) {
+    $oppoPhone  = $c['buyer_contact_phone'] ?? '';
+    $oppoWechat = $c['buyer_contact_wechat'] ?? '';
+    $oppoId     = intval($c['current_bidder_id']);
+} else {
+    $oppoPhone  = $c['seller_contact_phone'] ?? '';
+    $oppoWechat = $c['seller_contact_wechat'] ?? '';
+    $oppoId     = intval($c['seller_id']);
+}
+$myPhone  = $isSeller ? ($c['seller_contact_phone'] ?? '') : ($c['buyer_contact_phone'] ?? '');
+$myWechat = $isSeller ? ($c['seller_contact_wechat'] ?? '') : ($c['buyer_contact_wechat'] ?? '');
+// 站内私信直连（www 域，会话 cookie 同域共享）
+$dmUrl = 'https://www.58.tl/messages/?with=' . $oppoId;
+
 $site_config['title'] = '契约 ' . ac_lot_no($auctionId) . ' - 58拍卖';
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -136,11 +159,47 @@ require_once __DIR__ . '/../includes/header.php';
 .ct-alert.ok { background: var(--brand-dim); color: var(--brand); }
 .ct-alert.err { background: rgba(231,76,60,.12); color: #e74c3c; }
 .ct-alert.warn { background: rgba(243,156,18,.12); color: #f39c12; }
+
+/* 契约联系方式 */
+.ct-contact-item { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; margin-right: 4px; }
+.ct-contact-item i { font-size: 11px; color: var(--brand); }
+.ct-copy-btn {
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+    border-radius: 6px; font-size: 11px; padding: 2px 8px; cursor: pointer;
+}
+.ct-copy-btn:hover { color: var(--brand); border-color: var(--brand); }
+.ct-contact-form label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; line-height: 1.6; }
+.ct-contact-inputs { display: flex; gap: 8px; flex-wrap: wrap; }
+.ct-contact-inputs input {
+    flex: 1 1 150px; min-width: 0;
+    padding: 8px 12px; font-size: 13px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text);
+}
+.ct-contact-inputs input:focus { outline: none; border-color: var(--brand); }
 @media (max-width: 520px) {
     .ac-ct-node { width: 76px; }
     .ct-price { font-size: 22px; }
 }
 </style>
+<script>
+function copyContractText(btn, text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+            var old = btn.textContent;
+            btn.textContent = '已复制';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+        return;
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    var old = btn.textContent;
+    btn.textContent = '已复制';
+    setTimeout(function () { btn.textContent = old; }, 1200);
+}
+</script>
 
 <div class="ct-wrap">
     <?php if ($opMsg): ?><div class="ct-alert ok"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($opMsg) ?></div><?php endif; ?>
@@ -174,6 +233,56 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="ct-card">
         <div class="ct-h"><i class="fas fa-list-check"></i> 履约进度</div>
         <?php ac_render_contract_progress($c); ?>
+    </div>
+
+    <?php /* 契约联系方式（openspec: contract-contact-info）：契约成立后当事人互见 */ ?>
+    <div class="ct-card">
+        <div class="ct-h"><i class="fas fa-address-book"></i> 联系方式</div>
+
+        <div class="ct-row">
+            <span class="k"><?= $isSeller ? '买家' : '卖家' ?>的联系方式</span>
+            <span class="v">
+                <?php if ($oppoPhone !== '' || $oppoWechat !== ''): ?>
+                    <?php if ($oppoPhone !== ''): ?>
+                        <span class="ct-contact-item"><i class="fas fa-phone"></i> <?= htmlspecialchars($oppoPhone) ?></span>
+                        <button type="button" class="ct-copy-btn" onclick="copyContractText(this, '<?= htmlspecialchars(addslashes($oppoPhone)) ?>')">复制</button>
+                    <?php endif; ?>
+                    <?php if ($oppoWechat !== ''): ?>
+                        <span class="ct-contact-item"><i class="fab fa-weixin"></i> <?= htmlspecialchars($oppoWechat) ?></span>
+                        <button type="button" class="ct-copy-btn" onclick="copyContractText(this, '<?= htmlspecialchars(addslashes($oppoWechat)) ?>')">复制</button>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span class="ct-note">对方未留联系方式，可通过私信联系</span>
+                <?php endif; ?>
+            </span>
+        </div>
+
+        <?php if (empty($myPhone) && empty($myWechat) && $isSeller && $currency === 'cny'): ?>
+        <div class="ct-alert warn" style="margin-top:10px;">
+            <i class="fas fa-triangle-exclamation"></i> 你还未填写联系方式——买家需要你的收款方式（微信/支付宝等）才能付款，请尽快填写。
+        </div>
+        <?php endif; ?>
+
+        <form method="POST" style="margin-top:10px;">
+            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+            <input type="hidden" name="action" value="save_contact">
+            <div class="ct-contact-form">
+                <label>我的联系方式<?= empty($myPhone) && empty($myWechat) && $isSeller && $currency === 'popularity' ? '（买家转账需要你的人气值收款信息，可写在微信号栏，如「北京区块号 xxx」）' : '（仅对方可见）' ?></label>
+                <div class="ct-contact-inputs">
+                    <input type="tel" name="contact_phone" maxlength="20" placeholder="电话（选填）" value="<?= htmlspecialchars($myPhone) ?>">
+                    <input type="text" name="contact_wechat" maxlength="64" placeholder="微信 / 收款方式（选填）" value="<?= htmlspecialchars($myWechat) ?>">
+                    <button type="submit" class="ac-btn ac-btn-ghost" style="padding:8px 14px;font-size:13px;white-space:nowrap;">
+                        <i class="fas fa-floppy-disk"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="ct-actions" style="margin-top:10px;">
+            <a class="ac-btn ac-btn-ghost" style="padding:8px 14px;font-size:13px;" href="<?= htmlspecialchars($dmUrl) ?>">
+                <i class="fas fa-comment-dots"></i> <?= $isSeller ? '私信联系买家' : '私信联系卖家' ?>
+            </a>
+        </div>
     </div>
 
     <div class="ct-card">
@@ -234,8 +343,8 @@ require_once __DIR__ . '/../includes/header.php';
                             <i class="fas fa-store"></i> <?= $shopName ? '前往「' . htmlspecialchars($shopName) . '」' : '前往店铺' ?>
                         </a>
                     <?php endif; ?>
-                    <a class="ac-btn ac-btn-ghost" style="padding:9px 16px;font-size:13px;" href="/user/messages.php">
-                        <i class="fas fa-comment-dots"></i> 联系卖家
+                    <a class="ac-btn ac-btn-ghost" style="padding:9px 16px;font-size:13px;" href="<?= htmlspecialchars($dmUrl) ?>">
+                        <i class="fas fa-comment-dots"></i> <?= $isSeller ? '联系买家' : '联系卖家' ?>
                     </a>
                 </div>
             <?php else: ?>

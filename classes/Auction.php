@@ -439,12 +439,12 @@ class Auction {
             $money       = $this->moneyText($price, $a['currency']);
             $this->notify->sendSystemNotify(
                 $bidderId, 'auction_contract_created', $auctionId,
-                '恭喜！您已拍得该拍品，契约已成立，成交价 ' . $money . '。请在 7 天内与卖家完成付款。',
+                '恭喜！您已拍得该拍品，契约已成立，成交价 ' . $money . '。请在 7 天内与卖家完成付款，可在契约页填写联系方式保持沟通。',
                 $contractUrl
             );
             $this->notify->sendSystemNotify(
                 intval($a['seller_id']), 'auction_contract_created', $auctionId,
-                '您的拍卖已成交，成交价 ' . $money . '，契约已成立。请在收到款项后再确认收款、交付物品。',
+                '您的拍卖已成交，成交价 ' . $money . '，契约已成立。请尽快在契约页填写联系方式（收款方式），收到款项后再确认收款、交付物品。',
                 $contractUrl
             );
 
@@ -673,6 +673,56 @@ class Auction {
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * 更新契约联系方式（openspec: contract-contact-info）
+     * 仅契约当事人可写，且只能写自己那一侧的两列——角色由库中身份判定，
+     * 不接受前端传入。电话宽松格式（数字/+/-/空格，5-20），微信仅限长度。
+     * @param string $phone 电话，可空（空串=清除）
+     * @param string $wechat 微信，可空
+     * @return array ['ok'=>bool, 'msg'=>string]
+     */
+    public function updateContractContact($auctionId, $userId, $phone, $wechat) {
+        $auctionId = intval($auctionId);
+        $userId    = intval($userId);
+        if ($auctionId <= 0 || $userId <= 0) return ['ok' => false, 'msg' => '参数无效'];
+
+        $phone  = trim((string)$phone);
+        $wechat = trim((string)$wechat);
+
+        if ($phone !== '' && !preg_match('/^[0-9+\-\s]{5,20}$/', $phone)) {
+            return ['ok' => false, 'msg' => '电话格式不正确（仅数字、+、-、空格，5-20 位）'];
+        }
+        if ($wechat !== '' && (mb_strlen($wechat) > 64 || !preg_match('/^[^\r\n\t<>]*$/u', $wechat))) {
+            return ['ok' => false, 'msg' => '微信号格式不正确'];
+        }
+        if ($phone === '' && $wechat === '') {
+            return ['ok' => false, 'msg' => '电话与微信至少填写一项'];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, seller_id, current_bidder_id, status, payment_status FROM auctions WHERE id = ?");
+        $stmt->execute([$auctionId]);
+        $a = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$a) return ['ok' => false, 'msg' => '契约不存在'];
+        if ($a['status'] !== 'sold' || $a['payment_status'] === null || $a['payment_status'] === '') {
+            return ['ok' => false, 'msg' => '契约尚未成立，暂不可填写联系方式'];
+        }
+
+        $isSeller = intval($a['seller_id']) === $userId;
+        $isBuyer  = intval($a['current_bidder_id']) === $userId;
+        if (!$isSeller && !$isBuyer) return ['ok' => false, 'msg' => '无权操作该契约'];
+
+        // 只更新自己那一侧，列名固定（不接受前端传入角色）
+        $cols = $isSeller ? 'seller_contact_phone = ?, seller_contact_wechat = ?'
+                          : 'buyer_contact_phone = ?, buyer_contact_wechat = ?';
+        $stmt = $this->pdo->prepare("UPDATE auctions SET {$cols}, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([
+            $phone !== '' ? $phone : null,
+            $wechat !== '' ? $wechat : null,
+            $auctionId,
+        ]);
+        return ['ok' => true, 'msg' => '联系方式已保存，对方在契约页可见'];
     }
 
     /**
