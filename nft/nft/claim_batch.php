@@ -382,14 +382,28 @@ $dailyLimit = NFT::BATCH_CLAIM_DAILY_LIMIT;
         });
         html += '</div>';
         if (isResult && s.ok > 0) {
-            html += '<div style="margin-top:14px;"><a href="/user/collection.php" '
+            html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">'
+                  + '<a href="/user/collection.php" '
                   + 'style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;'
                   + 'border-radius:999px;background:linear-gradient(135deg,#ff8a3d,#e55a00);'
                   + 'color:#fff;font-size:.9rem;font-weight:600;text-decoration:none;">'
-                  + '<i class="fas fa-arrow-right"></i> 查看我的收藏</a></div>';
+                  + '<i class="fas fa-arrow-right"></i> 查看我的收藏</a>'
+                  + '<button type="button" class="batch-btn batch-btn-preview" onclick="batchResetForNext()">'
+                  + '<i class="fas fa-broom"></i> 清空，认领下一批</button>'
+                  + '</div>';
         }
         return html;
     }
+
+    // 清空本轮输入与结果，方便直接开始下一个城市的认领
+    window.batchResetForNext = function () {
+        codeInput.value = '';
+        lastPreview = null;
+        resultArea.innerHTML = '';
+        refreshStates();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        citySelect.focus();
+    };
 
     // 城市联动：加载用户区块 + 状态刷新
     citySelect.addEventListener('change', function () {
